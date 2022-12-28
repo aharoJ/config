@@ -4,30 +4,6 @@
     "type": "split",
     "children": [
       {
-        "id": "22f140dac6e50453",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "cc8ca2f9796f3edd",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            },
-            "group": "93dc09a8ada4b6d4"
-          },
-          {
-            "id": "7f5d3bec2eadd990",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            }
-          }
-        ],
-        "currentTab": 1
-      },
-      {
         "id": "11ebaf1fe961f873",
         "type": "tabs",
         "children": [
@@ -35,10 +11,13 @@
             "id": "e0a9950aa77c6c50",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
-            },
-            "group": "93dc09a8ada4b6d4"
+              "type": "markdown",
+              "state": {
+                "file": "Python/screenshots.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
         ]
       }
@@ -107,6 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Python/screenshots.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -123,6 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Python/screenshots.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -133,7 +114,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Python/screenshots.md"
+              }
             }
           },
           {
@@ -176,6 +159,7 @@
             "state": {
               "type": "localgraph",
               "state": {
+                "file": "Python/screenshots.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -222,13 +206,13 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "7f5d3bec2eadd990",
+  "active": "e0a9950aa77c6c50",
   "lastOpenFiles": [
-    "Python/z/z_03.png",
-    "Python/screenshots.md",
     "Python/src.md",
-    "Python/z/z.png",
+    "Python/screenshots.md",
     "Python/data_types.md",
+    "Python/z/z_03.png",
+    "Python/z/z.png",
     "Flameshot/src-pdfs-links.md",
     "machine_learning/Numpy/Screenshot 2022-12-26 at 2.05.20 PM.png.md",
     "machine_learning/Numpy/z/aharo14.png",
