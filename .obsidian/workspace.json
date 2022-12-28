@@ -1,0 +1,238 @@
+{
+  "main": {
+    "id": "bdb9375057991d18",
+    "type": "split",
+    "children": [
+      {
+        "id": "22f140dac6e50453",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cc8ca2f9796f3edd",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            },
+            "group": "93dc09a8ada4b6d4"
+          },
+          {
+            "id": "7f5d3bec2eadd990",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "11ebaf1fe961f873",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e0a9950aa77c6c50",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            },
+            "group": "93dc09a8ada4b6d4"
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "74ec6face807d0eb",
+    "type": "split",
+    "children": [
+      {
+        "id": "a2ca338ee150a1f1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c4eb1e851603dc41",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "tag:#linspace_issue_00",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "ac979a1c93a3e0a1",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          },
+          {
+            "id": "21b9e433a57a35e9",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300.5024719238281
+  },
+  "right": {
+    "id": "1429fbcd57c6fdbd",
+    "type": "split",
+    "children": [
+      {
+        "id": "40c3c7ceadc9eaf8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fe01490dafafa69b",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "8ebc7f8a262e1448",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "0c59706b4fac0935",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          },
+          {
+            "id": "01564fb3304ce7bb",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "90d262bf0ff528ef",
+            "type": "leaf",
+            "state": {
+              "type": "calendar",
+              "state": {}
+            }
+          },
+          {
+            "id": "e07916661e7ade4c",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 4
+      },
+      {
+        "id": "149e9283b5b0b518",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f24dc8ecfa2b7efb",
+            "type": "leaf",
+            "state": {
+              "type": "localgraph",
+              "state": {
+                "options": {
+                  "collapse-filter": true,
+                  "search": "",
+                  "localJumps": 1,
+                  "localBacklinks": true,
+                  "localForelinks": true,
+                  "localInterlinks": true,
+                  "showTags": true,
+                  "showAttachments": true,
+                  "hideUnresolved": false,
+                  "collapse-color-groups": true,
+                  "colorGroups": [],
+                  "collapse-display": true,
+                  "showArrow": true,
+                  "textFadeMultiplier": 0.3,
+                  "nodeSizeMultiplier": 1.13075140386844,
+                  "lineSizeMultiplier": 2.82188252072377,
+                  "collapse-forces": true,
+                  "centerStrength": 0.518713248970312,
+                  "repelStrength": 10,
+                  "linkStrength": 1,
+                  "linkDistance": 250,
+                  "scale": 0.9932650304550696,
+                  "close": true
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 262.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "templater-obsidian:Templater": false
+    }
+  },
+  "active": "7f5d3bec2eadd990",
+  "lastOpenFiles": [
+    "Python/z/z_03.png",
+    "Python/screenshots.md",
+    "Python/src.md",
+    "Python/z/z.png",
+    "Python/data_types.md",
+    "Flameshot/src-pdfs-links.md",
+    "machine_learning/Numpy/Screenshot 2022-12-26 at 2.05.20 PM.png.md",
+    "machine_learning/Numpy/z/aharo14.png",
+    "machine_learning/Numpy/z/aharo13.png",
+    "machine_learning/Numpy/z/aharo12.png"
+  ]
+}
