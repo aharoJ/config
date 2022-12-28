@@ -4,22 +4,71 @@
     "type": "split",
     "children": [
       {
-        "id": "11ebaf1fe961f873",
+        "id": "f74b646247d30809",
         "type": "tabs",
         "children": [
           {
-            "id": "e0a9950aa77c6c50",
+            "id": "7bd85c896f9699e1",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Python/screenshots.md",
+                "file": "Python/object.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "7796714900ebe3ae",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Python/fields.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "8a1bfe1d523b2328",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Tester/tester_one.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "31f9791418dc2800",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Tester/tester_two.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "70c8786f1b4b2d8b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Tester/beta/beta_tester_one.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -86,7 +135,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Python/screenshots.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +152,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Python/screenshots.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -115,7 +164,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Python/screenshots.md"
+                "file": "Tester/beta/beta_tester_one.md"
               }
             }
           },
@@ -159,7 +208,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Python/screenshots.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -206,17 +255,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "e0a9950aa77c6c50",
+  "active": "70c8786f1b4b2d8b",
   "lastOpenFiles": [
-    "Python/src.md",
+    "Tester/tester_two.md",
+    "Tester/tester_one.md",
+    "Python/fields.md",
+    "Python/object.md",
     "Python/screenshots.md",
+    "Python/src.md",
     "Python/data_types.md",
     "Python/z/z_03.png",
     "Python/z/z.png",
-    "Flameshot/src-pdfs-links.md",
-    "machine_learning/Numpy/Screenshot 2022-12-26 at 2.05.20 PM.png.md",
-    "machine_learning/Numpy/z/aharo14.png",
-    "machine_learning/Numpy/z/aharo13.png",
-    "machine_learning/Numpy/z/aharo12.png"
+    "Flameshot/src-pdfs-links.md"
   ]
 }
