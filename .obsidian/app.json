@@ -1,0 +1,19 @@
+{
+  "alwaysUpdateLinks": true,
+  "promptDelete": false,
+  "spellcheck": true,
+  "showLineNumber": false,
+  "foldHeading": true,
+  "foldIndent": true,
+  "newFileLocation": "current",
+  "attachmentFolderPath": "./z",
+  "useMarkdownLinks": true,
+  "newFileFolderPath": "",
+  "pdfExportSettings": {
+    "includeName": false,
+    "pageSize": "Letter",
+    "landscape": false,
+    "margin": "0",
+    "downscalePercent": 100
+  }
+}
