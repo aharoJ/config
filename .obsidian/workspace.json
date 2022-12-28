@@ -4,71 +4,22 @@
     "type": "split",
     "children": [
       {
-        "id": "f74b646247d30809",
+        "id": "b9cd1ee1e52be3cc",
         "type": "tabs",
         "children": [
           {
-            "id": "7bd85c896f9699e1",
+            "id": "60a6fcba6159cb89",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Python/object.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "7796714900ebe3ae",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Python/fields.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "8a1bfe1d523b2328",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tester/tester_one.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "31f9791418dc2800",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tester/tester_two.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "70c8786f1b4b2d8b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "machine_learning/Numpy/arrays.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ],
-        "currentTab": 4
+        ]
       }
     ],
     "direction": "vertical"
@@ -135,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "machine_learning/Numpy/arrays.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -152,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "machine_learning/Numpy/arrays.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -164,7 +115,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md"
+                "file": "machine_learning/Numpy/arrays.md"
               }
             }
           },
@@ -208,7 +159,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "machine_learning/Numpy/arrays.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -255,17 +206,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "70c8786f1b4b2d8b",
+  "active": "60a6fcba6159cb89",
   "lastOpenFiles": [
+    "machine_learning/Numpy/confisonn.md",
+    "Python/object.md",
+    "Tester/beta/beta_tester_one.md",
     "Tester/tester_two.md",
     "Tester/tester_one.md",
     "Python/fields.md",
-    "Python/object.md",
     "Python/screenshots.md",
     "Python/src.md",
     "Python/data_types.md",
-    "Python/z/z_03.png",
-    "Python/z/z.png",
-    "Flameshot/src-pdfs-links.md"
+    "Python/z/z_03.png"
   ]
 }
