@@ -11,10 +11,8 @@
             "id": "bb9c39e2952ba991",
             "type": "leaf",
             "state": {
-              "type": "image",
-              "state": {
-                "file": "z/aharo14.png"
-              }
+              "type": "empty",
+              "state": {}
             },
             "group": "cbd0697c0373e3ab"
           },
@@ -22,24 +20,16 @@
             "id": "1b40d306ea49b847",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tester/beta/beta_tester_one.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           },
           {
             "id": "eb953ea770b536c1",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Yaretzy/Yaretzy.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
         ]
@@ -54,7 +44,6 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "z/aharo14.png",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -135,7 +124,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 365.5
   },
   "right": {
     "id": "1429fbcd57c6fdbd",
@@ -151,7 +140,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "z/aharo14.png",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -168,7 +156,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "z/aharo14.png",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -179,9 +166,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "z/aharo14.png"
-              }
+              "state": {}
             }
           },
           {
@@ -224,7 +209,6 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "z/aharo14.png",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -273,15 +257,15 @@
   },
   "active": "bb9c39e2952ba991",
   "lastOpenFiles": [
+    "big-boy-stuff(experimental)/beta/beta_tester_one.md",
+    "z/aharo14.png",
     "machine_learning/Numpy/arrays.md",
     "z/aharo2.png",
     "z/aharo1.png",
-    "z/aharo14.png",
     "z/aharo123.png",
     "z/aharo3.png",
     "Python/src.md",
-    "Yaretzy/Yaretzy.md",
-    "Tester/beta/beta_tester_one.md",
+    "big-boy-stuff(experimental)/Yaretzy/Yaretzy.md",
     "machine_learning/Numpy/confisonn.md"
   ]
 }
