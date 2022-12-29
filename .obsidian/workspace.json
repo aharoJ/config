@@ -25,7 +25,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "mode": "source",
                 "source": false
               }
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -116,7 +116,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -128,7 +128,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md"
+                "file": "Tester/beta/beta_tester_one.md"
               }
             }
           },
@@ -172,7 +172,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -221,13 +221,13 @@
   },
   "active": "1b40d306ea49b847",
   "lastOpenFiles": [
+    "machine_learning/Numpy/arrays.md",
+    "machine_learning/Numpy/confisonn.md",
     "z/z_02.png",
     "Python/src.md",
-    "machine_learning/Numpy/arrays.md",
     "Tester/tester_two.md",
     "Tester/tester_one.md",
     "Tester/beta/beta_tester_one.md",
-    "machine_learning/Numpy/confisonn.md",
     "Python/object.md",
     "Python/fields.md",
     "Python/screenshots.md"
