@@ -1,2 +1,5 @@
 
-![](z/z_12.png)
+
+# Random
+
+![](../z/aharo_one_34.png)
