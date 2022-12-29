@@ -6,7 +6,7 @@
   "foldHeading": true,
   "foldIndent": true,
   "newFileLocation": "current",
-  "attachmentFolderPath": "./z",
+  "attachmentFolderPath": "z",
   "useMarkdownLinks": true,
   "newFileFolderPath": "",
   "pdfExportSettings": {

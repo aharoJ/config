@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "mode": "source",
                 "source": false
               }
@@ -86,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -115,7 +115,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md"
+                "file": "Tester/beta/beta_tester_one.md"
               }
             }
           },
@@ -159,7 +159,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "Tester/beta/beta_tester_one.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -208,6 +208,7 @@
   },
   "active": "60a6fcba6159cb89",
   "lastOpenFiles": [
+    "machine_learning/Numpy/arrays.md",
     "machine_learning/Numpy/confisonn.md",
     "Python/object.md",
     "Tester/beta/beta_tester_one.md",
@@ -216,7 +217,6 @@
     "Python/fields.md",
     "Python/screenshots.md",
     "Python/src.md",
-    "Python/data_types.md",
-    "Python/z/z_03.png"
+    "Python/data_types.md"
   ]
 }
