@@ -11,13 +11,12 @@
             "id": "bb9c39e2952ba991",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "image",
               "state": {
-                "file": "Python/src.md",
-                "mode": "source",
-                "source": false
+                "file": "z/aharo14.png"
               }
-            }
+            },
+            "group": "cbd0697c0373e3ab"
           },
           {
             "id": "1b40d306ea49b847",
@@ -43,8 +42,49 @@
               }
             }
           }
-        ],
-        "currentTab": 2
+        ]
+      },
+      {
+        "id": "906e038fcdc0328f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b2389854e6fcb1db",
+            "type": "leaf",
+            "state": {
+              "type": "localgraph",
+              "state": {
+                "file": "z/aharo14.png",
+                "options": {
+                  "collapse-filter": true,
+                  "search": "",
+                  "localJumps": 1,
+                  "localBacklinks": true,
+                  "localForelinks": true,
+                  "localInterlinks": false,
+                  "showTags": false,
+                  "showAttachments": false,
+                  "hideUnresolved": false,
+                  "collapse-color-groups": true,
+                  "colorGroups": [],
+                  "collapse-display": true,
+                  "showArrow": false,
+                  "textFadeMultiplier": 0,
+                  "nodeSizeMultiplier": 1,
+                  "lineSizeMultiplier": 1,
+                  "collapse-forces": true,
+                  "centerStrength": 0.518713248970312,
+                  "repelStrength": 10,
+                  "linkStrength": 1,
+                  "linkDistance": 250,
+                  "scale": 0.0078125,
+                  "close": false
+                }
+              }
+            },
+            "group": "cbd0697c0373e3ab"
+          }
+        ]
       }
     ],
     "direction": "vertical"
@@ -95,7 +135,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300.5024719238281
+    "width": 200
   },
   "right": {
     "id": "1429fbcd57c6fdbd",
@@ -111,7 +151,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Yaretzy/Yaretzy.md",
+                "file": "z/aharo14.png",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -128,7 +168,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Yaretzy/Yaretzy.md",
+                "file": "z/aharo14.png",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -140,7 +180,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Yaretzy/Yaretzy.md"
+                "file": "z/aharo14.png"
               }
             }
           },
@@ -184,7 +224,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Yaretzy/Yaretzy.md",
+                "file": "z/aharo14.png",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -231,17 +271,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "eb953ea770b536c1",
+  "active": "bb9c39e2952ba991",
   "lastOpenFiles": [
     "machine_learning/Numpy/arrays.md",
+    "z/aharo2.png",
+    "z/aharo1.png",
+    "z/aharo14.png",
+    "z/aharo123.png",
+    "z/aharo3.png",
+    "Python/src.md",
     "Yaretzy/Yaretzy.md",
     "Tester/beta/beta_tester_one.md",
-    "machine_learning/Numpy/confisonn.md",
-    "z/z_02.png",
-    "Python/src.md",
-    "Tester/tester_two.md",
-    "Tester/tester_one.md",
-    "Python/object.md",
-    "Python/fields.md"
+    "machine_learning/Numpy/confisonn.md"
   ]
 }
