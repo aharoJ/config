@@ -29,7 +29,7 @@
 
 
 
-![](../../z/yaretzy_here.png)
+![](z/yaretzy_here.png)
 
 
 
