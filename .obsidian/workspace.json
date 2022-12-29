@@ -23,9 +23,11 @@
             "id": "1b40d306ea49b847",
             "type": "leaf",
             "state": {
-              "type": "image",
+              "type": "markdown",
               "state": {
-                "file": "z/z_02.png"
+                "file": "machine_learning/Numpy/arrays.md",
+                "mode": "source",
+                "source": false
               }
             }
           }
@@ -97,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "z/z_02.png",
+                "file": "machine_learning/Numpy/arrays.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -114,7 +116,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "z/z_02.png",
+                "file": "machine_learning/Numpy/arrays.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -126,7 +128,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "z/z_02.png"
+                "file": "machine_learning/Numpy/arrays.md"
               }
             }
           },
@@ -170,7 +172,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "z/z_02.png",
+                "file": "machine_learning/Numpy/arrays.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -219,6 +221,7 @@
   },
   "active": "1b40d306ea49b847",
   "lastOpenFiles": [
+    "z/z_02.png",
     "Python/src.md",
     "machine_learning/Numpy/arrays.md",
     "Tester/tester_two.md",
@@ -227,7 +230,6 @@
     "machine_learning/Numpy/confisonn.md",
     "Python/object.md",
     "Python/fields.md",
-    "Python/screenshots.md",
-    "Python/data_types.md"
+    "Python/screenshots.md"
   ]
 }
