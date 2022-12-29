@@ -1,5 +1,5 @@
 
 # private fields
 
-![](z/z_10.png)
+![](../z/z_10.png)
 

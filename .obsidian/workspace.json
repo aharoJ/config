@@ -4,22 +4,33 @@
     "type": "split",
     "children": [
       {
-        "id": "b9cd1ee1e52be3cc",
+        "id": "8d64fd9c2c04c852",
         "type": "tabs",
         "children": [
           {
-            "id": "60a6fcba6159cb89",
+            "id": "bb9c39e2952ba991",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "Python/src.md",
                 "mode": "source",
                 "source": false
               }
             }
+          },
+          {
+            "id": "1b40d306ea49b847",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "z/z_02.png"
+              }
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -86,7 +97,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "z/z_02.png",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +114,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "z/z_02.png",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -115,7 +126,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md"
+                "file": "z/z_02.png"
               }
             }
           },
@@ -159,7 +170,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "z/z_02.png",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -206,17 +217,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "60a6fcba6159cb89",
+  "active": "1b40d306ea49b847",
   "lastOpenFiles": [
+    "Python/src.md",
     "machine_learning/Numpy/arrays.md",
-    "machine_learning/Numpy/confisonn.md",
-    "Python/object.md",
-    "Tester/beta/beta_tester_one.md",
     "Tester/tester_two.md",
     "Tester/tester_one.md",
+    "Tester/beta/beta_tester_one.md",
+    "machine_learning/Numpy/confisonn.md",
+    "Python/object.md",
     "Python/fields.md",
     "Python/screenshots.md",
-    "Python/src.md",
     "Python/data_types.md"
   ]
 }

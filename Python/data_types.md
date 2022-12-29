@@ -1,5 +1,5 @@
 # data_types
 
-![](z/z.png)
+![](../z/z.png)
 
 s

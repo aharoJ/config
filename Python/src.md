@@ -5,11 +5,11 @@
 
 
 
-![](z%202.png)
+![](../z/z_02.png)
 
 
 ---
 
 # string_all_functions
 
-![](z/z_1.png)
+![](../z/z_1.png)
