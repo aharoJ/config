@@ -30,9 +30,21 @@
                 "source": false
               }
             }
+          },
+          {
+            "id": "eb953ea770b536c1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Yaretzy/Yaretzy.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -99,7 +111,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "Yaretzy/Yaretzy.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -116,7 +128,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "Yaretzy/Yaretzy.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -128,7 +140,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md"
+                "file": "Yaretzy/Yaretzy.md"
               }
             }
           },
@@ -172,7 +184,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Tester/beta/beta_tester_one.md",
+                "file": "Yaretzy/Yaretzy.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -219,10 +231,10 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "1b40d306ea49b847",
+  "active": "eb953ea770b536c1",
   "lastOpenFiles": [
-    "machine_learning/Numpy/arrays.md",
     "Tester/beta/beta_tester_one.md",
+    "machine_learning/Numpy/arrays.md",
     "machine_learning/Numpy/confisonn.md",
     "z/z_02.png",
     "Python/src.md",
