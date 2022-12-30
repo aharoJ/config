@@ -57,7 +57,7 @@ contents = file.read()
 
   
 
-# Use a regular expression to find all instances of the pattern "![](file_name)"
+# Use a regular expression to find all instances of the pattern "![](../z/file_name)"
 
 pattern = r'!\[\]\(([\w\d_.]+)\)'
 
@@ -102,9 +102,9 @@ file.write(contents)
 
 ![beta_0.0.1](aharo_5.png)
 
-![](aharo_6.png)
+![](../z/aharo_6.png)
 
-![](aharo_7.png)
+![](../z/aharo_7.png)
 
 
 
@@ -121,7 +121,7 @@ file.write(contents)
 - [ ] can we expand it with more functionality or no?
 
 
-![](aharo_8.png)
+![](../z/aharo_8.png)
 
 
 ---
@@ -135,7 +135,7 @@ file.write(contents)
 
 ## git tool 
 
-![](aharo_9.png)
+![](../z/aharo_9.png)
 
 
 
@@ -200,7 +200,7 @@ for root, dirs, files in os.walk(workspace_root):
                 # Read the contents of the file into a string
                 contents = file.read()
 
-            # Use a regular expression to find all instances of the pattern "![](file_name)"
+            # Use a regular expression to find all instances of the pattern "![](../z/file_name)"
             pattern = r'!\[\]\(([\w\d_.-]+)\)'
             matches = re.findall(pattern, contents)
             print(f"Found {len(matches)} matches in {file_name}: {matches}")
@@ -220,7 +220,7 @@ for root, dirs, files in os.walk(workspace_root):
 ```
 
 
-![](aharo_10.png)
+![](../z/aharo_10.png)
 
 
 
