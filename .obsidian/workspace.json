@@ -13,13 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Obsidian/Obsidian.md",
+                "file": "dev[private]/markdow_script.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "531fc9a459e79ec6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Obsidian/markdow_script[public].md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -86,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Obsidian/Obsidian.md",
+                "file": "Obsidian/markdow_script[public].md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +116,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Obsidian/Obsidian.md",
+                "file": "Obsidian/markdow_script[public].md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -115,7 +128,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Obsidian/Obsidian.md"
+                "file": "Obsidian/markdow_script[public].md"
               }
             }
           },
@@ -159,7 +172,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Obsidian/Obsidian.md",
+                "file": "Obsidian/markdow_script[public].md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -206,7 +219,7 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "28cc12b0599aa219",
+  "active": "21b9e433a57a35e9",
   "lastOpenFiles": [
     "dev[private]/markdow_script.md",
     "Obsidian/Obsidian.md",
