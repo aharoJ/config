@@ -115,7 +115,7 @@ np.random.**[distributions()](https://numpy.org/doc/1.16/reference/routines.rand
 
 ---
 
-- [ ] # Attribute vs Function Call
+# Attribute_vs_Function_Calls
 #attribute_vs_func
 
 
