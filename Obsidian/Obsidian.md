@@ -12,4 +12,22 @@
 
 ## Colorsheme
 - Shimmering Focus (really like)
-- 
+
+
+
+# Linking
+
+[Video](https://www.youtube.com/watch?v=vStUKrOEuRc&ab_channel=SantiYounger)
+
+
+
+
+
+
+
+
+
+
+
+
+
