@@ -11,12 +11,8 @@
             "id": "28cc12b0599aa219",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "dev[private]/markdow_script.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           },
           {
@@ -219,7 +215,7 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "21b9e433a57a35e9",
+  "active": "531fc9a459e79ec6",
   "lastOpenFiles": [
     "dev[private]/markdow_script.md",
     "Obsidian/Obsidian.md",
