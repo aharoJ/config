@@ -7,7 +7,8 @@
 - help(pd.[function])
 	- gives you a man -help
 		- ie... `help(pd.series)`
-		- in depth --> [Attribute vs Function Call](arrays.md#Attribute%20vs%20Function%20Call)
+		- in depth --> [Attribute_vs_Function_Calls](arrays.md#Attribute_vs_Function_Calls)
+		- 
 
 
 #attribute_vs_func 
