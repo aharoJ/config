@@ -4,74 +4,20 @@
     "type": "split",
     "children": [
       {
-        "id": "8d64fd9c2c04c852",
+        "id": "834ca6b534de0176",
         "type": "tabs",
         "children": [
           {
-            "id": "bb9c39e2952ba991",
+            "id": "28cc12b0599aa219",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
-            },
-            "group": "cbd0697c0373e3ab"
-          },
-          {
-            "id": "1b40d306ea49b847",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            }
-          },
-          {
-            "id": "eb953ea770b536c1",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            }
-          }
-        ]
-      },
-      {
-        "id": "906e038fcdc0328f",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "b2389854e6fcb1db",
-            "type": "leaf",
-            "state": {
-              "type": "localgraph",
+              "type": "markdown",
               "state": {
-                "options": {
-                  "collapse-filter": true,
-                  "search": "",
-                  "localJumps": 1,
-                  "localBacklinks": true,
-                  "localForelinks": true,
-                  "localInterlinks": false,
-                  "showTags": false,
-                  "showAttachments": false,
-                  "hideUnresolved": false,
-                  "collapse-color-groups": true,
-                  "colorGroups": [],
-                  "collapse-display": true,
-                  "showArrow": false,
-                  "textFadeMultiplier": 0,
-                  "nodeSizeMultiplier": 1,
-                  "lineSizeMultiplier": 1,
-                  "collapse-forces": true,
-                  "centerStrength": 0.518713248970312,
-                  "repelStrength": 10,
-                  "linkStrength": 1,
-                  "linkDistance": 250,
-                  "scale": 0.0078125,
-                  "close": false
-                }
+                "file": "Obsidian/Obsidian.md",
+                "mode": "source",
+                "source": false
               }
-            },
-            "group": "cbd0697c0373e3ab"
+            }
           }
         ]
       }
@@ -124,7 +70,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 365.5
+    "width": 290.5
   },
   "right": {
     "id": "1429fbcd57c6fdbd",
@@ -140,6 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Obsidian/Obsidian.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -156,6 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Obsidian/Obsidian.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -166,7 +114,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Obsidian/Obsidian.md"
+              }
             }
           },
           {
@@ -209,6 +159,7 @@
             "state": {
               "type": "localgraph",
               "state": {
+                "file": "Obsidian/Obsidian.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -255,17 +206,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "bb9c39e2952ba991",
+  "active": "28cc12b0599aa219",
   "lastOpenFiles": [
+    "dev[private]/markdow_script.md",
+    "Obsidian/Obsidian.md",
+    "Python/object.md",
+    "machine_learning/Numpy/arrays.md",
+    "Flameshot/src-pdfs-links.md",
+    "dev/markdow_script.md",
     "big-boy-stuff(experimental)/beta/beta_tester_one.md",
     "z/aharo14.png",
-    "machine_learning/Numpy/arrays.md",
     "z/aharo2.png",
-    "z/aharo1.png",
-    "z/aharo123.png",
-    "z/aharo3.png",
-    "Python/src.md",
-    "big-boy-stuff(experimental)/Yaretzy/Yaretzy.md",
-    "machine_learning/Numpy/confisonn.md"
+    "z/aharo1.png"
   ]
 }

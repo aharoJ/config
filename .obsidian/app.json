@@ -2,7 +2,7 @@
   "alwaysUpdateLinks": true,
   "promptDelete": false,
   "spellcheck": true,
-  "showLineNumber": false,
+  "showLineNumber": true,
   "foldHeading": true,
   "foldIndent": true,
   "newFileLocation": "current",
