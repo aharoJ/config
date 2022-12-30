@@ -115,13 +115,17 @@ np.random.**[distributions()](https://numpy.org/doc/1.16/reference/routines.rand
 
 ---
 
-# Attribute vs Method call
+- [ ] # Attribute vs Function Call
+#attribute_vs_func
+
 
 * Atrribute
   * correct: random_arr.dtype
   * correct: random_arr.shape
     * wrong: random_arr.dtype\*\*~~()~~\*\*
     * wrong: ~~random_arr.shape()~~
+
+
 * Func call ()
   * whenever we call "**()**"
 
