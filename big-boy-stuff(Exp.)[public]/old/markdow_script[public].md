@@ -42,7 +42,7 @@ file.write(contents)
 
 
 
-![](../z/aharo_7.png)
+![](aharo_7.png)
 
 
 
@@ -61,7 +61,7 @@ file.write(contents)
 - [ ] can we expand it with more functionality or no?
 
 
-![](../z/aharo_8.png)
+![](aharo_8.png)
 
 
 ---
@@ -78,7 +78,7 @@ file.write(contents)
 
 ## git tool 
 
-![](../z/aharo_9.png)
+![](aharo_9.png)
 
 
 
@@ -122,7 +122,7 @@ parser.add_argument('--attachment', required=True, help='attachment directory to
 ```
 
 
-![](../z/aharo_10.png)
+![](aharo_10.png)
 
 
 
