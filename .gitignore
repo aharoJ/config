@@ -6,6 +6,9 @@ dev/
 # Ignore the ".obsidian" folder
 /.obsidian
 
+# Ignore .DS_Store files
+.DS_Store
+
 
 
 
