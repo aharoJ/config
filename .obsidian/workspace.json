@@ -6,6 +6,7 @@
       {
         "id": "834ca6b534de0176",
         "type": "tabs",
+        "dimension": 69.15422885572139,
         "children": [
           {
             "id": "531fc9a459e79ec6",
@@ -41,28 +42,53 @@
                 "mode": "source",
                 "source": false
               }
-            },
-            "group": "60e80121980df52d"
-          }
-        ],
-        "currentTab": 2
-      },
-      {
-        "id": "819e844dfa756fe6",
-        "type": "tabs",
-        "children": [
+            }
+          },
           {
-            "id": "1c8f209635a9c223",
+            "id": "3da21b0a39117519",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
+                "mode": "source",
+                "source": false
+              }
+            },
+            "group": "740881b2dc0931cf"
+          },
+          {
+            "id": "0d930908d9983bf0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Fish(shell)/fisher_z.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 3
+      },
+      {
+        "id": "d9bfe32f6cbc9b49",
+        "type": "tabs",
+        "dimension": 30.845771144278604,
+        "children": [
+          {
+            "id": "f2788c41ae3f9489",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
                 "mode": "preview",
                 "source": false
               }
             },
-            "group": "60e80121980df52d"
+            "group": "740881b2dc0931cf"
           }
         ]
       }
@@ -83,7 +109,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#Attribute",
+                "query": "pandas",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": true,
@@ -131,7 +157,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -148,7 +174,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -160,7 +186,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md"
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md"
               }
             }
           },
@@ -204,7 +230,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -251,17 +277,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "87a512b982c94597",
+  "active": "3da21b0a39117519",
   "lastOpenFiles": [
-    "machine_learning/Numpy/arrays.md",
-    "machine_learning/Numpy/confisonn.md",
+    "dev/markdow_script.md",
+    "Fish(shell)/fisher_z.md",
+    "Flameshot/src-pdfs-links.md",
     "machine_learning/Pandas/Pandas.md",
     "Obsidian/Obsidian.md",
+    "machine_learning/Numpy/arrays.md",
+    "machine_learning/Numpy/confisonn.md",
     "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
     "dev[private]/markdow_script.md",
-    "Python/object.md",
-    "Flameshot/src-pdfs-links.md",
-    "dev/markdow_script.md",
-    "big-boy-stuff(experimental)/beta/beta_tester_one.md"
+    "Python/object.md"
   ]
 }
