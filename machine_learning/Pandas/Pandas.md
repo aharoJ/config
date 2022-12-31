@@ -10,7 +10,7 @@
 		- in depth --> [Attribute_vs_Function_Calls](arrays.md#Attribute_vs_Function_Calls)
 	- 
 	- 
-	- ![](aharo_17.png)
+	- ![](../../z/aharo_17.png)
 - #attribute_vs_func 
 
 
@@ -50,28 +50,28 @@
 
 `data`
 
-![](aharo_19.png)
+![](../../z/aharo_19.png)
 
-![](aharo_20.png)
+![](../../z/aharo_20.png)
 
 
 `index`
 
-![](aharo_21.png)
+![](../../z/aharo_21.png)
 
-![](aharo_22.png)
+![](../../z/aharo_22.png)
 
 
 **Lets combined them** 
 `myser = pd.Series(mydata,myindex)`
 
-![](aharo_23.png)
+![](../../z/aharo_23.png)
 
 
 From the looks, most real life data we will be using comes form dict (hashmaps/dict)
 
 
-![](aharo_24.png)
+![](../../z/aharo_24.png)
 
 
 
@@ -82,14 +82,14 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 # Series_part_two
 
-![](aharo_25.png)
+![](../../z/aharo_25.png)
 
 
 - `keys()`
 
 
 **we can do this because of broadcast**
-![](aharo_26.png)
+![](../../z/aharo_26.png)
 
 
 ### NaN 
@@ -100,7 +100,7 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 
 
-![](aharo_27.png)
+![](../../z/aharo_27.png)
 
 
 
