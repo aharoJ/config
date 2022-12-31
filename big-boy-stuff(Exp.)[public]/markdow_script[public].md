@@ -40,16 +40,13 @@ file.write(contents)
 
 ## The Break Down
 
-![beta_0.0.1](aharo_5.png)
 
-![](../z/aharo_6.png)
 
 ![](../z/aharo_7.png)
 
 
 
 --- 
-
 
 
 
