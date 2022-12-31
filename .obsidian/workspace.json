@@ -35,6 +35,18 @@
             "group": "8952321a985065a5"
           },
           {
+            "id": "e662519fc29a54b2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "dev/markdow_script.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
             "id": "3da21b0a39117519",
             "type": "leaf",
             "state": {
@@ -61,7 +73,7 @@
             "group": "2668948954ed6a73"
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       },
       {
         "id": "d9bfe32f6cbc9b49",
@@ -167,12 +179,12 @@
               }
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "1429fbcd57c6fdbd",
@@ -188,7 +200,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "dev/markdow_script.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -205,7 +217,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "dev/markdow_script.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -217,7 +229,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md"
+                "file": "dev/markdow_script.md"
               }
             }
           },
@@ -261,7 +273,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "machine_learning/Pandas/Pandas.md",
+                "file": "dev/markdow_script.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -308,17 +320,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "87a512b982c94597",
+  "active": "e662519fc29a54b2",
   "lastOpenFiles": [
-    "Fish(shell)/fish_z.md",
     "dev/Git.md",
-    "machine_learning/Pandas/Pandas.md",
-    "machine_learning/Numpy/arrays.md",
+    "dev/Gpt.md",
     "dev/tmux.md",
+    "dev/markdow_script.md",
+    "machine_learning/Pandas/Pandas.md",
+    "Fish(shell)/fish_z.md",
+    "machine_learning/Numpy/arrays.md",
     "vscode/vscode.md",
     "big-boy-stuff(Exp.)[public]/space_template.md",
-    "README.md",
-    "big-boy-stuff(Exp.)[public]/markdow_script[public].md",
-    "dev/markdow_script.md"
+    "README.md"
   ]
 }
