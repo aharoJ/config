@@ -2,6 +2,10 @@
 tools/
 linkFixer.py
 dev/
+.obsidian
+
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
