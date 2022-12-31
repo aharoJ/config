@@ -6,7 +6,7 @@
       {
         "id": "834ca6b534de0176",
         "type": "tabs",
-        "dimension": 52.85171102661597,
+        "dimension": 74.33532284319045,
         "children": [
           {
             "id": "531fc9a459e79ec6",
@@ -14,12 +14,49 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "big-boy-stuff(Exp.)[public]/old/markdow_script[public].md",
                 "mode": "source",
                 "source": false
               }
             },
             "group": "748e4f0538ac3c88"
+          },
+          {
+            "id": "e1a6e048c8683975",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "9cffdfcef67d5e12",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "big-boy-stuff(Exp.)[public]/animals.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "e783fc315be9c913",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
+                "mode": "source",
+                "source": false
+              }
+            },
+            "group": "d73b47eca5b60040"
           },
           {
             "id": "87a512b982c94597",
@@ -33,18 +70,6 @@
               }
             },
             "group": "8952321a985065a5"
-          },
-          {
-            "id": "e662519fc29a54b2",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "dev/markdow_script.md",
-                "mode": "source",
-                "source": false
-              }
-            }
           },
           {
             "id": "3da21b0a39117519",
@@ -65,7 +90,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "dev/Git.md",
+                "file": "dev/markdow_script.md",
                 "mode": "source",
                 "source": false
               }
@@ -73,20 +98,33 @@
             "group": "2668948954ed6a73"
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       },
       {
         "id": "d9bfe32f6cbc9b49",
         "type": "tabs",
-        "dimension": 47.148288973384034,
+        "dimension": 25.66467715680955,
         "children": [
+          {
+            "id": "16c90d610885e442",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
+                "mode": "preview",
+                "source": false
+              }
+            },
+            "group": "d73b47eca5b60040"
+          },
           {
             "id": "28bb70521f2c76d9",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "machine_learning/Numpy/arrays.md",
+                "file": "big-boy-stuff(Exp.)[public]/old/markdow_script[public].md",
                 "mode": "source",
                 "source": false
               }
@@ -125,15 +163,14 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "dev/Git.md",
+                "file": "dev/markdow_script.md",
                 "mode": "source",
                 "source": false
               }
             },
             "group": "2668948954ed6a73"
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -184,7 +221,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "1429fbcd57c6fdbd",
@@ -200,7 +238,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "dev/markdow_script.md",
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -217,7 +255,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "dev/markdow_script.md",
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -229,7 +267,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "dev/markdow_script.md"
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md"
               }
             }
           },
@@ -273,7 +311,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "dev/markdow_script.md",
+                "file": "big-boy-stuff(Exp.)[public]/link_testing.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -320,17 +358,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "e662519fc29a54b2",
+  "active": "16c90d610885e442",
   "lastOpenFiles": [
-    "dev/Git.md",
-    "dev/Gpt.md",
-    "dev/tmux.md",
-    "dev/markdow_script.md",
-    "machine_learning/Pandas/Pandas.md",
+    "big-boy-stuff(Exp.)[public]/cars.md",
+    "big-boy-stuff(Exp.)[public]/animals.md",
+    "big-boy-stuff(Exp.)[public]/link_testing.md",
+    "big-boy-stuff(Exp.)[public]/old/markdow_script[public].md",
     "Fish(shell)/fish_z.md",
     "machine_learning/Numpy/arrays.md",
-    "vscode/vscode.md",
-    "big-boy-stuff(Exp.)[public]/space_template.md",
-    "README.md"
+    "machine_learning/Pandas/Pandas.md",
+    "dev/markdow_script.md",
+    "dev/Git.md",
+    "dev/Gpt.md"
   ]
 }
