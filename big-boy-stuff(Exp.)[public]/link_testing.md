@@ -13,7 +13,7 @@ my car:
 
 
 
-[how this look?](cars.md#^781e44)
+
 
 
 [masking "%"](cars.md#%5E781e44)
