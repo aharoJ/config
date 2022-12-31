@@ -10,7 +10,7 @@ https://github.com/jethrokuan/z
 
 - z -
 
-![](aharo_18.png)
+![](../z/aharo_18.png)
 
 
 
@@ -25,7 +25,7 @@ https://github.com/jethrokuan/z
 ## issue
 
 - **issue with 'z' extending into the most recent** 
-	- ![](aharo_28.png)
+	- ![](../z/aharo_28.png)
 - z -x "**directory**" 
 
 
