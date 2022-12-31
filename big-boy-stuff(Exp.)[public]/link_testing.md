@@ -14,3 +14,13 @@ my car:
 
 
 [how this look?](cars.md#^781e44)
+
+
+
+
+[with the ^](cars.md#^0efd78)
+
+
+
+[with the #](cars.md#random)
+
