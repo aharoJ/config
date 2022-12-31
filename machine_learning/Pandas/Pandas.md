@@ -6,6 +6,7 @@
 - help(pd.[function])  #help_pd
 	- gives you a man -help
 		- ie... `help(pd.series)`
+			- #long_af_issue_git
 		- in depth --> [Attribute_vs_Function_Calls](arrays.md#Attribute_vs_Function_Calls)
 	- 
 	- 
