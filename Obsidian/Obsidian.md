@@ -3,10 +3,25 @@
 
 
 ## Commands 
---    cmd + L   ( list [])
---    cmd + L + L (checks off list [x])
-- [ ] cmd + L
-- [x] cmd + L  + L
+- cmd + L   ( list [])
+	- [ ] cmd + L
+- cmd + L + L (checks off list [x])
+	- [x] cmd + L  + L
+- strikethrough
+	- ~~word~~
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+
+
+
+
+
 
 
 
@@ -31,5 +46,35 @@
 
 
 
+
+
+
+
+
+# bullet_points
+
+> easier for .md conversition
+
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
 
