@@ -31,17 +31,17 @@
 
 # Series_part_one
 
-![](../../z/aharo_13.png)
+![](../z/aharo_13.png)
 
 
-![](../../z/aharo_14.png)
+![](../z/aharo_14.png)
 
 - Pandas seires replaces the [0,1,2,3] for names 
 	- usa
 	- canada
 	- mexico
 
-![](../../z/aharo_16.png)
+![](../z/aharo_16.png)
 
 
 
@@ -50,28 +50,28 @@
 
 `data`
 
-![](../../z/aharo_19.png)
+![](../z/aharo_19.png)
 
-![](../../z/aharo_20.png)
+![](../z/aharo_20.png)
 
 
 `index`
 
-![](../../z/aharo_21.png)
+![](../z/aharo_21.png)
 
-![](../../z/aharo_22.png)
+![](../z/aharo_22.png)
 
 
 **Lets combined them** 
 `myser = pd.Series(mydata,myindex)`
 
-![](../../z/aharo_23.png)
+![](../z/aharo_23.png)
 
 
 From the looks, most real life data we will be using comes form dict (hashmaps/dict)
 
 
-![](../../z/aharo_24.png)
+![](../z/aharo_24.png)
 
 
 
@@ -82,14 +82,14 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 # Series_part_two
 
-![](../../z/aharo_25.png)
+![](../z/aharo_25.png)
 
 
 - `keys()`
 
 
 **we can do this because of broadcast**
-![](../../z/aharo_26.png)
+![](../z/aharo_26.png)
 
 
 ### NaN 
@@ -100,7 +100,7 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 
 
-![](../../z/aharo_27.png)
+![](../z/aharo_27.png)
 
 
 
