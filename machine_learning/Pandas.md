@@ -31,7 +31,7 @@
 
 # Series_part_one
 
-![](../z/aharo_13.png)
+ ![](../z/aharo_13.png)
 
 
 ![](../z/aharo_14.png)
@@ -297,7 +297,7 @@ decapricates, not recommended to use the **inplace** parameter
 ## part-four
 ## rows
 
-dis
+(: 
 
 
 
