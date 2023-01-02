@@ -112,8 +112,7 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 ---
 
 
-# DataFrames
-## part-one
+# DataFrames_part-one
 
 - ![](../z/aharo_45.png)
   
@@ -162,10 +161,10 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 
 
-# DataFrames
-## part-two
+# DataFrames_part-two
 
-## Properties
+
+## DataFrames_Properties
 
 	df.columns
 > Index(['total_bill', 'tip', 'sex', 'smoker', 'day', 'time', 'size', 'price_per_person', 'Payer Name', 'CC Number', 'Payment ID'], dtype='object')
@@ -225,8 +224,10 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 ---
 
 
-## part-three
-## columns
+# DataFrames_part-three
+
+
+## DataFrames_columns
 
 #dataframe/columns
 
@@ -269,10 +270,11 @@ getting more than **ONE** column
 
 
 ---
-
 #dataframe/commit_changes
+#dataframe/drop 
 
-`df.drop()`
+
+
 decapricates, not recommended to use the **inplace** parameter
 
 	df.drop(x,x,inline)
@@ -281,7 +283,6 @@ decapricates, not recommended to use the **inplace** parameter
 - ![](../z/aharo_67.png)
 
 
-							recommended way 
 	
 > 		recommended way to commit changes + aligns with githubs repository updates... or something like that.
 
@@ -294,635 +295,94 @@ decapricates, not recommended to use the **inplace** parameter
 ---
 
 
-## part-four
-## rows
+# DataFrames_part-four
 
-(: 
+## DataFrames_rows
 
 
 
+### converging a column into a row
 
+-  df.set_index()
+	- ![](../z/aharo_70.png)
+		- #dataframe/commit_changes 
+			- ![](../z/aharo_72.png)
+				- `df = df`
 
 
+---
 
 
+### unconverging a column into a row
+- df.reset_index()
+- ![](../z/aharo_73.png)
+	- #dataframe/uncommit_changes 
+		- ![](../z/aharo_74.png)
 
+---
 
+## grabbing rows
 
 
 
+![](../z/aharo_75.png)
 
+		df.iloc[0] # integer based location
+#dataframe/iloc
+- df.iloc[0]  # integer based location
+	- ![](../z/aharo_77.png)
+- ![](../z/aharo_79.png)
 
 
 
+---
 
 
 
+		df.loc['Sun2959'] # labed based location
+#dataframe/loc
+- df.loc['Sun2959'] # labed based location
+	- ![](../z/aharo_78.png)
 
 
 
+---
+#dataframe/iloc 
 
+- ![](../z/aharo_80.png)
+	- slicing
 
 
+---
+#dataframe/loc 
+- ![](../z/aharo_82.png)
 
 
 
+---
+#dataframe/drop 
+- ![](../z/aharo_83.png)
 
 
+---
+#dataframe/append
 
+- ![](../z/aharo_85.png)
+	- updated version but seems weird
+		-  `pd.concat([one_row, one_row])`
 
 
+---
+---
+---
+# Conditional_Filterting
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+**SUMMARY**
+- ![](../z/aharo_86.png)
+- ![](../z/aharo_87.png)
+	- #columns_are_features
+		- ie... ![](aharo_88%201.png)
+		  
 
 
 
