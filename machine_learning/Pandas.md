@@ -10,15 +10,15 @@
 		- in depth --> [Attribute_vs_Function_Calls](NumPy.md#Attribute_vs_Function_Calls)****
 	- 
 	- 
-	- ![](../../z/aharo_17.png)
+	- ![](../z/aharo_17.png)
 - #attribute_vs_func 
 
 
 
 ## Intro
 
-![](../../z/aharo_11.png)
-![](../../z/aharo_12.png)
+![](../z/aharo_11.png)
+![](../z/aharo_12.png)
 
 - like an excel but for pandas but more powerful
 - ss
@@ -232,7 +232,7 @@ From the looks, most real life data we will be using comes form dict (hashmaps/d
 
 getting more than **ONE** column 
 
-- ![](aharo_56%202.png)
+- ![](../z/aharo_56.png)
 
 
 ---
@@ -253,7 +253,7 @@ getting more than **ONE** column
 
 - ![](../z/aharo_60.png)
 	- ![](../z/aharo_59.png)
-		- ![](aharo_62%201.png)
+		- ![](../z/aharo_62.png)
 
 
 ---
