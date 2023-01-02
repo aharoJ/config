@@ -9,7 +9,8 @@
 	- [x] cmd + L  + L
 - strikethrough
 	- ~~word~~
-- 
+- cmd+shft+ 'up' / 'down'
+	- moves list up or down
 - 
 - 
 - 
@@ -32,11 +33,47 @@
 
 # Linking
 
-[Video](https://www.youtube.com/watch?v=vStUKrOEuRc&ab_channel=SantiYounger)
-
-
+- [Video](https://www.youtube.com/watch?v=vStUKrOEuRc&ab_channel=SantiYounger)
+- 
+- **Linking a YouTube video**
+	- <iframe src="URL_HERE"></iframe>
+- ****
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+  
+  
+  
+  
+  
 # Code
-
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
 
 
