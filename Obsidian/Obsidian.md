@@ -12,7 +12,7 @@
 - cmd+shft+ 'up' / 'down'
 	- moves list up or down
 - 
-- 
+- cmd+opt+ <-- || -->
 - 
 - 
 - 
