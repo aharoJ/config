@@ -29,11 +29,20 @@ https://github.com/jethrokuan/z
 - z -x "**directory**" 
 
 
+---
+---
+## z 
+
+### [Source](https://github.com/rupa/z)
+- a must plugin for Fish 
 
 
 
 
 
+## hack_firacode
+
+- ![](aharo_179.png)
 
 
 
