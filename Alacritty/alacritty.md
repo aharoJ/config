@@ -41,4 +41,29 @@ whenever you get error just do `alacritty` and a new check the logs of the new w
 - error
 	- ![](aharo24.png)
 	- ![](aharo24_1.png)
+
+
+
+## Line Indicator
+
+
+``` yml
+  # Line indicator
+  #
+  # Color used for the indicator displaying the position in history during
+  # search and vi mode.
+  #
+  # By default, these will use the opposing primary color.
+  #line_indicator:
+  #  foreground: None
+  #  background: None
+
+
+```
+
+- ie...
 	- 
+	- ![](aharo24_11.png)
+
+
+
