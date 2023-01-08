@@ -18,9 +18,29 @@
 
 
 
+---
+---
+
+## helium
+
+### **[Helium Doc](https://github.com/sschuhmann/Helium)**
+#subl/helium
+
+- advance af, I'll come back later
 
 
+---
+---
 
+## fonts 
 
+- steps to change font
+	- 
+	- 
+	- ![](aharo24_7.png)
+- 
+- my font settings
+	- ![](aharo24_8.png)
+- 
 
 
