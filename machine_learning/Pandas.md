@@ -982,4 +982,206 @@ its easier to specify your dataframe before doing an iloc,ioc, or groupby and th
 	- 
 	- 
 	- ![](aharo24_31.png)
+
+
+
+
+---
+
+## swaplevel
+
+- swaplevel()
+	- change the features inorder
+	- ![](aharo24_32.png)
+
+
+---
+---
+
+## sort_index
+
+- reverse orders
+	- ![](aharo24_33.png)
+
+
+---
+---
+
+### advance method
+
+- df.agg()
+	- using hashmaps
 	- 
+	- ![](aharo24_34.png)
+
+
+
+
+
+## Concatenation
+**Combining Dataframes**
+
+### [doc ](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html)
+
+## overview
+
+- 
+	- 
+	- 
+	- ![](aharo24_35.png)
+	- 
+	- 
+	- ![](aharo24_36.png)
+	- 
+	- ![](aharo24_37.png)
+		- ![](aharo24_38.png)
+
+
+
+---
+
+## concat
+
+			pd.concat([one,two], axis=1)
+
+- set up
+	- 
+	- ![](aharo24_39.png)
+	- 
+	- 
+	- ![](aharo24_40.png)
+		- 
+		- switch the features
+			- 
+			- ![](aharo24_41.png)
+- 
+- x=0 mixes the instances 
+	- 
+	- ![](aharo24_42.png)
+- what if we want `c` and `d` to fall under `a,b`
+	- 
+	- *two.columns = one.columns*
+	- ![](aharo24_43.png)
+- resetting the index 
+	- 
+	- 
+	- newdf.index = range(len(newdf))![](aharo24_44.png)
+
+---
+---
+
+
+# Merge_Combining
+
+## overview
+
+- ![](aharo24_46.png)
+- 
+- main idea
+	- 
+	- ![](aharo24_47.png)
+- 
+- ![](aharo24_49.png)
+- 
+- 
+- merges are often shown as Venn Diagrams![](aharo24_50.png)
+	- 
+	- 
+	- ![](aharo24_51.png)
+	- 
+	- 
+	- ![](aharo24_54.png)
+		- 
+		- 
+		- ![](aharo24_55.png)
+- 
+- 
+- how=left we cmp against the right ![](aharo24_56.png)
+- 
+- 
+-  how=right we cmp against the left![](aharo24_57.png)
+
+---
+---
+## merge
+#important/merge 
+- **'inner'** is what gets both left and right 
+	- 
+	- 
+	- ie... andrew,bob
+		- 
+		- 
+		- ![](aharo24_52.png)
+	- 
+	- 
+	- order dont matter
+		- 
+		- 
+		- ![](aharo24_53.png)
+- 
+- 
+- **`left`**
+	- 
+	- 
+	- ![](aharo24_58.png)
+- 
+- 
+- **`right`**
+	- 
+	- 
+	- ![](aharo24_59.png)
+
+---
+---
+
+
+## outer
+
+### overview_outer
+
+```python
+pd.merge(registrations,logins, how='outter', on='name')
+```
+
+- ![](aharo24_60.png)
+- 
+- 
+- ![](aharo24_61.png)
+	- 
+	- ![](aharo24_62.png)
+	- 
+
+---
+
+- outer
+	- 
+	- ![](aharo24_63.png)
+
+
+---
+
+## left_on/right_index
+
+		left_index/right_index -- right_on/left_on
+
+- left_index/right_index -- right_on/left_on
+	- 
+	- ![](aharo24_64.png)
+
+---
+
+reset_index
+#pandas/reset
+
+```python
+registrations = registrations.reset_index()
+```
+
+
+--- 
+
+[left_on/right_index](#left_on/right_index)
+
+![](aharo24_65.png)
+
+---
