@@ -67,3 +67,11 @@ whenever you get error just do `alacritty` and a new check the logs of the new w
 
 
 
+
+## import
+
+``` yml
+import:
+  - ~/.config/alacritty/themes/gruvbox-material-alacritty.yml
+```
+
