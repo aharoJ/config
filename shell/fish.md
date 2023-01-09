@@ -108,6 +108,13 @@ format = '[ ♥ $time ]($style)'
 - time
 	- 
 	- ![](aharo24_10.png)
+- Color
+	- ![](aharo24_12.png)
+
+
+
+
+
 
 ### status
 
@@ -186,6 +193,7 @@ disabled = true
 - 
 - 
 - 
+- ﯊
 
 
 ## APPLE_SYMBOLS
