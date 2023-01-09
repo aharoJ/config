@@ -1185,3 +1185,8 @@ registrations = registrations.reset_index()
 ![](aharo24_65.png)
 
 ---
+
+## merging same feature_name
+
+ie... here we have id's in both Y's
+![](aharo24_66.png)

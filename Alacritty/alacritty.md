@@ -1,3 +1,11 @@
+# Alacritty
+
+
+---
+### hidden src  in 'dev'
+(dev)[aharo24/dev]
+
+
 # alacritty
 
 
