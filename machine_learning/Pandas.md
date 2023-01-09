@@ -842,6 +842,37 @@ grabbing index location of min() and max()
 - 
 
 
+---
+---
+---
+# GroupBy
+
+## overview
+- 
+- ![](aharo24_13.png)
+- 
+- 
+- groupby() gets the Y 
+	- ![](aharo24_14.png)
+- 
+- #important/pandas
+	- ![](aharo24_15.png)
+	- ![](aharo24_16.png)
+	- ![](aharo24_14.png)
+- 
+- 
+
+---
+---
+
+## categorical column(x)
+
+
+
+
+
+
+## continuous column(x)
 
 
 
@@ -850,18 +881,105 @@ grabbing index location of min() and max()
 
 
 
+---
+
+## groupby
+
+- important ones
+	- ![](aharo24_18.png)
+- 
+- [FULL DOC](https://pandas.pydata.org/docs/reference/groupby.html)
+
+
+- df.groupby("Y").mean/add/ []
+	- ![](aharo24_19.png)
+
+
+
+### multi level indexes Y's
+
+```python
+df.groupby(['model_year','cylinders']).mean()
+```
+- using two features to compare instances 
+- 
+	- ![](aharo24_20.png)
+
+
+---
+
+### quick statistical analysis
+
+![](aharo24_21.png)
+
+---
+
+
+## index
+
+```python
+year_cyl = df.groupby(['model_year','cylinders']).mean()
+```
+
+
+- dataframe.index.names 
+	- give you the features
+	- 
+	- ![](aharo24_22.png)
+- dataframe.index.levels
+	- gives you all corresponding instances of Y
+	- 
+	- ![](aharo24_23.png)
+
+
+---
+
+## loc_index
+
+- overview of both single vs multi in action
+- 
+	- ![](aharo24_25.png)
+	- 
+
+### tuples
+
+- [  (  )  ] 
+- 
+	- ![](aharo24_26.png)
+
+
+
+---
+
+## xs
+
+- quick doc
+	- ![](aharo24_27.png)
+- 
+- 
+
+### cross section
+- cross section
+	- 
+	- yearly_cyl.xs()![](aharo24_28.png)
+- 
+- 
+- ![](aharo24_30.png)
 
 
 
 
+its easier to specify your dataframe before doing an iloc,ioc, or groupby and then those commands
 
-
-
-
-
-
-
-
-
-
-
+- ie...
+- 
+		df[df['cylinders'].isin([6,8])].
+- 
+- 
+- 
+- 
+- df[df['cylinders'].isin([6,8])].groupby(['model_year','cylinders']).mean()
+	- 
+	- 
+	- ![](aharo24_31.png)
+	- 
