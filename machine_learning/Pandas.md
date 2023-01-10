@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_01:58:22-08:00
+updated: 2023-01-10_02:10:38-08:00
 ---
 # Pandas
 
@@ -1237,6 +1237,16 @@ ie... here we have id's in both Y's
 
 
 
+
+## to_datetime
+#importan/datetime
+
+		pd.to_datetime(myser)
+
+- ![](aharo24_89.png)
+- 
+- 
+	- ![](aharo24_90.png)
 
 
 
