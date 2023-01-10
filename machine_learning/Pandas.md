@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_02:10:38-08:00
+updated: 2023-01-10_02:17:51-08:00
 ---
 # Pandas
 
@@ -1233,12 +1233,14 @@ ie... here we have id's in both Y's
 
 ## datetime
 
+#### [docs](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
+
 - ![](aharo24_88.png)
 
 
 
 
-## to_datetime
+### to_datetime
 #importan/datetime
 
 		pd.to_datetime(myser)
@@ -1248,6 +1250,10 @@ ie... here we have id's in both Y's
 - 
 	- ![](aharo24_90.png)
 
+---
+### European-Time
+
+- ![](aharo24_91.png)
 
 
 
