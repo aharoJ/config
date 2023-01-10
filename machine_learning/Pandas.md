@@ -1263,7 +1263,14 @@ ie... here we have id's in both Y's
 
 ### from obj to datetime
 
-![](aharo24_93.png)
+- manually do it
+- ![](aharo24_93.png)
+- 
+- smarter way is to set 
+	- parse_date=[0]
+- 
+- 
+- ![](aharo24_94.png)
 
 
 
