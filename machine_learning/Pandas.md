@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_01:49:03-08:00
+updated: 2023-01-10_01:58:22-08:00
 ---
 # Pandas
 
@@ -1227,6 +1227,16 @@ ie... here we have id's in both Y's
 	- 
 	- 
 	- ![](aharo24_86.png)
+
+---
+---
+
+## datetime
+
+
+
+
+
 
 
 
