@@ -1204,6 +1204,14 @@ ie... here we have id's in both Y's
 - ![](aharo24_82.png)
 
 
+## split
+
+- split()
+	- 
+	- 
+	- ![](aharo24_83.png)
+- 
+
 
 
 
