@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_01:37:53-08:00
+updated: 2023-01-10_01:49:03-08:00
 ---
 # Pandas
 
@@ -1201,6 +1201,8 @@ ie... here we have id's in both Y's
 
 ## Overview
 
+### [doc](https://pandas.pydata.org/docs/user_guide/text.html)
+
 - ![](aharo24_82.png)
 
 
@@ -1211,6 +1213,20 @@ ie... here we have id's in both Y's
 	- 
 	- ![](aharo24_83.png)
 - 
+
+
+## replace, strip
+
+- ![](aharo24_84.png)
+	- capitalize 
+	- 
+	- ![](aharo24_85.png)
+- 
+- 
+- or you can use a function
+	- 
+	- 
+	- ![](aharo24_86.png)
 
 
 
