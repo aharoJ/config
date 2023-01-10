@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_02:17:51-08:00
+updated: 2023-01-10_02:23:32-08:00
 ---
 # Pandas
 
@@ -1257,9 +1257,13 @@ ie... here we have id's in both Y's
 
 
 
+### custom times
+![](aharo24_92.png)
 
 
+### from obj to datetime
 
+![](aharo24_93.png)
 
 
 
