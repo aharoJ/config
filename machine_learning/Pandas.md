@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_01:31:45-08:00
+updated: 2023-01-10_01:37:53-08:00
 ---
 # Pandas
 
@@ -1193,5 +1193,17 @@ registrations = registrations.reset_index()
 
 ie... here we have id's in both Y's
 ![](aharo24_66.png)
+
+
+
+---
+---
+
+## Overview
+
+- ![](aharo24_82.png)
+
+
+
 
 
