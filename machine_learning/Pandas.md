@@ -1,3 +1,6 @@
+---
+updated: 2023-01-10_01:31:45-08:00
+---
 # Pandas
 
 #  [Documentation](https://pandas.pydata.org/docs/)
@@ -1190,3 +1193,5 @@ registrations = registrations.reset_index()
 
 ie... here we have id's in both Y's
 ![](aharo24_66.png)
+
+
