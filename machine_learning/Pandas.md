@@ -1236,6 +1236,9 @@ ie... here we have id's in both Y's
 #### [docs](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
 
 - ![](aharo24_88.png)
+- 
+- 
+- ![](aharo24_96.png)
 
 
 
