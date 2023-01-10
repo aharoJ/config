@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_02:23:32-08:00
+updated: 2023-01-10_02:31:54-08:00
 ---
 # Pandas
 
@@ -1271,6 +1271,21 @@ ie... here we have id's in both Y's
 - 
 - 
 - ![](aharo24_94.png)
+
+
+
+
+### resampe
+
+		sales.resample(rule='A').mean()
+
+- ![](aharo24_95.png)
+
+
+
+
+
+
 
 
 
