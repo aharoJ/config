@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-10_02:31:54-08:00
+updated: 2023-01-10_18:16:38-08:00
 ---
 # Pandas
 
@@ -1285,8 +1285,45 @@ ie... here we have id's in both Y's
 - ![](aharo24_95.png)
 
 
+---
+---
+---
+
+### overview
+
+#### [docs](https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html)
 
 
+		df = pd.read_csv('/Users/aharo/desk/python/machine_learning/zcode/guidance/Pandas_03/example.csv',header=None)
+
+- ![](aharo24_97.png)
+- ![](aharo24_98.png)
+
+
+
+
+## saving csv
+
+- ![](aharo24_99.png)
+
+![](aharo24_100.png)
+
+
+---
+---
+---
+
+## Pivot Tables
+
+This is not going to be used in machine learning(ML) but is very useful for Excel stuff
+
+- ![](aharo24_101.png)
+- ![](aharo24_102.png)
+- 
+
+Decided to skip but will come back
+
+---
 
 
 
