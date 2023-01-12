@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-11_21:55:49-08:00
+updated: 2023-01-11_22:50:23-08:00
 ---
 
 
@@ -174,6 +174,20 @@ format = """
 
 ---
 
+[directory]
+style = "italic bg:#6F6A70 fg:#EEEEEE"
+- ![](aharo24_112.png)
+
+
+
+---
+
+## style
+
+- ![](aharo24_113.png)
+- 
+- 
+- ![](aharo24_114.png)
 
 
 
