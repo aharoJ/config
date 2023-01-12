@@ -196,3 +196,6 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 
 
 
+## color
+
+#89b482
