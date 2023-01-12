@@ -220,9 +220,16 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 	- orange 
 - 
 - 
+- hex: 9b8378
+	- brown
 - 
 - 
+- hex:9b9578
+	- greyish
 - 
+- 
+- hex:8e789b
+	- dark purplee
 - 
 - 
 - 
