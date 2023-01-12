@@ -73,7 +73,7 @@ updated: 2023-01-12_14:45:35-08:00
 # savefig
 #plt/saving_plot
 
-# saving to png
+## saving to png
 
 ``` python
 plt.savefig("/Users/aharo/Desktop/the_aharo_plot.png") #choose_path
@@ -86,8 +86,29 @@ plt.savefig("the_aharo_plot.png") #default_path
 
 
 
+# Objects
 
-
+- 
+	- ![](aharo24%202023-01-12%20at%203.06.56%20PM.png)
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- 
+	- a
 
 
 
