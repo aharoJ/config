@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_15:43:33-08:00
+updated: 2023-01-12_15:52:07-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -179,13 +179,38 @@ axes2.set_ylabel('B')
 
 
 **another sample**
-## look at width,height
+## look at width, height
 ```python
 #Zoomed in Axes
 axes2 = fig.add_axes([0.2,0.5,0.5,0.1])
 axes2.plot(x,y)
 ```
+
 ![](aharo24%202023-01-12%20at%203.51.16%20PM.png)
+
+
+---
+
+
+
+
+# resolution
+## how to fix bad res.
+![](aharo24%202023-01-12%20at%203.55.14%20PM.png)
+
+
+```python
+fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
+```
+
+
+
+
+
+
+
+
+
 
 
 
