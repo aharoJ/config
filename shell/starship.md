@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_00:59:43-08:00
+updated: 2023-01-12_01:14:53-08:00
 ---
 
 
@@ -231,6 +231,9 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 - hex:8e789b
 	- dark purplee
 - 
+- 
+- hex:808080
+	- grey blue
 - 
 - 
 - 
