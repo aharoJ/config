@@ -178,15 +178,14 @@ axes2.set_ylabel('B')
 ![](aharo24%202023-01-12%20at%203.42.13%20PM.png)
 
 
-
-
-
----
-
-
-
-
-
+**another sample**
+## look at width,height
+```python
+#Zoomed in Axes
+axes2 = fig.add_axes([0.2,0.5,0.5,0.1])
+axes2.plot(x,y)
+```
+![](aharo24%202023-01-12%20at%203.51.16%20PM.png)
 
 
 
