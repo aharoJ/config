@@ -206,6 +206,8 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 - 
 - hex:78929b
 	- nice blue
+- hex: a17295
+	- nice pr
 
 
 ## right
