@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_14:55:27-08:00
+updated: 2023-01-12_15:03:32-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -29,7 +29,7 @@ updated: 2023-01-12_14:45:35-08:00
 ---
 ---
 
-## basics
+# basics
 #importan/plt
 #plt/labels
 #plt/titles
@@ -68,11 +68,20 @@ updated: 2023-01-12_14:45:35-08:00
 	
 
 
+---
+
+# savefig
+#plt/saving_plot
+
+# saving to png
+
+``` python
+plt.savefig("/Users/aharo/Desktop/the_aharo_plot.png") #choose_path
+plt.savefig("the_aharo_plot.png") #default_path
+```
 
 
-
-
-
+---
 
 
 
