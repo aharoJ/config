@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-11_21:48:47-08:00
+updated: 2023-01-11_21:55:49-08:00
 ---
 
 
@@ -60,6 +60,10 @@ format = '[ ♥ $time ]($style)'
 	- ![](aharo24_10.png)
 - Color
 	- ![](aharo24_12.png)
+
+
+**updated the format**
+		time_format = "%B %d, %Y"
 
 
 
