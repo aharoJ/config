@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_15:33:13-08:00
+updated: 2023-01-12_15:43:33-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -139,6 +139,57 @@ fig.add_axes([x, y, width, height])
 ```
 
 ![](aharo24%202023-01-12%20at%203.34.47%20PM.png)
+
+
+
+
+---
+
+# Zoom
+
+```python
+
+fig = plt.figure()
+
+#Large Axes
+axes1 = fig.add_axes([0,0,1,1])
+axes1.plot(a,b)
+
+axes1.set_title("aharo24")
+axes1.set_xlim(0,8)
+axes1.set_ylim(0,8000)
+axes1.set_xlabel("A")
+axes1.set_ylabel('B')  
+  
+
+#Zoomed in Axes
+axes2 = fig.add_axes([0.2,0.5,0.3,0.3])
+axes2.plot(x,y)  
+  
+
+axes2.set_title("ZOOM")
+axes2.set_xlim(1,2)
+axes2.set_ylim(0,30)
+axes2.set_xlabel("A")
+axes2.set_ylabel('B')
+```
+
+
+![](aharo24%202023-01-12%20at%203.42.13%20PM.png)
+
+
+
+
+
+---
+
+
+
+
+
+
+
+
 
 
 
