@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_15:26:46-08:00
+updated: 2023-01-12_15:33:13-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -86,8 +86,8 @@ plt.savefig("the_aharo_plot.png") #default_path
 
 
 
-# Objects
-
+# Figures
+### oop
 - 
 	- ![](aharo24%202023-01-12%20at%203.06.56%20PM.png)
 	- 
@@ -113,23 +113,33 @@ plt.savefig("the_aharo_plot.png") #default_path
 	- 
 	- ![](aharo24%202023-01-12%20at%203.18.08%20PM.png)
 	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- 
-	- a
 
+---
 
-
+# add_axes( [] )
 
 ```python
+fig = plt.figure()
 
+#Large Axes
+
+axes1 = fig.add_axes([0,0,1,1])
+
+axes1.plot(a,b)
+
+  
+
+#Small Axes
+
+axes2 = fig.add_axes([0.2,0.1,0.4,0.4])
 ```
+
+```python
+fig.add_axes([x, y, width, height])
+```
+
+![](aharo24%202023-01-12%20at%203.34.47%20PM.png)
+
+
+
+
