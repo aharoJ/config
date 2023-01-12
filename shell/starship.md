@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_00:10:07-08:00
+updated: 2023-01-12_00:17:34-08:00
 ---
 
 
@@ -225,7 +225,7 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 - 
 - 
 - hex:9b9578
-	- greyish
+	- shit fire (greyish green)
 - 
 - 
 - hex:8e789b
