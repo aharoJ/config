@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-11_23:10:54-08:00
+updated: 2023-01-11_23:17:57-08:00
 ---
 
 
@@ -204,4 +204,33 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 - 
 - hex:78929b
 	- nice blue
-- 
+
+
+## right
+
+
+[docs](https://starship.rs/advanced-config/#enable-right-prompt)
+
+
+- ![](aharo24_115.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
