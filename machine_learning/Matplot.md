@@ -34,6 +34,7 @@ updated: 2023-01-12_14:45:35-08:00
 #plt/labels
 #plt/titles
 #plt/xlim
+#plt/ylim
 
 - 
 	- ![](aharo24%202023-01-12%20at%202.34.06%20PM.png)
@@ -49,7 +50,12 @@ updated: 2023-01-12_14:45:35-08:00
 	- ![](aharo24%202023-01-12%20at%202.53.13%20PM.png)
 - 
 - 
-- 
+- `xlim() ylim()`
+	- 
+	- this limits the x or y borders
+	- ![](aharo24%202023-01-12%20at%202.57.22%20PM.png)
+		- 
+		- ![](aharo24%202023-01-12%20at%202.58.37%20PM.png)
 - 
 - 
 - 
