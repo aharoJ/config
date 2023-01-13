@@ -81,6 +81,14 @@ plt.savefig("the_aharo_plot.png") #default_path
 ```
 
 
+
+## saving the 'x'
+
+
+
+
+
+
 ---
 
 
@@ -203,8 +211,10 @@ axes2.plot(x,y)
 fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
 ```
 
+![](aharo24%202023-01-12%20at%203.56.28%20PM.png)
 
 
+---
 
 
 
