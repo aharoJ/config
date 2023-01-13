@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-11_21:49:14-08:00
+updated: 2023-01-12_16:14:32-08:00
 ---
 # Fish
 
@@ -19,7 +19,7 @@ https://github.com/jethrokuan/z
 
 - z -
 
-![](../z/aharo_18.png)
+![](aharo_18.png)
 
 
 
@@ -34,7 +34,7 @@ https://github.com/jethrokuan/z
 ## issue
 
 - **issue with 'z' extending into the most recent** 
-	- ![](../z/aharo_28.png)
+	- ![](aharo_28.png)
 - z -x "**directory**" 
 
 
