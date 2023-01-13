@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_15:52:07-08:00
+updated: 2023-01-12_16:03:13-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -82,7 +82,15 @@ plt.savefig("the_aharo_plot.png") #default_path
 
 
 
-## saving the 'x'
+## saving the 'x' 'y' labels
+
+
+```python
+fig.savefig('new_fig.png', bbox_inches='tight')
+```
+
+` bbox_inches='tight' `
+
 
 
 
@@ -215,6 +223,26 @@ fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
 
 
 ---
+---
+---
+
+# subplots
+
+### overview
+
+![](aharo24%202023-01-12%20at%204.04.10%20PM.png)
+
+
+![](aharo24%202023-01-12%20at%204.04.37%20PM.png)
+
+
+![](aharo24%202023-01-12%20at%204.04.54%20PM.png)
+
+
+![](aharo24%202023-01-12%20at%204.05.17%20PM.png)
+
+![](aharo24%202023-01-12%20at%204.05.42%20PM.png)
+
 
 
 
