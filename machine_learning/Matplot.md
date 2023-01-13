@@ -1,5 +1,5 @@
 ---
-updated: 2023-01-12_16:03:13-08:00
+updated: 2023-01-12_16:12:22-08:00
 ---
 ****---
 updated: 2023-01-12_14:45:35-08:00
@@ -222,9 +222,15 @@ fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
 ![](aharo24%202023-01-12%20at%203.56.28%20PM.png)
 
 
+
+
+
+
 ---
 ---
 ---
+
+
 
 # subplots
 
@@ -245,7 +251,9 @@ fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
 
 
 ---
--
+---
+
+## 
 
 
 

@@ -5,4 +5,4 @@
 el travieso
 
 
-![](../../../z/aharo_1.png)
+![](aharo_1.png)
