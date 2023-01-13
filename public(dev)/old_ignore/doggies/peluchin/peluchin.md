@@ -5,4 +5,4 @@
 el pelucas ! 
 
 
-![](../../../z/aharo_3.png)
+![](aharo_3.png)
