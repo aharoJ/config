@@ -1,59 +1,28 @@
----
-updated: 2023-01-12_16:14:32-08:00
----
 # Fish
+### I will come back and refresh files... ik ik its messy
 
----
-### hidden src  in 'dev'
-(dev)[aharo24/dev]
-
-
-
-## Temp
-https://github.com/jethrokuan/z
-
-
-- zo 
-	- opens folder
-
-
-- z -
-
-![](aharo_18.png)
+## Fish over zsh/bash
 
 
 
 
+# hack fonts  -  (need_updating)
+
+- ![](../z/aharo_179.png)
 
 
-
-
-
-# rmv_ext_dir
-
-## issue
-
-- **issue with 'z' extending into the most recent** 
-	- ![](aharo_28.png)
-- z -x "**directory**" 
 
 
 ---
----
-## z 
 
-### [Source](https://github.com/rupa/z)
-- a must plugin for Fish 
+# Plugins
+#important/fish/plugins
 
 
+## [awsn.fish](https://github.com/jorgebucaran/awsm.fish)
+![](../z/aharo24%202023-01-13%20at%201.41.27%20AM.png)
 
-
-
-## hack_firacode
-
-- ![](aharo_179.png)
-
-
+### just a list, I dont use most of them...
 
 
 
@@ -65,137 +34,24 @@ https://github.com/jethrokuan/z
 
 
 
+# Stackoverflow
 
+## [Suppress or Customize Intro Message in Fish Shell](https://stackoverflow.com/questions/13995857/suppress-or-customize-intro-message-in-fish-shell)
 
 
+>		Found that the greeting message is set in fishd.Machine.local.
 
 
+ `~/.config/fish/config.fish`
 
 
+``` fish
+set fish_greeting
+```
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+---
 
 
 

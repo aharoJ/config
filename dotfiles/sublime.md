@@ -1,7 +1,5 @@
----
-updated: 2023-01-12_16:25:11-08:00
----
-# sublime
+# I will come back and refresh files... ik ik its messy
+
 #subl 
 
 ---
@@ -11,16 +9,16 @@ updated: 2023-01-12_16:25:11-08:00
 ## Packages
 #subl/packages
 
-- ![](aharo24_2.png)
+- ![](../z/aharo24_2.png)
 
 
 ## colorschemes
 
 - search colorschemes on the web first
 	- 
-	- ![](aharo24_3.png)
+	- ![](../z/aharo24_3.png)
 - colorscheme.config
-	- ![](aharo24_4.png)
+	- ![](../z/aharo24_4.png)
 
 
 
@@ -43,10 +41,10 @@ updated: 2023-01-12_16:25:11-08:00
 - steps to change font
 	- 
 	- 
-	- ![](aharo24_7.png)
+	- ![](../z/aharo24_7.png)
 - 
 - my font settings
-	- ![](aharo24_8.png)
+	- ![](../z/aharo24_8.png)
 - 
 
 
