@@ -1,3 +1,5 @@
+# I will come back and refresh files... ik ik its messy
+## I was not even a week into .md note-taking here
 
 what are columns and what are rows?
 #data/feature 
@@ -49,7 +51,7 @@ iterates/creates features (Y)
                       
 > The purpose of `np.vectorize` is to transform functions which are not numpy-aware
 
-![](aharo_129.png)
+![](../z/aharo_129.png)
 
 ```python
 import timeit
@@ -92,7 +94,7 @@ df['Tip Quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])
 
 '''
 ```
-![](aharo_130.png)
+![](../z/aharo_130.png)
 
 
 
