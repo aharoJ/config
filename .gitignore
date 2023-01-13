@@ -2,6 +2,7 @@
 tools/
 linkFixer.py
 dev/
+link_fixer.py
 
 # Ignore the ".obsidian" folder
 /.obsidian

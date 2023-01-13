@@ -1,3 +1,0 @@
-# animals
-
-I have dog 
