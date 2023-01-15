@@ -1,8 +1,13 @@
-
+# Ignore gen files
 tools/
 linkFixer.py
 dev/
 link_fixer.py
+
+
+# ignore ".trash" directory
+/.trash
+
 
 # Ignore the ".obsidian" folder
 /.obsidian
