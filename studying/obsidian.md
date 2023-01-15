@@ -12,6 +12,6 @@ when you delete files/dir, the files that go into the 'recycle bin' wont have th
 you'll have to place it back manually.
 
 ie...
-![](aharo24_118.png)
+![](../z/aharo24_118.png)
 
 ---
