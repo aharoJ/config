@@ -3,7 +3,7 @@ tools/
 linkFixer.py
 dev/
 link_fixer.py
-
+zcode/
 
 # ignore ".trash" directory
 /.trash
