@@ -257,7 +257,7 @@ fig = plt.figure(dpi=150)     # the higher the dpi, the more RAM
 fig, axes=plt.subplots(nrows=1,ncols=2)
 ```
 
-![](aharo24%202023-01-15%20at%201.32.38%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.32.38%20AM.png)
 
 
 ``` python
@@ -265,19 +265,19 @@ axes[0].plot(x,y)
 axes[1].plot(a,b)
 ```
 
-![](aharo24%202023-01-15%20at%201.36.13%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.36.13%20AM.png)
 
 
 now its 2D 
-![](aharo24%202023-01-15%20at%201.39.38%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.39.38%20AM.png)
 
 plotting for 2 dimensional
-![](aharo24%202023-01-15%20at%201.42.37%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.42.37%20AM.png)
 
 
 
 looping 3 rows of a Y
-![](aharo24%202023-01-15%20at%201.45.26%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.45.26%20AM.png)
 
 
 ## spacing
@@ -285,7 +285,7 @@ looping 3 rows of a Y
 ### auto spacing 
 			plt.tight_layout()
 
-![](aharo24%202023-01-15%20at%201.47.13%20AM.png)
+![](../z/aharo24%202023-01-15%20at%201.47.13%20AM.png)
 
 
 ### manual spacing 
@@ -293,16 +293,16 @@ looping 3 rows of a Y
 ```python
 fig.subplots_adjust()
 ```
-![](aharo24%202023-01-15%20at%204.51.25%20PM.png)
+![](../z/aharo24%202023-01-15%20at%204.51.25%20PM.png)
 
 	fig.subplots_adjust(wspace=0.9, hspace=0.3)
 
-![](aharo24%202023-01-15%20at%204.55.17%20PM.png)
+![](../z/aharo24%202023-01-15%20at%204.55.17%20PM.png)
 
 .
 .
 birds view of spacing 2D
-![](aharo24%202023-01-15%20at%205.01.14%20PM.png)
+![](../z/aharo24%202023-01-15%20at%205.01.14%20PM.png)
 
 
 
@@ -322,7 +322,7 @@ birds view of spacing 2D
 	ax.legend(loc=(1.01,0.5))
 
 **overview**
-![](aharo24%202023-01-15%20at%205.13.22%20PM.png)
+![](../z/aharo24%202023-01-15%20at%205.13.22%20PM.png)
 
 
 ### plot color 
@@ -330,7 +330,7 @@ birds view of spacing 2D
 	ax.plot(x,x, color='#9bb5a7')
 
 
-![](aharo24%202023-01-15%20at%205.21.52%20PM.png)
+![](../z/aharo24%202023-01-15%20at%205.21.52%20PM.png)
 
 
 
