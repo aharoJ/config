@@ -1,3 +1,21 @@
+# Ignore gen files
+tools/
+linkFixer.py
+dev/
+link_fixer.py
+zcode/
+
+# ignore ".trash" directory
+/.trash
+
+
+# Ignore the ".obsidian" folder
+/.obsidian
+
+# Ignore .DS_Store files
+.DS_Store
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
