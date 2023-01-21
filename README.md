@@ -14,21 +14,21 @@ z
 ## [my dot files](https://github.com/aharo24/dotfiles)
 ## [my dot notes](https://github.com/aharo24/opensource/tree/main/dotfiles)
 
-── alacritty
-── done
-── exa
-── fish-abbreviation-tips
-── fish
-── flameshot
-── keycastr 
-── obsidian
-── raycast
-── rectangle
-── spunge
-── starship
-── sublime
-── tmux
-── z
+- alacritty
+- done
+- exa
+- fish-abbreviation-tips
+- fish
+- flameshot
+- keycastr 
+- obsidian
+- raycast
+- rectangle
+- spunge
+- starship
+- sublime
+- tmux
+- z
 
 
 ### under dev...
