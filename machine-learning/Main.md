@@ -129,16 +129,16 @@ df['Tip Quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])
 
 
 # chat_to_revise
-![](aharo24%202023-01-16%20at%2011.51.14%20PM.png)
+![](../z/aharo24%202023-01-16%20at%2011.51.14%20PM.png)
 
 
 
 this one correlates to what I thought
-![](aharo24%202023-01-17%20at%2012.05.24%20AM.png)
+![](../z/aharo24%202023-01-17%20at%2012.05.24%20AM.png)
 
 
 #important/featurevsinstances
-![](aharo24%202023-01-17%20at%202.23.44%20PM.png)
+![](../z/aharo24%202023-01-17%20at%202.23.44%20PM.png)
 
 
 

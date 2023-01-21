@@ -138,7 +138,7 @@ add an option to recursively search for files only in specific subdirectories.
 
 add an option to only search for specific file types other than .md
 
-add an option to search for a different pattern other than `![](file_name.png)` (in thoughts only ☁️)
+add an option to search for a different pattern other than `![](../z/file_name.png)` (in thoughts only ☁️)
 
 add an option to specify the new_path in the replacement, instead of calculating it in the script.
 
@@ -147,3 +147,21 @@ add an option to dry run the script without making any changes to the files.
 add an option to check the number of changes made to the files.
 
 adding CLI support (Actively 👨‍💻)
+
+
+.
+.
+.
+`Evidence it works`
+![](aharo24%202023-01-20%20at%2010.23.42%20PM.png)
+
+
+
+
+
+
+
+
+
+
+
