@@ -1,10 +1,10 @@
 
 ## [Git Tutorial Link](https://www.youtube.com/watch?v=tRZGeaHPoaw&ab_channel=KevinStratvert)
 
+
 # Overview
 
 ![](aharo24%202023-01-14%20at%207.09.20%20PM.png)
-
 
 
 
@@ -13,7 +13,6 @@
 ```git
 git config -h
 ```
-
 
 
 
@@ -360,6 +359,8 @@ touch .ignore
 
 
 
+
+
 ## stash
 
 ![](aharo24%202023-01-19%20at%2011.08.37%20PM.png)
@@ -525,5 +526,7 @@ tester.py
 
 /.trash
 ```
+
+
 
 
