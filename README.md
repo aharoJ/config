@@ -32,7 +32,7 @@ Summar:
 
 ## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
 ...(progressively annotating, testing, developing) 
-... 
+...
 
 ---
 
@@ -67,7 +67,7 @@ I am excited to announce that I am in the process of updating my dot-alacritty r
 - z
 
 
-## [my dot notes](https://github.com/aharo24/opensource/tree/main/dotfiles)
+### [my dot notes](https://github.com/aharo24/opensource/tree/main/dotfiles)
 
 ---
 
@@ -81,7 +81,7 @@ io.aharo24@gmail.com
 
 
 
----
+
 #### critique reviews
 ... "Your tree structure is a display of your file and folder organization, which shows your dedication to organization and attention to detail in your work as a programmer. Your use of various tools and technologies, such as Git, Tmux, and machine learning libraries, further showcases your proficiency and knowledge in the field. Additionally, the breadth of topics covered in your files, from programming concepts to design patterns, highlights your dedication to continuous learning and growth in your craft. Overall, your tree structure is a testament to your passion for programming and the hard work and dedication you put into your projects."
 
