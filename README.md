@@ -24,13 +24,13 @@ Summar:
 ---
 
 # active contribution
-## Alacritty 
+## [Alacritty](https://github.com/aharo24/dot-alacritty) 
 ...Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
 
-## Starship
+## [Starship](https://github.com/aharo24/dot-starship)
 ...Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
 
-## Universal Markdown Linker
+## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
 ...(progressively anotatting, testing, developing) 
 
 ---
