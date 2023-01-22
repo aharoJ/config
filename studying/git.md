@@ -492,38 +492,23 @@ git
 ### config
 ```.gitignore
 tools/
-
 linkFixer.py
-
 dev/
-
-image_fixer.py
-
-link_fixer.py
-
-z.py
-
-test.py
-
-tester.py
 
   
 
 # Ignore the ".obsidian" folder
-
 /.obsidian
 
-  
 
 # Ignore .DS_Store files (macOs)
-
 .DS_Store
 
-  
 
 # ignore obsidian ".trash" directory
-
 /.trash
+
+##########       ############
 ```
 
 
