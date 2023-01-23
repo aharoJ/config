@@ -9,7 +9,7 @@
 
 # machine-learning
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
-...Over 7,000 lines of notes on machine-learning.
+...Over 8,000 lines of markdown notes on machine-learning.
 
 ### [my code](https://github.com/aharo24/machine-learning-jupyternotebook)
 ... All code related to machine/deep-learning, algorithms, and analysis will be found here. 
@@ -23,7 +23,7 @@
 Summar:
 ... Actively learning for [UCSD](https://cse.ucsd.edu/research) research and [Google](https://research.google/research-areas/natural-language-processing/) NLP research. Please refer to my [Linkedin](https://www.linkedin.com/in/aharo24/) for more details.
 
-...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
+...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
 
 ---
 
@@ -35,8 +35,13 @@ Summar:
 ...Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
 
 ## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
-...(progressively annotating, testing, developing) 
-...
+
+...(progressively annotating, testing, developing)
+
+...Big changes coming with the upcoming updates 
+
+...Developed an open-source Python script that makes it easy to keep markdown files 
+organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
 ---
 
