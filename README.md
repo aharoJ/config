@@ -4,17 +4,21 @@
 
 ...In addition to my professional pursuits, I am also an open source advocate, committed to sharing my knowledge and expertise with the community. My open source materials, including documentation, code, projects, and resources, cover a range of topics, including machine learning, deep learning, hacking, multi-modular use, frameworks, data structures, algorithms, and more. All of these materials are freely available for anyone to access, use, modify, and distribute, as long as they adhere to the terms of the open source license. I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.
 
+
 ---
 
 # machine-learning
-## [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
+### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
 ...Over 7,000 lines of notes on machine-learning.
 
-## [my code](https://github.com/aharo24/machine-learning-jupyternotebook)
+### [my code](https://github.com/aharo24/machine-learning-jupyternotebook)
 ... All code related to machine/deep-learning, algorithms, and analysis will be found here. 
 
 ### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
 ... Intro Project for machine-learning.
+
+### predict value of home 
+... (in process)
 
 Summar:
 ... Actively learning for [UCSD](https://cse.ucsd.edu/research) research and [Google](https://research.google/research-areas/natural-language-processing/) NLP research. Please refer to my [Linkedin](https://www.linkedin.com/in/aharo24/) for more details.
@@ -24,10 +28,10 @@ Summar:
 ---
 
 # active contribution
-## [Alacritty](https://github.com/aharo24/dot-alacritty) 
+### [Alacritty](https://github.com/aharo24/dot-alacritty) 
 ...Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
 
-## [Starship](https://github.com/aharo24/dot-starship)
+### [Starship](https://github.com/aharo24/dot-starship)
 ...Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
 
 ## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
