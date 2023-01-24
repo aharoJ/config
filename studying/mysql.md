@@ -7,17 +7,24 @@
 
 ---
 
+>	step one: 
+>	Download the workbench
+>	choose (os)
+
+>
+>	step two:
+>	choose chip
 
 ## workbench
-... choose arm or intel
+... choose operating system
 ![](aharo24_122.png)
-### [workbench](https://dev.mysql.com/downloads/workbench/)
+#### [workbench](https://dev.mysql.com/downloads/workbench/)
 
 ## mysql
-... choose operating system
+... choose arm or intel
 ![](aharo24_121.png)
 
-### [mysql community for macOS](https://dev.mysql.com/downloads/mysql/)
+#### [mysql community for macOS](https://dev.mysql.com/downloads/mysql/)
 
 
 
