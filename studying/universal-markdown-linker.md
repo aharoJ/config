@@ -153,7 +153,7 @@ adding CLI support (Actively 👨‍💻)
 .
 .
 `Evidence it works`
-![](aharo24%202023-01-20%20at%2010.23.42%20PM.png)
+![](../z/aharo24%202023-01-20%20at%2010.23.42%20PM.png)
 
 
 
