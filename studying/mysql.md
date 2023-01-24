@@ -1,5 +1,5 @@
 
-# Mac 
+# Mac / Linux
 
 ### Installs 
 - [workbench](https://dev.mysql.com/downloads/workbench/)
