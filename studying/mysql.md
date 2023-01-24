@@ -5,8 +5,6 @@
 - [workbench](https://dev.mysql.com/downloads/workbench/)
 - [mysql community for macOS](https://dev.mysql.com/downloads/mysql/)
 
----
-
 >	step one: 
 >	Download the workbench
 >	choose (os)
