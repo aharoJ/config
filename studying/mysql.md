@@ -3,26 +3,27 @@
 
 ### Installs 
 - [workbench](https://dev.mysql.com/downloads/workbench/)
-- [mysql community for macOS](https://dev.mysql.com/downloads/mysql/)
+- [mysql community for macOS/linux](https://dev.mysql.com/downloads/mysql/)
 
 >	step one: 
->	Download the workbench
->	choose (os)
+>	... choose (os)
 
 >
 >	step two:
->	choose chip
+>	... choose arm or intel (mac)
+>	... choose distro (linux)
 
 ## workbench
 ... choose operating system
 ![](../z/aharo24_122.png)
 #### [workbench](https://dev.mysql.com/downloads/workbench/)
 
-## mysql servert
-... choose arm or intel
+## mysql server
+... choose arm or intel (mac)
+... choose distro (linux)
 ![](../z/aharo24_121.png)
 
-#### [mysql community server for macOS](https://dev.mysql.com/downloads/mysql/)
+#### [mysql community server](https://dev.mysql.com/downloads/mysql/)
 
 
 
