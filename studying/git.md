@@ -430,8 +430,9 @@ if you accidently nuked yoo stuff... recovery 30 days
 git reflog
 ```
 
+This command removes the file from the staging area, but leaves the file in your working directory.
 ```git
-git 
+git rm --cached [file_name.blah]
 ```
 
 ```git
