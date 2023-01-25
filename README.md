@@ -21,7 +21,7 @@
 ... (in process)
 
 Summar:
-... Actively learning for [UCSD](https://cse.ucsd.edu/research) research and [Google](https://research.google/research-areas/natural-language-processing/) NLP research. Please refer to my [Linkedin](https://www.linkedin.com/in/aharo24/) for more details.
+... Actively learning for [UCSD](https://cse.ucsd.edu/research) research and [Google](https://research.google/research-areas/natural-language-processing/) research. Please refer to my [Linkedin](https://www.linkedin.com/in/aharo24/) for more details.
 
 ...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
 
