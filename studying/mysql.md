@@ -1,12 +1,10 @@
 
 # Mac / Linux
 
-### Installs 
-- [workbench](https://dev.mysql.com/downloads/workbench/)
-- [mysql community for macOS/linux](https://dev.mysql.com/downloads/mysql/)
+## Steps
 
 >	step one: 
->	... choose (os)
+>	... choose (os) for workbench
 
 >
 >	step two:
