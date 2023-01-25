@@ -11,7 +11,7 @@
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
 ...Over 8,000 lines of markdown notes on machine-learning.
 
-### [my code](https://github.com/aharo24/machine-learning-jupyternotebook)
+### [my jupyternotebook](https://github.com/aharo24/machine-learning-jupyternotebook)
 ... All code related to machine/deep-learning, algorithms, and analysis will be found here. 
 
 ### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
