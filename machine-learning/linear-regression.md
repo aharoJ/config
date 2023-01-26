@@ -58,7 +58,7 @@
 
 [Ordinary least squares](https://en.wikipedia.org/wiki/Ordinary_least_squares)
 
-
+- [equation process min:14](https://www.udemy.com/course/python-for-machine-learning-data-science-masterclass/learn/lecture/22976300?start=570#overview)
 
 
 
