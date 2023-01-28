@@ -34,7 +34,8 @@ Summar:
 ### [vivaldi](https://github.com/aharo24/dot-vivaldi)
 ...I've included a list of custom hotkeys, including shortcuts for the panel, window, dev, and tabs. Detail color combinations to stimulate long hours of docs/coding/dev.
 
-## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
+### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
+- #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
 
 ...(progressively annotating, testing, developing)
 
