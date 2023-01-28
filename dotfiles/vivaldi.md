@@ -20,7 +20,7 @@ panel:
 | cmd+shift+'  | left bar  |
 | cmd+opt+z  | ultra-focus  |
 | cmd+opt+x  | do not disturb  |
-| C  | C  |
+
 
 
 
@@ -42,7 +42,7 @@ panel:
 
 ### mail keys
 mail keys (default for now)
-![](z/aharo24%202023-01-27%20at%205.52.20%20PM.png)
+
 
 
 
