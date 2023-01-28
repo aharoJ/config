@@ -513,3 +513,36 @@ dev/
 ```
 
 
+
+
+
+
+# [Advance](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables)
+```markdown
+|  Header  |  Header |
+| ------------- | ------------- |
+| Cnt   | Cnt  |
+```
+
+```markdown
+| Command | Description |
+| --- | --- |
+| git status | List all new or modified files |
+| git diff | Show file differences that haven't been staged |
+```
+
+
+
+````markdown
+<details><summary>CLICK ME</summary>
+<p>
+
+#### We can hide anything, even code!
+
+```ruby
+   puts "Hello World"
+```
+
+</p>
+</details>
+````
