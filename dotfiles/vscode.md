@@ -30,27 +30,11 @@
 	- sidebar <-
 - 
 - [cmd+j]
-	- terminal window ⌨️
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-  
-  
-  
-  
+	- terminal window ⌨
 
 
-
+cmd + '          -->   bottom bar
+cmd + shift + '  -->   left bar
 
 
 

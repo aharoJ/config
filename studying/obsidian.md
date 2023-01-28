@@ -15,3 +15,10 @@ ie...
 ![](../z/aharo24_118.png)
 
 ---
+
+
+### italic
+``` obsidian
+_ write whatever _
+```
+ Lucretia Marinella wrote _The Nobility and Excellence of Women and the Defects and Vices of Men._

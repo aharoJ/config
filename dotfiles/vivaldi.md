@@ -1,0 +1,17 @@
+
+
+
+
+## Keyboard
+status bar --> cmd+/
+
+
+
+
+
+
+
+
+
+
+
