@@ -42,7 +42,7 @@ panel:
 
 ### mail keys
 mail keys (default for now)
-![](aharo24%202023-01-27%20at%205.52.20%20PM.png)
+![](z/aharo24%202023-01-27%20at%205.52.20%20PM.png)
 
 
 
