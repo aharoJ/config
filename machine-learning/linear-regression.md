@@ -63,12 +63,38 @@
 
 
 
+## feature vs instance
+#important/featurevsinstances 
+
+X--> feature matrix
+y--> target output/label
+
+```python
+y=mx+b   -->    # for the best line for 'this' set of real data points
+y=B1x+B0 -->    # beta coeficients
+```
 
 
+### polyfit
 
+``` python
+np.polyfit(X,y,deg=1)   
+```
+`deg` what degree of polynomial do you want to do?
+`deg` = 1 --> x
+`deg` = 2 --> x^2
+`deg` = 3 --> x^3
 
+#important/simple-lr
+y=B1x+B0
+```python
+np.polyfit(X,y,3) #y= B3x**3 + B2*x**2 + B1x+ B0
+```
 
-
+^3
+```python
+pred_sales= 3.07615033e-07 * pot_spend **3 + -1.89392449e-04*pot_spend**2 + 8.20886302e-02*pot_spend+2.70495053e+00
+```
 
 
 

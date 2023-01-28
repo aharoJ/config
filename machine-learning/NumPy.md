@@ -38,7 +38,7 @@ np.zeros( (2,5) )
 
 ---
 
-# Linspace
+### Linspace
 
 `np.linspace()`
 [linspace official source](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#:~:text=numpy.arange-,numpy.linspace,-numpy.logspace)
@@ -67,6 +67,14 @@ np.linespace(**start**, **stop**, **x**)
 machine:				 0, 1, 2, 3, 4 *\<-->* 5 Human counts
 human:                  1, 2, 3, 4, 5
 output:				\[0, 1, 2, 3\] |
+
+
+---
+`Update Jan 25,2023`
+the 100 is the give me this many dots in between 0~500
+```python
+potential_spend= np.linspace(0,500,100)
+```
 
 ---
 
