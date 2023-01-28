@@ -5,8 +5,6 @@
 ...In addition to my professional pursuits, I am also an open source advocate, committed to sharing my knowledge and expertise with the community. My open source materials, including documentation, code, projects, and resources, cover a range of topics, including machine learning, deep learning, hacking, multi-modular use, frameworks, data structures, algorithms, and more. All of these materials are freely available for anyone to access, use, modify, and distribute, as long as they adhere to the terms of the open source license. I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.
 
 
----
-
 # machine-learning
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
 ...Over 8,000 lines of markdown notes on machine-learning.
@@ -25,14 +23,16 @@ Summar:
 
 ...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
 
----
 
 # active contribution
-### [Alacritty](https://github.com/aharo24/dot-alacritty) 
+### [alacritty](https://github.com/aharo24/dot-alacritty) 
 ...Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
 
-### [Starship](https://github.com/aharo24/dot-starship)
+### [starship](https://github.com/aharo24/dot-starship)
 ...Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
+
+### [vivaldi](https://github.com/aharo24/dot-vivaldi)
+...I've included a list of custom hotkeys, including shortcuts for the panel, window, dev, and tabs. Detail color combinations to stimulate long hours of docs/coding/dev.
 
 ## [Universal Markdown Linker](https://github.com/aharo24/universal-markdown-linker)
 
@@ -55,7 +55,7 @@ I am excited to announce that I am in the process of updating my dot-alacritty r
 
 ---
 
-# dotfiles
+### [dotfiles](https://github.com/aharo24/opensource/tree/main/dotfiles)
 - Please 
 	- be patient (slowly merging all dotfiles for public use)
 
@@ -72,11 +72,11 @@ I am excited to announce that I am in the process of updating my dot-alacritty r
 - spunge
 - [starship ✅](https://github.com/aharo24/dot-starship)
 - sublime
+- [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
 - tmux
 - z
 
 
-### [my dot notes](https://github.com/aharo24/opensource/tree/main/dotfiles)
 
 ---
 
