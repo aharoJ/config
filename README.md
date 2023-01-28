@@ -36,13 +36,7 @@ Summar:
 
 ### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
 - #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
-
-...(progressively annotating, testing, developing)
-
-...Big changes coming with the upcoming updates 
-
-...Developed an open-source Python script that makes it easy to keep markdown files 
-organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
+...Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
 ---
 
