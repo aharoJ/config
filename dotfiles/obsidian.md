@@ -29,8 +29,6 @@
 
 
 
-
-
 ## Colorsheme
 - Shimmering Focus (really like)
 
@@ -144,4 +142,26 @@ ie...
 _ write whatever _
 ```
  Lucretia Marinella wrote _The Nobility and Excellence of Women and the Defects and Vices of Men._
- 
+
+
+
+
+
+
+
+
+![](z/aharo24%202023-01-28%20at%2010.29.48%20AM.png)
+
+
+![](z/aharo24%202023-01-28%20at%2010.30.34%20AM.png)
+
+
+
+
+![](z/aharo24%202023-01-28%20at%2010.32.50%20AM.png)
+
+
+![](z/aharo24%202023-01-28%20at%2010.40.23%20AM.png)
+
+
+![](z/aharo24%202023-01-28%20at%2010.45.51%20AM.png)
