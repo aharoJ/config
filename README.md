@@ -38,7 +38,6 @@ Summar:
 - #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
 ...Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
----
 
 # [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
 - Please refer to my opensource docs.
@@ -48,9 +47,8 @@ Summar:
 .
 I am excited to announce that I am in the process of updating my dot-alacritty repository. You can access it on my opensource GitHub page. This update includes improvements to thousands of lines of code across various programming languages and topics such as machine learning. Please bear with me as I work to merge my notes and code. Thank you for your patience!
 
----
 
-### [dotfiles](https://github.com/aharo24/opensource/tree/main/dotfiles)
+## [dotfiles](https://github.com/aharo24/opensource/tree/main/dotfiles)
 - Please 
 	- be patient (slowly merging all dotfiles for public use)
 
