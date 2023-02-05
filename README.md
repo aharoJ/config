@@ -39,7 +39,7 @@ Summar:
 ...Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
 
-# [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
+## [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
 - Please refer to my opensource docs.
 	- be patient (slowly merging notes and code)
 .

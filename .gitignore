@@ -8,6 +8,8 @@ zcode/
 # ignore ".trash" directory
 /.trash
 
+# Ignore my school stuff
+school/
 
 # Ignore the ".obsidian" folder
 /.obsidian
