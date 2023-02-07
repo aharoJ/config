@@ -528,7 +528,7 @@ decapricates, not recommended to use the **inplace** parameter
 		- data manipulation is so crazy, wow ~.~![](../z/aharo_120.png)
 
 ---
-##  [instance_vs_feature](Main.md#instance_vs_feature)
+##  [instance_vs_feature](machine-learning/Main.md#instance_vs_feature)
 
 ^reference_for_help
 
