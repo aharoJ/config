@@ -10,6 +10,41 @@
 
 
 
+# CQL
+
+
+>	\c to connect to any DB
+- ![](aharo24%202023-02-07%20at%203.12.12%20PM.png)
+- ![](aharo24%202023-02-07%20at%203.12.37%20PM.png)
+
+
+``` 
+" use main ; " to use DB 
+  SELECT * FROM (messages_by_user_folder) ;
+"describe" powerful keyword
+```
+
+
+### describe main ;
+![](aharo24%202023-02-07%20at%203.15.22%20PM.png)
+
+### src
+- [How to configure port for a Spring Boot application]([https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application](https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application "https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application"))
+
+
+## Main 
+
+![](aharo24%202023-02-07%20at%203.17.28%20PM.png)
+
+
+
+
+
+
+
+
+
+
 
 
 
