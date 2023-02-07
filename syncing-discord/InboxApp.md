@@ -24,7 +24,9 @@
 "describe" powerful keyword
 ```
 
+--> SELECT * FROM Student ;
 
+November 3, 2022
 ### describe main ;
 ![](aharo24%202023-02-07%20at%203.15.22%20PM.png)
 
@@ -32,20 +34,88 @@
 - [How to configure port for a Spring Boot application]([https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application](https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application "https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application"))
 
 
-## Main 
+# Main 
 
-![](aharo24%202023-02-07%20at%203.17.28%20PM.png)
-
-
-
+- ![](aharo24%202023-02-07%20at%203.17.28%20PM.png)
+- ![](aharo24%202023-02-07%20at%203.18.57%20PM.png)
 
 
+ css on the left, java on the right:
+	 these 2 combinations were the ones that gave me trouble.
+
+![](aharo24%202023-02-07%20at%203.23.32%20PM.png)
+
+
+- ![](aharo24%202023-02-07%20at%203.25.03%20PM.png)
+	- ![](aharo24%202023-02-07%20at%203.25.20%20PM.png)
 
 
 
 
 
 
+### random
+![](aharo24%202023-02-07%20at%203.27.24%20PM.png)
+
+![](aharo24%202023-02-07%20at%203.27.39%20PM.png)
+
+![](aharo24%202023-02-07%20at%203.27.56%20PM.png)
+
+
+
+
+
+Global Variables are known as Properties in System Design  
+@autowire --> Global Variables/Properties   
+Annotations  < -- > XML  Config  == Spring  
+XML Configurations || Annotations  
+Annotations seem to be the standard 
+
+
+Maven kinda handles all the library drag && autoupdates all dependencies 
+Inject Objects to avoid 'new' 
+@Configuration is responsible for giving you the objects 
+
+
+@Bean I think go above the Functions 
+
+
+within the @Config class thooo
+Annotations is just XML  w/out the hassle of dealing with XML Config 
+
+
+
+@Component  makes the object accessible && makes all functions a @Bean    ? 
+
+
+
+@Config makes it an automation opposed to manually  stating the actions  
+everything is lowercased  by default  
+
+
+
+@Primary makes the @component Primary for that object-class if there is more than One 
+@Qualifier is similar to ^^
+
+
+@PostConstructs --> creates the entities/objects from the interface of the class
+
+
+
+### json/xml are standard format/files for everything the world
+![](aharo24%202023-02-07%20at%203.32.26%20PM.png)
+### RESPT API returns the state of the object not the object itself ~ it returns as json/xml
+![](aharo24%202023-02-07%20at%203.32.35%20PM.png)
+
+
+### schema is what gets created in the DB regardless of sql or noSql
+![](aharo24%202023-02-07%20at%203.34.33%20PM.png)
+
+
+### PostConstructs 
+
+![](aharo24%202023-02-07%20at%203.35.27%20PM.png)
+![](aharo24%202023-02-07%20at%203.35.37%20PM.png)
 
 
 # YLM
