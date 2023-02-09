@@ -1,6 +1,5 @@
 <h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1Rie11e0Y5SO0YtPyMCBO1UzZzuma_iXd" alt="" width="30"></h1>
 
-
 <!-- START  -->
 <div align="center">
 <a href="mailto: io.aharo24@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Gmail" /></a>&nbsp;
@@ -13,7 +12,8 @@
 ---
 
 
-### Dear mentees
+
+###Dear mentees,
 
 I'm excited to embark on this journey of learning and growth with you. Whether you're interested in machine learning, hacking, game development, or data structures and algorithms, I believe that you have the potential to achieve great things.
 
@@ -23,5 +23,6 @@ Remember that the path to mastery is rarely a smooth one, but with dedication an
 
 Here's to a exciting and rewarding experience ahead! 
 
-Kindness of Regards (: 
+Kindness of Regards,
+Angel J. Haro 
 
