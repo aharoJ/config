@@ -1,4 +1,4 @@
-<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1zmDTHUvLhy_q_oxcO98ABX-u7yGrEa-G" alt="" width="25"></h1>
+<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae" alt="" width="25"></h1>
 
 <!-- START  -->
 <div align="center">
@@ -12,8 +12,8 @@
 ---
 
 1Rie11e0Y5SO0YtPyMCBO1UzZzuma_iXd
-
-
+1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae
+1zmDTHUvLhy_q_oxcO98ABX-u7yGrEa-G
 ###Dear mentees,
 
 I'm excited to embark on this journey of learning and growth with you. Whether you're interested in machine learning, hacking, game development, or data structures and algorithms, I believe that you have the potential to achieve great things.
