@@ -1,7 +1,6 @@
 <h1 align="center"><b> Angel J. Haro 
 <img src="https://docs.google.com/uc?export=download&id=1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae" alt="" height="25" >
 <img src="https://docs.google.com/uc?export=download&id=1HsBpakQVutfOmxBcPbGpKdo_oGEoKJZT" alt="" height="35" >
-
 </h1>
 
 <!-- START  -->
