@@ -34,7 +34,7 @@
 
 
 <!-- START -->
-<h3 align="center"> machine-learning </a> </h2>
+<h1 align="center"> machine-learning </a> </h1>
 
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
 Over 8,000 lines of markdown notes on machine-learning.
