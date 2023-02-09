@@ -56,7 +56,6 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> contribution </a> </h2>
 <h2 align="center"> <a href="https://github.com/aharo24"> contributions </a> </h2>
 
 
