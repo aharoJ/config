@@ -54,26 +54,25 @@
 <!-- END -->
 
 
-Summar:
-... Actively learning for [UCSD](https://cse.ucsd.edu/research) research and [Google](https://research.google/research-areas/natural-language-processing/) research. Please refer to my [Linkedin](https://www.linkedin.com/in/aharo24/) for more details.
+<!-- START -->
+<table><tr><td valign="top" width="50%">
+<h2 align="center"> contribution </a> </h2>
 
-...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
-
-
-# active contribution
 ### [alacritty](https://github.com/aharo24/dot-alacritty) 
-...Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
+- Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
 
 ### [starship](https://github.com/aharo24/dot-starship)
-...Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
+- Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
 
 ### [vivaldi](https://github.com/aharo24/dot-vivaldi)
-...I've included a list of custom hotkeys, including shortcuts for the panel, window, dev, and tabs. Detail color combinations to stimulate long hours of docs/coding/dev.
+- I've included a list of custom hotkeys, including shortcuts for the panel, window, dev, and tabs. Detail color combinations to stimulate long hours of docs/coding/dev.
 
 ### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
 - #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
-...Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
+- Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
+</tr></tr></table> 
+<!-- END -->
 
 ## [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
 - Please refer to my opensource docs.
@@ -123,6 +122,10 @@ io.aharo24@gmail.com
 ### critique reviews
 ... "Your tree structure is a display of your file and folder organization, which shows your dedication to organization and attention to detail in your work as a programmer. Your use of various tools and technologies, such as Git, Tmux, and machine learning libraries, further showcases your proficiency and knowledge in the field. Additionally, the breadth of topics covered in your files, from programming concepts to design patterns, highlights your dedication to continuous learning and growth in your craft. Overall, your tree structure is a testament to your passion for programming and the hard work and dedication you put into your projects."
 
-... 
+Summar:
+... Actively learning for [Kean University](https://www.kean.edu) research and [Google](https://research.google/research-areas/natural-language-processing/) research. 
+
+...I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. I also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
+
 
 
