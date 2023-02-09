@@ -17,7 +17,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> opensource advocate </a> </h2>
+<h3 align="center"> opensource advocate </a> </h3>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
 
@@ -33,7 +33,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> machine-learning </a> </h2>
+<h3 align="center"> machine-learning </a> </h3>
 
 <h3 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/machine-learning"> my notes </a> </h2>
 - Over 8,000 lines of markdown notes on machine-learning.
