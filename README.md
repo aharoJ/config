@@ -57,30 +57,17 @@
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> contribution </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharo24"> contributions </a> </h2>
 
-### [alacritty ✅](https://github.com/aharo24/dot-alacritty) 
+
+<h3 align="center"> <a href="https://github.com/aharo24/dot-alacritty"> alacritty ✅ </a> </h3>
+
 - I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through thorough experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
-
-
-<p align="center">
-<a href="https://github.com/aharo24/dot-alacritty">
-  <img style="display: block; margin: 0 auto;" 
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-alacritty&theme=onedark" />
-</a>
-</p>
-
 
 
 ### [starship ✅](https://github.com/aharo24/dot-starship)
 - I have put in substantial effort into creating a unique and visually appealing starship configuration. My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
 
-<p align="center">
-<a href="https://github.com/aharo24/dot-starship">
-  <img style="display: block; margin: 0 auto;" 
-  height="170"
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-starship&theme=onedark" />
-</a>
-</p>
 
 ### [vivaldi ✅](https://github.com/aharo24/dot-vivaldi)
 - My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
