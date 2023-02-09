@@ -10,10 +10,10 @@
 <br/>
 </div>  
 
+---
 
 
-Note:
-Dear mentees,
+### Dear mentees
 
 I'm excited to embark on this journey of learning and growth with you. Whether you're interested in machine learning, hacking, game development, or data structures and algorithms, I believe that you have the potential to achieve great things.
 
@@ -23,6 +23,5 @@ Remember that the path to mastery is rarely a smooth one, but with dedication an
 
 Here's to a exciting and rewarding experience ahead! 
 
-Kindness of Regards,
-Angel J. Haro 
+Kindness of Regards (: 
 
