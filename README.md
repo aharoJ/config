@@ -64,7 +64,6 @@
 - I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through thorough experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
 
-### [starship ✅](https://github.com/aharo24/dot-starship)
 <h2 align="center"> <a href="https://github.com/aharo24/dot-starship"> starship ✅ </a> </h2>
 - I have put in substantial effort into creating a unique and visually appealing starship configuration. My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
 
