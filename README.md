@@ -36,11 +36,15 @@
 - The project involves building a model to predict the value of homes based on various features such as square footage, number of bedrooms, and location.
 - The project demonstrates your ability to gather, clean, and analyze data, as well as implement and evaluate machine learning models.
 
-### predict value of home 
+### predict value of home project 
 - in progress ⏳
 
 </tr></tr></table> 
 <!-- END -->
+
+
+
+
 
 
 <!-- START -->
@@ -98,6 +102,8 @@
 
 
 
+
+
 <!-- START -->
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> dot-files </a> </h2>
 
@@ -123,6 +129,8 @@
 
 </tr></tr></table> 
 <!-- END -->
+
+
 
 
 
