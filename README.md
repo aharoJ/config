@@ -44,11 +44,11 @@
 <h3 align="center"> <a href="https://github.com/aharo24/machine-learning-jupyternotebook"> my jupyternotebook </a> </h2>
 - All code related to machine/deep-learning, algorithms, and analysis will be found here. 
 
+### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
+<h3 align="center"> <a href="https://github.com/aharo24/opensource"> opensource advocate </a> </h2>
 
 - Intro Project for machine-learning.
 
-### predict value of home 
--  (under dev)
 
 </tr></tr></table> 
 <!-- END -->
