@@ -74,18 +74,11 @@
 </tr></tr></table> 
 <!-- END -->
 
-## [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
-- Please refer to my opensource docs.
-	- be patient (slowly merging notes and code)
-.
-.
-.
-I am excited to announce that I am in the process of updating my dot-alacritty repository. You can access it on my opensource GitHub page. This update includes improvements to thousands of lines of code across various programming languages and topics such as machine learning. Please bear with me as I work to merge my notes and code. Thank you for your patience!
 
 
-## [dotfiles](https://github.com/aharo24/opensource/tree/main/dotfiles)
-- Please 
-	- be patient (slowly merging all dotfiles for public use)
+<!-- START -->
+<table><tr><td valign="top" width="50%">
+<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
 
 - [alacritty ✅](https://github.com/aharo24/dot-alacritty)
 - done
@@ -104,16 +97,12 @@ I am excited to announce that I am in the process of updating my dot-alacritty r
 - tmux
 - z
 
+  <div align="center"> <a href="https://github.com/aharo24/opensource#dotfiles"> actively merging all dotfiles for public use
+ </a> </div>
+
 
 
 ---
-
-# [Contact Info](https://github.com/aharo24/opensource)
-
-Feel free to follow me on twitter: [@aharo24](https://www.twitter.com/aharo24)!
-
-email me with any questions, improvements, bugs, or just to chat.
-io.aharo24@gmail.com
 
 
 
@@ -129,3 +118,13 @@ Summar:
 
 
 
+
+
+
+## [How to Use / Important Note](https://github.com/aharo24/opensource/tree/main/dotfiles) 
+- Please refer to my opensource docs.
+	- be patient (slowly merging notes and code)
+.
+.
+.
+I am excited to announce that I am in the process of updating my dot-alacritty repository. You can access it on my opensource GitHub page. This update includes improvements to thousands of lines of code across various programming languages and topics such as machine learning. Please bear with me as I work to merge my notes and code. Thank you for your patience!
