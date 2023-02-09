@@ -35,7 +35,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> machine-learning </a> </h3>
+<h3 align="center"> machine-learning </a> </h2>
 
 <h3 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/machine-learning"> my notes </a> </h3>
 - Over 8,000 lines of markdown notes on machine-learning.
@@ -49,6 +49,8 @@
 
 - Intro Project for machine-learning.
 
+### predict value of home 
+-  (under dev)
 
 </tr></tr></table> 
 <!-- END -->
