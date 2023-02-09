@@ -74,7 +74,8 @@
 - [official vivadi theme contribution](https://themes.vivaldi.net/themes/nV6vpPxDvdN)
 
 
-### [universal markdown linker ⏳](https://github.com/aharo24/universal-markdown-linker)
+
+<h3 align="center"> <a href="https://github.com/aharo24/aharo24/universal-markdown-linker"> linksage ⏳ </a> </h3>
 - #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
 - Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
