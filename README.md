@@ -38,17 +38,22 @@
 <h2 align="center"> machine learning </a> </h2>
 
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
-- Over 8,000 lines of markdown notes on machine-learning.
+- Over 8,000 lines of markdown notes on machine learning, covering various topics including supervised and unsupervised learning, deep learning, reinforcement learning, and more.
+- The notes are organized in a clear and concise manner, making it easy for readers to understand and follow the concepts.
+- The notes also include real-world examples, diagrams, and illustrations to help reinforce the concepts being discussed.
 
 ### [my jupyternotebook](https://github.com/aharo24/machine-learning-jupyternotebook)
-- All code related to machine/deep-learning, algorithms, and analysis will be found here. 
+- All code related to machine/deep learning, algorithms, and analysis can be found in this repository.
+- The repository includes various projects and exercises that demonstrate how to apply machine learning concepts in practice.
+- The code is well-documented and includes explanations of the steps being taken, making it easy for others to understand and learn from.
 
 ### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
-- Intro Project for machine-learning.
+- This is an introductory project that showcases your understanding of the fundamentals of machine learning.
+- The project involves building a model to predict the value of homes based on various features such as square footage, number of bedrooms, and location.
+- The project demonstrates your ability to gather, clean, and analyze data, as well as implement and evaluate machine learning models.
 
 ### predict value of home 
-- I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
-- in progress
+- in progress ⏳
 
 </tr></tr></table> 
 <!-- END -->
