@@ -27,14 +27,6 @@
 
 - I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
 
-<p align="center">
-<a href="https://github.com/aharo24/opensource">
-  <img style="display: block; margin: 0 auto;" 
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=opensource&theme=onedark" />
-</a>
-</p>
-
-</tr></tr></table> 
 <!-- END -->
 
 
