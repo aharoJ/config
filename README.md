@@ -27,6 +27,7 @@
 
 - I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
 
+</tr></tr></table> 
 <!-- END -->
 
 
