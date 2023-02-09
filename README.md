@@ -65,7 +65,6 @@
 <p align="center">
 <a href="https://github.com/aharo24/dot-alacritty">
   <img style="display: block; margin: 0 auto;" 
-  width="230"
   src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-alacritty&theme=onedark" />
 </a>
 </p>
@@ -78,7 +77,6 @@
 <p align="center">
 <a href="https://github.com/aharo24/dot-starship">
   <img style="display: block; margin: 0 auto;" 
-  width="230"
   src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-starship&theme=onedark" />
 </a>
 </p>
@@ -100,7 +98,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> ~/.files </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> dot-files </a> </h2>
 
 - [alacritty ✅](https://github.com/aharo24/dot-alacritty)
 - done
