@@ -19,23 +19,7 @@
 <table><tr><td valign="top" width="50%">
 <h3 align="center"> about me </h3>
 
-physical activities: 
-  - gym, soccer, boxing, skateboarding
-
-anime enthusiast:
-  - vinland, fma, aot, demon slayer, psycho-pass
-
-video game enthusiast: 
-  - regional pro player for FIFA: 17 | 19 | 21
-  - top 13 % in COD, top 5 % in warzone, top 1 % in pubg
-  - first person shooter kill-to-death ratio 2.43
-
-editor:
-  - photoshop, sony vegas pro, elgato, obs, youtube
-
-<!-- MID -->
-</td><td valign="top" width="50%">
-<h3 align="center"> <a href="https://github.com/aharo24/opensource"> opensource advocate </a> </h2>
+<h3 align="center"> opensource advocate </a> </h2>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
 
