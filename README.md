@@ -34,6 +34,7 @@
 
 
 <!-- START -->
+<table><tr><td valign="top" width="50%">
 <h2 align="center"> machine-learning </a> </h2>
 
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
@@ -49,7 +50,7 @@ Intro Project for machine-learning.
 - I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
 - in progress
 
----
+</tr></tr></table> 
 <!-- END -->
 
 
