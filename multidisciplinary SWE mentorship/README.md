@@ -1,5 +1,5 @@
 <h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae" alt=""
-height="25"
+height="30"
 ></h1>
 
 <!-- START  -->
