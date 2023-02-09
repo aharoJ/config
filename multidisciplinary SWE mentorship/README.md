@@ -1,4 +1,4 @@
-<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1Rie11e0Y5SO0YtPyMCBO1UzZzuma_iXd" alt="" width="40"></h1>
+<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1Rie11e0Y5SO0YtPyMCBO1UzZzuma_iXd" alt="" width="20"></h1>
 
 <!-- START  -->
 <div align="center">
