@@ -17,8 +17,6 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> about me </h3>
-
 <h3 align="center"> opensource advocate </a> </h2>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
@@ -32,7 +30,8 @@
 <p align="center">
 <a href="https://github.com/aharo24/opensource">
   <img style="display: block; margin: 0 auto;" 
-  width="230"
+  width="200"
+  height="200"
   src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=opensource&theme=onedark" />
 </a>
 </p>
