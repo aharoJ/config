@@ -1,4 +1,6 @@
-<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae" ></h1>
+<h1 align="center"><b> Angel J. Haro <img src="https://docs.google.com/uc?export=download&id=1JqFc6WL-cTtJBQgW9tusQAZhQ3H9hGae" alt=""
+height="25"
+></h1>
 
 <!-- START  -->
 <div align="center">
@@ -20,6 +22,5 @@ Remember that the path to mastery is rarely a smooth one, but with dedication an
 
 Here's to a exciting and rewarding experience ahead! 
 
-Kindness of Regards,
-Angel J. Haro 
+Kindness of Regards (:
 
