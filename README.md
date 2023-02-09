@@ -38,13 +38,13 @@
 <h2 align="center"> machine-learning </a> </h2>
 
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
-Over 8,000 lines of markdown notes on machine-learning.
+- Over 8,000 lines of markdown notes on machine-learning.
 
 ### [my jupyternotebook](https://github.com/aharo24/machine-learning-jupyternotebook)
-All code related to machine/deep-learning, algorithms, and analysis will be found here. 
+- All code related to machine/deep-learning, algorithms, and analysis will be found here. 
 
 ### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
-Intro Project for machine-learning.
+- Intro Project for machine-learning.
 
 ### predict value of home 
 - I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
