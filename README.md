@@ -35,7 +35,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> machine-learning </a> </h2>
+<h2 align="center"> machine learning </a> </h2>
 
 ### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
 - Over 8,000 lines of markdown notes on machine-learning.
@@ -89,7 +89,7 @@
 - [official vivadi theme contribution](https://themes.vivaldi.net/themes/nV6vpPxDvdN)
 
 
-### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
+### [universal markdown linker ⏳](https://github.com/aharo24/universal-markdown-linker)
 - #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
 - Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
 
@@ -100,8 +100,9 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> ~/.files </a> </h2>
 
+- [alacritty ✅](https://github.com/aharo24/dot-alacritty)
 - done
 - exa
 - fish-abbreviation-tips
@@ -112,7 +113,9 @@
 - raycast
 - rectangle
 - spunge
+- [starship ✅](https://github.com/aharo24/dot-starship)
 - sublime
+- [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
 - tmux
 - z
 
