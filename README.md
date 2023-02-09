@@ -79,6 +79,7 @@
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
+
 ### [alacritty ✅](https://github.com/aharo24/dot-alacritty) 
 - I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through thorough experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
