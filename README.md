@@ -89,7 +89,6 @@
 
 
 <!-- START -->
-<table><tr><td valign="top" width="50%">
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> dot-files </a> </h2>
 
 - [alacritty ✅](https://github.com/aharo24/dot-alacritty)
@@ -112,7 +111,6 @@
   <div align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> actively merging all dotfiles for public use
  </a> </div>
 
-</tr></tr></table> 
 <!-- END -->
 
 
