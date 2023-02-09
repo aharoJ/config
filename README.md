@@ -17,7 +17,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> opensource advocate </a> </h3>
+<h3 align="center"> opensource advocate </a> </h2>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
 
@@ -31,19 +31,19 @@
 <!-- END -->
 
 
+
+
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h3 align="center"> machine-learning </a> </h3>
 
-<h3 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/machine-learning"> my notes </a> </h2>
+<h3 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/machine-learning"> my notes </a> </h3>
 - Over 8,000 lines of markdown notes on machine-learning.
 
 
 <h3 align="center"> <a href="https://github.com/aharo24/machine-learning-jupyternotebook"> my jupyternotebook </a> </h2>
 - All code related to machine/deep-learning, algorithms, and analysis will be found here. 
 
-### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
-<h3 align="center"> <a href="https://github.com/aharo24/opensource"> opensource advocate </a> </h2>
 
 - Intro Project for machine-learning.
 
