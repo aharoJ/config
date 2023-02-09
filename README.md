@@ -79,8 +79,44 @@
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
+### [alacritty ✅](https://github.com/aharo24/dot-alacritty) 
+- I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through thorough experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
-- [alacritty ✅](https://github.com/aharo24/dot-alacritty)
+
+<p align="center">
+<a href="https://github.com/aharo24/dot-alacritty">
+  <img style="display: block; margin: 0 auto;" 
+  width="230"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-alacritty&theme=onedark" />
+</a>
+</p>
+
+
+
+### [starship ✅](https://github.com/aharo24/dot-starship)
+- I have put in substantial effort into creating a unique and visually appealing starship configuration. My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
+
+<p align="center">
+<a href="https://github.com/aharo24/dot-starship">
+  <img style="display: block; margin: 0 auto;" 
+  width="230"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-starship&theme=onedark" />
+</a>
+</p>
+
+### [vivaldi ✅](https://github.com/aharo24/dot-vivaldi)
+- My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
+
+- [official vivadi theme contribution](https://themes.vivaldi.net/themes/nV6vpPxDvdN)
+
+<p align="center">
+<a href="https://github.com/aharo24/dot-vivaldi">
+  <img style="display: block; margin: 0 auto;" 
+  width="230"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-vivaldi&theme=onedark" />
+</a>
+</p>
+
 - done
 - exa
 - fish-abbreviation-tips
@@ -91,13 +127,11 @@
 - raycast
 - rectangle
 - spunge
-- [starship ✅](https://github.com/aharo24/dot-starship)
 - sublime
-- [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
 - tmux
 - z
 
-  <div align="center"> <a href="https://github.com/aharo24/opensource#dotfiles"> actively merging all dotfiles for public use
+  <div align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> actively merging all dotfiles for public use
  </a> </div>
 
 
