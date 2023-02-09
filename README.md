@@ -58,28 +58,6 @@
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> contribution </a> </h2>
 
-### [alacritty](https://github.com/aharo24/dot-alacritty) 
-- Alacritty configuration, optimized for speed and efficiency. I've spent countless hours tweaking and fine-tuning.
-
-### [starship](https://github.com/aharo24/dot-starship)
-- Hours of research on color theory and what hues stimulate the eyes, and hand-picked hacked icons.
-
-### [vivaldi](https://github.com/aharo24/dot-vivaldi)
-- I've included a list of custom hotkeys, including shortcuts for the panel, window, dev, and tabs. Detail color combinations to stimulate long hours of docs/coding/dev.
-
-### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
-- #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
-- Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
-
-</tr></tr></table> 
-<!-- END -->
-
-
-
-<!-- START -->
-<table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
-
 ### [alacritty ✅](https://github.com/aharo24/dot-alacritty) 
 - I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through thorough experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
@@ -110,13 +88,19 @@
 
 - [official vivadi theme contribution](https://themes.vivaldi.net/themes/nV6vpPxDvdN)
 
-<p align="center">
-<a href="https://github.com/aharo24/dot-vivaldi">
-  <img style="display: block; margin: 0 auto;" 
-  width="230"
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharo24&repo=dot-vivaldi&theme=onedark" />
-</a>
-</p>
+
+### [universal markdown linker](https://github.com/aharo24/universal-markdown-linker)
+- #### This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of Universal Markdown Linker.
+- Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
+
+</tr></tr></table> 
+<!-- END -->
+
+
+
+<!-- START -->
+<table><tr><td valign="top" width="50%">
+<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> DOT-FILES </a> </h2>
 
 - done
 - exa
