@@ -152,6 +152,7 @@
 <table><tr><td valign="top" width="50%">
 <h3 align="center"> dot-files
 <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"></h3>
+
 - [alacritty ✅](https://github.com/aharo24/dot-alacritty)
 - done
 - exa
