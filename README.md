@@ -120,13 +120,9 @@
 <!-- START -->
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> dot-files </a> </h2>
 
-  <div align="center"> actively merging all dotfiles for public use
-  </div>
-
-<!-- -->
 
 
-<!-- START -->
+<!-- TABLE START -->
 <table><tr><td valign="top" width="50%">
 <h3 align="center"> dot-files
 <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"></h3>
@@ -147,6 +143,8 @@
 - [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
 - tmux
 - z
+
+<h4 align="center"> actively merging all dotfiles for public use </h4>
 
 <!-- MID -->
 </td><td valign="top" width="50%">
