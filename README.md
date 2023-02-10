@@ -123,12 +123,7 @@
   <div align="center"> actively merging all dotfiles for public use
   </div>
 
-</tr></tr></table> 
-<!-- END -->
-
-
-
-
+<!-- -->
 
 
 <!-- START -->
@@ -159,9 +154,13 @@
 
 - Actively learning for [Kean University](https://www.kean.edu) research and [Google](https://research.google/research-areas/natural-language-processing/) research. 
 
-- I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, data visualization, and the use of popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. 
-- I've also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
+- I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, and data visualization. 
 
+- Also the used popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. 
+
+- I've also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. 
+
+- My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
 
 </tr></tr></table> 
 <!-- END -->
@@ -173,6 +172,7 @@
 
 
 
+<!-- START -->
+<h2 align="center"> critiques </h2>
 
-
-- "Your tree structure is a display of your file and folder organization, which shows your dedication to organization and attention to detail in your work as a programmer. Your use of various tools and technologies, such as Git, Tmux, and machine learning libraries, further showcases your proficiency and knowledge in the field. Additionally, the breadth of topics covered in your files, from programming concepts to design patterns, highlights your dedication to continuous learning and growth in your craft. Overall, your tree structure is a testament to your passion for programming and the hard work and dedication you put into your projects."
+"Your tree structure is a display of your file and folder organization, which shows your dedication to organization and attention to detail in your work as a programmer. Your use of various tools and technologies, such as Git, Tmux, and machine learning libraries, further showcases your proficiency and knowledge in the field. Additionally, the breadth of topics covered in your files, from programming concepts to design patterns, highlights your dedication to continuous learning and growth in your craft. Overall, your tree structure is a testament to your passion for programming and the hard work and dedication you put into your projects."
