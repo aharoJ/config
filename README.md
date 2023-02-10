@@ -120,25 +120,8 @@
 <!-- START -->
 <h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> dot-files </a> </h2>
 
-- [alacritty ✅](https://github.com/aharo24/dot-alacritty)
-- done
-- exa
-- fish-abbreviation-tips
-- fish
-- flameshot
-- keycastr 
-- obsidian
-- raycast
-- rectangle
-- spunge
-- [starship ✅](https://github.com/aharo24/dot-starship)
-- sublime
-- [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
-- tmux
-- z
-
-  <div align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> actively merging all dotfiles for public use
- </a> </div>
+  <div align="center"> actively merging all dotfiles for public use
+  </div>
 
 </tr></tr></table> 
 <!-- END -->
@@ -170,12 +153,6 @@
 - tmux
 - z
 
-
-  <div align="center"> actively merging all dotfiles for public use
-  </div>
-
-
-
 <!-- MID -->
 </td><td valign="top" width="50%">
 <h3 align="center"> actively learning </a> </h3>
@@ -188,6 +165,10 @@
 
 </tr></tr></table> 
 <!-- END -->
+
+
+
+
 
 
 
