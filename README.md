@@ -62,7 +62,7 @@
 - My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. 
 - I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
 
-<h3 align="center"> <a href="https://themes.vivaldi.net/themes/nV6vpPxDvdN"> official vivadi contribution  </a> </h3>
+<h4 align="center"> <a href="https://themes.vivaldi.net/themes/nV6vpPxDvdN"> official vivadi contribution  </a> </h4>
 
 
 ---
