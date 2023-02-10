@@ -121,11 +121,8 @@
 
 <!--  START -->
 <table><tr><td valign="top" width="50%">
-<h3 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> 
-dot-files </a> </h3>
-
-
-<h2 align="center"><a href="https://github.com/aharo24"> opensource advocate </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> 
+dot-files </a> </h2>
 
 - [alacritty ✅](https://github.com/aharo24/dot-alacritty)
 - done
@@ -149,7 +146,7 @@ dot-files </a> </h3>
 
 <!-- MID -->
 </td><td valign="top" width="50%">
-<h3 align="center"> actively learning </a> </h3>
+<h2 align="center"> actively learning </a> </h2>
 
 - Actively learning for [Kean University](https://www.kean.edu) research and [Google](https://research.google/research-areas/natural-language-processing/) research. 
 
