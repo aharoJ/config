@@ -23,6 +23,47 @@ Js:
 
 
 
+## use state
+- its for `Dynamic` state
+
+```js
+import React, { useState } from 'react';
+```
+
+
+## react fragments
+```js
+  <> 
+    <p><a href='#home'>Homeee</a></p>
+    <p><a href='#gp3'>What is GPT3?</a></p>
+  </>
+```
+
+
+
+## invoking
+
+```java
+Menu myMenu = new Menu();
+```
+
+```js
+<Menu/>
+```
+
+### displays
+
+this hides it
+```js
+display: none
+```
+
+this shows it
+```js
+display: flex
+```
+
+
 
 
 
@@ -39,8 +80,6 @@ replace multiple same words:
 [animation tool](https://animista.net)
 
 [idk but this tool looks wild](https://www.figma.com)
-
-
 
 
 
