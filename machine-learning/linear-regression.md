@@ -52,12 +52,10 @@
 
 
 # Links
-
 [Simple Linear regression](https://en.wikipedia.org/wiki/Simple_linear_regression)
 	[slr equation](https://en.wikipedia.org/wiki/Simple_linear_regression#Intuition_about_the_slope)
 
 [Ordinary least squares](https://en.wikipedia.org/wiki/Ordinary_least_squares)
-
 - [equation process min:14](https://www.udemy.com/course/python-for-machine-learning-data-science-masterclass/learn/lecture/22976300?start=570#overview)
 
 
