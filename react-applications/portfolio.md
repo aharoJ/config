@@ -72,7 +72,7 @@ className='w-20 h-20 object-contain'/>
 ---
 #important/js/dynamic_template
 # template literals
-![](aharo24%202023-03-05%20at%202.26.30%20PM.png)
+![](../z/aharo24%202023-03-05%20at%202.26.30%20PM.png)
 WRONG
 ```js
 className={'${ active === link.title ? "text-white" : "text-secondary" }'}
@@ -142,7 +142,29 @@ real example:
 ```
 
 
+## using the special brackets and not recalling on extern tags 
 
+This just calling the object
+```js
+<p className={styles.sectionSubText}>
+```
+
+Instead this is dynamic block I think... we can extend to other things which is more beneficial 
+```js
+<p className={`${styles.sectionSubText} 
+text-center
+font-semibold tracking-tighter bg-gradient-to-r 
+from-indigo-500 via-yellow-500 to-pink-500 inline-block 
+text-transparent bg-clip-text
+`}>
+```
+
+
+
+
+
+
+---
 
 # SRC
 [logos](https://logo.com)
@@ -225,7 +247,7 @@ This is similar to passing props to a React component, where you pass props as a
 ## Issue with canvas (balls)
 
 ### WRONG
-![](aharo24%202023-03-08%20at%207.23.32%20PM.png)
+![](../z/aharo24%202023-03-08%20at%207.23.32%20PM.png)
 ### Correct
-![](aharo24%202023-03-08%20at%207.24.15%20PM.png)
+![](../z/aharo24%202023-03-08%20at%207.24.15%20PM.png)
 
