@@ -5,11 +5,11 @@
 
 <!-- START  -->
 <div align="center">
-<a href="mailto: io.aharo24@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Gmail" /></a>&nbsp;
+<a href="mailto: io.aharoJ@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Gmail" /></a>&nbsp;
 <a href="https://discord.gg/HDDQ6pUMHt"><img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>&nbsp;
-<a href="https://twitter.com/aharo24"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>&nbsp;
-<a href="https://www.linkedin.com/in/aharo24/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Linkedin" /></a>&nbsp;
-<a href="https://leetcode.com/aharo24/"><img src="https://img.shields.io/badge/-LeetCode-FFA116?style=for-the-badge&logo=LeetCode&logoColor=black" alt="LeetCode" /></a>&nbsp;
+<a href="https://twitter.com/aharoJ"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>&nbsp;
+<a href="https://www.linkedin.com/in/aharoJ/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Linkedin" /></a>&nbsp;
+<a href="https://leetcode.com/aharoJ/"><img src="https://img.shields.io/badge/-LeetCode-FFA116?style=for-the-badge&logo=LeetCode&logoColor=black" alt="LeetCode" /></a>&nbsp;
 <br/>
 </div>  
 <!-- END -->
@@ -19,9 +19,30 @@
 
 
 
+
+
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"><a href="https://github.com/aharo24"> opensource advocate </a> </h2>
+<h2 align="center"> about me </h2>
+
+physical activities: 
+  - gym, soccer, boxing, skateboarding
+
+anime enthusiast:
+  - vinland, fma, aot, demon slayer, psycho-pass
+
+video game enthusiast: 
+  - regional pro player for FIFA: 17 | 19 | 21
+  - top 13 % in COD, top 5 % in warzone, top 1 % in pubg
+  - first person shooter kill-to-death ratio 2.43
+
+editor:
+  - photoshop, sony vegas pro, elgato, obs, youtube
+
+
+<!-- MID -->
+</td><td valign="top" width="50%">
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource"> opensource advocate </a> </h2>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
 
@@ -31,6 +52,14 @@
 
 - I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
 
+<p align="center">
+<a href="https://github.com/aharoJ/opensource">
+  <img style="display: block; margin: 0 auto;" 
+  width="250"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=opensource&theme=onedark" />
+</a>
+</p>
+
 </tr></tr></table> 
 <!-- END -->
 
@@ -40,41 +69,86 @@
 
 
 
-<!-- START -->
+
+
+
+
+
+
+
+<!-- START  -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharo24"> contributions </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ"> active contributions </a> </h2>
 
 
-<h3 align="center"> <a href="https://github.com/aharo24/dot-alacritty"> alacritty ✅ </a> </h3>
+<h3 align="center"> <a href="https://github.com/aharoJ/dot-alacritty"> alacritty ✅ </a> </h3>
 
 - I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. 
 - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
+
+<p align="center">
+<a href="https://github.com/aharoJ/dot-alacritty">
+  <img style="display: block; margin: 0 auto;" width="250"
+   src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-alacritty&theme=onedark" />
+</a>
+</p>
+
 ---
-<h3 align="center"> <a href="https://github.com/aharo24/dot-starship"> starship ✅ </a> </h3>
+<h3 align="center"> <a href="https://github.com/aharoJ/dot-starship"> starship ✅ </a> </h3>
 
 - I have put in substantial effort into creating a unique and visually appealing starship configuration. 
-- I've researched into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
+- My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
+
+<p align="center">
+<a href="https://github.com/aharoJ/dot-starship">
+  <img style="display: block; margin: 0 auto;" width="250"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-starship&theme=onedark" />
+</a>
+</p>
 
 ---
-<h3 align="center"> <a href="https://github.com/aharo24/dot-vivaldi"> vivaldi ✅ </a> </h3>
+<h3 align="center"> <a href="https://github.com/aharoJ/dot-vivaldi"> vivaldi ✅ </a> </h3>
 
 - My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. 
 - I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
 
-<h4 align="center"> <a href="https://themes.vivaldi.net/themes/nV6vpPxDvdN"> official vivadi contribution  </a> </h4>
+
+<h3 align="center"> <a href="https://themes.vivaldi.net/themes/nV6vpPxDvdN"> official vivadi contribution  </a> </h3>
+
+
+<p align="center">
+<a href="https://github.com/aharoJ/dot-vivaldi">
+  <img style="display: block; margin: 0 auto;" width="250"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-vivaldi&theme=onedark" />
+</a>
+</p>
 
 
 ---
-<h3 align="center"> <a href="https://github.com/aharo24/aharo24/universal-markdown-linker"> linksage ⏳ </a> </h3>
+<h3 align="center"> <a href="https://github.com/aharoJ/aharoJ/universal-markdown-linker"> linksage ⏳ </a> </h3>
 
-- This tool was developed and is maintained by [Angel Haro](https://www.linkedin.com/in/aharo24/), the founder of linksage.
+- As the [founder](https://www.linkedin.com/in/aharoJ/) of Universal Markdown Linker, I have developed and maintained an open-source Python script that streamlines the process of organizing markdown files. 
 
-- Developed an open-source Python script that makes it easy to keep markdown files organized and error-free. 
-- The script eliminates the need for manual searching and guarantees that all links will work, even if the file structure of your repository changes.
+- This tool ensures that all links remain functional, even if the file structure of your repository changes. With the Universal Markdown Linker, you no longer have to manually search for links, saving you time and effort.
 
+<p align="center">
+<a href="https://github.com/aharoJ/universal-markdown-linker">
+  <img style="display: block; margin: 0 auto;" width="250"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=universal-markdown-linker&theme=onedark" />
+</a>
+</p>
+
+
+
+--- 
+  <h3 align="center"> <a href="https://github.com/aharoJ/opensource#dotfiles"> slowly merging all dotfiles/configs </a> </h3>
 </tr></tr></table> 
 <!-- END -->
+
+
+
+
 
 
 
@@ -83,31 +157,22 @@
 
 
 <!-- START -->
-<table><tr><td valign="top" width="50%">
-<h2 align="center"><a href="https://github.com/aharo24"> machine learning </a> </h2>
+<table><tr><td valign="top" >
+<h2 align="center"><a href="https://github.com/aharoJ"> machine learning </a> </h2>
 
-### [my notes](https://github.com/aharo24/opensource/tree/main/machine-learning)
-- Over 8,000 lines of markdown notes on machine learning, covering various topics including supervised and unsupervised learning, deep learning, reinforcement learning, and more.
-- The notes are organized in a clear and concise manner, making it easy for readers to understand and follow the concepts.
-- The notes also include real-world examples, diagrams, and illustrations to help reinforce the concepts being discussed.
+<h4 align="center"> Over 8,000 lines of markdown notes/code/docs/sources on machine learning, covering various topics including supervised and unsupervised learning, and more... </h4>
 
----
-### [my jupyternotebook](https://github.com/aharo24/machine-learning-jupyternotebook)
-- All code related to machine/deep learning, algorithms, and analysis can be found in this repository.
-- The repository includes various projects and exercises that demonstrate how to apply machine learning concepts in practice.
-- The code is well-documented and includes explanations of the steps being taken, making it easy for others to understand and learn from.
 
----
-### [capstone project](https://github.com/aharo24/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb)
-- This is an introductory project that showcases your understanding of the fundamentals of machine learning.
-- The project involves building a model to predict the value of homes based on various features such as square footage, number of bedrooms, and location.
-- The project demonstrates your ability to gather, clean, and analyze data, as well as implement and evaluate machine learning models.
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/machine-learning"> my notes  </a> </h2>
 
----
-### predict value of home project 
-- in progress ⏳
 
-</tr></tr></table> 
+<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook"> my jupyternotebook  </a> </h2>
+
+
+<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb"> capstone project  </a> </h2>
+
+
+</tr></table> 
 <!-- END -->
 
 
@@ -122,47 +187,20 @@
 
 
 
-<!--  START -->
-<table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> 
-dot-files </a> </h2>
 
-- [alacritty ✅](https://github.com/aharo24/dot-alacritty)
-- done
-- exa
-- fish-abbreviation-tips
-- fish
-- flameshot
-- keycastr 
-- obsidian
-- raycast
-- rectangle
-- spunge
-- [starship ✅](https://github.com/aharo24/dot-starship)
-- sublime
-- [vivaldi  ✅](https://github.com/aharo24/dot-vivaldi)
-- tmux
-- z
 
-<h4 align="center"> actively merging all dotfiles for public use 
-<a href="https://github.com/aharo24/opensource/tree/main/dotfiles"> </a></h4>
+<!-- START  -->
+<div align="center">
+<table><tr><td valign="top" width="55%">
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=aharoJ&theme=noctis_minimus" width="700" />
 
 <!-- MID -->
-</td><td valign="top" width="50%">
-<h2 align="center"> actively learning </a> </h2>
-
-- Actively learning for [Kean University](https://www.kean.edu) research and [Google](https://research.google/research-areas/natural-language-processing/) research. 
-
-- I have gained extensive knowledge in machine learning through my personal studies, with a focus on topics such as linear regression, and data visualization. 
-
-- Also the used popular libraries such as NumPy, Pandas, scikit-learn and Matplotlib. 
-
-- I've also completed a capstone project that demonstrated my ability to apply these concepts in a practical setting. 
-
-- My goal is to continue to deepen my understanding in this field and apply it to real-world problems.
-
-</tr></tr></table> 
-<!-- END -->
+</td><td valign="top" width="45%">
+<img width="400" src="https://github-readme-stats.vercel.app/api?username=aharoJ&show_icons=true&theme=onedark" />
+<img width="400" src="https://github-readme-streak-stats.herokuapp.com/?user=aharoJ&theme=dracula" />
+<img width="400" src="https://github-readme-activity-graph.cyclic.app/graph?username=aharoJ&theme=rogue"/>
+</div>
+<!-- END  -->
 
 
 
@@ -170,11 +208,6 @@ dot-files </a> </h2>
 
 
 
-<!-- START -->
-<table><tr><td valign="top" width="50%">
-<h2 align="center"> critiques </h2>
 
-"Your tree structure is a display of your file and folder organization, which shows your dedication to organization and attention to detail in your work as a programmer. Your use of various tools and technologies, such as Git, Tmux, and machine learning libraries, further showcases your proficiency and knowledge in the field. Additionally, the breadth of topics covered in your files, from programming concepts to design patterns, highlights your dedication to continuous learning and growth in your craft. Overall, your tree structure is a testament to your passion for programming and the hard work and dedication you put into your projects."
 
-</tr></tr></table> 
-<!-- END -->
+
