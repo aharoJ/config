@@ -166,16 +166,6 @@ text-transparent bg-clip-text
 
 ---
 
-# SRC
-[logos](https://logo.com)
-
-[react three fiber ](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction)
-	[lights](https://docs.pmnd.rs/react-three-fiber/getting-started/your-first-scene#adding-lights)
-
-[using {} on an import vs not ](https://stackoverflow.com/questions/36795819/when-should-i-use-curly-braces-for-es6-import)
-
-### font
-megrim is fire af 
 
 # Possible Errors
 
@@ -251,3 +241,42 @@ This is similar to passing props to a React component, where you pass props as a
 ### Correct
 ![](../z/aharo24%202023-03-08%20at%207.24.15%20PM.png)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+---
+
+# SRC
+[logos](https://logo.com)
+
+[react three fiber ](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction)
+	[lights](https://docs.pmnd.rs/react-three-fiber/getting-started/your-first-scene#adding-lights)
+
+[using {} on an import vs not ](https://stackoverflow.com/questions/36795819/when-should-i-use-curly-braces-for-es6-import)
+
+### font
+megrim is fire af 
