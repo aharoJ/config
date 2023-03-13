@@ -242,12 +242,20 @@ This is similar to passing props to a React component, where you pass props as a
 ![](../z/aharo24%202023-03-08%20at%207.24.15%20PM.png)
 
 
+# Size matters
+
+![](../z/aharo24%202023-03-12%20at%202.53.41%20PM.png)
 
 
+issue on my code:
+```js
+absolute inset-0 top-[80px] xs:top-[50px] max-w-7xl mx-auto flex
+```
 
-
-
-
+correct way since we defined it for a size: already 
+```js
+absolute inset-0 md:top-[80px] xs:top-[50px] max-w-7xl mx-auto flex
+```
 
 
 
