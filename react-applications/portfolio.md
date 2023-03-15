@@ -32,7 +32,11 @@ lecgacy
 ```js
 npm install  --legacy-peer-deps -D postcss autoprefixer
 ```
-
+...
+isMobile
+```js
+npm install --legacy-peer-deps react-device-detect 
+```
 
 
 #important/js/packages
@@ -96,7 +100,10 @@ additionally we need to add a `light`
 
 
 
-### rafce
+# psvm but for JS 
+```js
+rafce
+```
 
 
 
@@ -285,6 +292,10 @@ absolute inset-0 md:top-[80px] xs:top-[50px] max-w-7xl mx-auto flex
 	[lights](https://docs.pmnd.rs/react-three-fiber/getting-started/your-first-scene#adding-lights)
 
 [using {} on an import vs not ](https://stackoverflow.com/questions/36795819/when-should-i-use-curly-braces-for-es6-import)
+
+
+
+[animation samples](https://framerbook.com/animation/example-animations/1-tween/)
 
 ### font
 megrim is fire af 
