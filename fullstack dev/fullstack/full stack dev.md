@@ -1031,21 +1031,21 @@ What is a Use Case?
 
 
 ### Phases
-inception phase
-elaboration phase
+inception phase:
+- [ ] basic idea
 
-The planning and modeling activities of the generic process model.
-evolution 
+elaboration phase:
+- [ ] evolution 
 
-elicitation phase
-end goal
+elicitation phase:
+- [ ] end goal
 
-Negotiation Phase 
-rank (priority) requirements 
+Negotiation Phase :
+- [ ] rank (priority) requirements 
 
-construction phase
-Is identical to the construction activity defined for the generic software process. 
+construction phase:
+- [ ] Is identical to the construction activity defined for the generic software process. 
 
-transition phase
-Encompasses the latter stages of the generic construction activity and the first part of the generic deployment (delivery and feedback) activity.
+transition phase:
+- [ ] Encompasses the latter stages of the generic construction activity and the first part of the generic deployment (delivery and feedback) activity.
 

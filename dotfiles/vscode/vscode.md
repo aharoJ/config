@@ -1,20 +1,3 @@
-# under dev...
-
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-## updating soon
-
-
 # Commands
 
 - [opt+enter]
