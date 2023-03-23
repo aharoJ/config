@@ -9,12 +9,12 @@
 [optional: 3 hours](https://www.youtube.com/watch?v=qnXe1gecux8)
 
 ### virtual box - cross to linux - mac - windows
-[40 min ](https://www.youtube.com/watch?v=8QUEaeyTorg)
+- [ ] [40 min ](https://www.youtube.com/watch?v=8QUEaeyTorg)
 
 
 ### Real Hacking  - The flow/tools/workspace
-[7 hours part-one ](https://www.youtube.com/watch?v=3FNYvj2U0HM)
-[8 hours part-two](https://www.youtube.com/watch?v=sH4JCwjybGs)
+- [ ] [7 hours part-one ](https://www.youtube.com/watch?v=3FNYvj2U0HM)
+- [ ] [8 hours part-two](https://www.youtube.com/watch?v=sH4JCwjybGs)
 
 
 
@@ -25,7 +25,7 @@
 
 ### Methodology for hacking   (optional)
 72 Video playlist :
-	[The natural movement of hackers and tools  ](https://www.youtube.com/playlist?list=PL5--8gKSku174EnRTbP4DzU2W80Q1vqtm)
+- [ ] [The natural movement of hackers and tools  ](https://www.youtube.com/playlist?list=PL5--8gKSku174EnRTbP4DzU2W80Q1vqtm)
 
 
 
