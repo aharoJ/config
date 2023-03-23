@@ -25,7 +25,7 @@ org.junit.ComparisonFailure: expected:<Not a [t]riangle> but was:<Not a [T]riang
         at io.aharoj.AppTest.shouldAnswerWithTrue(AppTest.java:21)
 ```
 
-![](../z/aharo24%202023-03-07%20at%202.22.36%20PM.png)
+![](../../z/aharo24%202023-03-07%20at%202.22.36%20PM.png)
 
 the output must be the exact "string as "
 
