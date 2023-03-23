@@ -4,7 +4,7 @@
 what are columns and what are rows?
 #data/feature 
 #data/instances 
-![](../z/aharo_88.png)
+![](../../z/aharo_88.png)
 
 ---
 
@@ -45,7 +45,7 @@ iterates/creates features (Y)
 # multiple_features
 #data/feature 
 
-- [internal_resources](Pandas.md#resources)
+- [internal_resources](pandas.md#resources)
 
 [Applying function with multiple arguments to create a new pandas column](https://stackoverflow.com/questions/19914937/applying-function-with-multiple-arguments-to-create-a-new-pandas-column)
 
@@ -59,7 +59,7 @@ iterates/creates features (Y)
                       
 > The purpose of `np.vectorize` is to transform functions which are not numpy-aware
 
-![](../z/aharo_129.png)
+![](../../z/aharo_129.png)
 
 ```python
 import timeit
@@ -102,7 +102,7 @@ df['Tip Quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])
 
 '''
 ```
-![](../z/aharo_130.png)
+![](../../z/aharo_130.png)
 
 
 
@@ -129,16 +129,16 @@ df['Tip Quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])
 
 
 # chat_to_revise
-![](../z/aharo24%202023-01-16%20at%2011.51.14%20PM.png)
+![](../../z/aharo24%202023-01-16%20at%2011.51.14%20PM.png)
 
 
 
 this one correlates to what I thought
-![](../z/aharo24%202023-01-17%20at%2012.05.24%20AM.png)
+![](../../z/aharo24%202023-01-17%20at%2012.05.24%20AM.png)
 
 
 #important/featurevsinstances
-![](../z/aharo24%202023-01-17%20at%202.23.44%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%202.23.44%20PM.png)
 
 
 
