@@ -107,3 +107,16 @@ everything else is frontend
 
 # env
 whenever you change anything from `env` you need to restart the server 
+
+
+
+# backend
+```cli
+npm run dev        
+```
+
+
+
+
+
+
