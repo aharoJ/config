@@ -20,6 +20,11 @@ const montserrat= ({
 - [ ] [svg to react](https://react-svgr.com)
 - [ ] [remove background](https://www.remove.bg)
 
+## SVG Icons
+- [ ] [amazing icons](https://iconscout.com/icons/leetcode)
+
+
+
 
 # Canva
 - [ ] [canvas stuff ](https://www.canva.com/design)
