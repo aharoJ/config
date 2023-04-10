@@ -19,9 +19,13 @@ Check the above-mentioned document link to get details on giving specific privil
 5.  Quit MySql `quit;` and login again with `mysql -u [newuser] -p;`
 6.  Last step change the authentication `ALTER USER 'newuser'@'localhost' IDENTIFIED WITH mysql_native_password by 'password';`
 
-# Tables 
+# Schema 
 ```sql
 SHOW DATABASEs;
+```
+
+```sql
+CREATE DATABASE [my_new_schema];
 ```
 
 # Drop
@@ -29,6 +33,9 @@ SHOW DATABASEs;
 DROP TABLE [my_table];
 ```
 
+```sql
+drop database [my_schema];
+```
 
 # Src
 - [ ] [how to connect your mysql to vscode](https://stackoverflow.com/questions/50093144/mysql-8-0-client-does-not-support-authentication-protocol-requested-by-server)
