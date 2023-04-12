@@ -91,12 +91,18 @@ brew services stop postgresql
 
 
 
+# Architectural Design
 
+repo == DB
+models == entities (Objects)
+controllers == reactive-to-events
+services == fetch 
 
+![](../../z/aharo24%202023-04-09%20at%2011.38.17%20PM.png)
 
-
-
-
+``` controller
+ooohh soo the controller is like the middle layer that speaks to the top n bottom layer
+```
 
 
 
