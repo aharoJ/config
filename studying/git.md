@@ -546,3 +546,23 @@ dev/
 </p>
 </details>
 ````
+
+
+# Reset
+
+Unstage everything from git add -A
+```shell
+git reset 
+```
+
+# Force Untrack
+normally
+```shell
+git rm --cached mvnw
+git rm --cached mvnw.cmd
+```
+recursively
+```shell
+git rm --cached  r file_name/path
+```
+**
