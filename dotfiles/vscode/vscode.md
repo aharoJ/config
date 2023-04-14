@@ -20,6 +20,7 @@ cmd + '          -->   bottom bar
 cmd + shift + '  -->   left bar
 
 
+cmd+p --> refresh window
 
 
 

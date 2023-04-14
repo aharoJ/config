@@ -50,6 +50,7 @@ public class MyEntity {
 }
 ```
 
+[Mail not working](https://stackoverflow.com/questions/16807758/java-lang-noclassdeffounderror-com-sun-mail-util-maillogger-for-junit-test-case)
 
 # kill-port
 
@@ -105,6 +106,35 @@ ooohh soo the controller is like the middle layer that speaks to the top n botto
 ```
 
 
+# Bean
+I think its just the OBJECT 
+
+# Autowired
+before you autowired anything, it must first be a BEAN 
+
+# @RequestBody
+
+@RequestBody is a Spring annotation used to indicate that a method parameter should be bound to the body of the HTTP request.
+
+When you use @RequestBody annotation with a method parameter, Spring will automatically deserialize the incoming HTTP request body into an object of the specified type, using a message converter. This is useful when you want to receive data from the client in a structured format, such as JSON or XML.
+
+Here's an example:
+```java
+Copy code
+@PostMapping("/users")
+public ResponseEntity<User> createUser(@RequestBody User user) {
+    // Process the user object received in the request body
+    // ...
+
+    // Return a response with a status code and a user object
+    return new ResponseEntity<>(user, HttpStatus.CREATED);
+}
+```
+In this example, we're using the @PostMapping annotation to handle HTTP POST requests to the /users endpoint. The createUser method takes a User object as a parameter with the @RequestBody annotation, indicating that it should be deserialized from the HTTP request body.
+
+The createUser method then processes the user object and returns a response with a status code and a user object using the ResponseEntity class.
+
+Note that you can use other annotations, such as @GetMapping, @PutMapping, @DeleteMapping, etc., depending on the HTTP method you want to handle. Also, you can use other parameter annotations, such as @PathVariable, @RequestParam, etc., to access other parts of the HTTP request.
 
 
 
