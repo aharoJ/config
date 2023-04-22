@@ -1,0 +1,12 @@
+{
+  "attachmentFolderPath": "z",
+  "useMarkdownLinks": true,
+  "showFrontmatter": false,
+  "spellcheck": true,
+  "trashOption": "local",
+  "newFileLocation": "current",
+  "newLinkFormat": "shortest",
+  "showLineNumber": true,
+  "promptDelete": false,
+  "alwaysUpdateLinks": true
+}
