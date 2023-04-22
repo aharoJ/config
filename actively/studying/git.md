@@ -563,6 +563,6 @@ git rm --cached mvnw.cmd
 ```
 recursively
 ```shell
-git rm --cached  r file_name/path
+git rm --cached -r file_name/path
 ```
 **
