@@ -42,7 +42,7 @@ editor:
 
 <!-- MID -->
 </td><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharoJ/opensource"> opensource advocate </a> </h2>
+<h2 align="center"> <a href="https://aharoj.io"> opensource advocate </a> </h2>
 
 - An open source advocate, committed to sharing my knowledge and expertise with the community. 
 
@@ -78,7 +78,7 @@ editor:
 
 <!-- START  -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> <a href="https://github.com/aharoJ"> active contributions </a> </h2>
+<h2 align="center"> <a href="https://aharoj.io/projects"> active contributions </a> </h2>
 
 
 <h3 align="center"> <a href="https://github.com/aharoJ/dot-alacritty"> alacritty ✅ </a> </h3>
@@ -142,7 +142,7 @@ editor:
 
 
 --- 
-  <h3 align="center"> <a href="https://github.com/aharoJ/opensource#dotfiles"> slowly merging all dotfiles/configs </a> </h3>
+  <h3 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/dotfiles"> slowly merging all dotfiles/configs </a> </h3>
 </tr></tr></table> 
 <!-- END -->
 
@@ -158,15 +158,15 @@ editor:
 
 <!-- START -->
 <table><tr><td valign="top" >
-<h2 align="center"><a href="https://github.com/aharoJ"> machine learning </a> </h2>
+<h2 align="center"><a href="https://github.com/aharoJ/opensource/tree/main/programming/machine-learning"> machine learning </a> </h2>
 
 <h4 align="center"> Over 8,000 lines of markdown notes/code/docs/sources on machine learning, covering various topics including supervised and unsupervised learning, and more... </h4>
 
 
-<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/machine-learning"> my notes  </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/machine-learning">Notes</a> </h2>
 
 
-<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook"> my jupyternotebook  </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook"> Code:jupyternotebook</a> </h2>
 
 
 <h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb"> capstone project  </a> </h2>
