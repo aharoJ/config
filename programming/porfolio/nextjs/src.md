@@ -42,3 +42,8 @@ const montserrat= ({
 # Underline colors?
 
 
+
+# Vercel
+- [ ] [youtube vid](https://www.youtube.com/watch?v=W3jKJ3V_4V4[]())
+- [ ] [vercel-cli docs](https://vercel.com/docs/cli)
+- [ ] 

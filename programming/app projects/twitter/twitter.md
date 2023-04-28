@@ -139,8 +139,33 @@ Note that you can use other annotations, such as @GetMapping, @PutMapping, @Dele
 
 
 
+# Error on return type
+
+```
+The issue you encountered is related to the difference between primitive types and object types in TypeScript.
+
+In TypeScript, primitive types like `string`, `number`, and `boolean` represent the basic types of values that can be used in your code. Object types, on the other hand, represent more complex data structures that can be created using constructor functions or class declarations.
+
+In your case, the `value` property in the `ValidatedInputState` interface seems to be defined as an object type `String`, which is a wrapper object for a string value. When you pass this object as an argument to a function that expects a primitive `string` type, TypeScript throws a type error because the two types are not compatible.
+
+By calling the `toString()` method on the `String` object, you convert it to a primitive `string` type, which is compatible with the function argument type and resolves the type error.
+
+In general, it's a good practice to use primitive types instead of object types when possible, since they are more efficient and have fewer edge cases to consider. However, in some cases, object types may be necessary or more appropriate, depending on your use case.
+```
 
 
+![](../../../z/aharo24%202023-04-23%20at%2012.35.43%20AM.png)
+
+```ts
+export interface ValidatedInputState{
+    active: boolean;
+    valid: boolean;
+    typedIn: boolean;
+    labelActive: boolean;
+    labelColor:string;
+    value:String;          // ISSUE WAS HERE 
+}
+```
 
 
 
