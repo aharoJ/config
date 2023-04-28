@@ -23,6 +23,9 @@ npm i styled-components
 npm i @types/styled-components
 ```
 
+```shell
+npm i redux react-redux @reduxjs/toolkit  
+```
 
 # Modal
 A modal is a type of user interface component that appears on top of the main content and blocks user interaction with the rest of the page until the user takes action or dismisses it. It is commonly used to display additional information or to prompt the user to take a specific action, such as confirming a deletion or submitting a form.
