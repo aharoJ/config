@@ -565,4 +565,3 @@ recursively
 ```shell
 git rm --cached -r file_name/path
 ```
-**
