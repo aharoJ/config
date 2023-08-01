@@ -23,9 +23,6 @@ const montserrat= ({
 ## SVG Icons
 - [ ] [amazing icons](https://iconscout.com/icons/leetcode)
 
-
-
-
 # Canva
 - [ ] [canvas stuff ](https://www.canva.com/design)
 
@@ -40,8 +37,6 @@ const montserrat= ({
 
 
 # Underline colors?
-
-
 
 # Vercel
 - [ ] [youtube vid](https://www.youtube.com/watch?v=W3jKJ3V_4V4[]())
