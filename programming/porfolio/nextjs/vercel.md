@@ -4,3 +4,6 @@
 - [ ] needs to be push to production not preview 
 
 
+- ` vercel --prod`
+	- I think this pushes it instead of preview
+
