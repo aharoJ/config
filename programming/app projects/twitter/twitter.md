@@ -99,7 +99,7 @@ models == entities (Objects)
 controllers == reactive-to-events
 services == fetch 
 
-![](../../../z/aharo24%202023-04-09%20at%2011.38.17%20PM.png)
+![](aharo24%202023-04-09%20at%2011.38.17%20PM.png)
 
 ``` controller
 ooohh soo the controller is like the middle layer that speaks to the top n bottom layer
@@ -154,7 +154,7 @@ In general, it's a good practice to use primitive types instead of object types 
 ```
 
 
-![](../../../z/aharo24%202023-04-23%20at%2012.35.43%20AM.png)
+![](aharo24%202023-04-23%20at%2012.35.43%20AM.png)
 
 ```ts
 export interface ValidatedInputState{
