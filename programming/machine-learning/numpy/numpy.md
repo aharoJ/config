@@ -22,7 +22,7 @@ out: array(\[0, 1, 2, 3, 4, 5, 6\])
 np.zeros( (2,5) )
 ````
 
-![](aharo3.png)
+![](../../../z/aharo3.png)
 
 * np.zeros((**x**,**y**))
   * '**x**' --> rows
@@ -33,7 +33,7 @@ np.zeros( (2,5) )
 # Ones
 
 `np.ones()`
-![](aharo4.png)
+![](../../../z/aharo4.png)
 \>	same as np.zeros, now we spawn 1's.
 
 ---
@@ -43,10 +43,10 @@ np.zeros( (2,5) )
 `np.linspace()`
 [linspace official source](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#:~:text=numpy.arange-,numpy.linspace,-numpy.logspace)
 
-* ![](aharo4.png)
-* ![](aharo5.png)
+* ![](../../../z/aharo4.png)
+* ![](../../../z/aharo5.png)
 
-![](aharo6.png)
+![](../../../z/aharo6.png)
 
 np.linespace(**start**, **stop**, **x**)
 
@@ -82,7 +82,7 @@ potential_spend= np.linspace(0,500,100)
 
 `np.eye()`
 
-![](aharo7.png)
+![](../../../z/aharo7.png)
 
 ---
 
@@ -99,17 +99,17 @@ np.random.**[distributions()](https://numpy.org/doc/1.16/reference/routines.rand
  > Random values in a given shape.
  > Create an array of the given shape and populate it with random samples from a uniform distribution over `[0, 1)`.
 
-![](aharo8.png)
+![](../../../z/aharo8.png)
 
-![](aharo9.png)
+![](../../../z/aharo9.png)
 
 `np.random.randn()`
-![](aharo10.png)
+![](../../../z/aharo10.png)
 
 `np.random.randint()`
-![](aharo11.png)
+![](../../../z/aharo11.png)
 
-![](aharo12.png)
+![](../../../z/aharo12.png)
 
 `np.random.seed()`
 
@@ -117,11 +117,11 @@ np.random.**[distributions()](https://numpy.org/doc/1.16/reference/routines.rand
 
 `reshape()`
 
-![](aharo14.png)
+![](../../../z/aharo14.png)
 
 `np.random.randint` more stuff
 
-![](np.random.randint_more_stuff.png)
+![](../../../z/np.random.randint_more_stuff.png)
 
 ---
 
