@@ -97,7 +97,7 @@ interface Props
 
 # backend in nextJs
 anything inside /api... is backend
-![](../../../z/aharo24%202023-03-26%20at%2010.31.04%20PM.png)
+![](aharo24%202023-03-26%20at%2010.31.04%20PM.png)
 else:
 everything else is frontend
 
