@@ -1,21 +1,21 @@
 ### Overview
 
-![](aharo24%202023-01-15%20at%205.33.16%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.33.16%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%205.34.03%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.34.03%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%205.34.26%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.34.26%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%205.37.13%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.37.13%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%205.38.19%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.38.19%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%205.49.50%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.49.50%20PM.png)
 
 ---
 
@@ -25,11 +25,11 @@
 ### [colors](https://matplotlib.org/stable/tutorials/colors/colormaps.html)
 
 
-![](aharo24%202023-01-15%20at%205.55.58%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%205.55.58%20PM.png)
 
 	sns.scatterplot(x="salary", y='sales', data=df)
 
-![](aharo24%202023-01-15%20at%206.00.11%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.00.11%20PM.png)
 
 ```python 
 plt.figure(figsize=(12,4), dpi=200)
@@ -37,7 +37,7 @@ plt.figure(figsize=(12,4), dpi=200)
 sns.scatterplot(x="salary", y='sales', data=df, hue="salary")
 ```
 
-![](aharo24%202023-01-15%20at%206.13.41%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.13.41%20PM.png)
 
 ---
 
@@ -56,7 +56,7 @@ ie...
                       'Set1', 'Set2', 'Set3', 'tab10', 'tab20', 'tab20b',
                       'tab20c'])
 
-![](aharo24_119.png)
+![](../../../z/aharo24_119.png)
 
 
 
@@ -77,7 +77,7 @@ plt.figure(figsize=(8,4), dpi=200)
 sns.scatterplot(x='salary',y='sales',data=df, size='work experience', alpha=0.3)
 ```
 
-![](aharo24%202023-01-15%20at%206.41.19%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.41.19%20PM.png)
 
 #important/categorical 
 
@@ -95,27 +95,27 @@ ie...
 # Distribution-Plots
 
 ## Bins
-![](aharo24%202023-01-15%20at%206.57.02%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.57.02%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%206.57.24%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.57.24%20PM.png)
 .
 .
-![](aharo24%202023-01-15%20at%206.57.45%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%206.57.45%20PM.png)
 
 #### histogram^^^
 
 
 ## rugplot
-![](aharo24%202023-01-15%20at%207.08.24%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%207.08.24%20PM.png)
 
 	sns.rugplot(x='salary', data=df, height=0.5)
 
-![](aharo24%202023-01-15%20at%207.10.12%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%207.10.12%20PM.png)
 
 
 `displot`
-![](aharo24%202023-01-15%20at%207.10.57%20PM.png)
+![](../../../z/aharo24%202023-01-15%20at%207.10.57%20PM.png)
 
 
 
@@ -125,18 +125,18 @@ ie...
 
 # Categorical-Plots
 
-![](aharo24%202023-01-16%20at%2011.10.26%20PM.png)
+![](../../../z/aharo24%202023-01-16%20at%2011.10.26%20PM.png)
 
 
 
 ## countplot
 
-![](aharo24%202023-01-16%20at%2011.18.45%20PM.png)
+![](../../../z/aharo24%202023-01-16%20at%2011.18.45%20PM.png)
 
 
 ### countplot == values_counts
 #sns/countplot
-![](aharo24%202023-01-17%20at%209.09.00%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%209.09.00%20PM.png)
 
 refer to:
 #pandas/value_counts 
@@ -153,12 +153,12 @@ refer to:
 
 
 `ci` --> confidence interval
-![](aharo24%202023-01-16%20at%2011.23.20%20PM.png)
+![](../../../z/aharo24%202023-01-16%20at%2011.23.20%20PM.png)
 
 
 	sns.barplot(data=df, x='level of education', y='salary', estimator=np.mean,ci='sd')
 
-![](aharo24%202023-01-16%20at%2011.31.30%20PM.png)
+![](../../../z/aharo24%202023-01-16%20at%2011.31.30%20PM.png)
 
 
 # Boxplot
@@ -193,10 +193,10 @@ sns.swarmplot(data=df,x='math score',y='gender', hue='test preparation course')
 plt.legend(bbox_to_anchor=(1.355,0.5))
 ```
 
-![](aharo24%202023-01-17%20at%201.56.02%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%201.56.02%20PM.png)
 
 `dodge=True)`
-![](aharo24%202023-01-17%20at%201.56.57%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%201.56.57%20PM.png)
 
 it will seperate the sub category
 
@@ -213,7 +213,7 @@ it will seperate the sub category
 ```python
 sns.jointplot(data=df,x='math score', y='reading score')
 ```
-![](aharo24%202023-01-17%20at%202.06.41%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.06.41%20PM.png)
 
 
 `kind=`
@@ -225,14 +225,14 @@ sns.jointplot(data=df,x='math score', y='reading score')
 ie... 
 
 	sns.jointplot(data=df,x='math score', y='reading score', kind='hex')
-![](aharo24%202023-01-17%20at%202.07.51%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.07.51%20PM.png)
 
 
 
 
 
 #### clean ie...
-![](aharo24%202023-01-17%20at%202.13.13%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.13.13%20PM.png)
 
 hue sepera
 
@@ -240,19 +240,19 @@ hue sepera
 # pairplot
 #important 
 seen a lot in ML
-![](aharo24%202023-01-17%20at%202.31.11%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.31.11%20PM.png)
 
 ```python
 sns.pairplot(data=df)
 ```
-![](aharo24%202023-01-17%20at%202.33.05%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.33.05%20PM.png)
 
 
 #### cleanest way for pairplot
 ```python
 sns.pairplot(data=df,hue='gender',corner=True)
 ```
-![](aharo24%202023-01-17%20at%202.51.38%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.51.38%20PM.png)
 
 
 
@@ -267,7 +267,7 @@ sns.pairplot(data=df,hue='gender',corner=True)
 `hue=`
 is amazing for allowing the user to understand the difference between feature or instances
 
-![](aharo24%202023-01-17%20at%202.26.10%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%202.26.10%20PM.png)
 
 
 
@@ -281,20 +281,20 @@ sns.catplot(data=df,x='gender',y='math score',kind='box', col='lunch', row='test
 ```
 
 max recommended ~> 4 
-![](aharo24%202023-01-17%20at%203.02.45%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%203.02.45%20PM.png)
 
 
 
 
 ## pairgrid
 allows you to create your own graph per section
-![](aharo24%202023-01-17%20at%203.07.42%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%203.07.42%20PM.png)
 
 this is how we put stuff
-![](aharo24%202023-01-17%20at%203.06.50%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%203.06.50%20PM.png)
 
 ie...
-![](aharo24%202023-01-17%20at%203.12.24%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%203.12.24%20PM.png)
 
 ## kdeplot
 #important/categorical/instances 
@@ -306,7 +306,7 @@ sns.kdeplot(data=fan_reviewed, x='STARS', clip=[0,5],label= 'Stars Shown')
 plt.legend(loc=(1.05, 0.5))
 ```
 
-![](aharo24%202023-01-17%20at%209.31.33%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%209.31.33%20PM.png)
 
 # Matrix Plot == Pivot Table
 
@@ -320,7 +320,7 @@ sns.heatmap(df.drop('Life expectancy',axis=1),linewidths=0.5,annot=True,cmap='vi
 `cmap` -> same as `palette`
 `linewidth` -> straight forward
 `center` -> like changing the mean
-![](aharo24%202023-01-17%20at%203.26.52%20PM.png)
+![](../../../z/aharo24%202023-01-17%20at%203.26.52%20PM.png)
 
 
 
