@@ -8,7 +8,7 @@
 	- opens folder
 - z -
 
-![](aharo_18.png)
+![](../../../z/aharo_18.png)
 
 
 
@@ -20,7 +20,7 @@
 ## issue
 
 - **issue with 'z' extending into the most recent** 
-	- ![](aharo_28.png)
+	- ![](../../../z/aharo_28.png)
 - z -x "**directory**" 
 
 

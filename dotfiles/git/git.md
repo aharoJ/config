@@ -3,7 +3,7 @@ git s
 
 # Overview
 
-![](aharo24%202023-01-14%20at%207.09.20%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%207.09.20%20PM.png)
 
 
 
@@ -21,17 +21,17 @@ git config -h
 # Tracking
 ### git status tracking
 
-![](aharo24%202023-01-14%20at%206.21.12%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%206.21.12%20PM.png)
 
 
 
 ## rm
 
-![](aharo24%202023-01-14%20at%206.22.28%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%206.22.28%20PM.png)
 
 
 
-![](aharo24%202023-01-14%20at%206.25.45%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%206.25.45%20PM.png)
 
 
 ## add
@@ -70,12 +70,12 @@ That also implies we can go back and forth between commits.
 
 ## restore
 
-![](aharo24%202023-01-14%20at%207.04.21%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%207.04.21%20PM.png)
 
 
 
 normally after a commit
-![](aharo24%202023-01-14%20at%207.09.20%20PM%201.png)
+![](../../z/aharo24%202023-01-14%20at%207.09.20%20PM%201.png)
 
 
 
@@ -109,13 +109,13 @@ git rebase -i --root
 ``` git 
 git branch (name)
 ```
-![](aharo24%202023-01-14%20at%209.08.20%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.08.20%20PM.png)
 
 ### faster way 
 ``` git
 git switch -c (branch_name)
 ```  
-![](aharo24%202023-01-14%20at%209.27.37%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.27.37%20PM.png)
 .
 .
 ### most people do it this way
@@ -128,14 +128,14 @@ whatever branch you are in, it will clone it
 .
 .
 ## merge
-![](aharo24%202023-01-14%20at%209.21.43%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.21.43%20PM.png)
 .
 .
-![](aharo24%202023-01-14%20at%209.23.03%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.23.03%20PM.png)
 .
 .
 ## delete
-![](aharo24%202023-01-14%20at%209.25.10%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.25.10%20PM.png)
 
 
 .
@@ -144,9 +144,9 @@ whatever branch you are in, it will clone it
 .
 # Pushing
 
-![](aharo24%202023-01-14%20at%2010.22.10%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%2010.22.10%20PM.png)
 
-![](aharo24%202023-01-14%20at%2010.23.44%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%2010.23.44%20PM.png)
 
 
 when pushing to 
@@ -170,7 +170,7 @@ git push origin [branch_name]
 ^^^recommended 
 
 ie...
-![](aharo24%202023-01-17%20at%2010.28.23%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2010.28.23%20PM.png)
 
 
 
@@ -182,7 +182,7 @@ ie...
 # Pull Request
 
 # [Source This video for Request stuff](https://www.youtube.com/watch?v=rgbCcBNZcdQ&ab_channel=JakeVanderplas)
-![](aharo24%202023-01-14%20at%2010.55.44%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%2010.55.44%20PM.png)
 
 
 
@@ -193,12 +193,12 @@ ie...
 
 
 # GPT
-![](aharo24%202023-01-14%20at%209.13.16%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%209.13.16%20PM.png)
 
 
-![](aharo24%202023-01-14%20at%2010.39.35%20PM.png)
+![](../../z/aharo24%202023-01-14%20at%2010.39.35%20PM.png)
 
-![](aharo24%202023-01-19%20at%2010.39.26%20PM.png)
+![](../../z/aharo24%202023-01-19%20at%2010.39.26%20PM.png)
 #git/origin
 after we can just do git push since the local establishes a connection with the remote
 
@@ -215,7 +215,7 @@ after we can just do git push since the local establishes a connection with the 
 choose the snapchat you want to revert into 
 
 check -> [Commit](#Commit)
-![](aharo24%202023-01-16%20at%2010.43.41%20PM.png)
+![](../../z/aharo24%202023-01-16%20at%2010.43.41%20PM.png)
 
 
 
@@ -226,7 +226,7 @@ check -> [Commit](#Commit)
 # Attempt to restructure OpenSource 
 
 setting up branches for environmental set up
-![](aharo24%202023-01-17%20at%2010.10.54%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2010.10.54%20PM.png)
 
 
 
@@ -238,7 +238,7 @@ setting up branches for environmental set up
 ### branch up to date?
 
 	do `git fetch`
-![](aharo24%202023-01-17%20at%2010.21.19%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2010.21.19%20PM.png)
 
 if nothing returns we are up to date 
 
@@ -260,7 +260,7 @@ git push origin --delete [branch-name]
 ```
 
 ie...
-![](aharo24%202023-01-17%20at%2010.52.30%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2010.52.30%20PM.png)
 
 
 ## pull
@@ -275,7 +275,7 @@ git pull origin [branch]
 
 
 
-![](aharo24%202023-01-17%20at%2011.43.40%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2011.43.40%20PM.png)
 
 
 
@@ -295,7 +295,7 @@ git branch -a
 
 ie...
 
-![](aharo24%202023-01-17%20at%2011.58.03%20PM.png)
+![](../../z/aharo24%202023-01-17%20at%2011.58.03%20PM.png)
 
 
 
@@ -321,7 +321,7 @@ git rebase --abbort
 
 ## cherry-picking 
 
-![](aharo24%202023-01-18%20at%2012.29.28%20AM.png)
+![](../../z/aharo24%202023-01-18%20at%2012.29.28%20AM.png)
 
 
 
@@ -362,7 +362,7 @@ touch .ignore
 
 ## stash
 
-![](aharo24%202023-01-19%20at%2011.08.37%20PM.png)
+![](../../z/aharo24%202023-01-19%20at%2011.08.37%20PM.png)
 
 will auto gen a staash
 ``` git
