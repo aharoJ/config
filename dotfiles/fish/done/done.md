@@ -21,6 +21,6 @@ If you want notifications with icons on macOS, please install `terminal-notifie
 
 
 ie...
-![](aharo24%202023-01-13%20at%202.24.18%20AM.png)
+![](../../../z/aharo24%202023-01-13%20at%202.24.18%20AM.png)
 
 ---

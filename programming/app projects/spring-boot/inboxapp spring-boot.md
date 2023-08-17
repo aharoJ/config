@@ -17,8 +17,8 @@
 
 
 >	\c to connect to any DB
-- ![](aharo24%202023-02-07%20at%203.12.12%20PM.png)
-- ![](aharo24%202023-02-07%20at%203.12.37%20PM.png)
+- ![](../../../z/aharo24%202023-02-07%20at%203.12.12%20PM.png)
+- ![](../../../z/aharo24%202023-02-07%20at%203.12.37%20PM.png)
 
 
 ``` 
@@ -31,7 +31,7 @@
 
 November 3, 2022
 ### describe main ;
-![](aharo24%202023-02-07%20at%203.15.22%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.15.22%20PM.png)
 
 ### src
 - [How to configure port for a Spring Boot application]([https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application](https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application "https://stackoverflow.com/questions/21083170/how-to-configure-port-for-a-spring-boot-application"))
@@ -39,18 +39,18 @@ November 3, 2022
 
 # Main 
 
-- ![](aharo24%202023-02-07%20at%203.17.28%20PM.png)
-- ![](aharo24%202023-02-07%20at%203.18.57%20PM.png)
+- ![](../../../z/aharo24%202023-02-07%20at%203.17.28%20PM.png)
+- ![](../../../z/aharo24%202023-02-07%20at%203.18.57%20PM.png)
 
 
  css on the left, java on the right:
 	 these 2 combinations were the ones that gave me trouble.
 
-![](aharo24%202023-02-07%20at%203.23.32%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.23.32%20PM.png)
 
 
-- ![](aharo24%202023-02-07%20at%203.25.03%20PM.png)
-	- ![](aharo24%202023-02-07%20at%203.25.20%20PM.png)
+- ![](../../../z/aharo24%202023-02-07%20at%203.25.03%20PM.png)
+	- ![](../../../z/aharo24%202023-02-07%20at%203.25.20%20PM.png)
 
 
 
@@ -58,11 +58,11 @@ November 3, 2022
 
 
 ### random
-![](aharo24%202023-02-07%20at%203.27.24%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.27.24%20PM.png)
 
-![](aharo24%202023-02-07%20at%203.27.39%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.27.39%20PM.png)
 
-![](aharo24%202023-02-07%20at%203.27.56%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.27.56%20PM.png)
 
 
 
@@ -106,23 +106,23 @@ everything is lowercased  by default
 
 
 ### json/xml are standard format/files for everything the world
-![](aharo24%202023-02-07%20at%203.32.26%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.32.26%20PM.png)
 ### RESPT API returns the state of the object not the object itself ~ it returns as json/xml
-![](aharo24%202023-02-07%20at%203.32.35%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.32.35%20PM.png)
 
 
 ### schema is what gets created in the DB regardless of sql or noSql
-![](aharo24%202023-02-07%20at%203.34.33%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.34.33%20PM.png)
 
 
 ### PostConstructs 
 
-![](aharo24%202023-02-07%20at%203.35.27%20PM.png)
-![](aharo24%202023-02-07%20at%203.35.37%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.35.27%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.35.37%20PM.png)
 
 
 # YLM
-![](aharo24%202023-02-07%20at%203.06.55%20PM.png)
+![](../../../z/aharo24%202023-02-07%20at%203.06.55%20PM.png)
 
 
 
