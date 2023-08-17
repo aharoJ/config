@@ -1,7 +1,7 @@
 
 
 
-![](aharo24%202023-02-28%20at%2012.34.15%20AM.png)
+![](../../../z/aharo24%202023-02-28%20at%2012.34.15%20AM.png)
 
 ---
 ## BEM
@@ -12,16 +12,16 @@ Js:
 	BEM
 	Block Element Modifier
 
-![](aharo24%202023-03-02%20at%2012.40.41%20AM.png)
+![](../../../z/aharo24%202023-03-02%20at%2012.40.41%20AM.png)
 
 ---
 
 # NavBar
-![](aharo24%202023-02-28%20at%202.31.44%20AM.png)
+![](../../../z/aharo24%202023-02-28%20at%202.31.44%20AM.png)
 
-![](aharo24%202023-02-28%20at%202.33.43%20AM.png)
+![](../../../z/aharo24%202023-02-28%20at%202.33.43%20AM.png)
 
-![](aharo24%202023-02-28%20at%202.32.11%20AM.png)
+![](../../../z/aharo24%202023-02-28%20at%202.32.11%20AM.png)
 
 `<p> its a p-tag <p/> `
 
@@ -72,7 +72,7 @@ display: flex
 
 possible issues with margin design 
 
-![](aharo24%202023-03-02%20at%201.36.36%20AM.png)
+![](../../../z/aharo24%202023-03-02%20at%201.36.36%20AM.png)
 
 ```css
 margin: 0 0 0 1rem;
@@ -91,7 +91,7 @@ margin: 0     0     0     0;
 
 Using JSX and CSS with a unique identifer ( ID )
 
-![](aharo24%202023-03-02%20at%202.01.19%20AM.png)
+![](../../../z/aharo24%202023-03-02%20at%202.01.19%20AM.png)
 
 
 ```css
