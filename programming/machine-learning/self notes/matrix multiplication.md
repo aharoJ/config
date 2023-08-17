@@ -8,7 +8,7 @@ where X = [x_1, x_2, ..., x_(n - 1)] and W = [w_0, w_1,  w_2, ..., w_(n - 1)]
 W^T means W transposed
 ```
 
-![](../../../z/aharo24%202023-03-01%20at%202.43.00%20PM.png)
+![](aharo24%202023-03-01%20at%202.43.00%20PM.png)
 
 ``` gio
 X is the left one

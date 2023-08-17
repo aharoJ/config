@@ -12,8 +12,8 @@
 **help messages will print long af in github repo.**
 
 - #1 example
-	- ![](../../z/aharo_30.png)
-	- ![](../../z/aharo_32.png)
+	- ![](aharo_30.png)
+	- ![](aharo_32.png)
 .
 .
 .
@@ -21,10 +21,10 @@
 .
 .
 - #2 example 
-	- ****![](../../z/aharo_33.png)
+	- ****![](aharo_33.png)
 	- 
 	- 
-	- ![](../../z/aharo_34.png)
+	- ![](aharo_34.png)
 
 
 
@@ -40,7 +40,7 @@
 #### .DS_Store
 
 
-![](../../z/aharo_39.png)
+![](aharo_39.png)
 
 
 ``` git
@@ -65,7 +65,7 @@
 ## .Obsidian
 
 
-![](../../z/aharo_40.png)
+![](aharo_40.png)
 
 
 ``` git
@@ -87,8 +87,8 @@
 
 ### [Delete .DS_STORE files in current folder and all subfolders from command line on Mac](https://stackoverflow.com/questions/30483670/delete-ds-store-files-in-current-folder-and-all-subfolders-from-command-line-on)
 
-- ![](../../z/aharo_41.png)
-	- ![](../../z/aharo_44.png)
+- ![](aharo_41.png)
+	- ![](aharo_44.png)
 
 
 
@@ -99,10 +99,10 @@
 
 - unsure of why or how it works, but worked 
 	- 
-	- falgged error at the top![](../../z/aharo24_5.png)
+	- falgged error at the top![](aharo24_5.png)
 		- 
 		- 
-		- ![](../../z/aharo24_6.png)
+		- ![](aharo24_6.png)
 
 
 
@@ -110,8 +110,8 @@
 
 ## submodules in github
 
-- ![](../../z/aharo24_67.png)
-- ![](../../z/aharo24_68.png)
+- ![](aharo24_67.png)
+- ![](aharo24_68.png)
 
 
 
@@ -120,10 +120,10 @@
 
 # gitconfig
 
-- ![](../../z/aharo24_74.png)
+- ![](aharo24_74.png)
 - 
 - 
-- my stuff![](../../z/aharo24_75.png)
+- my stuff![](aharo24_75.png)
 
 
 
