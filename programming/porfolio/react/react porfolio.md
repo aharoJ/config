@@ -76,7 +76,7 @@ className='w-20 h-20 object-contain'/>
 ---
 #important/js/dynamic_template
 # template literals
-![](aharo24%202023-03-05%20at%202.26.30%20PM.png)
+![](../../../z/aharo24%202023-03-05%20at%202.26.30%20PM.png)
 WRONG
 ```js
 className={'${ active === link.title ? "text-white" : "text-secondary" }'}
@@ -244,14 +244,14 @@ This is similar to passing props to a React component, where you pass props as a
 ## Issue with canvas (balls)
 
 ### WRONG
-![](aharo24%202023-03-08%20at%207.23.32%20PM.png)
+![](../../../z/aharo24%202023-03-08%20at%207.23.32%20PM.png)
 ### Correct
-![](aharo24%202023-03-08%20at%207.24.15%20PM.png)
+![](../../../z/aharo24%202023-03-08%20at%207.24.15%20PM.png)
 
 
 # Size matters
 
-![](aharo24%202023-03-12%20at%202.53.41%20PM.png)
+![](../../../z/aharo24%202023-03-12%20at%202.53.41%20PM.png)
 
 
 issue on my code:
