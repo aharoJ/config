@@ -16,7 +16,7 @@ if __name__ == "__main__":
 print(sys.argv)
 ```
 
-![](../../z/aharo24_127.png)
+![](aharo24_127.png)
 
 
 ## argparse 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     print(args)
 ```
 
-![](../../z/aharo24%202023-02-05%20at%203.49.10%20PM.png)
+![](aharo24%202023-02-05%20at%203.49.10%20PM.png)
 
 ### add argument
 `nargs='+'` 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     fire.Fire(hello)
 ```
 
-![](../../z/aharo24%202023-02-05%20at%204.19.50%20PM.png)
+![](aharo24%202023-02-05%20at%204.19.50%20PM.png)
 
 
 

@@ -1,9 +1,8 @@
 # Ignore gen files
 tools/
-linkFixer.py
 dev/
-link_fixer.py
-zcode/
+link.py
+unlink.py
 
 # ignore ".trash" directory
 /.trash
