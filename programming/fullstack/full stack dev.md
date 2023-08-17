@@ -573,7 +573,7 @@ Non-Functional Requirement (NFR)
 ### The UML sequence diagram can be used for behavioral modeling.
 - Sequence diagrams can also be used to show how events cause transitions from object to object. Once events have been identified by examining a use case, the modeler creates a sequence diagram—a representation of how events cause flow from one object to another as a function of time. The sequence diagram is a shorthand version of the use case.
 
-![](aharo24%202023-03-16%20at%207.59.46%20PM.png)
+![](../../z/aharo24%202023-03-16%20at%207.59.46%20PM.png)
 
 
 
