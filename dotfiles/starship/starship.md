@@ -55,9 +55,9 @@ format = '[ ♥ $time ]($style)'
 
 - time
 	- 
-	- ![](../z/aharo24_10.png)
+	- ![](aharo24_10.png)
 - Color
-	- ![](../z/aharo24_12.png)
+	- ![](aharo24_12.png)
 
 
 **updated the format**
@@ -174,7 +174,7 @@ format = """
 
 [directory]
 style = "italic bg:#6F6A70 fg:#EEEEEE"
-- ![](../z/aharo24_112.png)
+- ![](aharo24_112.png)
 
 
 
@@ -182,10 +182,10 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 
 ## style
 
-- ![](../z/aharo24_113.png)
+- ![](aharo24_113.png)
 - 
 - 
-- ![](../z/aharo24_114.png)
+- ![](aharo24_114.png)
 
 
 
@@ -243,7 +243,7 @@ style = "italic bg:#6F6A70 fg:#EEEEEE"
 [docs](https://starship.rs/advanced-config/#enable-right-prompt)
 
 
-- ![](../z/aharo24_115.png)
+- ![](aharo24_115.png)
 
 
 

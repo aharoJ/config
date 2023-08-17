@@ -1,5 +1,5 @@
 
-![](../../../z/aharo24%202023-03-07%20at%2012.29.42%20AM.png)
+![](aharo24%202023-03-07%20at%2012.29.42%20AM.png)
 
 ``` gio
 why is it better to have false positives?
