@@ -13,13 +13,13 @@
 
 ## workbench
 ... choose operating system
-![](aharo24_122.png)
+![](../../../z/aharo24_122.png)
 #### [workbench](https://dev.mysql.com/downloads/workbench/)
 
 ## mysql server
 ... choose arm or intel (mac)
 ... choose distro (linux)
-![](aharo24_121.png)
+![](../../../z/aharo24_121.png)
 
 #### [mysql community server](https://dev.mysql.com/downloads/mysql/)
 
