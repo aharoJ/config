@@ -11,13 +11,13 @@
 - match the name of the default Font name given by OS not by your preferred name
 	- 
 	-  correct:
-		- ![](../z/aharo_179_1.png)
+		- ![](aharo_179_1.png)
 	- wrong:
-		- ![](../z/aharo_179_2.png)
+		- ![](aharo_179_2.png)
 - 
 - 
 - correct:
-- ![](../z/aharo_179_3.png)
+- ![](aharo_179_3.png)
 
 
 
@@ -30,7 +30,7 @@
 - fix
 	- 
 	- 
-	- ![](../z/aharo_181.png)
+	- ![](aharo_181.png)
 
 
 
@@ -44,8 +44,8 @@
 whenever you get error just do `alacritty` and a new check the logs of the new window
 
 - error
-	- ![](../z/aharo24.png)
-	- ![](../z/aharo24_1.png)
+	- ![](aharo24.png)
+	- ![](aharo24_1.png)
 
 
 
@@ -68,7 +68,7 @@ whenever you get error just do `alacritty` and a new check the logs of the new w
 
 - ie...
 	- 
-	- ![](../z/aharo24_11.png)
+	- ![](aharo24_11.png)
 
 
 

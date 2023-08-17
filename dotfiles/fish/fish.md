@@ -8,7 +8,7 @@
 
 # hack fonts  -  (need_updating)
 
-- ![](../z/aharo_179.png)
+- ![](aharo_179.png)
 
 
 
@@ -20,7 +20,7 @@
 
 
 ## [awsn.fish](https://github.com/jorgebucaran/awsm.fish)
-![](../z/aharo24%202023-01-13%20at%201.41.27%20AM.png)
+![](aharo24%202023-01-13%20at%201.41.27%20AM.png)
 
 ### just a list, I dont use most of them...
 
