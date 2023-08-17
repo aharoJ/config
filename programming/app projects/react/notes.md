@@ -1,16 +1,16 @@
 ## components
 
 nav-bar
-![](../../../z/aharo24%202023-02-24%20at%2011.29.22%20PM.png)
+![](aharo24%202023-02-24%20at%2011.29.22%20PM.png)
 
 profile
-![](../../../z/aharo24%202023-02-24%20at%2011.29.44%20PM.png)
+![](aharo24%202023-02-24%20at%2011.29.44%20PM.png)
 
 trends
-![](../../../z/aharo24%202023-02-24%20at%2011.30.08%20PM.png)
+![](aharo24%202023-02-24%20at%2011.30.08%20PM.png)
 
 feed
-![](../../../z/aharo24%202023-02-24%20at%2011.30.28%20PM.png)
+![](aharo24%202023-02-24%20at%2011.30.28%20PM.png)
 
 feed:
 	tweet component
@@ -29,7 +29,7 @@ class Tweet
 
 ```
 
-![](../../../z/aharo24%202023-02-25%20at%2012.02.21%20AM.png)
+![](aharo24%202023-02-25%20at%2012.02.21%20AM.png)
 
 ### react
 react is better because of something called DOM:
@@ -70,7 +70,7 @@ npm start
 
 
 ### older version in CLI
-![](../../../z/aharo24%202023-02-25%20at%202.21.45%20AM.png)
+![](aharo24%202023-02-25%20at%202.21.45%20AM.png)
 
 
 
@@ -93,7 +93,7 @@ The `<span>` element can be used in various ways, for example:
 ```
 
 
-![](../../../z/aharo24%202023-02-25%20at%2012.25.09%20PM.png)
+![](aharo24%202023-02-25%20at%2012.25.09%20PM.png)
 
 In the code  provided, the outermost `<span>` element is used to group together a set of elements that need to be displayed as a single entity, likely for layout or styling purposes.
 
@@ -105,10 +105,10 @@ Within this `<span>` element, there is another nested `<span>` element, which is
 
 ### const
 
-![](../../../z/aharo24%202023-02-25%20at%2010.54.48%20PM.png)
+![](aharo24%202023-02-25%20at%2010.54.48%20PM.png)
 
 
-![](../../../z/aharo24%202023-02-25%20at%2010.55.22%20PM.png)
+![](aharo24%202023-02-25%20at%2010.55.22%20PM.png)
 
 
 
@@ -181,7 +181,7 @@ user.setActive(false);
 
 ### JSX
 
-![](../../../z/aharo24%202023-02-26%20at%201.00.46%20AM.png)
+![](aharo24%202023-02-26%20at%201.00.46%20AM.png)
 
 
 ### bootstrap icons
@@ -201,7 +201,7 @@ npm install react-bootstrap-icons --save
 
 ```
 
-![](../../../z/aharo24%202023-02-26%20at%201.39.00%20AM.png)
+![](aharo24%202023-02-26%20at%201.39.00%20AM.png)
 
 ### react-multi-carousel
 
@@ -227,7 +227,7 @@ npm i react-on-screen
 
 ### .css and .js  (hand to hand code)
 
-![](../../../z/aharo24%202023-02-26%20at%205.04.28%20PM.png)
+![](aharo24%202023-02-26%20at%205.04.28%20PM.png)
 
 
 
