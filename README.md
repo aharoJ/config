@@ -91,13 +91,14 @@
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> backend </a> </h2>
 
-- react
-- nextJs
+- spring-boot
+- inbox-application
+- greaterbooks-applications
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> hehe </a> </h2>
+<h2 align="center"> <a href=""> frontend </a> </h2>
 
-- react
+- chatGPT3 (react)
 - nextJs
 
 </td><td valign="top" width="35%">
