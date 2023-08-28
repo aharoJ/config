@@ -100,7 +100,7 @@
 - react
 - nextJs
 
-</td><td valign="top" width="33%">
+</td><td valign="top" width="35%">
 <h2 align="center"> <a href=""> fullstack </a> </h2>
 
 - apple redesign
