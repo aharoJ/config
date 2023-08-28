@@ -79,13 +79,13 @@
 - nextJs
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> fullstack </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/fullstack"> fullstack </a> </h2>
 
 - apple redesign
 - reverse engineering twitter
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> machine learning  </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/machine-learning"> machine learning  </h2>
 
 - linear regression
 - matplot
