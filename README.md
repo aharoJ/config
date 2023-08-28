@@ -94,7 +94,7 @@
 - seaborn
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> portfolio </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/porfolio"> portfolio </a> </h2>
 
 - nextJs
 - react
