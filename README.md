@@ -82,12 +82,6 @@
 - nextJs
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> fullstack </a> </h2>
-
-- react
-- nextJs
-
-</td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> databases </a> </h2>
 
 - cassandraDB
@@ -95,7 +89,13 @@
 - postgresql
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> fullstack </a> </h2>
+<h2 align="center"> <a href=""> backend </a> </h2>
+
+- react
+- nextJs
+
+</td><td valign="top" width="33%">
+<h2 align="center"> <a href=""> hehe </a> </h2>
 
 - react
 - nextJs
@@ -103,8 +103,8 @@
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> fullstack </a> </h2>
 
-- react
-- nextJs
+- apple redesign
+- reverse engineering twitter
 </tr></tr></table> 
 <!-- END -->
 
