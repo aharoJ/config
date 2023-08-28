@@ -104,6 +104,13 @@
 - react
 - nextJs
 
+- <!-- MID -->
+</td><td valign="top" width="33%">
+<h2 align="center"> <a href=""> fullstack </a> </h2>
+
+- react
+- nextJs
+
 </tr></tr></table> 
 <!-- END -->
 
