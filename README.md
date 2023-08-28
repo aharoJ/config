@@ -36,12 +36,11 @@
 - hehe
 
 <p align="center">
-<a href="https://github.com/aharoJ/opensource">
-  <img style="display: block; margin: 0 auto;" 
-  width="250"
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=opensource&theme=onedark" />
+<a href="">
 </a>
 </p>
+- hehe
+- hehe
 
 </tr></tr></table> 
 <!-- END -->
