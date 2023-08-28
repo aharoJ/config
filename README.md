@@ -23,6 +23,7 @@
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> dotfiles </h2>
+
 - alacritty
 - fish
 - git
@@ -37,6 +38,7 @@
 <!-- MID -->
 </td><td valign="top" width="50%">
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
+
 - alacritty
 - vivaldi
 - yabai && skhd
