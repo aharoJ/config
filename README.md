@@ -56,62 +56,6 @@
 
 
 
-
-
-
-
-
-
-
-<!-- START -->
-<table><tr><td valign="top" width="33%">
-<h2 align="center"> <a href=""> machine learning  </h2>
-
-- linear regression
-- matplot
-- numpy
-- pandas
-- Project
-- seaborn
-- self notes
-
-</td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> portfolio </a> </h2>
-
-- react
-- nextJs
-
-</td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> databases </a> </h2>
-
-- cassandraDB
-- mysql
-- postgresql
-
-</td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> backend </a> </h2>
-
-- spring-boot
-- inbox-application
-- greaterbooks-applications
-
-</td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> frontend </a> </h2>
-
-- chatGPT3 (react)
-- nextJs
-
-</td><td valign="top" width="35%">
-<h2 align="center"> <a href=""> fullstack </a> </h2>
-
-- apple redesign
-- reverse engineering twitter
-</tr></tr></table> 
-<!-- END -->
-
-
-
-
 <!-- START -->
 <table><tr><td valign="top" width="33%">
 <h2 align="center"> <a href=""> backend </a> </h2>
