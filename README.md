@@ -75,22 +75,18 @@
 - seaborn
 - self notes
 
-<!-- MID -->
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> portfolio </a> </h2>
 
 - react
 - nextJs
 
-
-<!-- MID -->
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> fullstack </a> </h2>
 
 - react
 - nextJs
 
-<!-- MID -->
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> databases </a> </h2>
 
@@ -98,20 +94,17 @@
 - mysql
 - postgresql
 
-- <!-- MID -->
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> fullstack </a> </h2>
 
 - react
 - nextJs
 
-- <!-- MID -->
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> fullstack </a> </h2>
 
 - react
 - nextJs
-
 </tr></tr></table> 
 <!-- END -->
 
