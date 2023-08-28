@@ -1,4 +1,12 @@
-# under dev...
+
+
+### switching panes
+opt + [arrows left | up | down | right]
+
+
+
+
+### under dev...
 - 
 - 
 - 
@@ -22,11 +30,6 @@ brew install awk
 brew install perl
 brew install gnu-sed
 ```
-
-
-
-
-
 
 
 
