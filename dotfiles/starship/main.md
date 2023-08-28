@@ -1,9 +1,7 @@
-# I will come back and refresh files... ik ik its messy
+#### you need hacked fonts in order to view this file correctly
 
 
 ## starship
-#important/terminal_prompt
-
 - [Apple Logo](https://github.com/jasonlong/dotfiles/blob/main/starship/starship.toml)
 - [cool line ](https://github.com/AshutoshDash1999/custom-starship.toml-file)
 - [I really like, huge docs](https://github.com/Ruturajn/Dotfiles/blob/main/starship.toml)
@@ -22,7 +20,6 @@ format = """
 [└─>](bold green) """
 ```
 ---
-
 
 
 ### directory
