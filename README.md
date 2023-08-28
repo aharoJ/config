@@ -28,7 +28,7 @@
 
 <!-- MID -->
 </td><td valign="top" width="80%">
-<h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
+<h2 align="center"> <a> contributions </a> </h2>
 
 - [alacritty](https://github.com/aharoJ/dot-alacritty)
   - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability. 
@@ -55,7 +55,7 @@
 
 
 
-<h2 align="center"><a href=> Areas of Work </a> </h2>
+<h2 align="center"><a> Areas of Work </a> </h2>
 
 <!-- START -->
 <table><tr><td valign="top" width="33%">
