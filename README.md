@@ -14,11 +14,6 @@
 </div>  
 <!-- END -->
 
-<h1 align="center"> <a href=https://aharoj.io> Visit Portfolio </a> </h1>
-
-
-<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/dotfiles"> my dot files </a> </h2>
-
 
 <!-- START -->
 <table><tr><td valign="top" width="20%">
@@ -52,39 +47,6 @@
 
 </tr></tr></table> 
 <!-- END -->
-
-
-
-
-- I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
-
-
-
-
-
-
----
-<h3 align="center"> <a href="https://github.com/aharoJ/aharoJ/universal-markdown-linker"> linksage ⏳ </a> </h3>
-
-- As the [founder](https://www.linkedin.com/in/aharoJ/) of Universal Markdown Linker, I have developed and maintained an open-source Python script that streamlines the process of organizing markdown files. 
-
-- This tool ensures that all links remain functional, even if the file structure of your repository changes. With the Universal Markdown Linker, you no longer have to manually search for links, saving you time and effort.
-
-<p align="center">
-<a href="https://github.com/aharoJ/universal-markdown-linker">
-  <img style="display: block; margin: 0 auto;" width="250"
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=universal-markdown-linker&theme=onedark" />
-</a>
-</p>
-
-
-
---- 
-  <h3 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/dotfiles"> slowly merging all dotfiles/configs </a> </h3>
-</tr></tr></table> 
-<!-- END -->
-
-
 
 
 
