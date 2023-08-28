@@ -21,7 +21,7 @@
 
 
 <!-- START -->
-<table><tr><td valign="top" width="25%">
+<table><tr><td valign="top" width="20%">
 <h2 align="center"> advance </h2>
 
 - [yabai](https://github.com/aharoJ/yabai-skhd-config)
@@ -30,7 +30,7 @@
 
 
 <!-- MID -->
-</td><td valign="top" width="75%">
+</td><td valign="top" width="80%">
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
 
 - [alacritty](https://github.com/aharoJ/dot-alacritty)
