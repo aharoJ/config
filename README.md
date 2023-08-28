@@ -23,20 +23,25 @@
 <!-- START -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> dotfiles </h2>
-
-- hehe
-- hehe
+- alacritty
+- fish
+- git
+- obsidian
+- starship
+- tmux
+- vivaldi
+- vscode
+- yabai && skhd
 
 
 <!-- MID -->
 </td><td valign="top" width="50%">
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
-
-- hehe
-- hehe
-
-
-
+- alacritty
+- vivaldi
+- yabai && skhd
+- starship
+- tmux
 </tr></tr></table> 
 <!-- END -->
 
