@@ -15,7 +15,7 @@
 <!-- END -->
 
 
-<h2 align="center"><a href=""> dotfiles </a> </h2>
+<h2 align="center"><a href=""> DOTFILES </a> </h2>
 <!-- START -->
 <table><tr><td valign="top" width="20%">
 <h2 align="center"> advance </h2>
