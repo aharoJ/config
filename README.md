@@ -22,7 +22,7 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="50%">
-<h2 align="center"> about me </h2>
+<h2 align="center"> dotfiles </h2>
 
 - hehe
 - hehe
@@ -30,17 +30,12 @@
 
 <!-- MID -->
 </td><td valign="top" width="50%">
-<h2 align="center"> <a href="https://aharoj.io"> opensource advocate </a> </h2>
+<h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
 
 - hehe
 - hehe
 
-<p align="center">
-<a href="">
-</a>
-</p>
-- hehe
-- hehe
+
 
 </tr></tr></table> 
 <!-- END -->
