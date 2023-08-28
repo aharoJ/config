@@ -21,7 +21,7 @@
 
 
 <!-- START -->
-<table><tr><td valign="top" width="20%">
+<table><tr><td valign="top" width="30%">
 <h2 align="center"> dotfiles </h2>
 
 - alacritty
@@ -36,7 +36,7 @@
 
 
 <!-- MID -->
-</td><td valign="top" width="80%">
+</td><td valign="top" width="70%">
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
 
 - alacritty
