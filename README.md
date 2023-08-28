@@ -40,9 +40,11 @@
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
 
 - alacritty
+  - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability. 
 - vivaldi
 - yabai && skhd
 - starship
+  - I have put in substantial effort into creating a unique and visually appealing starship configuration. 
 - tmux
 </tr></tr></table> 
 <!-- END -->
