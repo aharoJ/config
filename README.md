@@ -90,9 +90,7 @@
 - matplot
 - numpy
 - pandas
-- Project
 - seaborn
-- self notes
 
 </td><td valign="top" width="33%">
 <h2 align="center"> <a href=""> portfolio </a> </h2>
