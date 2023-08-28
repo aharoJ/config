@@ -17,61 +17,25 @@
 <h1 align="center"> <a href=https://aharoj.io> Visit Portfolio </a> </h1>
 
 
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/dotfiles"> my dot files </a> </h2>
 
+- [**Alacritty**](https://github.com/aharoJ/dot-alacritty): I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
+  [![Alacritty](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-alacritty&theme=onedark)](https://github.com/aharoJ/dot-alacritty)
 
+- [**Starship**](https://github.com/aharoJ/dot-starship): I have put in substantial effort into creating a unique and visually appealing Starship configuration. My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
 
+  [![Starship](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-starship&theme=onedark)](https://github.com/aharoJ/dot-starship)
 
+- [**Vivaldi**](https://github.com/aharoJ/dot-vivaldi): My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
 
-<!-- START -->
-<table><tr><td valign="top" width="50%">
-<h2 align="center"> about me </h2>
+  [![Vivaldi](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-vivaldi&theme=onedark)](https://github.com/aharoJ/dot-vivaldi)
 
-physical activities: 
-  - gym, soccer, boxing, skateboarding
+- [**Universal Markdown Linker**](https://github.com/aharoJ/universal-markdown-linker): As the founder of Universal Markdown Linker, I have developed and maintained an open-source Python script that streamlines the process of organizing markdown files. This tool ensures that all links remain functional, even if the file structure of your repository changes. With the Universal Markdown Linker, you no longer have to manually search for links, saving you time and effort.
 
-anime enthusiast:
-  - vinland, fma, aot, demon slayer, psycho-pass
+  [![Universal Markdown Linker](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=universal-markdown-linker&theme=onedark)](https://github.com/aharoJ/universal-markdown-linker)
 
-video game enthusiast: 
-  - regional pro player for FIFA: 17 | 19 | 21
-  - top 13 % in COD, top 5 % in warzone, top 1 % in pubg
-  - first person shooter kill-to-death ratio 2.43
-
-editor:
-  - photoshop, sony vegas pro, elgato, obs, youtube
-
-
-<!-- MID -->
-</td><td valign="top" width="50%">
-<h2 align="center"> <a href="https://aharoj.io"> opensource advocate </a> </h2>
-
-- An open source advocate, committed to sharing my knowledge and expertise with the community. 
-
-- My open source materials, including documentation, code, projects, and resources, cover a range of topics. 
-
-- Also includes machine learning, deep learning, hacking, multi-modular use, frameworks, data structures, algorithms, and more. 
-
-- I am excited to contribute to the growth of the open source movement and help others learn and grow in their own careers.  
-
-<p align="center">
-<a href="https://github.com/aharoJ/opensource">
-  <img style="display: block; margin: 0 auto;" 
-  width="250"
-  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=opensource&theme=onedark" />
-</a>
-</p>
-
-</tr></tr></table> 
-<!-- END -->
-
-
-
-
-
-
-
-
+- **Slowly merging all dotfiles/configs**: Work in progress.
 
 
 
@@ -81,6 +45,8 @@ editor:
 <!-- START  -->
 <table><tr><td valign="top" width="50%">
 <h2 align="center"> <a href="https://aharoj.io/projects"> active contributions </a> </h2>
+
+
 
 
 <h3 align="center"> <a href="https://github.com/aharoJ/dot-alacritty"> alacritty ✅ </a> </h3>
