@@ -39,7 +39,7 @@
 </td><td valign="top" width="75%">
 <h2 align="center"> <a href="https://aharoj.io"> contributions </a> </h2>
 
-- alacritty
+- [alacritty](https://github.com/aharoJ/dot-alacritty)
   - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability. 
 - vivaldi
 - yabai && skhd
