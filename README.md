@@ -59,21 +59,21 @@
 
 <!-- START -->
 <table><tr><td valign="top" width="33%">
-<h2 align="center"> <a href=""> backend </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/backend"> backend </a> </h2>
 
 - greaterbooks-applications
 - inbox-application
 - spring-boot
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> databases </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/databases"> databases </a> </h2>
 
 - cassandraDB
 - mysql
 - postgresql
 
 </td><td valign="top" width="33%">
-<h2 align="center"> <a href=""> frontend </a> </h2>
+<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/frontend"> frontend </a> </h2>
 
 - chatGPT3 (react)
 - nextJs
