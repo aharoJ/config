@@ -16,6 +16,7 @@
 
 
 <h2 align="center"><a href=""> DOTFILES </a> </h2>
+
 <!-- START -->
 <table><tr><td valign="top" width="20%">
 <h2 align="center"> advance </h2>
@@ -57,25 +58,41 @@
 
 
 
+
+
+
+
+
 <!-- START -->
-<table><tr><td valign="top" >
-<h2 align="center"><a href="https://github.com/aharoJ/opensource/tree/main/programming/machine-learning"> machine learning </a> </h2>
+<table><tr><td valign="top" width="33%">
+<h2 align="center"> <a href=""> machine learning  </h2>
 
 - linear regression
 - matplot
 - numpy
 - pandas
 - Project
-- ReadME.md
 - seaborn
 - self notes
 
-</tr></table> 
+<!-- MID -->
+</td><td valign="top" width="33%">
+<h2 align="center"> <a href=""> portfolio </a> </h2>
+
+- react
+- nextJs
+
+
+<!-- MID -->
+</td><td valign="top" width="33%">
+<h2 align="center"> <a href=""> fullstack </a> </h2>
+
+- react
+- nextJs
+
+
+</tr></tr></table> 
 <!-- END -->
-
-
-
-
 
 
 
