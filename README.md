@@ -61,17 +61,14 @@
 <table><tr><td valign="top" >
 <h2 align="center"><a href="https://github.com/aharoJ/opensource/tree/main/programming/machine-learning"> machine learning </a> </h2>
 
-<h4 align="center"> Over 8,000 lines of markdown notes/code/docs/sources on machine learning, covering various topics including supervised and unsupervised learning, and more... </h4>
-
-
-<h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/machine-learning">Notes</a> </h2>
-
-
-<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook"> Code:jupyternotebook</a> </h2>
-
-
-<h2 align="center"> <a href="https://github.com/aharoJ/machine-learning-jupyternotebook/blob/main/Projects/Capstone.ipynb"> capstone project  </a> </h2>
-
+- linear regression
+- matplot
+- numpy
+- pandas
+- Project
+- ReadME.md
+- seaborn
+- self notes
 
 </tr></table> 
 <!-- END -->
