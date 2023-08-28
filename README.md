@@ -24,9 +24,9 @@
 <table><tr><td valign="top" width="25%">
 <h2 align="center"> advance </h2>
 
-- yabai
-- skhd
-- karabiner
+- [yabai](https://github.com/aharoJ/yabai-skhd-config)
+- [skhd](https://github.com/aharoJ/yabai-skhd-config)
+- [karabiner]()
 
 
 <!-- MID -->
