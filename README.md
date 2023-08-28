@@ -19,23 +19,32 @@
 
 <h2 align="center"> <a href="https://github.com/aharoJ/opensource/tree/main/dotfiles"> my dot files </a> </h2>
 
-- [**Alacritty**](https://github.com/aharoJ/dot-alacritty): I have devoted numerous hours to optimizing my Alacritty configuration for maximum speed and efficiency. Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
-  [![Alacritty](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-alacritty&theme=onedark)](https://github.com/aharoJ/dot-alacritty)
+<!-- START -->
+<table><tr><td valign="top" width="50%">
+<h2 align="center"> about me </h2>
 
-- [**Starship**](https://github.com/aharoJ/dot-starship): I have put in substantial effort into creating a unique and visually appealing Starship configuration. My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
+- hehe
+- hehe
 
-  [![Starship](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-starship&theme=onedark)](https://github.com/aharoJ/dot-starship)
 
-- [**Vivaldi**](https://github.com/aharoJ/dot-vivaldi): My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. I have also taken the time to carefully choose color combinations that will not strain your eyes during long coding or document editing sessions.
+<!-- MID -->
+</td><td valign="top" width="50%">
+<h2 align="center"> <a href="https://aharoj.io"> opensource advocate </a> </h2>
 
-  [![Vivaldi](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=dot-vivaldi&theme=onedark)](https://github.com/aharoJ/dot-vivaldi)
+- hehe
+- hehe
 
-- [**Universal Markdown Linker**](https://github.com/aharoJ/universal-markdown-linker): As the founder of Universal Markdown Linker, I have developed and maintained an open-source Python script that streamlines the process of organizing markdown files. This tool ensures that all links remain functional, even if the file structure of your repository changes. With the Universal Markdown Linker, you no longer have to manually search for links, saving you time and effort.
+<p align="center">
+<a href="https://github.com/aharoJ/opensource">
+  <img style="display: block; margin: 0 auto;" 
+  width="250"
+  src="https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=opensource&theme=onedark" />
+</a>
+</p>
 
-  [![Universal Markdown Linker](https://github-readme-stats.vercel.app/api/pin/?username=aharoJ&repo=universal-markdown-linker&theme=onedark)](https://github.com/aharoJ/universal-markdown-linker)
-
-- **Slowly merging all dotfiles/configs**: Work in progress.
+</tr></tr></table> 
+<!-- END -->
 
 
 
