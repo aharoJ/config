@@ -3,7 +3,8 @@
 ### switching panes
 opt + [arrows left | up | down | right]
 
-
+### scroll with vim 
+> 	You can also enable scroll mode by pressing Ctrl + B, then the `[`
 
 
 ### under dev...
