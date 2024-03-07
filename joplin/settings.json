@@ -1,0 +1,8 @@
+{
+	"$schema": "https://joplinapp.org/schema/settings.json",
+	"locale": "en_GB",
+	"api.token": "96f667825441f0907ed24a24039faebd46183f9e1f8d4e5938f63f02483393166ab002b38b96ce78bdca9deb785741629f9e0f23dd85aeea95f8d4ce038983d5",
+	"editor": "nvim",
+	"sync.2.path": "/Users/aharo/desk/playground/j-cli",
+	"sync.target": 2
+}

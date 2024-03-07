@@ -1,0 +1,209 @@
+
+
+
+# Default statusbar color
+set-option -g status-style bg=colour237,fg=default # bg=bg1, fg=fg1
+
+# Default window title colors
+set-window-option -g window-status-style bg=colour214,fg=colour237 # bg=yellow, fg=bg1
+
+# Default window with an activity alert
+set-window-option -g window-status-activity-style bg=colour237,fg=colour248 # bg=bg1, fg=fg3
+
+# Active window title colors
+set-window-option -g window-status-current-style bg=default,fg=default # fg=bg1
+
+# Set active pane border color
+set-option -g pane-active-border-style fg=colour214
+
+# Set inactive pane border color
+set-option -g pane-border-style fg=colour239
+
+# Message info
+set-option -g message-style bg=colour239,fg=colour223 # bg=bg2, fg=fg1
+
+# Writing commands inactive
+set-option -g message-command-style bg=colour239,fg=colour223 # bg=fg3, fg=bg1
+
+# Pane number display
+set-option -g display-panes-active-colour colour1 #fg2
+set-option -g display-panes-colour colour237 #bg1
+
+# Clock
+set-window-option -g clock-mode-colour colour109 #blue
+
+# Bell
+set-window-option -g window-status-bell-style bg=colour167,fg=colour235 # bg=red, fg=bg
+
+
+
+
+set-option -g status-left "\
+#[fg=default, bg=colour241]#{?client_prefix,#[bg=colour167],} ❐ #S \
+#[fg=colour241, bg=colour237]#{?client_prefix,#[fg=colour167],}#{?window_zoomed_flag, 🔍,}"
+
+#set -ga status-left " #[fg=white,nobold]#(gitmux -cfg $HOME/.config/tmux/gitmux.conf)"
+set -g status-position top       # macOS / darwin style
+
+set-option -g status-right "\
+#[fg=colour214, bg=colour237] \
+#[fg=colour237, bg=colour214] #(~/.config/tmux/scripts/music.sh) \
+#[fg=colour223, bg=colour237] #(~/.config/tmux/scripts/uptime.sh) \
+#[fg=colour246, bg=colour237]  %b %d '%y\
+#[fg=colour109]  %H:%M \
+#[fg=colour248, bg=colour239]\ 
+"
+
+#[fg=colour214, bg=default] #{pane_current_path}\
+
+# ACTIVE
+set-window-option -g window-status-current-format "\
+#[fg=magenta, bg=default]\
+#[fg=magenta, bg=default] #I\
+#[fg=magenta, bg=default, bold] #W  \
+"
+
+
+# NON-ACTIVE
+set-window-option -g window-status-format "\
+#[fg=colour237,bg=colour239,noitalics]\
+#[fg=colour223,bg=colour239] #I \
+#[fg=colour223, bg=colour239] #W \
+#[fg=colour239, bg=colour237]"
+
+# Set the history limit so we get lots of scrollback.
+setw -g history-limit 50000000
+
+
+####################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+set-option -g default-terminal 'screen-256color'
+set-option -g terminal-overrides ',xterm-256color:RGB'
+set-option -g focus-events on # TODO: learn how this works
+
+
+set -g base-index 1          # start indexing windows at 1 instead of 0
+set -g detach-on-destroy off # don't exit from tmux when closing a session
+set -g escape-time 0         # zero-out escape time delay
+set -g history-limit 1000000 # increase history size (from 2,000)
+set -g mouse on              # enable mouse support
+set -g renumber-windows on   # renumber all windows when any window is closed
+set -g set-clipboard on      # use system clipboard
+set -g status-interval 3     # update the status bar every 3 seconds
+
+
+
+
+######################## Pane Stuff ########################
+unbind '"'
+bind-key - split-window -h
+unbind '{'
+bind-key _ split-window -v
+bind '-' split-window -c '#{pane_current_path}' -h
+bind '_' split-window -c '#{pane_current_path}'
+bind c new-window -c '#{pane_current_path}'
+###############################################################
+
+
+bind g new-window -n '' lazygit
+bind G new-window -n '' gh dash
+
+
+
+
+# vim style pane switching
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+
+# Rename session
+bind-key . command-prompt -p "Rename session to:" "rename-session '%%'"
+
+# Bind prefix + \ for previous session
+#bind-key \ switch-client -p
+
+# Bind prefix + | for next session
+#bind-key | switch-client -n
+
+
+
+# refresh/ reload new changes 
+unbind r
+bind r source-file ~/.config/tmux/tmux.conf
+
+bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt (cmd+w)
+
+
+bind-key e send-keys "tmux capture-pane -p -S - | nvim -c 'set buftype=nofile' +" Enter
+
+
+
+
+set -g @plugin 'fcsonline/tmux-thumbs'
+set -g @plugin 'joshmedeski/t-smart-tmux-session-manager'
+set -g @plugin 'joshmedeski/tmux-fzf-url'
+set -g @plugin 'joshmedeski/tmux-nerd-font-window-name'
+set -g @plugin 'mskelton/tmux-last'
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-prefix-highlight'
+
+
+# set-window-option -g window-status-current-format "\
+# #[fg=magenta, bg=default] #I* \
+# #[fg=magenta, bg=default, bold] #W \
+# #[fg=magenta, bg=default] #(echo #{pane_current_path}
+# "
+
+
+
+
+run "~/.config/tmux/plugins/tpm/tpm" # always at end of file

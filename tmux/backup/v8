@@ -1,0 +1,130 @@
+
+
+#################################     CUSTOM BAR      #####################################################
+
+set-option -g status-style bg=default,fg=default                             # Default statusbar color
+set -g status-position top                                                   # macOS / darwin style
+set-window-option -g window-status-activity-style bg=colour237,fg=colour248  # Default window with an activity alert
+set-window-option -g clock-mode-colour colour109                             # Clock
+set-window-option -g window-status-bell-style bg=colour167,fg=colour235      # Bell
+set-option -g message-style bg=colour239,fg=colour223                        # Message info
+set-option -g message-command-style bg=colour239,fg=colour223                # Writing commands inactive
+set-option -g allow-rename on                                                # idk if this works?
+setw -g history-limit 50000000                                               # Set the history limit so we get lots of scrollback.
+
+# Pane number display
+set-option -g display-panes-active-colour colour1
+set-option -g display-panes-colour color124 
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  TABS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+#                             ACTIVE 
+set-window-option -g window-status-current-style bg=default,fg=red
+#                           NON-ACTIVE
+set-window-option -g window-status-style bg=default,fg=#7d7db2
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  TABS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PANES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+#                             ACTIVE 
+set-option -g pane-active-border-style fg=colour214
+#                           NON-ACTIVE
+set-option -g pane-border-style fg=colour239
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PANES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       BANNER LEFT         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+set-option -g status-left "\
+#[fg=default, bg=default]#{?client_prefix,#[bg=colour167],} ❐ #S \
+#[fg=default, bg=default]#{?client_prefix,#[fg=colour167],}#{?window_zoomed_flag, 🔍,}"
+
+set -ga status-left " #[fg=red,bg=black,nobold]#(gitmux -cfg $HOME/.config/tmux/gitmux.conf)"
+
+# ACTIVE
+set-window-option -g window-status-current-format "\
+#[fg=default, bg=default]  (#I) #{=-25:pane_current_path} \
+"
+
+# NON-ACTIVE
+set-window-option -g window-status-format "\
+#[fg=#7d7db2, bg=default]  \
+|#I| #{b:pane_current_path} \
+"
+#[fg=default, bg=default]  #{=-20:pane_current_path}  \
+#[fg=default, bg=default]  #I #{b:pane_current_path} \
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       BANNER LEFT         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       BANNER RIGHT       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+set-option -g status-right "\
+#[fg=#7d7db2] \
+#[fg=red]%I:%M %p | %B %d, %Y\
+#[fg=#7d7db2] \
+#[fg=#7d7db2, bg=default] #(~/.config/tmux/scripts/music.sh)\
+"
+#[fg=default, bg=default]  #(~/.config/tmux/scripts/uptime.sh) \
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       BANNER RIGHT       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+#########################################################################################################
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  DEFAULTS CUZ IDK  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+set-option -g default-terminal 'screen-256color'
+set-option -g terminal-overrides ',xterm-256color:RGB'
+set-option -g focus-events on # TODO: learn how this works
+set -g base-index 1          # start indexing windows at 1 instead of 0
+set -g detach-on-destroy off # don't exit from tmux when closing a session
+set -g escape-time 0         # zero-out escape time delay
+set -g history-limit 1000000 # increase history size (from 2,000)
+set -g mouse on              # enable mouse support
+set -g renumber-windows on   # renumber all windows when any window is closed
+set -g set-clipboard on      # use system clipboard
+set -g status-interval 3     # update the status bar every 3 seconds
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  DEFAULTS CUZ IDK  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PANES STUFF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+unbind '"'
+bind-key - split-window -h
+unbind '{'
+bind-key _ split-window -v
+bind '-' split-window -c '#{pane_current_path}' -h
+bind '_' split-window -c '#{pane_current_path}'
+bind c new-window -c '#{pane_current_path}'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PANES STUFF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+bind g new-window -n '' lazygit
+bind G new-window -n '' gh dash
+
+# vim style pane switching
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+
+# Rename session
+bind-key . command-prompt -p "Rename session to:" "rename-session '%%'"
+
+# refresh/ reload new changes 
+unbind r
+bind r source-file ~/.config/tmux/tmux.conf
+
+bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt (cmd+w)
+
+bind-key e send-keys "tmux capture-pane -p -S - | nvim -c 'set buftype=nofile' +" Enter
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PLUGINS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+set -g @plugin 'fcsonline/tmux-thumbs'
+set -g @plugin 'joshmedeski/t-smart-tmux-session-manager'
+set -g @plugin 'joshmedeski/tmux-fzf-url'
+set -g @plugin 'joshmedeski/tmux-nerd-font-window-name'
+set -g @plugin 'mskelton/tmux-last'
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-prefix-highlight'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  PLUGINS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+run "~/.config/tmux/plugins/tpm/tpm" # always at end of file
