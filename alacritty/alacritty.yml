@@ -22,9 +22,11 @@ window:
 
 font:
   normal:
-    #family: "DroidSansM Nerd Font"
-    family: "FiraCode Nerd Font Mono"
-    style: Medium
+    family: "DroidSansM Nerd Font"
+    # family: "FiraCode Nerd Font Mono"
+    # style: Medium
+    style: Regular
+
   italic:
     family: "FiraCode Nerd Font Mono"
     style: Medium Italic
@@ -34,7 +36,7 @@ font:
   bold_italic:
     family: "FiraCode Nerd Font Mono"
     style: Heavy Italic
-  size: 23
+  size: 14
 
 # NOTE: helpful hex codes
 # \x1b = escape (useful for vim-related keybindings)
@@ -46,9 +48,9 @@ key_bindings:
 #  - { key: VerticalBar, mods: Command|Shift, chars: "\x02%" } # split tmux window horizontally
   - { key: T, mods: Command, chars: "\x02c" } # create a new tmux window
   - { key: W, mods: Command, chars: "\x02x" } # kill the current pane
-  - { key: Tab, mods: Control, chars: "\x02n" } # switch to next tmux window
   - { key: LBracket, mods: Command, chars: "\x02p" } # switch to next tmux window
   - { key: RBracket, mods: Command, chars: "\x02n" } # switch to previous tmux window
+  - { key: H, mods: Command, chars: "\x02" } # switch to previous tmux window
   
   - { key: G, mods: Command, chars: "lazygit\n" } # open git manager 'jesseduffield/lazygit'
   - { key: Z, mods: Command, chars: "\x02" } # use Cmd + Z instead of default prefix
@@ -68,6 +70,10 @@ key_bindings:
 
 
 
+################################################ Vim STUFF ################################################
+  - { key: Equals, mods: Command|Shift, chars: "\x17+" } # kill the current pane
+  - { key: Minus, mods: Command|Shift, chars: "\x17-" } # kill the current pane
+  - { key: W, mods: Control, chars: "\x17c " } # kill the current pane
 
 ################################################ ColorSchemes STUFF ################################################
 import:
