@@ -1,5 +1,5 @@
-set previewer ~/.config/lf/lf_kitty_preview
-set cleaner ~/.config/lf/lf_kitty_clean
+# set previewer ~/.config/lf/lf_kitty_preview
+# set cleaner ~/.config/lf/lf_kitty_clean
 
 # SUPER = SHIFT + CMD + ALT + OPTION
 
@@ -74,6 +74,8 @@ cmd restore_trash ${{
 # Bindings
 map d
 map m
+map <enter> $lvim "$f"
+
 
 # opening using spevcific app
 map oc $code "$f" # taget 1 file
@@ -117,3 +119,13 @@ map gv cd ~/videos
 
 map gs cd ~/.local/bin
 map gt cd ~/.local/share/Trash/files
+
+
+
+
+
+
+
+###### VIM 
+set hiddenfiles *.class
+
