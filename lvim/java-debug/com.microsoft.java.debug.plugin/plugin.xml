@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
+      <delegateCommandHandler class="com.microsoft.java.debug.plugin.internal.JavaDebugDelegateCommandHandler">
+            <command id="vscode.java.startDebugSession"/>
+            <command id="vscode.java.resolveClasspath"/>
+            <command id="vscode.java.resolveMainClass"/>
+            <command id="vscode.java.buildWorkspace"/>
+            <command id="vscode.java.fetchUsageData"/>
+            <command id="vscode.java.updateDebugSettings"/>
+            <command id="vscode.java.validateLaunchConfig"/>
+            <command id="vscode.java.resolveMainMethod"/>
+            <command id="vscode.java.inferLaunchCommandLength"/>
+            <command id="vscode.java.checkProjectSettings"/>
+            <command id="vscode.java.resolveElementAtSelection"/>
+            <command id="vscode.java.resolveBuildFiles"/>
+            <command id="vscode.java.isOnClasspath"/>
+            <command id="vscode.java.resolveJavaExecutable"/>
+            <command id="vscode.java.fetchPlatformSettings"/>
+            <command id="vscode.java.resolveClassFilters"/>
+            <command id="vscode.java.resolveSourceUri"/>
+            <command id="vscode.java.resolveInlineVariables"/>
+       </delegateCommandHandler>
+   </extension>
+</plugin>

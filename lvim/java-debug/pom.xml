@@ -1,0 +1,183 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.microsoft.java</groupId>
+    <artifactId>java-debug-parent</artifactId>
+    <name>${base.name} :: Parent</name>
+    <description>The Java Debug Server is an implementation of Visual Studio Code (VSCode) Debug Protocol. It can be used in Visual Studio Code to debug Java programs.</description>
+    <url>https://github.com/Microsoft/java-debug</url>
+    <version>0.51.1</version>
+    <packaging>pom</packaging>
+    <properties>
+        <base.name>Java Debug Server for Visual Studio Code</base.name>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <tycho-version>4.0.5</tycho-version>
+        <checkstyleDir>${basedir}</checkstyleDir>
+    </properties>
+
+    <licenses>
+        <license>
+            <name>Eclipse Public License 1.0</name>
+            <url>https://github.com/Microsoft/java-debug/blob/master/LICENSE.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>akaroml</id>
+            <name>Rome Li</name>
+            <email>roml@microsoft.com</email>
+        </developer>
+        <developer>
+            <id>testforstephen</id>
+            <name>Jinbo Wang</name>
+            <email>jinbwan@microsoft.com</email>
+        </developer>
+        <developer>
+            <id>andxu</id>
+            <name>Andy Xu</name>
+            <email>andxu@microsoft.com</email>
+        </developer>
+        <developer>
+            <id>yaohaizh</id>
+            <name>Yaohai Zheng</name>
+            <email>yaozheng@microsoft.com</email>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>Microsoft</name>
+        <url>https://www.microsoft.com</url>
+    </organization>
+
+    <scm>
+        <connection>scm:git:git://github.com/Microsoft/java-debug.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Microsoft/java-debug.git</developerConnection>
+        <url>https://github.com/Microsoft/java-debug/tree/master</url>
+    </scm>
+
+    <modules>
+        <module>com.microsoft.java.debug.core</module>
+        <module>com.microsoft.java.debug.plugin</module>
+        <module>com.microsoft.java.debug.repository</module>
+        <module>com.microsoft.java.debug.target</module>
+    </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.15</version>
+                    <executions>
+                        <!-- Ensures that both integration-test and verify 
+                            goals of the Failsafe Maven plugin are executed. -->
+                        <execution>
+                            <id>integration-tests</id>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                            <configuration>
+                                <!-- Sets the VM argument line used when 
+                                    integration tests are run. -->
+                                <argLine>${failsafeArgLine}</argLine>
+                                <!-- Skips integration tests if the value 
+                                    of skip.integration.tests property is true -->
+                                <skipTests>${skip.integration.tests}</skipTests>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <?m2e execute onConfiguration?>
+                            <id>get-libs</id>
+                            <goals>
+                                <goal>copy</goal>
+                            </goals>
+                            <phase>validate</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <skip>false</skip>
+                        <outputDirectory>${basedir}/lib/</outputDirectory>
+                        <!-- baseVersion is to avoid SNAPSHOT dependencies 
+                            being copied with ever daily changing timestamp -->
+                        <useBaseVersion>true</useBaseVersion>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>8.29</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.github.sevntu-checkstyle</groupId>
+                            <artifactId>sevntu-checkstyle-maven-plugin</artifactId>
+                            <version>1.24.1</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <configLocation>${checkstyleDir}/check_style.xml</configLocation>
+                        <failOnViolation>true</failOnViolation>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>target-platform-configuration</artifactId>
+                    <version>${tycho-version}</version>
+                    <configuration>
+                        <resolver>p2</resolver>
+                        <target>
+                            <artifact>
+                                <groupId>com.microsoft.java</groupId>
+                                <artifactId>com.microsoft.java.debug.tp</artifactId>
+                                <version>${project.version}</version>
+                            </artifact>
+                        </target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-maven-plugin</artifactId>
+                <version>${tycho-version}</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>activate-in-module</id>
+            <activation>
+                <file>
+                    <exists>${basedir}/../check_style.xml</exists>
+                </file>
+            </activation>
+            <properties>
+                <checkstyleDir>${basedir}/..</checkstyleDir>
+            </properties>
+        </profile>
+    </profiles>
+    <repositories>
+        <repository>
+            <id>oss.sonatype.org</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+</project>

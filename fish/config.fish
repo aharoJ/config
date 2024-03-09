@@ -16,7 +16,7 @@ if status is-interactive
     pyenv init - | source
 
     alias vim lvim
-    set -x EDITOR nvim
+    set -x EDITOR lvim
     set -gx PATH "/Applications/MacPorts/Emacs.app/Contents/MacOS" $PATH
     set -gx STARSHIP_CONFIG ~/.config/starship/starship.toml
 
@@ -26,3 +26,17 @@ end
 
 # Created by `pipx` on 2023-08-18 22:06:32
 set PATH $PATH /Users/aharo/.local/bin
+
+
+# # JAVA_HOME configuration
+# set -gx JAVA_HOME /usr/local/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home
+
+# # Add Java binary to PATH
+# set -gx PATH $JAVA_HOME/bin $PATH
+
+
+
+
+set -gx JAVA_HOME (brew --prefix openjdk@17)
+set -gx PATH $JAVA_HOME/bin $PATH
+
