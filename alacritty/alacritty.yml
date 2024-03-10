@@ -36,7 +36,7 @@ font:
   bold_italic:
     family: "FiraCode Nerd Font Mono"
     style: Heavy Italic
-  size: 14
+  size: 23
 
 # NOTE: helpful hex codes
 # \x1b = escape (useful for vim-related keybindings)
