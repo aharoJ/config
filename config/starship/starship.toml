@@ -77,7 +77,6 @@ disabled = false
 [line_break]
 disabled = true
 
-
 [battery]
 disabled = true
 full_symbol = ""
@@ -93,7 +92,6 @@ threshold = 10
 threshold = 40
 # style = "bg:#FF5511 fg:#111111"
 
-
 [cmd_duration]
 disabled = true
 # style = "bg:#464347 fg:#FBDE2D"
@@ -103,16 +101,15 @@ show_notifications = false
 min_time_to_notify = 45_000
 # format = "[ 祥$duration]($style)"
 
-
 [directory]
-#style = "italic bg:#6F6A70 fg:#EEEEEE"
-# style= "italic fg:#78929b"
-#style= "italic fg:#738895"
 style= "fg:#6A8AEA"
 truncation_length = 4
 truncate_to_repo = true
-# truncation_symbol = "…"
 fish_style_pwd_dir_length = 3
+#style = "italic bg:#6F6A70 fg:#EEEEEE"
+# style= "italic fg:#78929b"
+#style= "italic fg:#738895"
+# truncation_symbol = "…"
 # format = "([[](bg:#ff3322 fg:#464347)$read_only[](bg:#464347 fg:#ff3322)]($read_only_style))[[](bg:#6F6A70 fg:#464347)$path[](bg:#464347 fg:#6F6A70)]($style)"
 
 [directory.substitutions]
@@ -387,8 +384,8 @@ symbol = "［Z］"
 [dotnet]
 disabled = true
 symbol = " "
-# style = "bg:#4A35CC fg:#EEEEEE"
 heuristic = true
+# style = "bg:#4A35CC fg:#EEEEEE"
 # format = "[[](bg:#4A35CC fg:#464347)$symbol$version( 什$tfm)[](bg:#464347 fg:#4A35CC)]($style)"
 
 [elixir]
@@ -432,16 +429,12 @@ symbol = " "
 # style = "bg:#EC912D"
 # format = '[[](bg:#EC912D fg:#464347)$symbol$profile(\($region\))[](bg:#464347 fg:#EC912D)]($style)'
 
-
-
-
 [cmake]
 disabled = true
 # symbol = "卑" # alternate
 symbol = "喝"
 # style = "bg:#064F8D fg:#EEEEEE"
 # format = "[[](bg:#064F8D fg:#464347)$symbol$version[](bg:#464347 fg:#064F8D)]($style)"
-
 
 [conda]
 disabled = true
@@ -463,7 +456,6 @@ symbol = " " # original
 # symbol = "﯑ " # clearer
 # style = "bg:#32BBF9 fg:#111111"
 # format = "[[](bg:#32BBF9 fg:#464347)$symbol$version[](bg:#464347 fg:#32BBF9)]($style)"
-
 
 [jobs]
 disabled = true
