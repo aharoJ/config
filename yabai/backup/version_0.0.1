@@ -16,18 +16,19 @@ yabai -m space 6 --label six
 a
 yabai -m space 9 --label nine
 
-#### float system preferences. Most of these just ENABLE yabai form resizing them.
+# float system preferences. Most of these just diable Yabai form resizing them.
+yabai -m rule --add app="^(Google Chrome|Code|IntelliJ IDEA)$" role="AXWindow" subrole="AXStandardWindow" manage=on layer=below
 yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Karabiner-Elements$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Karabiner-EventViewer$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Finder$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Preview$" sticky=on layer=above manage=off
+#yabai -m rule --add app="^Finder$" sticky=on layer=above manage=off
+#yabai -m rule --add app="^Preview$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Keka$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Alfred Preferences$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Disk Utility$" sticky=on layer=above manage=off
 yabai -m rule --add app="^System Information$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Activity Monitor$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Path Finder$" manage=off
+#yabai -m rule --add app="^Path Finder$" manage=off
 yabai -m rule --add app="^TeamViewer$" sticky=off layer=above manage=off
 yabai -m rule --add app="Fantastical" manage=off
 yabai -m rule --add app="^Spotify$" manage=off
@@ -42,6 +43,7 @@ yabai -m rule --add app="^Logi Options$" manage=off
 yabai -m rule --add app="^Cisco Webex Start$" manage=off
 yabai -m rule --add app="^Private Internet Access$" manage=off
 yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
+
 #find ~/Library/Parallels/Applications\ Menus/ -maxdepth 3 -type f | awk -F'/' '{ print $NF; }' | awk '{$1=$1};1' | sort | uniq | tr "\n" "\0" | xargs -0 -I{} yabai -m rule --add app="^{}\$" title=".*" manage=on
 
 ## Some random global settings
@@ -81,10 +83,10 @@ yabai -m config mouse_action1 move
 ## Change how yabai looks
 yabai -m config layout bsp
 yabai -m config top_padding 0 # 33 for monitor  #2 for mac
-yabai -m config bottom_padding 4
-yabai -m config left_padding 2
-yabai -m config right_padding 2
-yabai -m config window_gap 6
+yabai -m config bottom_padding 12
+yabai -m config left_padding 12
+yabai -m config right_padding 12
+yabai -m config window_gap 12
 
 
 # #Ubersicht widget bar stuff
@@ -114,7 +116,4 @@ yabai -m signal --add event=window_destroyed action="bash /Users/aharo/.config/y
 echo "yabai configuration loaded.."
 
 #END
-
-
-
 
