@@ -2,7 +2,7 @@
 local config = {
   cmd = {
     -- Your path to the jdtls launch script
-    (os.getenv("HOME") .. '/.local/share/lvim/mason/bin/jdtls'),
+    '$HOME/.local/share/lvim/mason/bin/jdtls',
   },
   -- Automatically find root directory by looking for gradlew, .git, or mvnw files/directories
   root_dir = require('jdtls.setup').find_root({ 'gradlew', '.git', 'mvnw' })
@@ -33,3 +33,4 @@ dap.configurations.java = {
 vim.bo.tabstop = 4
 vim.bo.shiftwidth = 4
 vim.bo.expandtab = true
+
