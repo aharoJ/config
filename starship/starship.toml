@@ -116,19 +116,14 @@ fish_style_pwd_dir_length = 3
 # format = "([[](bg:#ff3322 fg:#464347)$read_only[](bg:#464347 fg:#ff3322)]($read_only_style))[[](bg:#6F6A70 fg:#464347)$path[](bg:#464347 fg:#6F6A70)]($style)"
 
 [directory.substitutions]
-"Documents" = ""
-"Music" = ""
-"Movies" = ""
-"Pictures" = ""
-"Sources" = ""
-"Downloads" = ""
-"~" = ""
-#"desk" = "邏"
-#"~" = "邏"
-# "/" = "  "
-# "/" = "  "
-"/" = " 󰁔 "
-
+"Documents" = " 󰧮 "
+"Music" = "  "
+"Movies" = " 󰿏 "
+"Pictures" =  " "
+"Sources" = "  "
+"Downloads" = "  "
+"~" = "  "
+"/" = "  "
 
 
 # on [branch]
