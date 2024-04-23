@@ -1,0 +1,1 @@
+ configuration path is:  $HOME/Library/Preferences/glow/glow.yml
