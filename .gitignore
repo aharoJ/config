@@ -8,6 +8,12 @@ unlink.py
 02/
 mynotes/
 notes/
+script.sh
+*.zip
+/.script
+/.scripts
+
+
 
 # ignore ".trash" directory
 /.trash
@@ -153,3 +159,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+github-copilot
