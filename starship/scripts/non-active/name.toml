@@ -1,0 +1,7 @@
+[username]
+disabled = true
+show_always = true
+
+[hostname]
+disabled = true
+trim_at = "."

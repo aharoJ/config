@@ -1,0 +1,34 @@
+[git_branch]
+disabled = false
+symbol = " "
+style = "fg:#b79999"
+truncation_length = 5   # length == ABCDE
+format = '[$symbol$branch(:$remote_branch)]($style) ' # this sets path ../../../../
+
+[git_commit]
+disabled = false
+commit_hash_length = 1
+
+[git_state]
+disabled = false
+rebase = "rebasing"
+merge = "merging"
+revert = "reverting"
+cherry_pick = " picking"
+bisect = "bisecting"
+am = "am'ing"
+am_or_rebase = "am/rebase"
+
+[git_status]
+disabled = false
+style= "fg:#5F8575"
+stashed = " ${count} "
+ahead = "󰞙 ${count} "
+behind = "󰞒 ${count} "
+diverged = "󰵉 ${ahead_count} ${behind_count} "
+conflicted = " ${count} "
+deleted = " ${count} "
+renamed = " ${count} "
+modified = " ${count} "
+staged = " ${count} "
+untracked = "󱅘 ${count}"

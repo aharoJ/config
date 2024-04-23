@@ -1,0 +1,25 @@
+[directory]
+style= "fg:#6A8AEA"
+truncation_length = 4
+truncate_to_repo = true
+fish_style_pwd_dir_length = 3
+
+
+[directory.substitutions]
+"Documents" = " 󰧮 "
+"Music" = "  "
+"Movies" = " 󰿏 "
+"Pictures" =  " "
+"Sources" = "  "
+"Downloads" = "  "
+"~" = "  "
+"/" = "  "
+
+[line_break]
+disabled = true
+
+[character]
+success_symbol = " [󰁔](fg:#6A8AEA) "
+error_symbol =   " [ ](fg:#d56767)[ ](fg:#d56767) "
+format = "$symbol"
+disabled = false
