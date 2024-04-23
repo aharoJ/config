@@ -1,0 +1,184 @@
+
+#  █████╗ ██╗      █████╗  ██████╗██████╗ ██╗████████╗████████╗██╗   ██╗
+# ██╔══██╗██║     ██╔══██╗██╔════╝██╔══██╗██║╚══██╔══╝╚══██╔══╝╚██╗ ██╔╝
+# ███████║██║     ███████║██║     ██████╔╝██║   ██║      ██║    ╚████╔╝
+# ██╔══██║██║     ██╔══██║██║     ██╔══██╗██║   ██║      ██║     ╚██╔╝
+# ██║  ██║███████╗██║  ██║╚██████╗██║  ██║██║   ██║      ██║      ██║
+# ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝   ╚═╝      ╚═╝      ╚═╝
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  GENERAL   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+import = [
+  # "~/.config/alacritty/themes/catppuccin/themescatppuccin-mocha.toml",
+  "~/.config/alacritty/themes/catppuccin/catppuccin-macchiato.toml",
+  # "-~/.config/alacritty/themes/catppuccin/catppuccin-frappe.toml",
+  # "~/.config/alacritty/themes/catppuccin/catppuccin-latte.toml",
+]
+
+
+working_directory = "None"  
+live_config_reload = true  
+ipc_socket = true  
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  ENV   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[env]
+TERM = "xterm-256color" # Macos | Linux 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  WINDOW    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[window]
+dimensions = { columns = 0, lines = 0 }  
+position = "None"  # None | { x = <integer>, y = <integer> }
+padding = { x = 10, y = 5 }  
+dynamic_padding = false  # true | false
+decorations = "Buttonless"  # Full | None | Transparent | Buttonless 
+opacity = 0.9
+blur = false  # true | false
+startup_mode = "Windowed"  # Windowed | Maximized | Fullscreen | SimpleFullscreen
+title = "Alacritty"  # Default: "Alacritty"
+dynamic_title = true  # true | false
+class = { instance = "Alacritty", general = "Alacritty" }  # Default: instance = "Alacritty", general = "Alacritty"
+decorations_theme_variant = "None"  # Dark | Light | None
+resize_increments = false  # true | false
+option_as_alt = "None"  # Leave as is for MacOS 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  SCROLLING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[scrolling]
+history = 10000  # 0 | 10000
+multiplier = 5  # Default: 3
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  FONT   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[font] # /Users/aharo/Library/Fonts
+normal = { family = "FiraCode Nerd Font", style = "Regular" }
+bold = { family = "FiraCode Nerd Font", style = "Bold" }
+italic  = { family = "Monofur Nerd Font", style = "Italic" }
+bold_italic  = { family = "Monofur Nerd Font", style = "Bold Italic" }
+offset = { x = 1, y = 2 }   # Offset is extra space around each character
+glyph_offset = { x = 0, y = 0 }  
+builtin_box_drawing = true  # true | false
+size= 18 # Macbook
+# size: 24 # UltraWide Monitor
+
+# italic  = { family = "Lekton Nerd Font", style = "Italic" }
+# bold_italic  = { family = "Lekton Nerd Font", style = "Bold Italic" }
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  BELL    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[bell]
+animation = "Linear"  #  "Ease" | "EaseOut" | "EaseOutSine" | "EaseOutQuad" | "EaseOutCubic" | "EaseOutQuart" | "EaseOutQuint" | "EaseOutExpo" | "EaseOutCirc" | "Linear"
+duration = 0  # Default: 0
+color = "#ffffff"  
+command = "None"  
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  SELECTION    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[selection]
+semantic_escape_chars = ",│`|:\"' ()[]{}<>\\t"  
+save_to_clipboard = false  # true | false
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  CURSOR    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[cursor]
+style = { shape = "Block", blinking = "On" }  # shape: Block | Underline | Beam # blinking = Never | Off | On | Always
+vi_mode_style = "None"  
+blink_interval = 450  
+blink_timeout = 5  
+unfocused_hollow = true  # true | false
+thickness = 0.1  
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  TERMINAL   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[terminal]
+osc52 = "CopyPaste"  # Default: "OnlyCopy"
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  MOUSE   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[mouse]
+hide_when_typing = false  # true | false
+bindings = [] # Example: bindings = [{ mouse = "Left", action = "Paste" }]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  HINTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[hints]
+alphabet = "jfkdls;ahgurieowpq"  # Default: "jfkdls;ahgurieowpq"
+[[hints.enabled]]
+command = "open" # On macOS
+# command = { program = "cmd", args = [ "/c", "start", "" ] } # On Windows
+hyperlinks = true # true | false
+post_processing = true # true | false
+persist = false # true | false
+mouse.enabled = true # true | false
+# binding = { key = "U", mods = "Control|Shift" }
+# regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`]+"
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~  KEYBOARD  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# NOTE: helpful hex codes
+# \u0002 = control-b (default tmux prefix)
+# \u0017 = control + w (default vim window bind)
+# Use 'alacritty --print-events' to print key events
+
+[keyboard]
+bindings = [
+  # TMUX STUFF
+  { key = "T", mods = "Command", chars = "\u0002u" }, # create a new tmux window
+  { key = "LBracket", mods = "Command", chars = "\u0002p" }, # switch to next tmux window
+  { key = "RBracket", mods = "Command", chars = "\u0002n" }, # switch to previous tmux window
+  { key = "H", mods = "Command", chars = "\u0002" }, # switch to previous tmux window
+  { key = "G", mods = "Command", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit'
+  { key = "Z", mods = "Command", chars = "\u0002" }, # use Cmd + Z instead of default prefix
+  { key = "L", mods = "Command|Shift", chars = "lf\n" }, # open file manager 'gokcehan/lf'
+  { key = "G", mods = "Shift|Command|Option|Control", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit' with a complex keybinding
+  
+  # NeoVim STUFF
+  { key = "Equals", mods = "Command|Shift", chars = "\u0017+" }, # Increase font size in Vim
+  { key = "Minus", mods = "Command|Shift", chars = "\u0017-" }, # Decrease font size in Vim
+  { key = "A", mods = "Shift|Command|Option|Control", chars = "\u0017" }, # Vim's Ctrl+W
+  { key = "Key1", mods = "Command", chars = "\u00021" }, # select tmux window 1
+  { key = "W", mods = "Command", chars = "\u001b" }, 
+  { key = "P", mods = "Command", action = "Quit" }, # create a new tmux window
+
+  # Expirimenting 
+  { key= "D", mods= "Command | Option | Control", action= "ScrollHalfPageDown" },
+  { key= "U", mods= "Command | Option | Control", action= "ScrollHalfPageUp" },
+  { key= "V", mods= "Command | Option", action= "ToggleViMode" },
+]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~       DEBUG       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[debug]
+render_timer= false # true | false
+persistent_logging= true # true | false
+log_level = "Warn" # "Off" | "Error" | "Warn" | "Info" | "Debug" | "Trace"
+print_events= true # true | false
+highlight_damage= false # IMPORTANT OR ELSE ITS WEIRD 
+prefer_egl= false # true | false
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
