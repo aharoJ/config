@@ -1,5 +1,0 @@
-[time]
-disabled = true
-time_format = "  ⏲  %I:%M %P      %B %d, %Y    "
-style = "fg:#9b9578"
-format = '[$time]($style)'
