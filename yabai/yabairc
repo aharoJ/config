@@ -3,8 +3,15 @@
 
 # bsp or float (default: bsp)
 #yabai -m config layout bsp
+#yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+#sudo yabai --load-sa
+
+
+# for this to work you must configure sudo such that
+# it will be able to run the command without password
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 sudo yabai --load-sa
+
 
 # My custom space names for my 3 monitor setup. These names are used in some of my scripts.
 yabai -m space 1 --label one
@@ -13,21 +20,20 @@ yabai -m space 3 --label three
 yabai -m space 4 --label four
 yabai -m space 5 --label five
 yabai -m space 6 --label six
-a
 yabai -m space 9 --label nine
 
 #### float system preferences. Most of these just ENABLE yabai form resizing them.
-yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Karabiner-Elements$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Karabiner-EventViewer$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Finder$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Preview$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Karabiner-Elements$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Karabiner-EventViewer$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Finder$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Preview$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Keka$" sticky=on layer=above manage=off
 yabai -m rule --add app="^Alfred Preferences$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Disk Utility$" sticky=on layer=above manage=off
-yabai -m rule --add app="^System Information$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Activity Monitor$" sticky=on layer=above manage=off
-yabai -m rule --add app="^Path Finder$" manage=off
+# yabai -m rule --add app="^Disk Utility$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^System Information$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Activity Monitor$" sticky=on layer=above manage=off
+# yabai -m rule --add app="^Path Finder$" manage=off
 yabai -m rule --add app="^TeamViewer$" sticky=off layer=above manage=off
 yabai -m rule --add app="Fantastical" manage=off
 yabai -m rule --add app="^Spotify$" manage=off
@@ -35,7 +41,7 @@ yabai -m rule --add app="^iTerm2$" manage=off
 yabai -m rule --add app="^Flux$" manage=off
 yabai -m rule --add app="^Time Out$" manage=off
 yabai -m rule --add app="^perl_client_app$" manage=off
-yabai -m rule --add app="^console$" manage=off
+# yabai -m rule --add app="^console$" manage=off
 yabai -m rule --add app="^Harvest$" manage=off
 yabai -m rule --add app="^CiscoSparkHelper$" manage=off
 yabai -m rule --add app="^Logi Options$" manage=off
@@ -108,7 +114,7 @@ yabai -m config window_gap 6
 # yabai -m signal --add event=application_terminated action="terminal-notifier -message 'application_terminated'"
 
 ## If I close the active window, focus on any other visible window.
-yabai -m signal --add event=window_destroyed action="bash /Users/aharo/.config/yabai/scripts/switchspaces/window-focus-on-destroy.sh"
+# yabai -m signal --add event=window_destroyed action="bash /Users/aharo/.config/yabai/scripts/switchspaces/window-focus-on-destroy.sh"
 # yabai -m signal --add event=space_changed action="export CUR_ACTIVE_APP=\"iTerm2\""
 
 echo "yabai configuration loaded.."
