@@ -4,6 +4,10 @@ dev/
 link.py
 unlink.py
 00/
+01/
+02/
+mynotes/
+notes/
 
 # ignore ".trash" directory
 /.trash
