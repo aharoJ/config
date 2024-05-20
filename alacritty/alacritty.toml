@@ -26,7 +26,7 @@ TERM = "xterm-256color" # Macos | Linux
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  WINDOW    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 [window]
-blur = true # true | false 
+blur = false # true | false 
 dimensions = { columns = 0, lines = 0 }  
 position = "None"  # None | { x = <integer>, y = <integer> }
 padding = { x = 15, y = 5 }  
@@ -139,10 +139,10 @@ bindings = [
   { key = "H", mods = "Shift|Command|Option|Control", chars = "\u0002p" }, # switch to next tmux window
   { key = "L", mods = "Shift|Command|Option|Control", chars = "\u0002n" }, # switch to previous tmux window
   { key = "H", mods = "Command", chars = "\u0002" }, # switch to previous tmux window
-  { key = "G", mods = "Command", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit'
+  # { key = "G", mods = "Command", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit'
   { key = "Z", mods = "Command", chars = "\u0002" }, # use Cmd + Z instead of default prefix
-  { key = "L", mods = "Command|Shift", chars = "lf\n" }, # open file manager 'gokcehan/lf'
-  { key = "G", mods = "Shift|Command|Option|Control", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit' with a complex keybinding
+  # { key = "L", mods = "Command|Shift", chars = "lf\n" }, # open file manager 'gokcehan/lf'
+  # { key = "G", mods = "Shift|Command|Option|Control", chars = "lazygit\n" }, # open git manager 'jesseduffield/lazygit' with a complex keybinding
   
   # NeoVim STUFF
   { key = "Equals", mods = "Command|Shift", chars = "\u0017+" }, # Increase font size in Vim
