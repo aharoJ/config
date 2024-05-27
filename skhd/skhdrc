@@ -73,8 +73,8 @@ rcmd - 9 : yabai -m space --focus 9
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ACTIVE TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 rshift - a : /Applications/Alacritty.app/Contents/MacOS/alacritty
 # rshift - v: /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
-rshift - v: /Applications/Firefox.app/Contents/MacOS/firefox 
-# rshift - g: open -na "Google Chrome" --args --new-window "https://www.google.com/" 
+# rshift - v: /Applications/Firefox.app/Contents/MacOS/firefox 
+rshift - g: open -na "Google Chrome" --args --new-window "https://www.google.com/" 
 rshift - f: open -a 'Finder.app' 
 hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
