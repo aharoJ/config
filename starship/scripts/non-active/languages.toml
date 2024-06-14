@@ -1,0 +1,137 @@
+[ruby]
+disabled = true
+symbol = "•  "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[rust]
+disabled = true
+symbol = "• 󰰠 "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[shlvl]
+disabled = true
+symbol = ""
+threshold = 2
+
+[singularity]
+disabled = true
+symbol = "S"
+
+[swift]
+disabled = true
+symbol = "ﯣ "
+
+[status]
+disabled = true
+symbol = ""
+
+[terraform]
+disabled = true
+symbol = "行"
+
+[zig]
+disabled = true
+symbol = "［Z］"
+
+[dotnet]
+disabled = true
+symbol = " "
+heuristic = true
+
+[elixir]
+disabled = true
+symbol = " "
+
+[elm]
+disabled = true
+symbol = " " # original
+
+[env_var]
+disabled = true
+symbol = " "
+variable = "0"
+default = "zsh"
+
+[erlang]
+disabled = true
+symbol = " "
+
+[gcloud]
+disabled = true
+symbol = "☁️ "
+
+[aws]
+disabled = true
+symbol = " "
+
+[cmake]
+disabled = true
+symbol = "喝"
+
+[conda]
+disabled = true
+symbol = " "
+# style = "bg:#43B02A fg:#111111"
+ignore_base = true
+truncation_length = 1
+
+[crystal]
+disabled = true
+symbol = " "
+
+[dart]
+disabled = true
+symbol = " " # original
+
+[jobs]
+disabled = true
+symbol = "  "
+
+[julia]
+disabled = true
+symbol = " "
+
+[kubernetes]
+disabled = true
+symbol = "☸︎"
+
+[memory_usage]
+disabled = true
+symbol = " "
+threshold = 75
+
+[helm]
+disabled = true
+symbol = "ﴱ "
+
+[nim]
+disabled = true
+symbol = " "
+
+[nix_shell]
+disabled = true
+symbol = " "
+impure_msg = '[\(impure\)](bg:#27385D fg:#FF5511)'
+pure_msg = '[\(pure\)](bg:#27385D fg:#AFD700)'
+
+[ocaml]
+disabled = true
+symbol = "🐫 "
+
+[perl]
+disabled = true
+symbol = "🐪 "
+
+[php]
+disabled = true
+symbol = " "
+
+[purescript]
+disabled = true
+symbol = "<=>"
+
+[hg_branch] # Mercurial
+disabled = true
+symbol = "•  "
