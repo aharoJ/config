@@ -1,0 +1,45 @@
+[java]
+disabled = false
+symbol = "•  "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[python]
+disabled = false
+pyenv_version_name= false
+python_binary = 'python'
+format = '[${symbol}(\($virtualenv\))]($style)'
+style = "fg:#a48989"
+symbol = "• 󱔎 "
+
+[lua]
+disabled = false
+symbol = "• "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[nodejs]
+disabled = false
+symbol = "• 󰎙 "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[package]
+disabled = false
+symbol = "•  "
+display_private = false
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[docker_context]
+disabled = false
+symbol = "•  "
+only_with_files = true
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
+
+[golang]
+disabled = false
+symbol = "•  "
+format = '[${symbol}]($style)'
+style = "fg:#a48989"
