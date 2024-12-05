@@ -108,7 +108,6 @@ set-option -g status-left "\
 set-window-option -g window-status-current-format "\
 #[fg=default, bg=default, bold]  #{=-25:pane_current_path} \
 "
-#[fg=default, bg=default]  #{d:pane_current_path} \
 
 
 
