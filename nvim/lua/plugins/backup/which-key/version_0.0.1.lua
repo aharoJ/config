@@ -161,8 +161,8 @@ return {
         g = {
           name = "+Get",
           f = "File",
-          B = "Buffer",
-          b = "NeoTree Buffer",
+          b = "Buffer",
+          B = "NeoTree Buffer",
         },
       },
       {
@@ -174,28 +174,6 @@ return {
         nowait = false,
         expr = false,
       },
-      -------------------    FOLDING COMMANDS    ------------------------
-      -- wk.register({
-      -- 	z = {
-      -- 		name = "Folding",
-      -- 		o = "Open fold", -- zo
-      -- 		O = "Open all folds", -- zO
-      -- 		c = "Close fold", -- zc
-      -- 		C = "Close all folds", -- zC
-      -- 		a = "Toggle fold", -- za
-      -- 		A = "Toggle all folds", -- zA
-      -- 		m = "Fold more", -- zm
-      -- 		M = "Fold everything", -- zM
-      -- 		r = "Reduce folding", -- zr
-      -- 		R = "Open all folds", -- zR
-      -- 		x = "Update folds", -- zx
-      -- 		X = "Recompute all folds", -- zX
-      -- 		v = "View cursor line", -- zv
-      -- 		E = "Eliminate all folds", -- zE
-      -- 		j = "Next fold", -- zj
-      -- 		k = "Previous fold", -- zk
-      -- 	},
-      -- }, { prefix = "", mode = { "n" } }), -- Register for both NORMAL and VISUAL modes
     })
   end,
 }
