@@ -86,12 +86,20 @@ yabai -m config mouse_action1 move
 
 ## Change how yabai looks
 yabai -m config layout bsp
-yabai -m config top_padding 0 # 33 for monitor  #2 for mac
-yabai -m config bottom_padding 4
+yabai -m config top_padding 2 
+yabai -m config bottom_padding 2
 yabai -m config left_padding 2
 yabai -m config right_padding 2
-yabai -m config window_gap 6
+yabai -m config window_gap 7
 
+
+### DEFAULTS ####
+# yabai -m config layout bsp
+# yabai -m config top_padding 0 # 33 for monitor  #2 for mac
+# yabai -m config bottom_padding 4
+# yabai -m config left_padding 2
+# yabai -m config right_padding 2
+# yabai -m config window_gap 6
 
 # #Ubersicht widget bar stuff
 #yabai -m signal --add event=space_changed \
