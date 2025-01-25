@@ -63,7 +63,8 @@ return {
 				----------------                              ----------------
 
 				-------------------        PYTHON       ------------------------
-				null_ls.builtins.formatting.black,
+				null_ls.builtins.formatting.black, -- Example: Python formatter
+				-- null_ls.builtins.formatting.flake8, -- Example: Python linter -- should not work!!! we need diagnostics
 				-- null_ls.builtins.formatting.isort,
 				-- null_ls.builtins.diagnostics.flake8,
 				----------------                              ----------------
