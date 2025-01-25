@@ -44,7 +44,7 @@ if status is-interactive
 end
 #################################################################################
 
-# Set lvim as default editor for Vim commands
+# Set Neovim as default editor for Vim commands
 function vim
     nvim $argv
 end
