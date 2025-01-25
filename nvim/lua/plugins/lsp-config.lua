@@ -57,7 +57,8 @@ return {
 		"neovim/nvim-lspconfig",
 		dependencies = { "folke/neodev.nvim", opts = {} },
 		lazy = false,
-		-- https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md
+		-- https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md -- OUTDATED
+		-- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
 		config = function()
 			-------------------    DAP UI    ------------------------
 			require("neodev").setup({
@@ -93,11 +94,15 @@ return {
 			----------------                              ----------------
 
 			-------------------        CSS       ------------------------
-			local capabilities_css = vim.lsp.protocol.make_client_capabilities()
-			capabilities_css.textDocument.completion.completionItem.snippetSupport = true
-			lspconfig.cssls.setup({ -- NORMAL CSS
-				capabilities = capabilities_css,
+			lspconfig.stylelint_lsp.setup({
+				capabilities = capabilities,
 			})
+			-- LEGACY CODE BELOW (TESTING)--
+			-- local capabilities_css = vim.lsp.protocol.make_client_capabilities()
+			-- capabilities_css.textDocument.completion.completionItem.snippetSupport = true
+			-- lspconfig.cssls.setup({ -- NORMAL CSS
+			-- 	capabilities = capabilities_css,
+			-- })
 			----------------                              ----------------
 
 			-------------------        XML       ------------------------
