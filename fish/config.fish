@@ -10,23 +10,22 @@ if status is-interactive
     # Initialize Starship prompt
     starship init fish | source
 
-    # NVIM POSTGRESQL 
+    # NVIM POSTGRESQL
     set -U fish_user_paths $fish_user_paths /Users/aharo/.cargo/bin
     
-  # Set Rust's cargo bin path
+    # Set Rust's cargo bin path
     set -x PATH "$HOME/.cargo/bin" $PATH
 
-    # Set Python path
-    set -gx PATH /Library/Frameworks/Python.framework/Versions/3.8/bin $PATH
-    
-    # Set PYENV_ROOT and add to user paths
-    set -Ux PYENV_ROOT $HOME/.pyenv
-    set -U fish_user_paths $PYENV_ROOT/bin $fish_user_paths
-    
-    # Initialize pyenv
-    if type pyenv > /dev/null 2>&1
-        pyenv init - | source
-    end
+    # Set Python path (Replace with the correct path to your global Python installation)
+    set -gx PATH /usr/local/bin/python3 $PATH
+
+    # Ensure Python3 and pip are globally available
+    set -gx PATH /usr/local/opt/python@3.13/bin $PATH
+
+    # Remove pyenv configuration
+    # PYENV-related paths and initialization are no longer needed
+    # set -Ux PYENV_ROOT $HOME/.pyenv
+    # set -U fish_user_paths $PYENV_ROOT/bin $fish_user_paths
 
     # Set Emacs path
     set -gx PATH "/Applications/MacPorts/Emacs.app/Contents/MacOS" $PATH
@@ -49,4 +48,3 @@ end
 function vim
     nvim $argv
 end
-
