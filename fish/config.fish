@@ -44,7 +44,23 @@ if status is-interactive
 end
 #################################################################################
 
-# Set Neovim as default editor for Vim commands
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET NEOVIM AS DEFAULT ~~~~~~~~~~~~~~~~~~~~~ #
 function vim
     nvim $argv
+end
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
+function auto_venv_check
+    # Check for venv in current or parent directories
+    if test -d ./venv
+        source venv/bin/activate.fish
+    else if set -q VIRTUAL_ENV
+        echo "Keeping existing venv: $VIRTUAL_ENV"
+    else
+        echo "No venv found in: "(pwd)
+    end
+end
+
+function __auto_venv --on-variable PWD
+    auto_venv_check
 end
