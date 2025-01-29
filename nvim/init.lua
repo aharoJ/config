@@ -22,7 +22,4 @@ require("lazy").setup("plugins", {
 require("settings")
 vim.o.cmdheight = 1
 
--- UNSURE IF I NEED THIS LINE (TESTING)
--- vim.g.python3_host_prog = "/usr/local/opt/python@3.13/bin/python3"
-
 -- HELLO WORLD! (:
