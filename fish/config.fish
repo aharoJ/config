@@ -50,49 +50,44 @@ function vim
 end
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
-function auto_venv_check --description "Ultra-optimized venv management"
-    # Lightweight directory fingerprint using inode metadata
-    set -l dir_id (stat -f '%i:%d' . 2>/dev/null || stat -c '%i:%d' .)
-    if set -q __venv_last_id && test "$dir_id" = "$__venv_last_id"
-        return
-    end
-    set -g __venv_last_id "$dir_id"
-
-    # Check cached venv path first (instant exit for common case)
-    if set -q VIRTUAL_ENV
-        if string match -q "$VIRTUAL_ENV" "$PWD"/venv
-            return
-        else if string match -q "$VIRTUAL_ENV" "$PWD"/*/venv
-            return
-        end
-    end
-
-    # Memory-optimized parent directory search
-    set -l search_path (pwd -P)
-    set -l max_depth 3
-    set -l found false
-
-    for i in (seq $max_depth)
-        if test -e "$search_path/venv/bin/activate.fish"
-            set found true
-            break
-        end
-        test "$search_path" = "/" && break
-        set search_path (dirname "$search_path")
-    end
-
-    # Fast path: No venv found anywhere
-    if not $found
-        set -q VIRTUAL_ENV && deactivate
+function auto_venv_check --description "Smart venv management"
+    # Check exact directory match first
+    if test -n "$VIRTUAL_ENV" && string match -q "$VIRTUAL_ENV" (pwd -P)/venv
         return
     end
 
-    # Only reactivate if venv path changed
-    if not set -q VIRTUAL_ENV || test "$VIRTUAL_ENV" != "$search_path/venv"
-        source "$search_path/venv/bin/activate.fish"
+    # Current directory check
+    if test -e ./venv/bin/activate.fish
+        source ./venv/bin/activate.fish >/dev/null 2>&1
+        return
+    end
+
+    # Parent directory search (3 levels)
+    set -l parent (pwd -P)
+    for i in 1 2 3
+        set parent (dirname "$parent")
+        if test -e "$parent/venv/bin/activate.fish"
+            source "$parent/venv/bin/activate.fish" >/dev/null 2>&1
+            return
+        end
+        test "$parent" = "/" && break
+    end
+
+    # Clean deactivation
+    if set -q VIRTUAL_ENV && functions -q deactivate
+        deactivate >/dev/null 2>&1
     end
 end
 
-function __auto_venv --on-variable PWD
-    auto_venv_check
+# Prevent duplicate checks during rapid directory changes
+function __force_venv_check --on-variable PWD
+    set -l dir_id (stat -c %i:%d . 2>/dev/null || stat -f %i:%d .)
+    if not set -q __venv_last_id || test "$dir_id" != "$__venv_last_id"
+        auto_venv_check
+        set -g __venv_last_id "$dir_id"
+    end
+    commandline -f repaint
 end
+
+# Initialize for new shells
+auto_venv_check
