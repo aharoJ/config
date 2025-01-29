@@ -50,17 +50,36 @@ function vim
 end
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
-function auto_venv_check
-    # Check for venv in current or parent directories
+function auto_venv_check --description "Auto-detects and activates venv"
+    # Avoid rechecking if we're in the same directory
+    if set -q last_venv_check_dir && test "$PWD" = "$last_venv_check_dir"
+        return
+    end
+    set -g last_venv_check_dir "$PWD"
+
+    # Check if a venv exists in the current directory
     if test -d ./venv
-        source venv/bin/activate.fish
-    else if set -q VIRTUAL_ENV
+        source ./venv/bin/activate.fish
+        return
+    end
+
+    # Fastest way to find a venv in parent directories (avoiding `find` overhead)
+    set search_path "$PWD"
+    while test "$search_path" != "/"
+        if test -d "$search_path/venv"
+            source "$search_path/venv/bin/activate.fish"
+            return
+        end
+        set search_path (dirname "$search_path")
+    end
+
+    # Retain active venv if already activated
+    if set -q VIRTUAL_ENV
         echo "Keeping existing venv: $VIRTUAL_ENV"
-    else
-        echo "No venv found in: "(pwd)
     end
 end
 
+# Automatically trigger when changing directories
 function __auto_venv --on-variable PWD
     auto_venv_check
 end
