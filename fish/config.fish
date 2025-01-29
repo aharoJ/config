@@ -50,36 +50,49 @@ function vim
 end
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
-function auto_venv_check --description "Auto-detects and activates venv"
-    # Avoid rechecking if we're in the same directory
-    if set -q last_venv_check_dir && test "$PWD" = "$last_venv_check_dir"
+function auto_venv_check --description "Ultra-optimized venv management"
+    # Lightweight directory fingerprint using inode metadata
+    set -l dir_id (stat -f '%i:%d' . 2>/dev/null || stat -c '%i:%d' .)
+    if set -q __venv_last_id && test "$dir_id" = "$__venv_last_id"
         return
     end
-    set -g last_venv_check_dir "$PWD"
+    set -g __venv_last_id "$dir_id"
 
-    # Check if a venv exists in the current directory
-    if test -d ./venv
-        source ./venv/bin/activate.fish
-        return
-    end
-
-    # Fastest way to find a venv in parent directories (avoiding `find` overhead)
-    set search_path "$PWD"
-    while test "$search_path" != "/"
-        if test -d "$search_path/venv"
-            source "$search_path/venv/bin/activate.fish"
+    # Check cached venv path first (instant exit for common case)
+    if set -q VIRTUAL_ENV
+        if string match -q "$VIRTUAL_ENV" "$PWD"/venv
+            return
+        else if string match -q "$VIRTUAL_ENV" "$PWD"/*/venv
             return
         end
+    end
+
+    # Memory-optimized parent directory search
+    set -l search_path (pwd -P)
+    set -l max_depth 3
+    set -l found false
+
+    for i in (seq $max_depth)
+        if test -e "$search_path/venv/bin/activate.fish"
+            set found true
+            break
+        end
+        test "$search_path" = "/" && break
         set search_path (dirname "$search_path")
     end
 
-    # Retain active venv if already activated
-    if set -q VIRTUAL_ENV
-        echo "Keeping existing venv: $VIRTUAL_ENV"
+    # Fast path: No venv found anywhere
+    if not $found
+        set -q VIRTUAL_ENV && deactivate
+        return
+    end
+
+    # Only reactivate if venv path changed
+    if not set -q VIRTUAL_ENV || test "$VIRTUAL_ENV" != "$search_path/venv"
+        source "$search_path/venv/bin/activate.fish"
     end
 end
 
-# Automatically trigger when changing directories
 function __auto_venv --on-variable PWD
     auto_venv_check
 end
