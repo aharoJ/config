@@ -69,6 +69,12 @@ return {
           -- ----------------                       ------------------------
         },
       },
+      -- Treesitter Inspect
+      vim.keymap.set("n", "<Leader>mm", "<cmd>Inspect<CR>", {
+        desc = "Treesitter Inspect Node",
+        noremap = true,
+        silent = true,
+      })
     })
   end,
 }
