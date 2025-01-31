@@ -176,7 +176,8 @@ require("noice").setup({
 				height = "auto",
 			},
 			border = {
-				style = rounded_border_style,
+				style = "rounded", -- TESTING BELOW
+				-- style = rounded_border_style,
 				-- style = "none",
 			},
 			filter_options = {},
@@ -209,7 +210,8 @@ require("noice").setup({
 				height = 10,
 			},
 			border = {
-				style = rounded_border_style,
+				-- style = rounded_border_style,
+				style = "rounded",
 				padding = { 0, 1 },
 			},
 			win_options = {
@@ -220,22 +222,23 @@ require("noice").setup({
 
 	---@type NoiceRouteConfig[]
 	routes = {
+		-- Add this new route at the top
 		{
-			-- filter = {
-			-- 	event = "msg_show",
-			-- 	-- kind = "search_count",
-			-- 	find = "written",
-			-- },
-			filter = {
-				event = "lsp_progress_done",
-			},
+			filter = { event = "lsp_progress_done" },
 			opts = { skip = true },
 		},
-	}, --- @see section on routes
+		-- Add these performance tweaks
+		throttle = 1000 / 15, -- Reduce refresh rate
+		lsp = {
+			progress = {
+				throttle = 1500, -- Slow down LSP progress updates
+			},
+		}, --- @see section on routes
 
-	---@type table<string, NoiceFilter>
-	status = {}, --- @see section on statusline components
+		---@type table<string, NoiceFilter>
+		status = {}, --- @see section on statusline components
 
-	---@type NoiceFormatOptions
-	format = {}, --- @see section on formatting
+		---@type NoiceFormatOptions
+		format = {}, --- @see section on formatting
+	},
 })
