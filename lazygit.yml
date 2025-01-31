@@ -1,0 +1,15 @@
+gui:
+  showIcons: true
+  theme:
+    activeBorderColor:
+      - magenta
+      - bold
+    inactiveBorderColor:
+      - black
+  showFileTree: true # for rendering changes files in a tree format
+os:
+  editCommand: "nvim"
+  editCommandTemplate: "{{editor}} {{filename}}"
+keybinding:
+  universal:
+    quit: "q"
