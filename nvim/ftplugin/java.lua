@@ -77,24 +77,18 @@ vim.list_extend(
 local config = {
   cmd = {
     "java",
+    "--add-modules=ALL-SYSTEM",
+    "--add-opens", "java.base/java.util=ALL-UNNAMED",
+    "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+    "-javaagent:/Users/aharo/.local/share/nvim/java-stuff/lombok.jar",
     "-Declipse.application=org.eclipse.jdt.ls.core.id1",
     "-Dosgi.bundles.defaultStartLevel=4",
     "-Declipse.product=org.eclipse.jdt.ls.core.product",
-    "-Dlog.protocol=true",
     "-Dlog.level=ALL",
-    "-Xms1g",
-    "--add-modules=ALL-SYSTEM",
-    "--add-opens",
-    "java.base/java.util=ALL-UNNAMED",
-    "--add-opens",
-    "java.base/java.lang=ALL-UNNAMED",
-    "-javaagent:/Users/aharo/.local/share/nvim/java-stuff/lombok.jar",
-    "-jar",
-    vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar"),
-    "-configuration",
-    vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/jdtls/config_mac"),
-    "-data",
-    workspace_dir,
+    "-Xmx4G",
+    "-jar", vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar"),
+    "-configuration", vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/jdtls/config_mac"),
+    "-data", workspace_dir
   },
   capabilities = capabilities(),
   root_dir = root_dir,
@@ -121,7 +115,9 @@ config["on_attach"] = function(client, bufnr)
   local _, _ = pcall(vim.lsp.codelens.refresh)
   require("jdtls.dap").setup_dap_main_class_configs()
   jdtls.setup_dap({ hotcodereplace = "auto" })
-  require("java-conf").on_attach(client, bufnr)
+  -- nvim@10 issues introduced
+  -- require("java-conf").on_attach(client, bufnr)
+    require("java-conf").setup()
 end
 
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
