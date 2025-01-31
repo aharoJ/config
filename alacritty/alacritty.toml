@@ -6,6 +6,7 @@
 # ██║  ██║███████╗██║  ██║╚██████╗██║  ██║██║   ██║      ██║      ██║
 # ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝   ╚═╝      ╚═╝      ╚═╝
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  GENERAL   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+[general]
 import = [
   # "~/.config/alacritty/themes/catppuccin/themescatppuccin-mocha.toml",
   "~/.config/alacritty/themes/catppuccin/catppuccin-macchiato.toml",
