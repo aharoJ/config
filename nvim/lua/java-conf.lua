@@ -1,112 +1,111 @@
-function get_spring_boot_runner(profile, debug)
-	local debug_param = ""
-	if debug then
-		debug_param =
-			' -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" '
-	end
+local M = {}
 
-	local profile_param = ""
-	if profile then
-		profile_param = " -Dspring-boot.run.profiles=" .. profile .. " "
-	end
+local function setup_dap()
+  local dap = require("dap")
+  dap.adapters.java = {
+    type = 'executable',
+    command = 'java',
+    args = { 
+      '-jar', 
+      vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar")
+    }
+  }
 
-	return "mvn spring-boot:run " .. profile_param .. debug_param
+  dap.configurations.java = {
+    {
+      type = 'java',
+      request = 'attach',
+      name = "Attach to Process",
+      hostName = "localhost",
+      port = "5005",
+    },
+  }
 end
 
-function run_spring_boot(debug)
-	vim.cmd("term " .. get_spring_boot_runner("local", debug))
+local function get_spring_boot_runner(profile, debug)
+  local debug_param = ""
+  if debug then
+    debug_param = ' -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" '
+  end
+
+  local profile_param = ""
+  if profile then
+    profile_param = " -Dspring-boot.run.profiles=" .. profile .. " "
+  end
+
+  return "mvn spring-boot:run " .. profile_param .. debug_param
 end
 
-vim.keymap.set("n", "<F9>", function()
-	run_spring_boot()
-end)
-vim.keymap.set("n", "<F10>", function()
-	run_spring_boot(true)
-end)
-
-function attach_to_debug()
-	local dap = require("dap")
-	dap.configurations.java = {
-		{
-			type = "java",
-			request = "attach",
-			name = "Attach to the process",
-			hostName = "localhost",
-			port = "5005",
-		},
-	}
-	dap.continue()
+local function run_spring_boot(debug)
+  vim.cmd("term " .. get_spring_boot_runner("local", debug))
 end
 
-function get_test_runner(test_name, debug)
-	if debug then
-		return 'mvn test -Dmaven.surefire.debug -Dtest="' .. test_name .. '"'
-	end
-	return 'mvn test -Dtest="' .. test_name .. '"'
+local function attach_to_debug()
+  local dap = require("dap")
+  dap.continue()
 end
 
-function run_java_test_method(debug)
-	local utils = require("utils")
-	local method_name = utils.get_current_full_method_name("\\#")
-	vim.cmd("term " .. get_test_runner(method_name, debug))
+local function get_test_runner(test_name, debug)
+  if debug then
+    return 'mvn test -Dmaven.surefire.debug -Dtest="' .. test_name .. '"'
+  end
+  return 'mvn test -Dtest="' .. test_name .. '"'
 end
 
-function run_java_test_class(debug)
-	local utils = require("utils")
-	local class_name = utils.get_current_full_class_name()
-	vim.cmd("term " .. get_test_runner(class_name, debug))
+local function run_java_test_method(debug)
+  local utils = require("utils")
+  local ok, method_name = pcall(utils.get_current_full_method_name, "\\#")
+  if ok and method_name then
+    vim.cmd("term " .. get_test_runner(method_name, debug))
+  end
 end
 
---  attach remotely
-vim.keymap.set("n", "<leader>da", ":lua attach_to_debug()<CR>")
--- vim.keymap.set("n", "<F5>", ':lua require"dap".continue()<CR>')
--- vim.keymap.set("n", "<F6>", function()
---   require("dap").continue()
--- end)
-
--- setup debug
-vim.keymap.set("n", "<leader>b", ':lua require"dap".toggle_breakpoint()<CR>')
-vim.keymap.set("n", "<leader>B", ':lua require"dap".set_breakpoint(vim.fn.input("Condition: "))<CR>')
-vim.keymap.set("n", "<leader>bl", ':lua require"dap".set_breakpoint(nil, nil, vim.fn.input("Log: "))<CR>')
-vim.keymap.set("n", "<leader>dr", ':lua require"dap".repl.open()<CR>')
-vim.keymap.set("n", "<leader>rm", function()
-	run_java_test_method()
-end)
-vim.keymap.set("n", "<leader>rM", function()
-	run_java_test_method(true)
-end)
-vim.keymap.set("n", "<leader>rc", function()
-	run_java_test_class()
-end)
-vim.keymap.set("n", "<leader>rC", function()
-	run_java_test_class(true)
-end)
-
--- view informations in debug
-function show_dap_centered_scopes()
-	local widgets = require("dap.ui.widgets")
-	widgets.centered_float(widgets.scopes)
+local function run_java_test_class(debug)
+  local utils = require("utils")
+  local ok, class_name = pcall(utils.get_current_full_class_name)
+  if ok and class_name then
+    vim.cmd("term " .. get_test_runner(class_name, debug))
+  end
 end
 
-vim.keymap.set("n", "<leader>gs", ":lua show_dap_centered_scopes()<CR>")
+local function show_dap_centered_scopes()
+  local widgets = require("dap.ui.widgets")
+  widgets.centered_float(widgets.scopes)
+end
 
-require("jdtls").test_class()
-require("jdtls").test_nearest_method()
-vim.keymap.set("n", "<leader>dZ", function()
-	require("jdtls").test_class()
-end, { silent = true })
-vim.keymap.set("n", "<leader>dn", function()
-	require("jdtls").test_nearest_method()
-end, { silent = true })
+function M.setup()
+  setup_dap()
 
+  -- Spring Boot mappings
+  vim.api.nvim_buf_set_keymap(0, "n", "<F9>", "<cmd>lua require('java-conf').run_spring_boot()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<F10>", "<cmd>lua require('java-conf').run_spring_boot(true)<CR>", {})
 
+  -- Debug mappings
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>da", "<cmd>lua require('java-conf').attach_to_debug()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>b", "<cmd>lua require('dap').toggle_breakpoint()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>B", "<cmd>lua require('dap').set_breakpoint(vim.fn.input('Condition: '))<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>bl", "<cmd>lua require('dap').set_breakpoint(nil, nil, vim.fn.input('Log: '))<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>dr", "<cmd>lua require('dap').repl.open()<CR>", {})
+  
+  -- Test mappings
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>rm", "<cmd>lua require('java-conf').run_java_test_method()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>rM", "<cmd>lua require('java-conf').run_java_test_method(true)<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>rc", "<cmd>lua require('java-conf').run_java_test_class()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>rC", "<cmd>lua require('java-conf').run_java_test_class(true)<CR>", {})
+  
+  -- Scopes view
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>gs", "<cmd>lua require('java-conf').show_dap_centered_scopes()<CR>", {})
 
--- First, ensure your custom command is defined
-vim.api.nvim_create_user_command(
-  'RunDev',
-  function()
-    vim.api.nvim_command('split term://npm run dev')
-  end,
-  {desc = 'Run npm run dev in a split terminal'}
-)
+  -- JDTLS test integration
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>dZ", "<cmd>lua require('jdtls').test_class()<CR>", { silent = true })
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>dn", "<cmd>lua require('jdtls').test_nearest_method()<CR>", { silent = true })
+end
 
+-- Export functions
+M.run_spring_boot = run_spring_boot
+M.attach_to_debug = attach_to_debug
+M.run_java_test_method = run_java_test_method
+M.run_java_test_class = run_java_test_class
+M.show_dap_centered_scopes = show_dap_centered_scopes
+
+return M
