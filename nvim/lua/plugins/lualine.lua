@@ -1,20 +1,21 @@
--- LSP clients attached to buffer
+-- Cached LSP clients function with buffer variable
 local clients_lsp = function()
-  local bufnr = vim.api.nvim_get_current_buf()
-
-  ---@diagnostic disable-next-line: deprecated
-  local clients = vim.lsp.buf_get_clients(bufnr) -- updated version breaks it
-  if next(clients) == nil then
-    return ""
-  end
-
-  local c = {}
-  for _, client in pairs(clients) do
-    table.insert(c, client.name)
-  end
-  return "  " .. table.concat(c, "|")
+  return vim.b.lsp_clients and " " .. table.concat(vim.b.lsp_clients, "|") or ""
 end
 
+-- Update LSP clients cache on attach/detach
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(args)
+    local clients = vim.lsp.get_clients({ bufnr = args.buf })
+    vim.b.lsp_clients = vim.tbl_map(function(client) return client.name end, clients)
+  end
+})
+
+vim.api.nvim_create_autocmd("LspDetach", {
+  callback = function(args)
+    vim.b.lsp_clients = nil
+  end
+})
 return {
   "nvim-lualine/lualine.nvim",
   dependencies = {
@@ -137,7 +138,8 @@ return {
     local branch = {
       "branch",
       icon = "", -- you can set an icon of your choice
-      color = { fg = "#808080", gui = "bold" }, -- sets the foreground to gray, adjust as needed
+      -- color = { fg = "#808080", gui = "bold" }, -- sets the foreground to gray, adjust as needed
+      color = { fg = "#808080" }, -- sets the foreground to gray, adjust as needed
     }
 
     --  CUSTOM MODE COLORS
@@ -145,6 +147,10 @@ return {
     custom_onedark.normal.a.fg = "#8A8DE0"
     custom_onedark.visual.a.fg = "#b8b57d"
     custom_onedark.insert.a.fg = "#77BE84"
+
+    custom_onedark.normal.a.bg = "#2c3043"
+    custom_onedark.visual.a.bg = "#2c3043"
+    custom_onedark.insert.a.bg = "#2c3043"
 
     require("lualine").setup({
       options = {
@@ -160,7 +166,7 @@ return {
         globalstatus = true,
         refresh = {     -- sets how often lualine should refresh it's contents (in ms)
           statusline = 1000, -- The refresh option sets minimum time that lualine tries
-          tabline = 1000, -- to maintain between refresh. It's not guarantied if situation
+          tabline = 10, -- to maintain between refresh. It's not guarantied if situation
           winbar = 1000, -- arises that lualine needs to refresh itself before this time
         },
       },
@@ -199,7 +205,11 @@ return {
             hide_filename_extension = true,                     -- Hide .java | .py | etc...
             show_modified_status = true,                        -- Shows indicator when the buffer is modified.
             use_mode_colors = true,                             -- change colors with MODE
-            color = { fg = "#808080", bg = "#303030", gui = "bold" }, -- sets the foreground to gray, adjust as needed
+            buffers_color = {
+              -- active (DONT SET --> removes MODE_COLOR)
+              active = { fg = "#bb9af7", bg="#2c3043" },
+              inactive = { fg = "#808080", bg = "#1c1e2b" },
+            },            
             mode = 0,                                           -- 0 | 1 | 2 | 3 | 4
             max_length = vim.o.columns * 2 / 3,                 -- Maximum width of buffers component,
             filetype_names = {
