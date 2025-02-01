@@ -8,8 +8,7 @@ gui:
       - black
   showFileTree: true # for rendering changes files in a tree format
 os:
-  editCommand: "nvim"
-  editCommandTemplate: "{{editor}} {{filename}}"
+  editPreset: 'nvim'
 keybinding:
   universal:
     quit: "q"
