@@ -20,7 +20,8 @@
         "show_dap_centered_scopes",
         "open_file_in_background",
         "enabled",
-        "run_npm_dev"
+        "run_npm_dev",
+        "Snacks"
     ],
     "diagnostics.disable": [
         "trailing-space",
