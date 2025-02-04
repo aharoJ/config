@@ -14,7 +14,6 @@
 <br/>
 <!-- END -->
 
-
 <h2 align="center"><a> DOTFILES </a> </h2>
 
 <!-- START -->
@@ -25,23 +24,24 @@
 - [skhd](https://github.com/aharoJ/yabai-skhd-config)
 - [karabiner]()
 
-
 <!-- MID -->
 </td><td valign="top" width="80%">
 <h2 align="center"> <a> contributions </a> </h2>
 
 - [alacritty](https://github.com/aharoJ/dot-alacritty)
-  - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability. 
 
+  - Through experimentation and fine-tuning, I have crafted a setup that prioritizes speed and reliability.
 
 - [vivaldi](https://github.com/aharoJ/dot-vivaldi)
-  - My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs. 
 
+  - My Vivaldi configuration includes a comprehensive list of custom hotkeys, designed to make your browsing experience more efficient and intuitive. I have included shortcuts for a wide range of actions, including panel navigation, window management, dev tools, and tabs.
 
 - [starship](https://github.com/aharoJ/dot-starship)
-  - I have put in substantial effort into creating a unique and visually appealing starship configuration. 
+
+  - I have put in substantial effort into creating a unique and visually appealing starship configuration.
 
 - [tmux](https://github.com/aharoJ/tmux-config)
+
   - My research into color theory and eye-stimulating hues has helped me to carefully select a color scheme, as well as handpick icons that complement the overall design.
 
 - [universal_linker]()
@@ -50,4 +50,3 @@
 </tr></tr></table> 
 <br/>
 <!-- END -->
-
