@@ -37,7 +37,8 @@ if status is-interactive
     set -x PATH $PATH /Users/aharo/.local/bin
 
     # Set JAVA_HOME and add Java binary to PATH
-    set -gx JAVA_HOME (brew --prefix openjdk@17)
+    set -gx JAVA_HOME (brew --prefix openjdk@21)
+    # set -gx JAVA_HOME (brew --prefix openjdk@17)
     # set -gx JAVA_HOME (brew --prefix openjdk@11)
 
     set -gx PATH $JAVA_HOME/bin $PATH
@@ -48,6 +49,16 @@ end
 function vim
     nvim $argv
 end
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX $JAVA_HOME ~~~~~~~~~~~~~~~~~~~~~ #
+if test -n "$TMUX"
+    set -gx JAVA_HOME (brew --prefix openjdk@21)
+    set -gx PATH $JAVA_HOME/bin $PATH
+end
+
+
+
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
 function auto_venv_check --description "Smart venv management"
