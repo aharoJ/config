@@ -57,6 +57,9 @@ if test -n "$TMUX"
 end
 
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ GITHUB STUFF ~~~~~~~~~~~~~~~~~~~~~ #
+set -x GPG_TTY (tty)
+
 
 
 
