@@ -1,4 +1,15 @@
 
+
+## My Fish Package Manager
+- [read official docs](https://github.com/jorgebucaran/fisher)
+
+
+
+
+
+
+
+
 ## FISH + TMUX <==> Python VENV 
 ### Optimization Breakdown:
 1. **Inode-Based Tracking**  
@@ -37,3 +48,6 @@
 3. **No Echo Statements** ensures complete silence
 
 > This represents the practical limit of shell script optimization for this use case. Further improvements would require moving to a compiled binary helper, which would provide ≈10x speedup but add deployment complexity.
+
+
+
