@@ -1,0 +1,11 @@
+
+
+
+> initially we flag --init
+
+```sh
+copybara copy.bara.sky migrate_backend --init-history
+```
+
+copybara copy.bara.sky migrate_backend --force
+copybara copy.bara.sky migrate_frontend --force
