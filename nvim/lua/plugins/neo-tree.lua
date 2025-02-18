@@ -1,44 +1,10 @@
 return {
 	{
-		require("nvim-web-devicons").setup({
-			override = {
-				lua = {
-					icon = "",
-					color = "#51a0cf",
-					cterm_color = "74",
-					name = "Lua",
-				},
-			},
-			default = true,
-		}),
-	},
-	-- {
-	-- 	"s1n7ax/nvim-window-picker",
-	-- 	version = "2.*",
-	-- 	config = function()
-	-- 		require("window-picker").setup({
-	-- 			filter_rules = {
-	-- 				include_current_win = false,
-	-- 				autoselect_one = true,
-	-- 				-- filter using buffer options
-	-- 				bo = {
-	-- 					-- if the file type is one of following, the window will be ignored
-	-- 					filetype = { "neo-tree", "neo-tree-popup", "notify" },
-	-- 					-- if the buffer type is one of following, the window will be ignored
-	-- 					buftype = { "terminal", "quickfix" },
-	-- 				},
-	-- 			},
-	-- 		})
-	-- 	end,
-	-- },
-
-	{
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"MunifTanjim/nui.nvim",
-			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
 		},
 		config = function()
 			-- If you want icons for diagnostic errors, you'll need to define them somewhere:
@@ -53,8 +19,8 @@ return {
 				enable_git_status = true,
 				enable_diagnostics = true,
 				open_files_do_not_replace_types = { "terminal", "trouble", "qf" }, -- when opening files, do not use windows containing these filetypes or buftypes
-				sort_case_insensitive = false, 
-				sort_function = nil, 
+				sort_case_insensitive = false,
+				sort_function = nil,
 				default_component_configs = {
 					container = {
 						enable_character_fade = true,
@@ -74,9 +40,9 @@ return {
 						expander_highlight = "NeoTreeExpander",
 					},
 					icon = {
-						folder_closed = "",
-						folder_open = "",
-						folder_empty = "󰜌",
+						folder_closed = "",
+						folder_open = "",
+						folder_empty = "󱧹",
 						default = "*",
 						highlight = "NeoTreeFileIcon",
 					},
@@ -138,7 +104,7 @@ return {
 						["<2-LeftMouse>"] = "open",
 						["<cr>"] = "open",
 						["<esc>"] = "cancel",
-						["h"] = { "toggle_preview", config = { use_float = true, use_image_nvim = true } },
+						["P"] = { "toggle_preview", config = { use_float = true, use_image_nvim = true } },
 						["l"] = "open", -- This binds the 'l' key to the open action
 						-- ["S"] = "open_split",
 						["s"] = "open_vsplit",
@@ -148,7 +114,6 @@ return {
 						-- ["<cr>"] = "open_drop",
 						-- ["t"] = "open_tab_drop",
 						["w"] = "open_with_window_picker",
-						--["P"] = "toggle_preview", -- enter preview mode, which shows the current node without focusing
 						["C"] = "close_node",
 						-- ['C'] = 'close_all_subnodes',
 						["z"] = "close_all_nodes",
@@ -207,8 +172,8 @@ return {
 							".git",
 							".next",
 							".vercel",
-							-- "node_modules",
-              ".vscode",
+							"node_modules",
+							".vscode",
 							--"thumbs.db"
 						},
 						never_show_by_pattern = {
@@ -216,7 +181,7 @@ return {
 						},
 					},
 					follow_current_file = {
-						enabled = false, -- This will find and focus the file in the active buffer every time
+						enabled = false,     -- This will find and focus the file in the active buffer every time
 						--               -- the current file is changed while the tree is open.
 						leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
 					},
@@ -318,5 +283,20 @@ return {
 
 			-- vim.cmd([[nnoremap \ :Neotree reveal<cr>]])
 		end,
+	},
+
+
+	{
+		require("nvim-web-devicons").setup({
+			override = {
+				lua = {
+					icon = "",
+					color = "#51a0cf",
+					cterm_color = "74",
+					name = "Lua",
+				},
+			},
+			default = true,
+		}),
 	},
 }

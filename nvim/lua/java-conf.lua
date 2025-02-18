@@ -1,16 +1,19 @@
+-- ~/.config/nvim/lua/java-conf.lua
+
 local M = {}
 
 local function setup_dap()
   local dap = require("dap")
+  -- Remove or comment out the manual adapter configuration:
+  --[[
   dap.adapters.java = {
     type = 'executable',
     command = 'java',
-    args = { 
-      '-jar', 
+    args = {
+      '-jar',
       vim.fn.glob("/Users/aharo/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar")
     }
   }
-
   dap.configurations.java = {
     {
       type = 'java',
@@ -20,12 +23,14 @@ local function setup_dap()
       port = "5005",
     },
   }
+  ]]
 end
 
 local function get_spring_boot_runner(profile, debug)
   local debug_param = ""
   if debug then
-    debug_param = ' -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" '
+    debug_param =
+    ' -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" '
   end
 
   local profile_param = ""
@@ -77,28 +82,28 @@ function M.setup()
   setup_dap()
 
   -- Spring Boot mappings
-  vim.api.nvim_buf_set_keymap(0, "n", "<F9>", "<cmd>lua require('java-conf').run_spring_boot()<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>ZZ", "<cmd>lua require('java-conf').run_spring_boot()<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<F10>", "<cmd>lua require('java-conf').run_spring_boot(true)<CR>", {})
 
   -- Debug mappings
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>da", "<cmd>lua require('java-conf').attach_to_debug()<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>b", "<cmd>lua require('dap').toggle_breakpoint()<CR>", {})
-  vim.api.nvim_buf_set_keymap(0, "n", "<leader>B", "<cmd>lua require('dap').set_breakpoint(vim.fn.input('Condition: '))<CR>", {})
-  vim.api.nvim_buf_set_keymap(0, "n", "<leader>bl", "<cmd>lua require('dap').set_breakpoint(nil, nil, vim.fn.input('Log: '))<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>B",
+  "<cmd>lua require('dap').set_breakpoint(vim.fn.input('Condition: '))<CR>", {})
+  vim.api.nvim_buf_set_keymap(0, "n", "<leader>bl",
+    "<cmd>lua require('dap').set_breakpoint(nil, nil, vim.fn.input('Log: '))<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>dr", "<cmd>lua require('dap').repl.open()<CR>", {})
-  
+
   -- Test mappings
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>rm", "<cmd>lua require('java-conf').run_java_test_method()<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>rM", "<cmd>lua require('java-conf').run_java_test_method(true)<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>rc", "<cmd>lua require('java-conf').run_java_test_class()<CR>", {})
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>rC", "<cmd>lua require('java-conf').run_java_test_class(true)<CR>", {})
-  
-  -- Scopes view
+
+  -- Scopes view mapping
   vim.api.nvim_buf_set_keymap(0, "n", "<leader>gs", "<cmd>lua require('java-conf').show_dap_centered_scopes()<CR>", {})
 
-  -- JDTLS test integration
-  vim.api.nvim_buf_set_keymap(0, "n", "<leader>dZ", "<cmd>lua require('jdtls').test_class()<CR>", { silent = true })
-  vim.api.nvim_buf_set_keymap(0, "n", "<leader>dn", "<cmd>lua require('jdtls').test_nearest_method()<CR>", { silent = true })
+  -- (Optional) You may include additional mappings as needed.
 end
 
 -- Export functions
