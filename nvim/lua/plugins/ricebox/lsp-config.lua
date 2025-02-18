@@ -1,39 +1,16 @@
 return {
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  -- THESE PLUGINS CANNOT BE SEPARATED 
+  -- "williamboman/mason.nvim",
+  -- "williamboman/mason-lspconfig.nvim",
+  -- "neovim/nvim-lspconfig",
   {
-    "WhoIsSethDaniel/toggle-lsp-diagnostics.nvim",
-    config = function()
-      require("toggle_lsp_diagnostics").init()
-      vim.api.nvim_set_keymap("n", "<leader>tl", "<Plug>(toggle-lsp-diag)", { noremap = true, silent = true })
-      -- vim.api.nvim_set_keymap('n', '<leader>ctu', '<Plug>(toggle-lsp-diag-underline)', { noremap = true, silent = true })
-      -- vim.api.nvim_set_keymap('n', '<leader>cts', '<Plug>(toggle-lsp-diag-signs)', { noremap = true, silent = true })
-      -- vim.api.nvim_set_keymap('n', '<leader>ctv', '<Plug>(toggle-lsp-diag-vtext)', { noremap = true, silent = true })
-      -- vim.api.nvim_set_keymap('n', '<leader>ctp', '<Plug>(toggle-lsp-diag-update_in_insert)', { noremap = true, silent = true })
-      -- vim.api.nvim_set_keymap('n', '<leader>tldd', '<Plug>(toggle-lsp-diag-default)', { noremap = true, silent = true })
-    end,
-  },
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  {
-    "mfussenegger/nvim-jdtls", -- ***Java LSP***
-  },
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  {
-    "mrcjkb/rustaceanvim",
-    version = "^4", -- Recommended
-    lazy = false, -- This plugin is already lazy
-  },
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  {
-    "williamboman/mason.nvim",
-    lazy = false,
+    "williamboman/mason.nvim", lazy = false,
     config = function()
       require("mason").setup()
     end,
   },
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   {
-    "williamboman/mason-lspconfig.nvim",
-    lazy = false,
+    "williamboman/mason-lspconfig.nvim", lazy = false,
     config = function()
       require("mason-lspconfig").setup({
         ensure_installed = { "lua_ls", "rust_analyzer", "pyright", "ts_ls", "bashls" },
@@ -41,12 +18,11 @@ return {
       })
     end,
   },
-  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
   {
     "neovim/nvim-lspconfig",
     dependencies = { "folke/neodev.nvim", opts = {} },
     lazy = false,
-    -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md -- OUTDATED
     -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
     config = function()
       -------------------    DAP UI    ------------------------
@@ -68,7 +44,7 @@ return {
       })
 
       -------------------        TAILWINDCSS       ------------------------
-      lspconfig.tailwindcss.setup({ -- TAILWINDCSS
+      lspconfig.tailwindcss.setup({
         capabilities = capabilities,
       })
 
@@ -151,5 +127,11 @@ return {
         print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
       end, { noremap = true, silent = true })
     end,
+  },
+
+
+
+  {
+    "mfussenegger/nvim-jdtls", -- ***Java LSP***
   },
 }
