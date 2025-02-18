@@ -117,7 +117,7 @@ config["on_attach"] = function(client, bufnr)
   jdtls.setup_dap({ hotcodereplace = "auto" })
   -- nvim@10 issues introduced
   -- require("java-conf").on_attach(client, bufnr)
-    require("java-conf").setup()
+  require("java-conf").setup()
 end
 
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
