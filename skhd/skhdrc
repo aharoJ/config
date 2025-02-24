@@ -18,10 +18,10 @@ hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
 # hyper - l : yabai -m window --focus east     # l ->
 
 # Set insertion point for focused container  ~ like it highlights were the new pane will spawn ~ 
-shift + alt - h : yabai -m window --insert west      # h <-
-shift + alt - j : yabai -m window --insert south     # j v
-shift + alt - k : yabai -m window --insert north     # k ^
-shift + alt - l : yabai -m window --insert east      # l ->
+# shift + alt - h : yabai -m window --insert west      # h <-
+# shift + alt - j : yabai -m window --insert south     # j v
+# shift + alt - k : yabai -m window --insert north     # k ^
+# shift + alt - l : yabai -m window --insert east      # l ->
 
 # # Window Resizing Shortcuts (Increase Size)
 # hyper - u : yabai -m window --resize left:-20:0  # y <-
@@ -38,33 +38,10 @@ shift + alt - l : yabai -m window --insert east      # l ->
 
 
 
-# # ~~~~~~~~~~~~~~~~~~~~~~~~     Workspaces == Desktop     ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~     Workspaces == Desktop     ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # shift + alt - m : yabai -m window --space last; yabai -m space --focus last
 # shift + alt - p : yabai -m window --space prev; yabai -m space --focus prev
 # shift + alt - n : yabai -m window --space next; yabai -m space --focus next
-
-# rshift - 1 : yabai -m window --space 1; yabai -m space --focus 1
-# rshift - 2 : yabai -m window --space 2; yabai -m space --focus 2
-# rshift - 3 : yabai -m window --space 3; yabai -m space --focus 3
-# rshift - 4 : yabai -m window --space 4; yabai -m space --focus 4
-# rshift - 5 : yabai -m window --space 5; yabai -m space --focus 5
-# rshift - 6 : yabai -m window --space 6; yabai -m space --focus 6
-# rshift - 7 : yabai -m window --space 7; yabai -m space --focus 7
-# rshift - 8 : yabai -m window --space 8; yabai -m space --focus 8
-# rshift - 9 : yabai -m window --space 9; yabai -m space --focus 9
-
-# rcmd + rshift   - w : yabai -m space --destroy # destroy desktop  
-
-# # jumping to different desktops
-hyper - 1 : yabai -m space --focus 1
-hyper - 2 : yabai -m space --focus 2
-hyper - 3 : yabai -m space --focus 3
-rcmd - 4 : yabai -m space --focus 4
-rcmd - 5 : yabai -m space --focus 5
-rcmd - 6 : yabai -m space --focus 6
-rcmd - 7 : yabai -m space --focus 7
-rcmd - 8 : yabai -m space --focus 8
-rcmd - 9 : yabai -m space --focus 9
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
@@ -103,13 +80,9 @@ rshift - k : /Applications/kitty.app/Contents/MacOS/kitty
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      CLI SCRIPTS         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       ROTATING         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -121,7 +94,6 @@ hyper - y : yabai -m space --mirror y-axis # Rotate on Y Axis
 
 
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      RANDOM GEMS       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 #hyper - 0x1B : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
 hyper - e : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
@@ -129,9 +101,6 @@ rcmd - b : yabai -m window --toggle border                                     #
 hyper - z : yabai -m window --toggle zoom-fullscreen                           # toggle window fullscreen zoom
 hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 # toggle sticky 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-
-
 
 
 
