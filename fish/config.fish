@@ -106,3 +106,8 @@ end
 # Initialize for new shells
 auto_venv_check
 
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ C# Stuff ~~~~~~~~~~~~~~~~~~~~~ #
+
