@@ -4,7 +4,7 @@ return {
   "nvimtools/none-ls.nvim",
   dependencies = {
     "gbprod/none-ls-shellcheck.nvim", -- shellcheck
-    "nvimtools/none-ls-extras.nvim",  -- eslint_d --> TS/JS
+    "nvimtools/none-ls-extras.nvim", -- eslint_d --> TS/JS
   },
   config = function()
     -- https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
@@ -51,6 +51,9 @@ return {
         -------------------        SQL       ------------------------
         null_ls.builtins.formatting.pg_format,
 
+        -------------------        C#        ------------------------
+        null_ls.builtins.formatting.csharpier,
+        -- dont think there is a linter?
 
         -------------------        PRETTIER FORMATTER       ------------------------
         null_ls.builtins.formatting.prettierd,
@@ -61,3 +64,4 @@ return {
     vim.keymap.set("n", "<leader>cf", vim.lsp.buf.format, {})
   end,
 }
+
