@@ -1,16 +1,18 @@
 return {
-  -- THESE PLUGINS CANNOT BE SEPARATED 
+  -- THESE PLUGINS CANNOT BE SEPARATED
   -- "williamboman/mason.nvim",
   -- "williamboman/mason-lspconfig.nvim",
   -- "neovim/nvim-lspconfig",
   {
-    "williamboman/mason.nvim", lazy = false,
+    "williamboman/mason.nvim",
+    lazy = false,
     config = function()
       require("mason").setup()
     end,
   },
   {
-    "williamboman/mason-lspconfig.nvim", lazy = false,
+    "williamboman/mason-lspconfig.nvim",
+    lazy = false,
     config = function()
       require("mason-lspconfig").setup({
         ensure_installed = { "lua_ls", "rust_analyzer", "pyright", "ts_ls", "bashls" },
@@ -21,7 +23,11 @@ return {
   ------------------------------------------------------------------------------------------------
   {
     "neovim/nvim-lspconfig",
-    dependencies = { "folke/neodev.nvim", opts = {} },
+    dependencies = {
+      "folke/neodev.nvim",
+      "mfussenegger/nvim-jdtls",        -- JAVA *** REQUIRED ***
+      "Hoffs/omnisharp-extended-lsp.nvim", -- C# *** REQUIRED ***
+    },
     lazy = false,
     -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
     config = function()
@@ -83,6 +89,24 @@ return {
         capabilities = capabilities,
       })
 
+      ---------------------        C#       ------------------------
+      lspconfig.omnisharp.setup({
+        capabilities = capabilities,
+        cmd = {
+          "dotnet",
+          vim.fn.stdpath("data") .. "/mason/packages/omnisharp/libexec/OmniSharp.dll",
+        },
+        enable_editorconfig_support = true,
+        enable_roslyn_analyzers = true,
+        organize_imports_on_format = true,
+        enable_import_completion = true,
+        handlers = {
+          ["textDocument/definition"] = require("omnisharp_extended").definition_handler,
+          ["textDocument/references"] = require("omnisharp_extended").references_handler,
+          ["textDocument/implementation"] = require("omnisharp_extended").implementation_handler,
+        },
+      })
+
       -------------------        SWIFT       ------------------------
       lspconfig.sourcekit.setup({
         capabilities = capabilities,
@@ -129,9 +153,7 @@ return {
     end,
   },
 
-
-
-  {
-    "mfussenegger/nvim-jdtls", -- ***Java LSP***
-  },
+  -- {
+  --   "mfussenegger/nvim-jdtls", -- ***Java LSP***
+  -- },
 }
