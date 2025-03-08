@@ -1,3 +1,3 @@
--- return {
---     "mfussenegger/nvim-jdtls", -- ***Java LSP***
--- }
+return {
+    "mfussenegger/nvim-jdtls", -- ***Java LSP***
+}

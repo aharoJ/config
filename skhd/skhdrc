@@ -2,7 +2,6 @@
 # HYPER == SHIFT + CMD + ALT + OPTION
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     WINDOW | PANES     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
 # SWAP  <~~>  WINDOWS
 hyper - j : yabai -m window --swap south
 hyper - k : yabai -m window --swap north
@@ -103,10 +102,6 @@ hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
 
