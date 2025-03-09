@@ -176,6 +176,12 @@ disabled = false
 symbol = "• 󰰠 "
 format = '[${symbol}]($style)'
 style = "fg:#a48989"
+
+[dotnet]
+disabled = false
+symbol = " "
+format = '[${symbol}]($style)'
+heuristic = true
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
