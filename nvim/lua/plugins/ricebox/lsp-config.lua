@@ -1,3 +1,4 @@
+-- /lua.plugins.ricebox.lsp-config
 return {
   -- THESE PLUGINS CANNOT BE SEPARATED
   -- "williamboman/mason.nvim",
@@ -25,8 +26,8 @@ return {
     "neovim/nvim-lspconfig",
     dependencies = {
       "folke/neodev.nvim",
-      "mfussenegger/nvim-jdtls",        -- JAVA *** REQUIRED ***
-      "Hoffs/omnisharp-extended-lsp.nvim", -- C# *** REQUIRED ***
+      { "mfussenegger/nvim-jdtls",           lazy = false }, -- JAVA *** REQUIRED ***
+      { "Hoffs/omnisharp-extended-lsp.nvim", lazy = false }, -- C# *** REQUIRED ***
     },
     lazy = false,
     -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
@@ -89,23 +90,8 @@ return {
         capabilities = capabilities,
       })
 
-      ---------------------        C#       ------------------------
-      lspconfig.omnisharp.setup({
-        capabilities = capabilities,
-        cmd = {
-          "dotnet",
-          vim.fn.stdpath("data") .. "/mason/packages/omnisharp/libexec/OmniSharp.dll",
-        },
-        enable_editorconfig_support = true,
-        enable_roslyn_analyzers = true,
-        organize_imports_on_format = true,
-        enable_import_completion = true,
-        handlers = {
-          ["textDocument/definition"] = require("omnisharp_extended").definition_handler,
-          ["textDocument/references"] = require("omnisharp_extended").references_handler,
-          ["textDocument/implementation"] = require("omnisharp_extended").implementation_handler,
-        },
-      })
+      ---------------------  C# OmniSharp Setup  ------------------------
+      require("plugins.ricebox.omnisharp").setup(capabilities)
 
       -------------------        SWIFT       ------------------------
       lspconfig.sourcekit.setup({
