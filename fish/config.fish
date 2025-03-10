@@ -37,10 +37,9 @@ if status is-interactive
     set -x PATH $PATH /Users/aharo/.local/bin
 
     # Set JAVA_HOME and add Java binary to PATH
-    set -gx JAVA_HOME (brew --prefix openjdk@21)
-    # set -gx JAVA_HOME (brew --prefix openjdk@17)
-    # set -gx JAVA_HOME (brew --prefix openjdk@11)
-
+    set -gx JAVA_HOME (brew --prefix openjdk@21) # default
+    # set -gx JAVA_HOME (brew --prefix openjdk@17) # Android SDK
+    # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
     set -gx PATH $JAVA_HOME/bin $PATH
 end
 #################################################################################
@@ -52,7 +51,9 @@ end
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX $JAVA_HOME ~~~~~~~~~~~~~~~~~~~~~ #
 if test -n "$TMUX"
-    set -gx JAVA_HOME (brew --prefix openjdk@21)
+    set -gx JAVA_HOME (brew --prefix openjdk@21) # default
+    # set -gx JAVA_HOME (brew --prefix openjdk@17) # Android SDK
+    # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
     set -gx PATH $JAVA_HOME/bin $PATH
 end
 
@@ -110,4 +111,4 @@ auto_venv_check
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ C# Stuff ~~~~~~~~~~~~~~~~~~~~~ #
-
+set -gx ANDROID_HOME ~/Library/Android/sdk
