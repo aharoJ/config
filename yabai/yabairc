@@ -29,6 +29,10 @@ yabai -m rule --add app="^Spotify$" manage=off
 # yabai -m rule --add app="^console$" manage=off
 yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
 
+# ~~~~~~~~~~~~~~~~~~~~~~   Iphone Developing with MAUI   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+yabai -m rule --add app="^Simulator$" manage=off
+# Window -> Stay on top
+
 ## Some random global settings
 #yabai -m config focus_follows_mouse          autoraise
 #yabai -m config focus_follows_mouse          on
