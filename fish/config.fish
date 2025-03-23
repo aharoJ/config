@@ -42,12 +42,13 @@ if status is-interactive
     # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
     set -gx PATH $JAVA_HOME/bin $PATH
 end
-#################################################################################
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET NEOVIM AS DEFAULT ~~~~~~~~~~~~~~~~~~~~~ #
 function vim
     nvim $argv
 end
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX $JAVA_HOME ~~~~~~~~~~~~~~~~~~~~~ #
 if test -n "$TMUX"
@@ -56,59 +57,43 @@ if test -n "$TMUX"
     # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
     set -gx PATH $JAVA_HOME/bin $PATH
 end
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ GITHUB STUFF ~~~~~~~~~~~~~~~~~~~~~ #
 set -x GPG_TTY (tty)
-
-
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
-function auto_venv_check --description "Smart venv management"
-    # Check exact directory match first
-    if test -n "$VIRTUAL_ENV" && string match -q "$VIRTUAL_ENV" (pwd -P)/venv
-        return
-    end
+# set -g project_dir "$HOME/desk/development/python/dcrm-project"
+#
+# function __auto_venv --on-variable PWD
+#     # Check if we're in project root OR any subdirectory
+#     if string match -q "$project_dir*" "$PWD"
+#         # Only activate if venv exists and not already active
+#         if test -e "$project_dir/denv/bin/activate.fish"
+#             if not set -q VIRTUAL_ENV
+#                 echo "Activating project virtual environment..."
+#                 source "$project_dir/denv/bin/activate.fish"
+#             end
+#         end
+#     else
+#         # Deactivate only if leaving project entirely
+#         if set -q VIRTUAL_ENV
+#             echo "Deactivating virtual environment..."
+#             deactivate
+#         end
+#     end
+# end
+#
+# # Initial check when shell starts
+# __auto_venv
 
-    # Current directory check
-    if test -e ./venv/bin/activate.fish
-        source ./venv/bin/activate.fish >/dev/null 2>&1
-        return
-    end
-
-    # Parent directory search (3 levels)
-    set -l parent (pwd -P)
-    for i in 1 2 3
-        set parent (dirname "$parent")
-        if test -e "$parent/venv/bin/activate.fish"
-            source "$parent/venv/bin/activate.fish" >/dev/null 2>&1
-            return
-        end
-        test "$parent" = "/" && break
-    end
-
-    # Clean deactivation
-    if set -q VIRTUAL_ENV && functions -q deactivate
-        deactivate >/dev/null 2>&1
-    end
-end
-
-# Prevent duplicate checks during rapid directory changes
-function __force_venv_check --on-variable PWD
-    set -l dir_id (stat -c %i:%d . 2>/dev/null || stat -f %i:%d .)
-    if not set -q __venv_last_id || test "$dir_id" != "$__venv_last_id"
-        auto_venv_check
-        set -g __venv_last_id "$dir_id"
-    end
-    commandline -f repaint
-end
-
-# Initialize for new shells
-auto_venv_check
-
-
+# DOES NOT WORK WITH TMUX SOOO I WILL NOT USE IT NO MORE 
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ C# Stuff ~~~~~~~~~~~~~~~~~~~~~ #
 set -gx ANDROID_HOME ~/Library/Android/sdk
+# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
