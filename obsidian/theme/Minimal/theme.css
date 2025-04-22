@@ -1,17 +1,15 @@
-/* ---------------------------------------------------------------------------
-Modifications by aharoJ 
-@author aharoJ
-@Github https://github.com/aharoJ
-*/
+/* ─────────────────────────────────────────────────────────
+            Modifications by aharoJ 
+            @author aharoJ
+            @Github https://github.com/aharoJ
+
+    -- JUMP TO THE VERY END  
+───────────────────────────────────────────────────────── */
+
+
 
 body {
-  --font-text-theme: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Inter, Ubuntu, sans-serif;
   --font-editor-theme: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Inter, Ubuntu, sans-serif;
-  --font-monospace-theme: Menlo, SFMono-Regular, Consolas, "Roboto Mono",
-    monospace;
-  --font-interface-theme: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Inter, Ubuntu, sans-serif;
   --font-editor: var(--font-editor-override), var(--font-text-override),
     var(--font-editor-theme);
@@ -23,11 +21,11 @@ body {
   --blockquote-border-color: var(--quote-opening-modifier);
   --embed-block-shadow-hover: none;
   --font-ui-smaller: 11px;
-  --normal-weight: 300;
-  --inline-title-margin-bottom: 3rem;
-  --h1-size: 2.2em;
-  --h2-size: 1.7em;
-  --h3-size: 1.3em;
+  --normal-weight: 400;
+  --inline-title-margin-bottom: 1rem;
+  --h1-size: 1.125em;
+  --h2-size: 1.05em;
+  --h3-size: 1em;
   --h4-size: 0.9em;
   --h5-size: 0.85em;
   --h6-size: 0.85em;
@@ -52,7 +50,7 @@ body {
   --line-width: 40rem;
   --line-height: 1.5;
   --line-height-normal: var(--line-height);
-  --max-width: 98%;
+  --max-width: 88%;
   --max-col-width: 18em;
   --icon-muted: 0.5;
   --nested-padding: 1.1em;
@@ -62,7 +60,10 @@ body {
   --list-spacing: 0.075em;
   --input-height: 32px;
   --header-height: 40px;
-  --metadata-label-width: 9rem;
+  --metadata-label-width-multiplier: 9;
+  --metadata-label-width: calc(
+    var(--font-adaptive-small) * var(--metadata-label-width-multiplier)
+  );
   --metadata-label-font-size: var(--font-adaptive-small);
   --metadata-input-font-size: var(--font-adaptive-small);
   --mobile-left-sidebar-width: 280pt;
@@ -104,71 +105,7 @@ body {
   --accent-s: 17%;
   --accent-l: 50%;
 }
-
-/*******************  aharoJ  **********************/
-
-.theme-dark {
-  --text-title-h1: #afc7d9;
-  --text-title-h2: #809fbf;
-  --text-title-h3: #6d84b4;
-  --text-title-h4: #ff6f61;
-  --text-title-h5: #aac6d0;
-
-  /* --text-title-h1: #bba06a;
-  --text-title-h2: #83919f;
-  --text-title-h3: #859679;
-  --text-title-h4: #9e6f6f;
-  --text-title-h5: #9e6f6f; */
-}
-
-.theme-light {
-  --text-title-h1: #bba06a;
-  --text-title-h2: #83919f;
-  --text-title-h3: #859679;
-  --text-title-h4: #9e6f6f;
-  --text-title-h5: #9e6f6f;
-}
-.cm-header-1 {
-  font-family: var(--font-family-editor);
-  font-weight: 500;
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--text-title-h1);
-}
-
-.cm-header-2 {
-  font-family: var(--font-family-editor);
-  font-weight: 500;
-  font-size: 26px;
-  font-weight: bold;
-  color: var(--text-title-h2);
-}
-
-.cm-header-3 {
-  font-family: var(--font-family-editor);
-  font-weight: 500;
-  font-size: 22px;
-  font-weight: bold;
-  color: var(--text-title-h3);
-}
-
-.cm-header-4 {
-  font-family: var(--font-family-editor);
-  font-weight: 500;
-  font-size: 20px;
-  font-weight: bold;
-  color: var(--text-title-h4);
-}
-
-.cm-header-5 {
-  font-family: var(--font-family-editor);
-  font-weight: 500;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-title-h5);
-}
-/**************************************************/
-
+.theme-dark,
 .theme-light {
   --color-red-rgb: 208, 66, 85;
   --color-orange-rgb: 213, 118, 63;
@@ -457,7 +394,7 @@ body {
 .minimal-dev-block-width .mod-root .workspace-leaf-content:after {
   display: flex;
   align-items: flex-end;
-  content: "\00a0pane\00a0";
+  content: " pane ";
   font-size: 12px;
   color: gray;
   font-family: var(--font-monospace);
@@ -483,8 +420,8 @@ body {
   background-color: rgba(0, 128, 0, 0.1);
   top: 0;
   left: max(
-    calc(50% - var(--line-width) / 2 - 1px),
-    calc(50% - var(--max-width) / 2 - 1px)
+    50% - var(--line-width) / 2 - 1px,
+    50% - var(--max-width) / 2 - 1px
   );
   z-index: 999;
   position: fixed;
@@ -511,7 +448,7 @@ body {
 .minimal-dev-block-width .mod-root .view-content:before {
   display: flex;
   align-items: flex-end;
-  content: "\00a0max\00a0";
+  content: " max ";
   font-size: 12px;
   color: red;
   width: var(--max-width);
@@ -530,7 +467,7 @@ body {
   .workspace-leaf-content:before {
   display: flex;
   align-items: flex-end;
-  content: "\00a0wide\00a0";
+  content: " wide ";
   font-size: 12px;
   color: orange;
   font-family: var(--font-monospace);
@@ -553,7 +490,7 @@ body {
   color: #00f;
   font-size: 12px;
   font-family: var(--font-monospace);
-  content: "\00a0normal";
+  content: " normal";
   width: var(--line-width);
   max-width: var(--max-width);
   height: 100vh;
@@ -698,7 +635,7 @@ body {
   border: 0;
 }
 .metadata-container {
-  --input-height: 2rem;
+  --input-height: calc(var(--font-adaptive-small) * 2.2);
 }
 body.metadata-heading-off .metadata-properties-heading {
   display: none;
@@ -876,7 +813,7 @@ body.ribbon-vertical-expand:not(.is-mobile)
 .ribbon-bottom-left-hover-vertical .side-dock-settings {
   flex-direction: row;
   display: var(--hider-ribbon-display);
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   margin: 0;
   position: relative;
   gap: var(--size-2-2);
@@ -1059,7 +996,7 @@ body.window-title-off .titlebar-text {
   display: none;
 }
 .titlebar-button-container.mod-right {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 .is-hidden-frameless.theme-dark:not(.minimal-dark-black):not(.colorful-frame),
 .is-hidden-frameless.theme-light:not(.minimal-light-tonal):not(
@@ -1188,7 +1125,7 @@ body:not(.is-mobile).labeled-nav.vault-profile-top
   top: var(--labeled-nav-top-margin);
   z-index: 6;
   width: 100%;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   border-top: 0;
   border-bottom: 1px solid var(--background-modifier-border);
 }
@@ -1379,7 +1316,7 @@ body {
 body:not(.hider-scrollbars).styled-scrollbars ::-webkit-scrollbar,
 body:not(.native-scrollbars) ::-webkit-scrollbar {
   width: 11px;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 body:not(.hider-scrollbars).styled-scrollbars ::-webkit-scrollbar:horizontal,
 body:not(.native-scrollbars) ::-webkit-scrollbar:horizontal {
@@ -1387,11 +1324,11 @@ body:not(.native-scrollbars) ::-webkit-scrollbar:horizontal {
 }
 body:not(.hider-scrollbars).styled-scrollbars ::-webkit-scrollbar-corner,
 body:not(.native-scrollbars) ::-webkit-scrollbar-corner {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 body:not(.hider-scrollbars).styled-scrollbars ::-webkit-scrollbar-track,
 body:not(.native-scrollbars) ::-webkit-scrollbar-track {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 body:not(.hider-scrollbars).styled-scrollbars ::-webkit-scrollbar-thumb,
 body:not(.native-scrollbars) ::-webkit-scrollbar-thumb {
@@ -1480,7 +1417,7 @@ body:not(.native-scrollbars) ::-webkit-scrollbar-thumb:active {
   --callout-border-opacity: 0.5;
   --callout-title-size: 0.8em;
   --callout-blend-mode: normal;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .callouts-outlined .cm-embed-block.cm-callout {
   padding-top: 12px;
@@ -1637,7 +1574,7 @@ body {
 }
 .markdown-embed .file-embed-link:hover:hover,
 .markdown-embed .markdown-embed-link:hover:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   --icon-color: var(--text-accent);
 }
 .file-embed-link:hover,
@@ -1711,7 +1648,9 @@ body {
   --pdf-thumbnail-shadow: none;
 }
 .theme-dark:not(.pdf-shadows-on) .pdf-viewer .page,
-.theme-light:not(.pdf-shadows-on) .pdf-viewer .page {
+.theme-dark:not(.pdf-shadows-on) .pdfViewer .page,
+.theme-light:not(.pdf-shadows-on) .pdf-viewer .page,
+.theme-light:not(.pdf-shadows-on) .pdfViewer .page {
   border: 0;
 }
 .theme-dark:not(.pdf-shadows-on) .pdf-sidebar-container .thumbnailSelectionRing,
@@ -1729,12 +1668,17 @@ body {
   --pdf-thumbnail-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.6);
   --pdf-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.6);
 }
-.theme-dark .pdf-viewer .canvasWrapper {
+.theme-dark .pdf-viewer .canvasWrapper,
+.theme-dark .pdfViewer .canvasWrapper {
   opacity: var(--pdf-dark-opacity);
 }
 .theme-dark.pdf-invert-dark
   .workspace-leaf-content[data-type="pdf"]
   .pdf-viewer
+  .canvasWrapper,
+.theme-dark.pdf-invert-dark
+  .workspace-leaf-content[data-type="pdf"]
+  .pdfViewer
   .canvasWrapper {
   filter: invert(1) hue-rotate(180deg);
   mix-blend-mode: screen;
@@ -1742,6 +1686,10 @@ body {
 .theme-light.pdf-blend-light
   .workspace-leaf-content[data-type="pdf"]
   .pdf-viewer
+  .canvasWrapper,
+.theme-light.pdf-blend-light
+  .workspace-leaf-content[data-type="pdf"]
+  .pdfViewer
   .canvasWrapper {
   mix-blend-mode: multiply;
 }
@@ -1796,6 +1744,9 @@ body {
 .markdown-source-view.mod-cm6 th:last-child .table-cell-wrapper {
   padding-inline-end: 0;
 }
+.markdown-source-view.mod-cm6 .cm-table-widget table {
+  margin-top: 0;
+}
 .markdown-source-view.mod-cm6 .cm-table-widget .table-cell-wrapper {
   padding: var(--table-cell-padding);
 }
@@ -1808,19 +1759,6 @@ body {
 }
 .is-mobile .cm-embed-block.cm-table-widget.markdown-rendered {
   padding-bottom: 40px;
-}
-.table-100 .markdown-source-view.mod-cm6,
-.table-100.markdown-source-view.mod-cm6 {
-  --table-drag-handle-background-active: transparent;
-}
-.table-100
-  .markdown-source-view.mod-cm6
-  .cm-table-widget
-  .table-row-drag-handle,
-.table-100.markdown-source-view.mod-cm6
-  .cm-table-widget
-  .table-row-drag-handle {
-  inset-inline-end: calc(100% - var(--table-drag-handle-size)) !important;
 }
 .markdown-preview-view th,
 .markdown-source-view.mod-cm6
@@ -1898,7 +1836,6 @@ input {
 .popover,
 .workspace-leaf-content[data-type="markdown"] {
   font-family: var(--font-text);
-
 }
 .markdown-preview-view,
 .view-content > .cm-s-obsidian,
@@ -2163,13 +2100,26 @@ body {
   --table-drag-padding: var(--table-drag-space) 0;
   --table-wrapper-width: min(fit-content, 100%);
 }
-.table-100 .dataview.list-view-ul {
-  max-width: var(--max-width);
-  width: var(--line-width);
-  margin-inline: auto;
-}
 .table-100 .table-col-btn {
-  display: none !important;
+  cursor: default !important;
+  margin-top: 8px;
+  height: var(--table-header-size);
+  inset-inline-start: calc(
+    100% - var(--table-drag-handle-size) - 4px
+  ) !important;
+}
+.table-100 .markdown-source-view.mod-cm6,
+.table-100.markdown-source-view.mod-cm6 {
+  --table-drag-handle-background-active: transparent;
+}
+.table-100
+  .markdown-source-view.mod-cm6
+  .cm-table-widget
+  .table-row-drag-handle,
+.table-100.markdown-source-view.mod-cm6
+  .cm-table-widget
+  .table-row-drag-handle {
+  inset-inline-end: calc(100% - var(--table-drag-handle-size)) !important;
 }
 .img-100,
 .img-max,
@@ -2246,7 +2196,7 @@ body {
   .cm-table-widget,
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(> table),
+  > :has(> table),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
@@ -2254,7 +2204,7 @@ body {
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(> table) {
+  > :has(> table) {
   width: var(--container-table-width);
   max-width: var(--container-table-max-width);
   margin-inline: var(--container-table-margin) !important;
@@ -2271,18 +2221,18 @@ body {
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(> .block-language-dataview table),
+  > :has(> .block-language-dataview table),
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(> .block-language-dataviewjs table),
+  > :has(> .block-language-dataviewjs table),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(> .block-language-dataview table),
+  > :has(> .block-language-dataview table),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(> .block-language-dataviewjs table) {
+  > :has(> .block-language-dataviewjs table) {
   width: var(--container-dataview-table-width);
   max-width: var(--container-table-max-width);
 }
@@ -2344,7 +2294,7 @@ body {
   > .image-embed,
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(.image-embed),
+  > :has(.image-embed),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
@@ -2352,7 +2302,7 @@ body {
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(.image-embed) {
+  > :has(.image-embed) {
   width: var(--container-img-width);
   max-width: var(--container-img-max-width);
 }
@@ -2362,7 +2312,7 @@ body {
   img,
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(.image-embed)
+  > :has(.image-embed)
   img,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
@@ -2372,7 +2322,7 @@ body {
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(.image-embed)
+  > :has(.image-embed)
   img {
   max-width: var(--img-max-width);
 }
@@ -2386,96 +2336,96 @@ body {
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-chart),
+  :has(> .block-language-chart),
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-dataviewjs canvas),
+  :has(> .block-language-dataviewjs canvas),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-chart),
+  :has(> .block-language-chart),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-dataviewjs canvas) {
+  :has(> .block-language-dataviewjs canvas) {
   width: var(--container-chart-width);
   max-width: var(--container-chart-max-width);
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-chart)
+  :has(> .block-language-chart)
   canvas,
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-dataviewjs canvas)
+  :has(> .block-language-dataviewjs canvas)
   canvas,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-chart)
+  :has(> .block-language-chart)
   canvas,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-dataviewjs canvas)
+  :has(> .block-language-dataviewjs canvas)
   canvas {
   max-width: var(--map-chart-width);
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-leaflet),
+  :has(> .block-language-leaflet),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-leaflet) {
+  :has(> .block-language-leaflet) {
   width: var(--container-map-width);
   max-width: var(--container-map-max-width);
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .block-language-leaflet)
+  :has(> .block-language-leaflet)
   iframe,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .block-language-leaflet)
+  :has(> .block-language-leaflet)
   iframe {
   max-width: var(--map-max-width);
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .cm-html-embed),
+  :has(> .cm-html-embed),
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(> iframe),
+  > :has(> iframe),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .cm-html-embed),
+  :has(> .cm-html-embed),
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(> iframe) {
+  > :has(> iframe) {
   width: var(--container-iframe-width);
   max-width: var(--container-iframe-max-width);
 }
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  div:has(> .cm-html-embed)
+  :has(> .cm-html-embed)
   iframe,
 .markdown-preview-view.is-readable-line-width
   .markdown-preview-sizer
-  > div:has(> iframe)
+  > :has(> iframe)
   iframe,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  div:has(> .cm-html-embed)
+  :has(> .cm-html-embed)
   iframe,
 .markdown-source-view.mod-cm6.is-readable-line-width
   .cm-contentContainer.cm-contentContainer
   > .cm-content
-  > div:has(> iframe)
+  > :has(> iframe)
   iframe {
   max-width: var(--iframe-max-width);
 }
@@ -2861,7 +2811,6 @@ li[data-task="I"] > p > input:checked,
 li[data-task="b"] > input:checked,
 li[data-task="b"] > p > input:checked,
 li[data-task="c"] > input:checked,
-
 li[data-task="c"] > p > input:checked,
 li[data-task="d"] > input:checked,
 li[data-task="d"] > p > input:checked,
@@ -2919,7 +2868,7 @@ input[data-task="/"]:checked,
 li[data-task="/"] > input:checked,
 li[data-task="/"] > p > input:checked {
   background-image: none;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   position: relative;
   overflow: hidden;
 }
@@ -3425,7 +3374,7 @@ body:not(.minimal-icons-off) svg.longform {
   .workspace-tab-header-spacer:before {
   width: 100%;
   content: " ";
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   height: 15px;
   position: absolute;
   z-index: 100;
@@ -3452,7 +3401,7 @@ body:not(.minimal-icons-off) svg.longform {
 .minimal-focus-mode .mod-root .workspace-tab-header-container:hover {
   height: var(--header-height);
   --tab-outline-width: 1px;
-  transition: all var(--focus-animation-duration) linear 50ms;
+  transition: all var(--focus-animation-duration) linear 0.05s;
 }
 .minimal-focus-mode
   .mod-root
@@ -3471,7 +3420,7 @@ body:not(.minimal-icons-off) svg.longform {
   .workspace-tab-header-container:hover
   .workspace-tab-header-tab-list {
   opacity: 1;
-  transition: all var(--focus-animation-duration) linear 50ms;
+  transition: all var(--focus-animation-duration) linear 0.05s;
 }
 .minimal-focus-mode
   .mod-root
@@ -3488,7 +3437,7 @@ body:not(.minimal-icons-off) svg.longform {
   .workspace-tab-header-container:hover
   .workspace-tab-header-container-inner
   .workspace-tab-header.is-active::before {
-  transition: all var(--focus-animation-duration) linear 50ms;
+  transition: all var(--focus-animation-duration) linear 0.05s;
 }
 .minimal-focus-mode.mod-macos:not(.is-fullscreen)
   .workspace:not(.is-left-sidedock-open)
@@ -3518,7 +3467,7 @@ body.minimal-focus-mode.show-view-header
 body.minimal-focus-mode.show-view-header .view-header::after {
   width: 100%;
   content: " ";
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   height: 40px;
   position: absolute;
   z-index: -9;
@@ -3902,7 +3851,7 @@ body {
   background-color: var(--image-grid-background);
 }
 .img-grid .image-embed.is-loaded img:active {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .img-grid .markdown-preview-section > div:has(img) .image-embed ~ br,
 .img-grid .markdown-preview-section > div:has(img) img ~ br,
@@ -4069,9 +4018,7 @@ body:not(.zoom-off):not(.is-mobile)
   .view-content
   .markdown-source-view.mod-cm6
   .cm-content
-  > [contenteditable="false"]:has(
-    .image-embed:not(.canvas-node-content):active
-  ) {
+  > .cm-callout[contenteditable="false"]:active {
   contain: unset !important;
 }
 .labeled-nav.is-fullscreen:not(.colorful-frame),
@@ -4086,7 +4033,7 @@ body:not(.zoom-off):not(.is-mobile)
   .mod-top
   .workspace-tab-header-container
   .workspace-tab-header-container-inner {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .labeled-nav.is-hidden-frameless:not(.is-fullscreen)
   .mod-left-split
@@ -4208,7 +4155,7 @@ body:not(.zoom-off):not(.is-mobile)
   .mod-left-split
   .mod-top
   .workspace-tab-header.is-active:not(:hover) {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .labeled-nav .mod-left-split .mod-top .workspace-tab-header.is-active,
 .labeled-nav .mod-left-split .mod-top .workspace-tab-header:hover {
@@ -4234,7 +4181,7 @@ body:not(.zoom-off):not(.is-mobile)
   .mod-top
   .workspace-tab-header.has-active-menu:hover,
 .labeled-nav .mod-left-split .mod-top .workspace-tab-header.is-active:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .labeled-nav
   .mod-left-split
@@ -4250,7 +4197,6 @@ body:not(.zoom-off):not(.is-mobile)
 }
 .labeled-nav
   .mod-left-split
-
   .mod-top
   .workspace-tab-header.is-active
   .workspace-tab-header-inner-icon,
@@ -4336,13 +4282,13 @@ body:not(.sidebar-color)
   .mod-root
   .workspace-tab-header:hover
   .workspace-tab-header-inner {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .tabs-underline .mod-root .workspace-tab-header.is-active {
   border-bottom: 2px solid var(--ax3);
 }
 .tabs-underline .mod-root .workspace-tab-header-inner:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
     .sidebar-tabs-square
@@ -4414,7 +4360,7 @@ body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
   -webkit-mask-image: none;
 }
 .tabs-modern .mod-root .workspace-tabs:not(.mod-stacked) .workspace-tab-header {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   border-radius: 5px;
   border: none;
   box-shadow: none;
@@ -4458,7 +4404,7 @@ body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
   .workspace-tabs:not(.mod-stacked)
   .workspace-tab-header:not(.is-active):hover
   .workspace-tab-header-inner {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .tabs-modern
   .mod-root
@@ -4495,7 +4441,7 @@ body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
   .workspace-tab-header-container-inner
   .workspace-tab-header:only-child {
   --sidebar-tab-text-display: static;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .tab-names-single
   .workspace
@@ -4593,7 +4539,7 @@ body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
   .mod-left-split
   .workspace-tab-header-container
   .workspace-tab-header:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .sidebar-tabs-underline
   .mod-right-split
@@ -4627,7 +4573,7 @@ body:not(.sidebar-tabs-underline):not(.sidebar-tabs-index):not(
   .workspace-tab-header-container
   .workspace-tab-header:hover
   .workspace-tab-header-inner {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .sidebar-tabs-underline
   .mod-right-split
@@ -5012,7 +4958,7 @@ body:not(.is-mobile)
 }
 .nav-file-tag {
   padding-top: 0.2em;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   color: var(--text-faint);
 }
 .nav-file .is-active .nav-file-tag,
@@ -5356,7 +5302,7 @@ body {
 }
 .checklist-plugin-main .group .classic,
 .checklist-plugin-main .group .compact {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   border-radius: 0;
   margin: 1px auto;
   padding: 0;
@@ -5366,7 +5312,7 @@ body {
 }
 .checklist-plugin-main .group .classic:hover,
 .checklist-plugin-main .group .compact:hover {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
 }
 .markdown-preview-view.checklist-plugin-main
   ul
@@ -5386,7 +5332,7 @@ body {
 .checklist-plugin-main .group .count {
   font-size: var(--font-adaptive-smaller);
   padding: 0;
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   font-weight: 400;
   color: var(--text-faint);
 }
@@ -5444,7 +5390,7 @@ body #cMenuModalBar button.cMenuCommandItem:hover {
 .MySnippets-statusbar-menu .menu-item .MS-OpenSnippet {
   height: auto;
   border: none;
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   box-shadow: none;
   width: auto;
   padding: 4px 6px;
@@ -5468,7 +5414,6 @@ body #cMenuModalBar button.cMenuCommandItem:hover {
   .markdown-preview-view
   .dataview-ul
   li:not(:last-child):after,
-
 .dataview-inline-lists
   .markdown-source-view
   .dataview-ol
@@ -5524,7 +5469,7 @@ body .dataview.small-text {
 body:not(.row-hover) .dataview.task-list-basic-item:hover,
 body:not(.row-hover) .dataview.task-list-item:hover,
 body:not(.row-hover) .table-view-table > tbody > tr:hover {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0) !important;
   box-shadow: none;
 }
 body.row-hover .dataview.task-list-basic-item:hover,
@@ -5533,7 +5478,7 @@ body.row-hover .table-view-table > tbody > tr:hover {
   background-color: var(--table-row-background-hover);
 }
 body .dataview-error {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .dataview.dataview-error,
 .markdown-source-view.mod-cm6 .cm-content .dataview.dataview-error {
@@ -5542,7 +5487,7 @@ body .dataview-error {
 body div.dataview-error-box {
   min-height: 0;
   border: none;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   font-size: var(--table-text-size);
   border-radius: var(--radius-m);
   padding: 15px 0;
@@ -5565,7 +5510,7 @@ table.dataview:has(+ .dataview-error-box) {
 }
 ul .dataview .task-list-basic-item:hover,
 ul .dataview .task-list-item:hover {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   box-shadow: none;
 }
 body .dataview.result-group {
@@ -5576,7 +5521,7 @@ body .dataview.inline-field-key,
 body .dataview.inline-field-value {
   font-family: var(--font-text);
   font-size: calc(var(--font-adaptive-normal) - 2px);
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   color: var(--text-muted);
 }
 body .dataview.inline-field-key {
@@ -5601,24 +5546,6 @@ body .dataview.inline-field-value {
 .markdown-preview-view .block-language-dataview table.calendar .day {
   font-size: var(--font-adaptive-small);
 }
-.database-plugin__navbar,
-.database-plugin__scroll-container,
-.database-plugin__table {
-  width: 100%;
-}
-.dbfolder-table-container {
-  --font-adaptive-normal: var(--table-text-size);
-  --font-size-text: 12px;
-}
-.database-plugin__cell_size_wide .database-plugin__td {
-  padding: 0.15rem;
-}
-.database-plugin__table {
-  border-spacing: 0 !important;
-}
-.MuiAppBar-root {
-  background-color: transparent !important;
-}
 .workspace-leaf-content .view-content.dictionary-view-content {
   padding: 0;
 }
@@ -5626,7 +5553,7 @@ div[data-type="dictionary-view"] .contents {
   padding-bottom: 2rem;
 }
 div[data-type="dictionary-view"] .results > .container {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   margin-top: 0;
   max-width: none;
   padding: 0 10px;
@@ -5649,7 +5576,7 @@ div[data-type="dictionary-view"] .results > .container h3 {
 }
 div[data-type="dictionary-view"] .container .main {
   border-radius: 0;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   font-size: var(--font-adaptive-smaller);
   line-height: 1.3;
   color: var(--text-muted);
@@ -5949,7 +5876,7 @@ body .kanban-plugin__lane-header-wrapper {
 body .kanban-plugin__lane-header-wrapper .kanban-plugin__grow-wrap > textarea,
 body .kanban-plugin__lane-input-wrapper .kanban-plugin__grow-wrap > textarea,
 body .kanban-plugin__lane-title p {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   color: var(--text-normal);
   font-size: var(--font-ui-medium);
   font-weight: 500;
@@ -5974,7 +5901,7 @@ body .kanban-plugin__item-settings-actions > button,
 body .kanban-plugin__lane button.kanban-plugin__lane-settings-button,
 body .kanban-plugin__lane button.kanban-plugin__lane-settings-button.is-enabled,
 body .kanban-plugin__lane-action-wrapper > button {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   transition: color 0.1s ease-in-out;
 }
 body .kanban-plugin__item .kanban-plugin__item-edit-archive-button:hover,
@@ -5984,7 +5911,7 @@ body .kanban-plugin__lane button.kanban-plugin__lane-settings-button.is-enabled,
 body .kanban-plugin__lane button.kanban-plugin__lane-settings-button:hover {
   color: var(--text-normal);
   transition: color 0.1s ease-in-out;
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
 }
 body .kanban-plugin__new-lane-button-wrapper {
   position: fixed;
@@ -6017,7 +5944,7 @@ body .kanban-plugin__lane button.kanban-plugin__lane-settings-button:hover {
 body .kanban-plugin__item-button-wrapper > button {
   color: var(--text-muted);
   font-weight: 400;
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   min-height: calc(var(--input-height) + 8px);
 }
 body .kanban-plugin__item-button-wrapper > button:hover {
@@ -6049,7 +5976,7 @@ body .kanban-plugin__lane-items {
   background-color: var(--background-secondary);
 }
 body .kanban-plugin__lane {
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   padding: 0;
   border: var(--border-width) solid transparent;
 }
@@ -6196,7 +6123,7 @@ body .leaflet-container {
   appearance: none;
 }
 body .block-language-leaflet .leaflet-bar.disabled > a {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   opacity: 0.3;
 }
 body .leaflet-touch .leaflet-bar a:first-child {
@@ -6308,96 +6235,6 @@ body
   font-size: calc(var(--font-adaptive-normal) - 2px);
   color: var(--tx1);
 }
-body .NLT__header-menu-header-container {
-  font-size: 85%;
-}
-body .NLT__button {
-  background: 0 0;
-  box-shadow: none;
-  color: var(--text-muted);
-}
-body .NLT__button:active,
-body .NLT__button:focus,
-body .NLT__button:hover {
-  background: 0 0;
-  color: var(--text-normal);
-  box-shadow: none;
-}
-.NLT__app .NLT__button {
-  background: 0 0;
-  border: 1px solid var(--background-modifier-border);
-  box-shadow: 0 0.5px 1px 0 var(--btn-shadow-color);
-  color: var(--text-muted);
-  padding: 2px 8px;
-}
-.NLT__app .NLT__button:active,
-.NLT__app .NLT__button:focus,
-.NLT__app .NLT__button:hover {
-  background: 0 0;
-  border-color: var(--background-modifier-border-hover);
-  color: var(--text-normal);
-  box-shadow: 0 0.5px 1px 0 var(--btn-shadow-color);
-}
-.NLT__td:nth-last-child(2),
-.NLT__th:nth-last-child(2) {
-  border-right: 0;
-}
-.NLT__app .NLT__td:last-child,
-.NLT__app .NLT__th:last-child {
-  padding-right: 0;
-}
-.NLT__app .NLT__th {
-  background-image: none !important;
-}
-.NLT__app th.NLT__selectable:hover {
-  background-color: transparent;
-  cursor: var(--cursor);
-}
-.NLT__menu .NLT__menu-container {
-  background-color: var(--background-secondary);
-}
-.NLT__menu .NLT__header-menu-item {
-  font-size: var(--font-adaptive-small);
-}
-.NLT__menu .NLT__header-menu {
-  padding: 6px 4px;
-}
-.NLT__menu .NLT__drag-menu {
-  font-size: var(--font-adaptive-small);
-  padding: 6px 4px;
-}
-.NLT__menu svg {
-  color: var(--text-faint);
-  margin-right: 6px;
-}
-.NLT__menu .NLT__selectable:hover,
-.NLT__menu .NLT__selected {
-  background: 0 0;
-}
-.NLT__menu .NLT__selected > .NLT__selectable {
-  background-color: var(--background-modifier-hover);
-}
-.NLT__menu .NLT__selectable {
-  cursor: var(--cursor);
-}
-.NLT__menu div.NLT__selectable {
-  min-width: 110px;
-  border-radius: var(--radius-m);
-  padding: 3px 8px 3px 4px;
-  margin: 1px 2px 1px;
-  cursor: var(--cursor);
-  height: auto;
-  line-height: 20px;
-}
-.NLT__menu div.NLT__selectable:hover {
-  background-color: var(--background-modifier-hover);
-}
-.NLT__menu .NLT__textarea {
-  font-size: var(--table-text-size);
-}
-.NLT__tfoot tr:hover td {
-  background-color: transparent;
-}
 .modal .quickAddPrompt > h1,
 .modal .quickAddYesNoPrompt h1 {
   margin-top: 0;
@@ -6448,7 +6285,7 @@ div#quick-explorer .explorable-name {
   border-radius: 4px;
 }
 div#quick-explorer .explorable-separator::before {
-  content: "\00a0›" !important;
+  content: " ›" !important;
   font-size: 1.3em;
   font-weight: 400;
   margin: 0;
@@ -6533,7 +6370,7 @@ body:not(.colorful-active)
   color: var(--text-faint);
 }
 body .modal .dtchooser {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 body .modal .dtchooser .reminder-calendar .year-month {
   font-weight: 400;
@@ -6705,13 +6542,13 @@ body .table-view-table > thead > tr > th {
   margin-left: 6px;
 }
 .theme-light .themed-color-wrapper > .theme-light {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 .theme-light .themed-color-wrapper > .theme-dark {
   background-color: rgba(0, 0, 0, 0.8);
 }
 .theme-dark .themed-color-wrapper > .theme-dark {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 @media (max-width: 400pt) {
   .workspace-leaf-content[data-type="style-settings"] .setting-item-name {
@@ -6741,7 +6578,7 @@ ul.todoist-task-list > li.task-list-item .task-list-item-checkbox {
 body .todoist-refresh-button {
   display: inline;
   float: right;
-  background: 0 0;
+  background: rgba(0, 0, 0, 0);
   padding: 5px 6px 0;
   margin-right: 0;
 }
@@ -6809,60 +6646,6 @@ body.theme-light {
 }
 .tracker-axis {
   color: var(--ui2);
-}
-.tabs-manager .chat-view {
-  --assistant-message-color: var(--background-primary);
-  --padding-md: var(--size-4-2) var(--size-4-3);
-  --padding-lg: var(--size-4-3) var(--size-4-3);
-  --chat-box-color: var(--background-primary);
-}
-.tabs-manager .chat-view .ow-dialogue-timeline {
-  padding: var(--size-4-4) var(--size-4-3) var(--size-4-8);
-}
-.tabs-manager
-  .chat-view
-  .ow-dialogue-timeline
-  .ow-message-bubble
-  .ow-content-wrapper {
-  box-shadow: none;
-  border-color: var(--background-modifier-border);
-  border-radius: var(--radius-m);
-}
-.tabs-manager
-  .chat-view
-  .ow-dialogue-timeline
-  .ow-message-bubble.ow-user-bubble
-  .ow-content-wrapper {
-  border-width: 0;
-  background-color: var(--interactive-accent);
-}
-.tabs-manager .chat-view .input-area .input-form .chat-box {
-  border-radius: 0;
-  box-shadow: none;
-  grid-row: 1;
-  grid-column: 1/3;
-  height: 100px;
-  border: none;
-  padding: var(--size-4-3) var(--size-4-4) var(--size-4-2);
-}
-.tabs-manager .chat-view .input-area .input-form .chat-box:hover {
-  height: 100px;
-}
-.tabs-manager .chat-view .input-area {
-  padding: 0;
-  gap: 0;
-}
-.tabs-manager .chat-view .header {
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-.tabs-manager .chat-view .input-form {
-  border-top: 1px solid var(--background-modifier-border);
-}
-.tabs-manager .chat-view .input-area .input-form .chat-box .info-bar span {
-  color: var(--text-faint);
-}
-.tabs-manager .chat-view .input-area .input-form .btn-new-chat {
-  display: none;
 }
 .zoom-plugin-header {
   --link-color: var(--text-normal);
@@ -7236,7 +7019,6 @@ body.theme-light {
   --text-on-accent-inverted: var(--bg1);
   --text-selection: var(--tx1);
   --vault-profile-color: var(--tx1);
-  --nav-item-color-active: var(--bg1);
   --nav-item-color-hover: var(--bg1);
 }
 .theme-dark.minimal-eink-dark ::selection,
@@ -7277,7 +7059,7 @@ body.theme-light {
 }
 .theme-dark.minimal-eink-dark .setting-hotkey,
 .theme-light.minimal-eink-light .setting-hotkey {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   border: 1px solid var(--tx1);
 }
 .theme-dark.minimal-eink-dark .suggestion-container,
@@ -9608,19 +9390,17 @@ settings:
 		type: class-toggle
 		default: false
 	-
-
 		id: metadata-dividers
 		title: Property row lines
 		description: Display borders between properties
 		type: class-toggle
 		default: false
 	-
-		id: metadata-label-width
+		id: metadata-label-width-multiplier
 		title: Property name width
 		description: Width for the name of the property
 		type: variable-number-slider
-		format: rem
-		default: 8
+		default: 9
 		min: 4
 		max: 12
 		step: 0.25
@@ -9991,7 +9771,6 @@ settings:
 			-
 				label: Thick
 				value: 2px
-
 	-
 		id: tag-color
 		title: Tag text color
@@ -10404,3 +10183,20 @@ settings:
 
 */
 
+/* ─────────────────────────────────────────────────────────
+   FiraCode Nerd Font *EVERYWHERE* for Minimal Theme
+   Paste this at the very bottom of your theme.css
+───────────────────────────────────────────────────────── */
+
+body {
+  --font-text-theme: -apple-system, BlinkMacSystemFont, "FiraCode Nerd Font",
+    Roboto, Inter, Ubuntu, sans‑serif !important;
+  --font-editor-theme: -apple-system, BlinkMacSystemFont, "FiraCode Nerd Font",
+    Roboto, Inter, Ubuntu, sans‑serif !important;
+  --font-monospace-theme: "FiraCode Nerd Font", Menlo, SFMono‑Regular,
+    Consolas, "Roboto Mono", monospace !important;
+  --font-interface-theme: -apple-system, BlinkMacSystemFont, "FiraCode Nerd Font",
+    Roboto, Inter, Ubuntu, sans‑serif !important;
+  --font-editor: var(--font-editor-override), var(--font-text-override),
+    var(--font-editor-theme) !important;
+}
