@@ -10183,9 +10183,11 @@ settings:
 
 */
 
+
 /* ─────────────────────────────────────────────────────────
-   FiraCode Nerd Font *EVERYWHERE* for Minimal Theme
-   Paste this at the very bottom of your theme.css
+            Modifications by aharoJ 
+            @author aharoJ
+            @Github https://github.com/aharoJ
 ───────────────────────────────────────────────────────── */
 
 body {
@@ -10200,3 +10202,68 @@ body {
   --font-editor: var(--font-editor-override), var(--font-text-override),
     var(--font-editor-theme) !important;
 }
+
+.theme-dark {
+  --text-title-h1: #bba06a; 
+  --text-title-h2: #6d84b4; 
+  --text-title-h3: #82e0aa;; 
+  --text-title-h4: #ff6f61; 
+  --text-title-h5: #bb8fce; 
+
+
+  /* -- 2nd iteration */
+  /* --text-title-h1: #afc7d9;
+  --text-title-h2: #809fbf;
+  --text-title-h3: #6d84b4;
+  --text-title-h4: #ff6f61;
+  --text-title-h5: #aac6d0; */
+  
+  /* -- 1st iteration */
+  /* --text-title-h1: #bba06a;
+  --text-title-h2: #83919f;
+  --text-title-h3: #859679;
+  --text-title-h4: #9e6f6f;
+  --text-title-h5: #9e6f6f; */
+}
+
+
+.cm-header-1 {
+  font-family: var(--font-family-editor);
+  font-weight: 500;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-title-h1);
+}
+
+.cm-header-2 {
+  font-family: var(--font-family-editor);
+  font-weight: 500;
+  font-size: 26px;
+  font-weight: bold;
+  color: var(--text-title-h2);
+}
+
+.cm-header-3 {
+  font-family: var(--font-family-editor);
+  font-weight: 500;
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--text-title-h3);
+}
+
+.cm-header-4 {
+  font-family: var(--font-family-editor);
+  font-weight: 500;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-title-h4);
+}
+
+.cm-header-5 {
+  font-family: var(--font-family-editor);
+  font-weight: 500;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-title-h5);
+}
+
