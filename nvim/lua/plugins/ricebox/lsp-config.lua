@@ -1,4 +1,4 @@
--- /lua.plugins.ricebox.lsp-config
+-- path: ~/.config/nvim/lua/plugins/ricebox/lsp-config.lua
 return {
   -- THESE PLUGINS CANNOT BE SEPARATED
   -- "williamboman/mason.nvim",
