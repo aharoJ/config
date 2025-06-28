@@ -1,3 +1,4 @@
+-- path: ~/.config/nvim/lua/plugins/ricebox/none-ls.lua
 -- diagnostic == linting
 -- formatting == format
 return {
