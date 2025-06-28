@@ -26,6 +26,7 @@ yabai -m rule --add app="^Alfred Preferences$" sticky=on layer=above manage=off
 yabai -m rule --add app="^TeamViewer$" sticky=off layer=above manage=off
 yabai -m rule --add app="Fantastical" manage=off
 yabai -m rule --add app="^Spotify$" manage=off
+# yabai -m rule --add app="^Windows App$" manage=off -- its quite annoying
 # yabai -m rule --add app="^console$" manage=off
 yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
 
