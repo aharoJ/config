@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/java-conf.lua
+-- path: ~/.config/nvim/lua/java-conf.lua
 
 local M = {}
 
@@ -11,7 +11,7 @@ local function setup_dap()
     command = 'java',
     args = {
       '-jar',
-      vim.fn.glob((os.getenv("HOME") .. "/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar"))
+      vim.fn.glob("$HOME/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar")
     }
   }
   dap.configurations.java = {

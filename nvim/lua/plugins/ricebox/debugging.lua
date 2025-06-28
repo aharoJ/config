@@ -1,3 +1,4 @@
+-- path: ~/.config/nvim/lua/plugins/ricebox/debugging.lua
 return {
 	"mfussenegger/nvim-dap",
 	dependencies = {
