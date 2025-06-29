@@ -1,5 +1,3 @@
--- path: /.config/nvim/ftplugin/java.lua
-
 -- vim.opt_local.shiftwidth = 4
 -- vim.opt_local.tabstop = 4
 -- vim.opt_local.softtabstop = 4
@@ -66,13 +64,13 @@ end
 -------------------    BUNDLES    ------------------------
 local bundles = { -- https://github.com/mfussenegger/nvim-jdtls?tab=readme-ov-file#nvim-dap-configuration
   vim.fn.glob(
-    "$HOME/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar",
+    (os.getenv("HOME") .. "/.local/share/nvim/mason/packages/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar"),
     1
   ),
 }
 vim.list_extend(
   bundles,
-  vim.split(vim.fn.glob("$HOME/.local/share/nvim/mason/packages/java-test/extension/server/*.jar", 1), "\n")
+  vim.split(vim.fn.glob((os.getenv("HOME") .. "/.local/share/nvim/mason/packages/java-test/extension/server/*.jar"), 1), "\n")
 )
 ----------------                              ----------------
 
@@ -88,8 +86,8 @@ local config = {
     "-Declipse.product=org.eclipse.jdt.ls.core.product",
     "-Dlog.level=ALL",
     "-Xmx4G",
-    "-jar", vim.fn.glob("$HOME/.local/share/nvim/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar"),
-    "-configuration", vim.fn.glob("$HOME/.local/share/nvim/mason/packages/jdtls/config_mac"),
+    "-jar", vim.fn.glob((os.getenv("HOME") .. "/.local/share/nvim/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar")),
+    "-configuration", vim.fn.glob((os.getenv("HOME") .. "/.local/share/nvim/mason/packages/jdtls/config_mac")),
     "-data", workspace_dir
   },
   capabilities = capabilities(),
@@ -99,7 +97,7 @@ local config = {
       format = {
         enabled = true,
         settings = {
-          url = "$HOME/.local/share/nvim/java-stuff/intellij-java-google-style.xml",
+          url = (os.getenv("HOME") .. "/.local/share/nvim/java-stuff/intellij-java-google-style.xml"),
           profile = "GoogleStyle",
         },
       },
