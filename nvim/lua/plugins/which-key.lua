@@ -1,201 +1,136 @@
-return {
-  "folke/which-key.nvim",
-  event = "VeryLazy",
-  init = function()
-    vim.o.timeout = true
-    vim.o.timeoutlen = 300
-  end,
-  config = function()
-    local wk = require("which-key")
-    wk.setup({
+return 
+{
+    "folke/which-key.nvim",
+    dependencies = { 'echasnovski/mini.nvim', version = false },
+    event = "VeryLazy",
+    init = function()
+      vim.o.timeout = true
+      vim.o.timeoutlen = 300
+    end,
+    opts = {
+      -- Plugin settings
       plugins = {
-        marks = true,
-        registers = true,
+        marks = true,           -- Enable mark plugin
+        registers = true,       -- Enable registers plugin
         spelling = {
-          enabled = true,
-          suggestions = 20,
+          enabled = true,       -- Enable spelling suggestions
+          suggestions = 20,     -- Number of suggestions
         },
         presets = {
-          operators = true,
-          motions = true,
-          text_objects = true,
-          windows = true,
-          nav = true,
-          z = true,
-          g = true,
+          operators = true,     -- Help for operators (d, y, etc.)
+          motions = true,       -- Help for motions
+          text_objects = true,  -- Help for text objects
+          windows = true,       -- Help for <c-w> bindings
+          nav = true,           -- Misc navigation bindings
+          z = true,             -- Help for z-prefixed bindings (folds, etc.)
+          g = true,             -- Help for g-prefixed bindings
         },
       },
-      operators = { gc = "Comments" },
-      key_labels = {},
-      motions = {
-        count = true,
-      },
+  
+      -- Icons for the popup
       icons = {
-        breadcrumb = "»",
-        separator = "➜",
-        group = "+",
+        breadcrumb = "»",       -- Symbol for active key combo
+        separator = "➜",        -- Symbol between key and label
+        group = "+",            -- Symbol for groups
       },
-      popup_mappings = {
-        scroll_down = "<c-d>",
-        scroll_up = "<c-u>",
+  
+      -- Key bindings within the popup
+      keys = {
+        scroll_down = "<c-d>",  -- Scroll down in popup
+        scroll_up = "<c-u>",    -- Scroll up in popup
       },
-      window = {
-        border = "none", -- none | single | double |shadow
-        position = "bottom", -- bottom | top
-        margin = { 1, 0, 1, 0 },
-        padding = { 1, 2, 1, 2 },
-        winblend = 0, -- 0 for Transparent
-        zindex = 1000,
+  
+      -- Window settings
+      win = {
+        border = "none",        -- Border style
+        padding = { 1, 2, 1, 2 }, -- Padding [top, right, bottom, left]
+        wo = {
+          winblend = 0,         -- Transparency (0 = opaque)
+        },
+        zindex = 1000,          -- Window stacking order
       },
+  
+      -- Layout settings
       layout = {
-        height = { min = 4, max = 30 },
-        width = { min = 4, max = 25 },
-        spacing = 3,       -- spacing between columns
-        align = "center",  -- align columns left, center or right
+        height = { min = 4, max = 30 }, -- Min/max height of popup
+        width = { min = 4, max = 25 },  -- Min/max width of columns
+        spacing = 3,                    -- Spacing between columns
+        align = "center",               -- Column alignment
       },
-      ignore_missing = false, -- IMPORTANT leave as FALSE
-      hidden = { "<silent>", "<cmd>", "<Cmd>", "<CR>", "^:", "^ ", "^call ", "^lua " },
-      show_help = true,
-      show_keys = true,
-      triggers = "auto",
-      triggers_nowait = {
-        -- marks
-        "",
-        "'",
-        "g",
-        "g'",
-        -- registers
-        '"',
-        "<c-r>",
-        -- spelling
-        "z=",
-      },
-      triggers_blacklist = {
-        i = { "j", "k" },
-        v = { "j", "k" },
+  
+      -- General settings
+      show_help = true,         -- Show help message in command line
+      show_keys = true,         -- Show pressed key in command line
+      triggers = {              -- Explicitly set triggers as a table
+        { "<auto>", mode = "nixsotc" },
       },
       disable = {
-        buftypes = {},
-        filetypes = {},
+        buftypes = {},          -- Disable for specific buffer types
+        filetypes = {},         -- Disable for specific filetypes
       },
-    })
-
-    -------------------    START    ------------------------
-    wk.register({
-      ["<leader>"] = {
-
-        -------------------    Signle Character    ------------------------
-        e = "NeoTree", -- NeoTree
-        ["/"] = "Comment",
-        q = "Quit",
-
-        -------------------    DEBUG    ------------------------
-        d = {
-          name = "+Debug",
-          t = "Toggle Breakpoint",
-          c = "Continue",
-          x = "Terminate",
-          o = "Step Over",
-          i = "Step Into",
-          O = "Step OUT",
-        },
-
-        -------------------    BUFFER    ------------------------
-        b = {
-          name = "+Buffer", -- all under settings.lua
-          c = "Close Buffer",
-          n = "Next Buffer",
-          p = "Previous Buffer",
-          sv = "Split Vertical",
-          sh = "Split Horizontal",
-          wc = "Close Window",
-        },
-
-        -------------------    TELESCOPE    ------------------------
-        f = {
-          name = "+Find",
-          -- f = "Find Files",
-          g = "Live Grep",
-          b = "Buffers",
-          h = "Help Tags",
-        },
-
-        -------------------    TOGGLE    ------------------------
-        t = {
-          name = "+Toggle",
-          l = "LSP Diagnostics", -- lsp-config.lua
-          c = "CoPilot",    -- git.lua
-          g = "Gitsigns",   -- git.lua
-        },
-
-        -------------------    CODE    ------------------------
-        c = {
-          name = "+Code",
-          d = "Go to Definition",
-          D = "Go to Declaration",
-          r = "List References",
-          a = "Show Code Actions",
-          i = "Go to Implementation",
-          S = "Show Signature Help",
-          wa = "Add Workspace Folder",
-          wr = "Remove Workspace Folder",
-          R = "Rename Symbol",
-          ["[d"] = "Go to Previous Diagnostic",
-          ["]d"] = "Go to Next Diagnostic",
-          o = "Open Diagnostic Float",
-          q = "Set Loclist with Diagnostics",
-          t = "Go to Type Definition",
-          f = "Format Code",
-          p = "Prettier Format ",
-          P = "Prettier Check",
-        },
-
-        -- -------------------    RUN    ------------------------
-        -- r = {
-        -- 	name = "+Run",
-        -- 	p = "Project",
-        -- 	f = "File",
-        -- },
-
-        -------------------    GET    ------------------------
-        g = {
-          name = "+Get",
-          f = "File",
-          B = "Buffer",
-          b = "NeoTree Buffer",
-        },
+  
+      -- Your keybinding descriptions
+      spec = {
+        -- Single character mappings
+        { "<leader>e", desc = "NeoTree", mode = "n" },
+        { "<leader>/", desc = "Comment", mode = "n" },
+        { "<leader>q", desc = "Quit", mode = "n" },
+  
+        -- Debug group
+        { "<leader>d", group = "Debug", mode = "n" },
+        { "<leader>dt", desc = "Toggle Breakpoint", mode = "n" },
+        { "<leader>dc", desc = "Continue", mode = "n" },
+        { "<leader>dx", desc = "Terminate", mode = "n" },
+        { "<leader>do", desc = "Step Over", mode = "n" },
+        { "<leader>di", desc = "Step Into", mode = "n" },
+        { "<leader>dO", desc = "Step Out", mode = "n" },
+  
+        -- Buffer group
+        { "<leader>b", group = "Buffer", mode = "n" },
+        { "<leader>bc", desc = "Close Buffer", mode = "n" },
+        { "<leader>bn", desc = "Next Buffer", mode = "n" },
+        { "<leader>bp", desc = "Previous Buffer", mode = "n" },
+        { "<leader>bsv", desc = "Split Vertical", mode = "n" },
+        { "<leader>bsh", desc = "Split Horizontal", mode = "n" },
+        { "<leader>bwc", desc = "Close Window", mode = "n" },
+  
+        -- Find (Telescope) group
+        { "<leader>f", group = "Find", mode = "n" },
+        { "<leader>fg", desc = "Live Grep", mode = "n" },
+        { "<leader>fb", desc = "Buffers", mode = "n" },
+        { "<leader>fh", desc = "Help Tags", mode = "n" },
+  
+        -- Toggle group
+        { "<leader>t", group = "Toggle", mode = "n" },
+        { "<leader>tl", desc = "LSP Diagnostics", mode = "n" },
+        { "<leader>tc", desc = "CoPilot", mode = "n" },
+        { "<leader>tg", desc = "Gitsigns", mode = "n" },
+  
+        -- Code group
+        { "<leader>c", group = "Code", mode = "n" },
+        { "<leader>cd", desc = "Go to Definition", mode = "n" },
+        { "<leader>cD", desc = "Go to Declaration", mode = "n" },
+        { "<leader>cr", desc = "List References", mode = "n" },
+        { "<leader>ca", desc = "Show Code Actions", mode = "n" },
+        { "<leader>ci", desc = "Go to Implementation", mode = "n" },
+        { "<leader>cS", desc = "Show Signature Help", mode = "n" },
+        { "<leader>cwa", desc = "Add Workspace Folder", mode = "n" },
+        { "<leader>cwr", desc = "Remove Workspace Folder", mode = "n" },
+        { "<leader>cR", desc = "Rename Symbol", mode = "n" },
+        { "<leader>c[d", desc = "Go to Previous Diagnostic", mode = "n" },
+        { "<leader>c]d", desc = "Go to Next Diagnostic", mode = "n" },
+        -- { "<leader>co", desc = "Open Diagnostic Float religious = "n",        -- Avoid religious mappings
+        { "<leader>cq", desc = "Set Loclist with Diagnostics", mode = "n" },
+        { "<leader>ct", desc = "Go to Type Definition", mode = "n" },
+        { "<leader>cf", desc = "Format Code", mode = "n" },
+        { "<leader>cp", desc = "Prettier Format", mode = "n" },
+        { "<leader>cP", desc = "Prettier Check", mode = "n" },
+  
+        -- Get group
+        { "<leader>g", group = "Get", mode = "n" },
+        { "<leader>gf", desc = "File", mode = "n" },
+        { "<leader>gB", desc = "Buffer", mode = "n" },
+        { "<leader>gb", desc = "NeoTree Buffer", mode = "n" },
       },
-      {
-        mode = "n", -- NORMAL mode
-        prefix = "",
-        buffer = nil,
-        silent = true,
-        noremap = true,
-        nowait = false,
-        expr = false,
-      },
-      -------------------    FOLDING COMMANDS    ------------------------
-      -- wk.register({
-      -- 	z = {
-      -- 		name = "Folding",
-      -- 		o = "Open fold", -- zo
-      -- 		O = "Open all folds", -- zO
-      -- 		c = "Close fold", -- zc
-      -- 		C = "Close all folds", -- zC
-      -- 		a = "Toggle fold", -- za
-      -- 		A = "Toggle all folds", -- zA
-      -- 		m = "Fold more", -- zm
-      -- 		M = "Fold everything", -- zM
-      -- 		r = "Reduce folding", -- zr
-      -- 		R = "Open all folds", -- zR
-      -- 		x = "Update folds", -- zx
-      -- 		X = "Recompute all folds", -- zX
-      -- 		v = "View cursor line", -- zv
-      -- 		E = "Eliminate all folds", -- zE
-      -- 		j = "Next fold", -- zj
-      -- 		k = "Previous fold", -- zk
-      -- 	},
-      -- }, { prefix = "", mode = { "n" } }), -- Register for both NORMAL and VISUAL modes
-    })
-  end,
-}
+    },
+  }
