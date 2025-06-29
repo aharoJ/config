@@ -1,4 +1,4 @@
-vim.notify = require("notify")
+-- vim.notify = require("notify")
 require("notify").setup({
   background_colour = "#000000", -- transparent
   fps = 30,
@@ -23,4 +23,3 @@ require("notify").setup({
   timeout = 300,
   top_down = true,
 })
-

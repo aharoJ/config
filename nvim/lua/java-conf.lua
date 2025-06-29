@@ -1,4 +1,4 @@
--- path: ~/.config/nvim/lua/java-conf.lua
+-- ~/.config/nvim/lua/java-conf.lua
 
 local M = {}
 
