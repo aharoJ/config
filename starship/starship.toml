@@ -127,7 +127,7 @@ renamed = " ${count} "
 modified = " ${count} "
 staged = " ${count} "
 untracked = "󱅘 ${count} "
-command_timeout = 2000   # or 0 to wait indefinitely
+# command_timeout = 2000   # or 0 to wait indefinitely ERROR HERE 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
