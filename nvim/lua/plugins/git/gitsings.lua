@@ -93,7 +93,7 @@ return {
 			end
 		end
 
-		vim.api.nvim_set_keymap("n", "<leader>tg", ":lua ToggleGitsigns()<CR>", { noremap = true, silent = true })
+		vim.api.nvim_set_keymap("n", "<leader>tg", ":lua ToggleGitsigns()<CR>", { desc="[gitsings] on|off"})
 		-- UNSURE
 		vim.api.nvim_set_hl(0, "GitSignsAdd", { fg = "#D2E59D" })
 	end
