@@ -1,0 +1,73 @@
+-- nvim/ftplugin/java.lua
+local jdtls = require("jdtls")
+local root_markers = { ".git", "mvnw", "pom.xml", "gradlew" }
+local root_dir = require('jdtls.setup').find_root(root_markers)
+
+-- Windows-specific path handling
+local function path_join(...)
+    return table.concat({ ... }, '\\')
+end
+
+-- JDK Paths
+local jdk8_home = os.getenv("ProgramFiles") .. "\\Amazon Corretto\\jdk1.8.0_422"
+local jdk21_home = os.getenv("ProgramFiles") .. "\\Amazon Corretto\\jdk21.0.6_7"
+
+-- JDTLS Paths
+local jdtls_home = os.getenv("LOCALAPPDATA") .. "\\jdt-language-server-1.45.0-202502271238"
+local jdtls_workspace = path_join(vim.fn.expand("~"), ".jdtls", vim.fn.fnamemodify(root_dir, ":t"))
+local launcher_jar = vim.fn.glob(path_join(jdtls_home, "plugins", "org.eclipse.equinox.launcher_*.jar"))
+
+-- Debugger Plugin
+local java_debug_path = os.getenv("LOCALAPPDATA") .. "\\java-debug-0.53.1"
+local debug_plugin = path_join(java_debug_path, "com.microsoft.java.debug.plugin", "target",
+    "com.microsoft.java.debug.plugin-0.53.1.jar")
+
+-- Ensure workspace directory exists
+if vim.fn.isdirectory(jdtls_workspace) == 0 then
+    vim.fn.mkdir(jdtls_workspace, "p")
+end
+
+local config = {
+    cmd = {
+        path_join(jdk21_home, "bin", "java.exe"),
+        "-Declipse.application=org.eclipse.jdt.ls.core.id1",
+        "-Dosgi.bundles.defaultStartLevel=4",
+        "-Declipse.product=org.eclipse.jdt.ls.core.product",
+        "-Dlog.level=ALL",
+        "-Xmx1g",
+        "--add-modules=ALL-SYSTEM",
+        "--add-opens", "java.base/java.util=ALL-UNNAMED",
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "-jar", launcher_jar,
+        "-configuration", path_join(jdtls_home, "config_win"),
+        "-data", jdtls_workspace
+    },
+    root_dir = root_dir,
+    settings = {
+        java = {
+            configuration = {
+                runtimes = {
+                    { name = "JavaSE-1.8", path = jdk8_home },
+                    { name = "JavaSE-21",  path = jdk21_home, default = true }
+                }
+            }
+        }
+    },
+    init_options = {
+        bundles = { debug_plugin }
+    },
+    on_attach = function(client, bufnr)
+        -- Keymaps
+        local map = function(lhs, rhs) vim.keymap.set("n", lhs, rhs, { buffer = bufnr }) end
+        map("<leader>o", jdtls.organize_imports)
+        map("<leader>df", jdtls.test_class)
+        map("<leader>dn", jdtls.test_nearest_method)
+
+        -- DAP setup
+        jdtls.setup_dap({ hotcodereplace = "auto" })
+        require("jdtls.dap").setup_dap_main_class_configs()
+    end
+}
+
+-- Start JDTLS
+jdtls.start_or_attach(config)

@@ -1,3 +1,4 @@
+-- path: nvim/init.lua
 -- Bootstrap Lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -16,7 +17,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- Load settings from lua/settings.lua
-require("settings")
+require("setting")
 
 vim.g.mapleader = " " -- Spacebar as leader key
 
@@ -27,8 +28,8 @@ vim.g.loaded_netrwPlugin = 1 -- need to load before neo-tree
 -- Setup lazy.nvim
 require("lazy").setup({
 	spec = {
-		{ import = "plugins" },
-	},
+        { import = "plugins" },
+    },
 	-- automatically check for plugin updates
 	checker = { enabled = true },
 })

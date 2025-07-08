@@ -1,14 +1,14 @@
-vim.notify = require("notify")
+-- vim.notify = require("notify")
 require("notify").setup({
   background_colour = "#000000", -- transparent
   fps = 30,
-  icons = {
-    DEBUG = "",
-    ERROR = "",
-    INFO = "",
-    TRACE = "✎",
-    WARN = "",
-  },
+--   icons = {
+--     DEBUG = "",
+--     ERROR = "",
+--     INFO = "",
+--     TRACE = "✎",
+--     WARN = "",
+--   },
   level = 2,
   minimum_width = 30,
 	maximum_width = 30,
@@ -23,4 +23,3 @@ require("notify").setup({
   timeout = 300,
   top_down = true,
 })
-
