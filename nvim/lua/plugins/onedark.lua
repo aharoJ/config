@@ -1,7 +1,7 @@
 
 return {
 	-- "navarasu/onedark.nvim",
-	'TechnicalDC/onedark.nvim',
+    'navarasu/onedark.nvim',
 	lazy = true,
 	enabled = true,
 	config = function ()
