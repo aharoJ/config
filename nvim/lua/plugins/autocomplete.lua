@@ -1,3 +1,4 @@
+-- path: /Users/aharo/.config/nvim/lua/plugins/autocomplete.lua
 return {
 	{
 		"hrsh7th/nvim-cmp",
@@ -8,7 +9,7 @@ return {
 			"L3MON4D3/LuaSnip", -- snippet engine
 			"saadparwaiz1/cmp_luasnip", -- for lua autocompletion
 			"rafamadriz/friendly-snippets", -- useful snippets library
-			-- "hrsh7th/cmp-nvim-lsp-document-symbol", -- document symbols
+			"hrsh7th/cmp-nvim-lsp-document-symbol", -- document symbols
 			"hrsh7th/cmp-nvim-lsp-signature-help", -- signature help
 			{
 				"VonHeikemen/lsp-zero.nvim", -- TAB | SHIFT-TAB to navigate through snippets
