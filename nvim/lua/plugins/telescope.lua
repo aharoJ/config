@@ -1,62 +1,100 @@
 return {
-  "nvim-telescope/telescope.nvim",
-  tag = "0.1.6",
-  dependencies = {
-    "nvim-lua/plenary.nvim",
-    "nvim-telescope/telescope-ui-select.nvim",
-  },
-  config = function()
-    local actions = require("telescope.actions")
-    require("telescope").setup({
-      defaults = {
-        vimgrep_arguments = {
-          'rg',
-          '--color=never',
-          '--no-heading',
-          '--with-filename',
-          '--line-number',
-          '--column',
-          '--smart-case',
-          '--hidden',
-        },
-      },
-      mappings = {
-        i = {
-          ["<esc>"] = actions.close,
-        },
-      },
-      pickers = {
-        find_files = {
-          theme = "ivy",           -- dropdown, cursor, ivy,
-          layout_config = {
-            width = 0.9,
-            height = 0.9,
-          },
-          hidden = true,           -- This will make the 'find_files' picker include hidden files by default.
-        },
-        -- Uncomment and configure live_grep if needed
-        -- live_grep = {
-        -- 	theme = "dropdown",
-        -- 	layout_config = {
-        -- 		width = 0.6, -- Customize the width for live_grep
-        -- 		height = 0.6, -- Customize the height for live_grep
-        -- 	},
-        -- },
-      },
-      extensions = {
-        ["ui-select"] = {
-          require("telescope.themes").get_dropdown({}),
-        },
-      },
-    })
+    "nvim-telescope/telescope.nvim",
+    tag = "0.1.8",
+    dependencies = {
+        { "nvim-telescope/telescope-fzf-native.nvim", build = "make", cond = vim.fn.executable("make") == 1 },
+        { "nvim-telescope/telescope-ui-select.nvim" }
+    },
+        config = function()
+            local telescope = require("telescope")
+            local builtin = require("telescope.builtin")
+            local themes = require("telescope.themes")
+    
+            -- Define a base dropdown theme with common settings
+            local dropdown_base = themes.get_dropdown({
+                winblend = 0,          -- Slight transparency for a modern look
+                border = true,          -- Add borders for clarity
+                previewer = true,      -- Disable previewer for a compact dropdown
+                shorten_path = false,   -- Show full paths for clarity
+            })
+    
+            -- Custom themes for each picker, extending the base theme
+            local dropdown_themes = {
+                files = vim.tbl_extend("force", dropdown_base, { prompt_title = "Find Files" }),
+                grep = vim.tbl_extend("force", dropdown_base, { prompt_title = "Live Grep" }),
+                buffers = vim.tbl_extend("force", dropdown_base, { prompt_title = "Buffers" }),
+                symbols = vim.tbl_extend("force", dropdown_base, { prompt_title = "Symbols" }),
+                diagnostics = vim.tbl_extend("force", dropdown_base, { prompt_title = "Diagnostics" }),
+            }
+    
+        -- Keymaps for Telescope using our custom dropdown_themes
+        -- File navigation (fuzzy search with prompt)
+        vim.keymap.set("n", "<leader>ff", function()
+            builtin.find_files(dropdown_themes.files)
+        end, { desc = "[T] Fuzzy find files" })
 
-    local builtin = require("telescope.builtin")
-    vim.keymap.set("n", "<leader>gf", builtin.find_files, {})     -- Updated to '<leader>ff' for find_files
-    vim.keymap.set("n", "<leader>gB", builtin.buffers, {})
-    vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
-    vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
+        vim.keymap.set("n", "<leader>fn", function()
+            -- Find files near current file (including hidden), still fuzzy searching
+            local opts = vim.tbl_extend("force", dropdown_themes.files, {
+                cwd = vim.fn.expand("%:p:h"), -- current file directory
+                hidden = true
+            })
+            builtin.find_files(opts)
+        end, { desc = "[T] nearby files" })
 
-    -- Load extensions after configuring Telescope
-    require("telescope").load_extension("ui-select")
-  end,
+        -- Live Grep (fuzzy find in content with prompt)
+        vim.keymap.set("n", "<leader>fg", function()
+            builtin.live_grep(dropdown_themes.grep)
+        end, { desc = "[T] Live grep in project" })
+
+        -- Buffers (view-only list of open buffers)
+        vim.keymap.set("n", "<leader>gb", function()
+            builtin.buffers(dropdown_themes.buffers)
+        end, { desc = "[T] List open buffers" })
+
+
+        -- Diagnostics (current buffer) - DISABLE TYPING HERE!
+        vim.keymap.set("n", "<leader>gd", function()
+            local opts = vim.tbl_extend("force", dropdown_themes.diagnostics, {
+                bufnr = 0,
+                initial_mode = "normal", -- Start in normal mode (not insert mode)
+                no_prompt = true,        -- Hide the prompt line completely
+                prompt_height= 0,
+                prompt_line=0,
+                results_title = "diagnostic result (j/k/esc)",
+            })
+            builtin.diagnostics(opts)
+        end, { desc = "[T] diagnostics" })
+
+        -- -- Severity-specific diagnostics (filter errors/warnings/info/hints in buffer)
+        -- local function diagnostics_by_severity(sev, title)
+        --     return function()
+        --         local opts = vim.tbl_extend("force", dropdown_themes.diagnostics, {
+        --             bufnr = 0,
+        --             severity = sev,
+        --             results_title = " " .. title .. " " -- e.g. " ERRORS ", with padding
+        --         })
+        --         builtin.diagnostics(opts)
+        --     end
+        -- end
+        -- vim.keymap.set("n", "<leader>de", diagnostics_by_severity(vim.diagnostic.severity.ERROR, "ERRORS"),
+        --     { desc = "[Diagnostics] Show errors" })
+        -- vim.keymap.set("n", "<leader>dw", diagnostics_by_severity(vim.diagnostic.severity.WARN, "WARNINGS"),
+        --     { desc = "[Diagnostics] Show warnings" })
+        -- vim.keymap.set("n", "<leader>di", diagnostics_by_severity(vim.diagnostic.severity.INFO, "INFO"),
+        --     { desc = "[Diagnostics] Show info" })
+        -- vim.keymap.set("n", "<leader>dh", diagnostics_by_severity(vim.diagnostic.severity.HINT, "HINTS"),
+        --     { desc = "[Diagnostics] Show hints" })
+
+        ------------------------------------------------------------------
+        -- Existing Telescope keymaps (ff / fn / fg / gb / fd / gd ...)
+        ------------------------------------------------------------------
+        vim.keymap.set("n", "<leader>ff", function()
+            builtin.find_files(dropdown_themes.files)
+        end, { desc = "[T] Fuzzy find files" })
+
+        -- Load Telescope extensions
+        telescope.load_extension("ui-select")
+        telescope.load_extension("fzf")
+    end,
 }
