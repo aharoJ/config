@@ -190,7 +190,6 @@ hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 #
 
 
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  UNUSED STUFF BELOW IGNORE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 ## CREDITS TO:
 ## - https://www.youtube.com/watch?v=JL1lz77YbUE&t=300s

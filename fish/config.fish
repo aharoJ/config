@@ -1,68 +1,50 @@
 ######## Commands to run in interactive sessions can go here ########
 if status is-interactive
-    
-    # Set the EDITOR
-    set -x EDITOR nvim
 
-    # Set the fish greeting
+    # Editor and greeting
+    set -x EDITOR nvim
     set fish_greeting
 
     # Initialize Starship prompt
     starship init fish | source
 
-    # NVIM POSTGRESQL
-    set -U fish_user_paths $fish_user_paths /Users/aharo/.cargo/bin
-    
-    # Set Rust's cargo bin path
-    set -x PATH "$HOME/.cargo/bin" $PATH
+    # Ensure Homebrew Python 3.12 has priority
+    set -U fish_user_paths /usr/local/opt/python@3.12/libexec/bin $fish_user_paths
 
-    # Set Python path (Replace with the correct path to your global Python installation)
-    set -gx PATH /usr/local/bin/python3 $PATH
+    # Cargo (Rust) binaries
+    set -U fish_user_paths $HOME/.cargo/bin $fish_user_paths
 
-    # Ensure Python3 and pip are globally available
-    set -gx PATH /usr/local/opt/python@3.13/bin $PATH
+    # pipx binaries
+    set -U fish_user_paths $HOME/.local/bin $fish_user_paths
 
-    # Remove pyenv configuration
-    # PYENV-related paths and initialization are no longer needed
-    # set -Ux PYENV_ROOT $HOME/.pyenv
-    # set -U fish_user_paths $PYENV_ROOT/bin $fish_user_paths
+    # Emacs (MacPorts) - remove if you're no longer using MacPorts Emacs
+    set -U fish_user_paths "/Applications/MacPorts/Emacs.app/Contents/MacOS" $fish_user_paths
 
-    # Set Emacs path
-    set -gx PATH "/Applications/MacPorts/Emacs.app/Contents/MacOS" $PATH
+    # JAVA configuration (default: OpenJDK 21)
+    set -gx JAVA_HOME (brew --prefix openjdk@21)
+    set -gx PATH $JAVA_HOME/bin $PATH
 
-    # Set the Starship configuration path
+    # Starship configuration file path
     set -gx STARSHIP_CONFIG ~/.config/starship/starship.toml
 
-    # Set local bin path created by `pipx`
-    set -x PATH $PATH /Users/aharo/.local/bin
+    # Android SDK Path (for mobile dev, C# MAUI)
+    set -gx ANDROID_HOME ~/Library/Android/sdk
 
-    # Set JAVA_HOME and add Java binary to PATH
-    set -gx JAVA_HOME (brew --prefix openjdk@21) # default
-    # set -gx JAVA_HOME (brew --prefix openjdk@17) # Android SDK
-    # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
-    set -gx PATH $JAVA_HOME/bin $PATH
+    # GPG configuration for GitHub
+    set -x GPG_TTY (tty)
+
 end
-# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET NEOVIM AS DEFAULT ~~~~~~~~~~~~~~~~~~~~~ #
+# Set Neovim as default editor
 function vim
     nvim $argv
 end
-# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX $JAVA_HOME ~~~~~~~~~~~~~~~~~~~~~ #
+# Set JAVA_HOME correctly inside TMUX sessions
 if test -n "$TMUX"
-    set -gx JAVA_HOME (brew --prefix openjdk@21) # default
-    # set -gx JAVA_HOME (brew --prefix openjdk@17) # Android SDK
-    # set -gx JAVA_HOME (brew --prefix openjdk@11) # MAUI
+    set -gx JAVA_HOME (brew --prefix openjdk@21)
     set -gx PATH $JAVA_HOME/bin $PATH
 end
-# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ GITHUB STUFF ~~~~~~~~~~~~~~~~~~~~~ #
-set -x GPG_TTY (tty)
-# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TMUX | PYTHON VENV STUFF ~~~~~~~~~~~~~~~~~~~~~ #
@@ -91,9 +73,4 @@ set -x GPG_TTY (tty)
 # __auto_venv
 
 # DOES NOT WORK WITH TMUX SOOO I WILL NOT USE IT NO MORE 
-# ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ C# Stuff ~~~~~~~~~~~~~~~~~~~~~ #
-set -gx ANDROID_HOME ~/Library/Android/sdk
 # ~~~~~~~~~~~~~~~~~~~           ..................       ~~~~~~~~~~~~~~~~~~~ #
