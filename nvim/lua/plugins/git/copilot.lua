@@ -56,18 +56,8 @@ return {
       },
     })
 
-    vim.api.nvim_set_keymap(
-      "n",
-      "<leader>tp",
-      "<cmd>lua require('copilot.panel').open()<CR>",
-      { noremap = false, silent = true }
-    )
-    vim.api.nvim_set_keymap(
-      "n",
-      "<leader>tc",
-      "<cmd>lua require('copilot.suggestion').toggle_auto_trigger()<CR>",
-      { noremap = false, silent = true }
-    )
+    vim.api.nvim_set_keymap("n","<leader>tp","<cmd>lua require('copilot.panel').open()<CR>",{ desc="[copilot] pannel" })
+    vim.api.nvim_set_keymap("n","<leader>tc","<cmd>lua require('copilot.suggestion').toggle_auto_trigger()<CR>",{ desc="[copilot] on|off" })
   end
 }
 
