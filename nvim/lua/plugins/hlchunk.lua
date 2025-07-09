@@ -31,7 +31,7 @@ return {
 				enable = false, -- Disable or configure if needed
 			},
 			blank = {
-				enable = false, -- Disable or configure if needed
+				enable = true, -- Disable or configure if needed
 			},
 		})
 	end,
