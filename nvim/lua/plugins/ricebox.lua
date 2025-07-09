@@ -3,7 +3,6 @@ return {
     require("plugins.ricebox.lsp-config"),        -- lsp configuration
     require("plugins.ricebox.none-ls"),           -- linting/formatting
     require("plugins.ricebox.autopair"),          -- pair ({[]})
-    --   require("plugins.ricebox.debugging"),         -- (debugging) ISSUES WITH DIPLICATION
-    --   require("plugins.ricebox.nvim-jdtls"),          -- 
+    --   require("plugins.ricebox.nvim-jdtls"),
     -- require("plugins.ricebox.nvim-java"),
 }
