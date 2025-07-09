@@ -1,7 +1,7 @@
-
+-- nvim/lua/plugins/themes/onedark.lua
+-- WE USE LUALINE INTERNAL INSTEAD 
 return {
-	-- "navarasu/onedark.nvim",
-    'navarasu/onedark.nvim',
+	'navarasu/onedark.nvim',
 	lazy = true,
 	enabled = true,
 	config = function ()

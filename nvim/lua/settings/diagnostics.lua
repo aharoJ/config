@@ -30,7 +30,7 @@ vim.diagnostic.config({
                 [vim.diagnostic.severity.ERROR] = " ",
                 [vim.diagnostic.severity.WARN]  = " ",
                 [vim.diagnostic.severity.INFO]  = " ",
-                [vim.diagnostic.severity.HINT]  = " ",
+                [vim.diagnostic.severity.HINT]  = "  ",
             }
             return icons[diagnostic.severity]
         end,
@@ -44,6 +44,7 @@ vim.fn.sign_define("DiagnosticSignWarn", { text = " ", texthl = "DiagnosticSi
 vim.fn.sign_define("DiagnosticSignInfo", { text = " ", texthl = "DiagnosticSignInfo" })
 vim.fn.sign_define("DiagnosticSignHint", { text = " ", texthl = "DiagnosticSignHint" })
 
+-- 
 -- 
--- 
--- 
+-- 
+-- 
