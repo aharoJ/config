@@ -1,0 +1,123 @@
+
+
+
+
+-- Define diagnostic signs
+vim.fn.sign_define("DiagnosticSignError", { text = "", texthl = "DiagnosticSignError" })
+vim.fn.sign_define("DiagnosticSignWarn", { text = " ", texthl = "DiagnosticSignWarn" })
+vim.fn.sign_define("DiagnosticSignInfo", { text = " ", texthl = "DiagnosticSignInfo" })
+vim.fn.sign_define("DiagnosticSignHint", { text = " ", texthl = "DiagnosticSignHint" })
+
+-- ============================================================================
+--  nvim-scrollbar – *dynamic colour edition*
+--  Keeps ALL of your original options & comments, but lets the slider + marks
+--  follow the same colour palette you use in lualine.
+-- ============================================================================
+return {
+    "petertriho/nvim-scrollbar",
+    event = "VimEnter",
+    config = function()
+        -- --------------------------------------------------------------------
+        --               1.  YOUR LUALINE-STYLE MODE → COLOUR MAP
+        -- --------------------------------------------------------------------
+        local mode_colors = {
+            n    = { bg = "#535586", fg = "#1c1e2b" }, -- Normal
+            i    = { bg = "#77BE84", fg = "#1c1e2b" }, -- Insert
+            v    = { bg = "#b8b57d", fg = "#1c1e2b" }, -- Visual / V-Line / V-Block
+            c    = { bg = "#b48284", fg = "#1c1e2b" }, -- Command
+            [""] = { bg = "#535586", fg = "#1c1e2b" }, -- Fallback
+        }
+
+        -- --------------------------------------------------------------------
+        --               2.  PLUGIN SETUP  (all your original opts)
+        --                   ‣ set_highlights = false  ➜ we’ll own HL groups
+        -- --------------------------------------------------------------------
+        require("scrollbar").setup({
+            show                = true,
+            show_in_active_only = false,
+            set_highlights      = false, -- <<< we take over highlight control
+            folds               = 1000, -- handle folds; set to number to disable folds if no. of lines in buffer exceeds this
+            max_lines           = false, -- disables if no. of lines in buffer exceeds this
+            hide_if_all_visible = false, -- hides everything if all lines are visible
+            throttle_ms         = 100,
+
+            handle              = {
+                text                = " ",
+                blend               = 0, -- Integer between 0 (opaque) and 100 (invisible). Defaults to 30.
+                color               = nil, -- we set colours via HL groups instead
+                color_nr            = nil, -- cterm
+                highlight           = "CursorColumn",
+                hide_if_all_visible = false, -- hides handle if all lines are visible
+            },
+            -- 
+            -- 
+            -- 
+            -- 
+
+            -- your mark definitions, kept verbatim
+            marks               = {
+                Cursor    = { text = "•", priority = 0, highlight = "Normal" },
+                Search    = { text = { "-", "=" }, priority = 1, highlight = "Search" },
+                Error     = { text = { "" }, priority = 2, highlight = "DiagnosticVirtualTextError" },
+                Warn      = { text = { "w" }, priority = 3, highlight = "DiagnosticVirtualTextWarn" },
+                Info      = { text = { "i" }, priority = 4, highlight = "DiagnosticVirtualTextInfo" },
+                Hint      = { text = { "h"}, priority = 5, highlight = "DiagnosticVirtualTextHint" },
+                Misc      = { text = { "-", "=" }, priority = 6, highlight = "Normal" },
+                GitAdd    = { text = "┆", priority = 7, highlight = "GitSignsAdd" },
+                GitChange = { text = "┆", priority = 7, highlight = "GitSignsChange" },
+                GitDelete = { text = "▁", priority = 7, highlight = "GitSignsDelete" },
+            },
+
+            excluded_buftypes   = { "terminal" },
+            excluded_filetypes  = { "cmp_docs", "cmp_menu", "noice", "prompt", "TelescopePrompt" },
+
+            autocmd             = {
+                render = {
+                    "BufWinEnter", "TabEnter", "TermEnter", "WinEnter", "CmdwinLeave",
+                    "TextChanged", "VimResized", "WinScrolled",
+                },
+                clear  = { "BufWinLeave", "TabLeave", "TermLeave", "WinLeave" },
+            },
+
+            handlers            = {
+                cursor     = true,
+                diagnostic = true,
+                gitsigns   = false, -- requires gitsigns
+                handle     = true,
+                search     = false, -- requires hlslens
+                ale        = false, -- requires ALE
+            },
+        })
+
+        -- --------------------------------------------------------------------
+        --               3.  HL GROUP DRIVER – syncs colours on mode changes
+        -- --------------------------------------------------------------------
+        local function recolor_scrollbar()
+            -- Normalise vim modes: treat V-Line/Block as just 'v'
+            local m = vim.fn.mode():gsub("[V]", "v")
+            local col = (mode_colors[m] or mode_colors["n"]).bg
+
+            -- Main slider + “current line” dot
+            vim.api.nvim_set_hl(0, "ScrollbarHandle", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarCursor", { bg = col, fg = col })
+
+            -- ----------------------------------------------------------------
+            --  Add **all** the optional tweaks so everything tracks the mode
+            -- ----------------------------------------------------------------
+            vim.api.nvim_set_hl(0, "ScrollbarSearch", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarError", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarWarn", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarInfo", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarHint", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarMisc", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarGitAdd", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarGitChange", { bg = col, fg = col })
+            vim.api.nvim_set_hl(0, "ScrollbarGitDelete", { bg = col, fg = col })
+            -- 🎨  add more HL tweaks (e.g. ScrollbarYank, ScrollbarTodo) here
+        end
+
+        -- Run once at startup, then whenever mode switches
+        recolor_scrollbar()
+        vim.api.nvim_create_autocmd("ModeChanged", { callback = recolor_scrollbar })
+    end,
+}
