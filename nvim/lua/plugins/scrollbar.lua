@@ -13,7 +13,7 @@ return {
 			handle = {
 				text = " ",
 				blend = 0, -- Integer between 0 and 100. 0 for fully opaque and 100 to full transparent. Defaults to 30.
-				color = nil,
+				color = "#535586",
 				color_nr = nil, -- cterm
 				highlight = "CursorColumn",
 				hide_if_all_visible = false, -- Hides handle if all lines are visible
@@ -29,7 +29,7 @@ return {
 					highlight = "Normal",
 				},
 				Search = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 1,
 					gui = nil,
 					color = nil,
@@ -38,7 +38,7 @@ return {
 					highlight = "Search",
 				},
 				Error = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 2,
 					gui = nil,
 					color = nil,
@@ -47,7 +47,7 @@ return {
 					highlight = "DiagnosticVirtualTextError",
 				},
 				Warn = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 3,
 					gui = nil,
 					color = nil,
@@ -56,7 +56,7 @@ return {
 					highlight = "DiagnosticVirtualTextWarn",
 				},
 				Info = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 4,
 					gui = nil,
 					color = nil,
@@ -65,7 +65,7 @@ return {
 					highlight = "DiagnosticVirtualTextInfo",
 				},
 				Hint = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 5,
 					gui = nil,
 					color = nil,
@@ -74,7 +74,7 @@ return {
 					highlight = "DiagnosticVirtualTextHint",
 				},
 				Misc = {
-					text = { "-", "=" },
+					text = { "-" },
 					priority = 6,
 					gui = nil,
 					color = nil,
@@ -141,10 +141,10 @@ return {
 			handlers = {
 				cursor = true,
 				diagnostic = true,
-				gitsigns = false, -- Requires gitsigns
+				gitsigns = false, -- Requires gitsigns | OFF
 				handle = true,
-				search = false, -- Requires hlslens
-				ale = false, -- Requires ALE
+				search = false, -- Requires hlslens | OFF
+				ale = false, -- Requires ALE | i dont have
 			},
 		})
 	end,
