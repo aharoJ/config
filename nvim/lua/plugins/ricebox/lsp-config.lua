@@ -147,6 +147,11 @@ return {
             vim.keymap.set("n", "<space>cwl", function()
                 print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
             end, { desc = "" })
+
+            -- toggle ALL diagnostics on/off
+            vim.keymap.set('n', '<leader>td', function()
+                vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+            end, { silent = true, noremap = true, desc = "[lsp] diag ON|OFF" })
         end,
     },
 }
