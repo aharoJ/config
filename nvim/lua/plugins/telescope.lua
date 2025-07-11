@@ -20,9 +20,16 @@ return {
     
             -- Custom themes for each picker, extending the base theme
             local dropdown_themes = {
+                prompt_title          = "Buffers (j/k/⏎)",
                 files = vim.tbl_extend("force", dropdown_base, { prompt_title = "Find Files" }),
                 grep = vim.tbl_extend("force", dropdown_base, { prompt_title = "Live Grep" }),
-                buffers = vim.tbl_extend("force", dropdown_base, { prompt_title = "Buffers" }),
+                buffers = vim.tbl_extend("force", dropdown_base, {
+                previewer             = false,             -- no preview window
+                path_display          = { "tail" }, -- **filename only**
+                initial_mode          = "normal",  -- start in normal mode
+                sort_mru              = true,              -- most-recently-used first
+                ignore_current_buffer = true,              -- hide the buf you’re in
+                    }),
                 symbols = vim.tbl_extend("force", dropdown_base, { prompt_title = "Symbols" }),
                 diagnostics = vim.tbl_extend("force", dropdown_base, { prompt_title = "Diagnostics" }),
             }
@@ -47,10 +54,10 @@ return {
             builtin.live_grep(dropdown_themes.grep)
         end, { desc = "[T] Live grep in project" })
 
-        -- Buffers (view-only list of open buffers)
-        vim.keymap.set("n", "<leader>gb", function()
-            builtin.buffers(dropdown_themes.buffers)
-        end, { desc = "[T] List open buffers" })
+        -- -- Buffers (view-only list of open buffers)
+        -- vim.keymap.set("n", "<leader>gb", function()
+        --     builtin.buffers(dropdown_themes.buffers)
+        -- end, { desc = "[T] get buffer" })
 
 
         -- Diagnostics (current buffer) - DISABLE TYPING HERE!
@@ -64,7 +71,19 @@ return {
                 results_title = "diagnostic result (j/k/esc)",
             })
             builtin.diagnostics(opts)
-        end, { desc = "[T] diagnostics" })
+        end, { desc = "[T] get diag" })
+
+        vim.keymap.set("n", "<leader>gD", function()
+            local opts = vim.tbl_extend("force", dropdown_themes.diagnostics, {
+                initial_mode = "normal",
+                no_prompt = true,
+                prompt_height = 0,
+                prompt_line = 0,
+                results_title = "project diagnostics (j/k/esc)",
+            })
+            builtin.diagnostics(opts)
+        end, { desc = "[T] get diag for project" })
+
 
         -- -- Severity-specific diagnostics (filter errors/warnings/info/hints in buffer)
         -- local function diagnostics_by_severity(sev, title)
