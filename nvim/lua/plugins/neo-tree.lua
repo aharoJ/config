@@ -276,6 +276,12 @@ return {
 
         -------------------    MAP    ------------------------
         vim.api.nvim_set_keymap("n", "<Leader>e", ":Neotree <CR>", { noremap = true, silent = true }),
+                vim.api.nvim_set_keymap(
+                    "n",
+                    "<leader>gb",
+                    ":Neotree buffers reveal float<CR>",
+                    { desc="[tree] get buffers"}
+                ),
       })
       -- vim.cmd([[nnoremap \ :Neotree reveal<cr>]])
     end,
