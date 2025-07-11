@@ -220,7 +220,7 @@ return {
                         use_mode_colors = true,
                         buffers_color = {
                             active   = { fg = "#ecce96", bg = "#1c1e2b" },
-                            inactive = { fg = "#5f5b41", bg = "#1c1e2b" },
+                            inactive = { fg = "#8e7c5a", bg = "#333540" },
                         },
                         mode = 0,
                         max_length = vim.o.columns * 2 / 3,
