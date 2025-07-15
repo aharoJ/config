@@ -56,36 +56,7 @@ return {
       },
     })
 
-    vim.api.nvim_set_keymap("n","<leader>tp","<cmd>lua require('copilot.panel').open()<CR>",{ desc="[copilot] pannel" })
-    vim.api.nvim_set_keymap("n","<leader>tc","<cmd>lua require('copilot.suggestion').toggle_auto_trigger()<CR>",{ desc="[copilot] on|off" })
+    vim.keymap.set("n","<leader>tp","<cmd>lua require('copilot.panel').open()<CR>",{ desc="[copilot] pannel" })
+    vim.keymap.set("n","<leader>tc","<cmd>lua require('copilot.suggestion').toggle_auto_trigger()<CR>",{ desc="[copilot] on|off" })
   end
 }
-
-
-
--- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- {
--- 	-- DONT LOG IN HERE
--- 	"github/copilot.vim",
--- 	config = function()
--- 		-------------------        CUSTOM TOGGLE       ------------------------
--- 		_G.copilot_enabled = true
--- 		vim.cmd("Copilot enable") -- Make sure Copilot is enabled at start
---
--- 		function ToggleCopilot()
--- 			if _G.copilot_enabled then
--- 				vim.cmd("Copilot disable")
--- 				_G.copilot_enabled = false
--- 				print("Copilot disabled")
--- 			else
--- 				vim.cmd("Copilot enable")
--- 				_G.copilot_enabled = true
--- 				print("Copilot enabled")
--- 			end
--- 		end
---
--- 		vim.api.nvim_set_keymap("n", "<Leader>tc", ":lua ToggleCopilot()<CR>", { noremap = true, silent = true })
--- 		----------------                              ----------------
--- 	end,
--- },
--- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
