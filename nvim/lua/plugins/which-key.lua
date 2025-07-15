@@ -69,21 +69,7 @@ return
             filetypes = {}, -- Disable for specific filetypes
         },
 
-        -- Your keybinding descriptions
         spec = {
-            -- Single character mappings
-            { "<leader>e", desc = "NeoTree", mode = "n" },
-            { "<leader>/", desc = "Comment", mode = "n" },
-            { "<leader>q", desc = "Quit",    mode = "n" },
-
-            -- Buffer group
-            -- { "<leader>b", group = "Buffer", mode = "n" },
-            -- { "<leader>bc", desc = "Close Buffer", mode = "n" },
-            -- { "<leader>bn", desc = "Next Buffer", mode = "n" },
-            -- { "<leader>bp", desc = "Previous Buffer", mode = "n" },
-            -- { "<leader>bsv", desc = "Split Vertical", mode = "n" },
-            -- { "<leader>bsh", desc = "Split Horizontal", mode = "n" },
-            -- { "<leader>bwc", desc = "Close Window", mode = "n" },
         },
     },
 }
