@@ -120,20 +120,17 @@ return {
       vim.keymap.set("n", "<leader>cS", vim.lsp.buf.signature_help, { desc = "" })
       vim.keymap.set("n", "<space>cwa", vim.lsp.buf.add_workspace_folder, { desc = "" })
       vim.keymap.set("n", "<space>cwr", vim.lsp.buf.remove_workspace_folder, { desc = "" })
-      vim.keymap.set("n", "<space>ct", vim.lsp.buf.type_definition, { desc = "" })
-      vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "[lsp] hover docs" })
-      vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, { desc = "[lsp] code action" })
 
+      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, { desc = "[lsp] implementation" })
+      vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "[lsp] hover docs" })
       vim.keymap.set("n", "gr", vim.lsp.buf.references, { desc = "[lsp] references" })
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "[lsp] definition" })
       vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { desc = "[lsp] declaration" })
       vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { desc = "[lsp] rename symbol" })
-      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, { desc = "[lsp] implementation" })
-
       vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, { desc = "[lsp] signature help" })
-
       vim.keymap.set("n", "<space>gt", vim.lsp.buf.type_definition, { desc = "[lsp] type definition" })
       vim.keymap.set("n", "<leader>gs", vim.lsp.buf.document_symbol, { desc = "[lsp] doc syms" })
+      vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "[lsp] code action" })
 
       -- Diagnostic navigation
       vim.keymap.set("n", "co", vim.diagnostic.open_float, { desc = "[diag] hover line" })

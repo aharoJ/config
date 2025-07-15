@@ -189,7 +189,8 @@ return {
             leave_dirs_open = false,         -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
           },
           group_empty_dirs = false,          -- when true, empty folders will be grouped together
-          hijack_netrw_behavior = "open_default", -- netrw disabled, opening a directory opens neo-tree
+          hijack_netrw_behavior = "disabled", --disabled | open_default
+          -- netrw disabled, opening a directory opens neo-tree
           -- in whatever position is specified in window.position
           -- "open_current",  -- netrw disabled, opening a directory opens within the
           -- window like netrw would, regardless of window.position
@@ -275,14 +276,22 @@ return {
         },
 
         -------------------    MAP    ------------------------
-        vim.api.nvim_set_keymap("n", "<Leader>e", ":Neotree <CR>", { noremap = true, silent = true }),
-                vim.api.nvim_set_keymap(
-                    "n",
-                    "<leader>gb",
-                    ":Neotree buffers reveal float<CR>",
-                    { desc="[tree] get buffers"}
-                ),
+        vim.keymap.set("n", "<leader>e", ":Neotree <CR>", { noremap = true, silent = true }),
+        vim.keymap.set("n", "<leader>gb", ":Neotree buffers reveal float<CR>", { desc = "[tree] get buffers" }),
       })
+
+      local neotree = require("neo-tree.command")
+
+      vim.keymap.set("n", "<leader>ge", function()
+        neotree.execute({
+          action = "focus",              -- focus | show
+          position = "left",             -- use your usual side
+          source = "filesystem",
+          reveal_file = vim.fn.expand("%:p"), -- path of current buffer
+          reveal_force_cwd = true,       -- don’t change CWD silently
+        })
+      end, { desc = "[tree] reveal current file" })
+
       -- vim.cmd([[nnoremap \ :Neotree reveal<cr>]])
     end,
   },
