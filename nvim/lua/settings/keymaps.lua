@@ -1,3 +1,5 @@
+-- nvim/lua/settings/keymaps.lua
+
 local map = vim.keymap.set
 
 -- Leader key
@@ -62,7 +64,7 @@ vim.keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 -- ============================================================================
 
 -- Copy Full File-Path
-vim.keymap.set("n", "<leader>gp", function()
+vim.keymap.set("n", "gp", function()
     local path = vim.fn.expand("%:p")
     vim.fn.setreg("+", path)
     print("file:", path)
