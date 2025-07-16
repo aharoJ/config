@@ -1,7 +1,17 @@
+-- path: nvim/lua/settings/files.lua
+
 -- File-handling core options
 -- vim.opt.backup = false      -- No *.bak
 -- vim.opt.writebackup = false -- No write-backup
 -- vim.opt.swapfile = false    -- No *.swp
+
+-- REACT SENSITIVE --
+vim.opt.backup      = false
+vim.opt.writebackup = false   -- skip atomic swap file dance
+vim.opt.backupcopy  = "yes"  -- critical: overwrite existing file
+-- ........... --
+
+
 
 vim.opt.undofile = true     -- Persistent undo
 
@@ -63,3 +73,23 @@ autocmd({ "FocusGained", "CursorHold" }, {
     end
   end,
 })
+
+
+-- vim.api.nvim_create_autocmd("BufWritePost", {
+--   pattern = { "*.tsx", "*.ts", "*.jsx", "*.js" },
+--   callback = function()
+--     -- Trigger browser refresh on save
+--     vim.fn.jobstart({"osascript", "-e", 'tell application "Vivaldi" to tell active tab of window 1 to reload'}, {detach = true})
+--   end
+-- })
+
+
+-- -- Save immediately when you stop typing or leave insert‑mode
+-- local save_grp = vim.api.nvim_create_augroup("autosave_fastrefresh", { clear = true })
+-- vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
+--   group = save_grp,
+--   pattern = { "*.ts", "*.tsx", "*.js", "*.jsx" },
+--   callback = function()
+--     if vim.bo.modified then vim.cmd("silent! write") end
+--   end,
+-- })

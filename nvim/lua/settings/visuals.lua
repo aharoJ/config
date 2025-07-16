@@ -1,3 +1,5 @@
+-- nvim/lua/settings/visuals.lua
+
 -- Visuals
 vim.opt.termguicolors = true                      -- Enable 24-bit colours
 vim.opt.signcolumn = "yes"                        -- Always show sign column
