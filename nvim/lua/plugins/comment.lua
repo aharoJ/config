@@ -34,8 +34,8 @@ return {
     })
 
     -- Instead of `gcc` we do <space>/
-    -- vim.api.nvim_set_keymap({"n","x","v"}, "<Leader>/", "<Plug>(comment_toggle_linewise_current)", {desc = "[Comment] Toggle linewise comment", silent = true })
-    vim.keymap.set({"n","v"}, "<Leader>/", "<Plug>(comment_toggle_linewise_current)", {desc = "[Comment] Toggle linewise comment", silent = true })
-
+    -- Normal mode mapping for <Space>/
+    vim.api.nvim_set_keymap("n", "<Leader>/", "<Plug>(comment_toggle_linewise_current)", { silent = true })
+    vim.api.nvim_set_keymap("x", "<Leader>/", "<Plug>(comment_toggle_linewise_visual)", { silent = true })
   end,
 }
