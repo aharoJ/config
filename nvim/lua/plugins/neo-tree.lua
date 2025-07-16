@@ -282,7 +282,7 @@ return {
 
       local neotree = require("neo-tree.command")
 
-      vim.keymap.set("n", "<leader>ge", function()
+      vim.keymap.set("n", "ge", function()
         neotree.execute({
           action = "focus",              -- focus | show
           position = "left",             -- use your usual side
