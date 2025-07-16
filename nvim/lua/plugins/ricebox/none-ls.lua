@@ -1,14 +1,14 @@
 -- path: nvim/lua/plugins/ricebox/none-ls.lua
+
 -- diagnostic == linting
 -- formatting == format
 return {
-	"nvimtools/none-ls.nvim",
+	"nvimtools/none-ls.nvim", -- https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
 	dependencies = {
 		"gbprod/none-ls-shellcheck.nvim", -- shellcheck
 		"nvimtools/none-ls-extras.nvim", -- eslint_d --> TS/JS
 	},
 	config = function()
-		-- https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
 		local null_ls = require("null-ls")
 		null_ls.setup({
 			sources = {
