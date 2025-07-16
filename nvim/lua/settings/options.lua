@@ -1,3 +1,5 @@
+-- path: nvim/lua/settings/options.lua
+
 -- Basic Editor Options
 vim.opt.number = true         -- Show absolute line numbers
 vim.opt.relativenumber = true -- Show relative line numbers
@@ -59,17 +61,3 @@ vim.opt.encoding = "UTF-8"             -- Set encoding
 vim.opt.wildmenu = true
 vim.opt.wildmode = "longest:full,full"
 vim.opt.wildignore:append({ "*.o", "*.obj", "*.pyc", "*.class", "*.jar" })
-
-
--- ============================================================================
--- TABS
--- ============================================================================
-
--- Tab display settings
--- vim.opt.showtabline = 1 -- Always show tabline (0=never, 1=when multiple tabs, 2=always)
--- vim.opt.tabline = ""    -- Use default tabline (empty string uses built-in)
-
-
-
-
-

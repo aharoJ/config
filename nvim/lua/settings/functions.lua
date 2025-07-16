@@ -1,3 +1,4 @@
+-- path: $HOME/.config/nvim/lua/settings/functions.lua
 -- Highlight yanked text
 local augroup = vim.api.nvim_create_augroup("UserConfig", {})
 
