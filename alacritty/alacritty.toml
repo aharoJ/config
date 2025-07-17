@@ -52,11 +52,12 @@ multiplier = 5  # Default: 3
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  FONT   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-[font] # /Users/aharo/Library/Fonts
+[font] # /Users/aharo/Library/Fonts -- light | retina | medium | semi_bold DONT EXIST IN ALACRITTY
 normal = { family = "FiraCode Nerd Font", style = "Regular" }
 bold = { family = "FiraCode Nerd Font", style = "Bold" }
-italic  = { family = "Monofur Nerd Font", style = "Italic" }
-bold_italic  = { family = "Monofur Nerd Font", style = "Bold Italic" }
+italic  = { family = "AnonymicePro Nerd Font", style = "Italic" }
+bold_italic  = { family = "AnonymicePro Nerd Font", style = "Bold Italic" }
+
 offset = { x = 1, y = 2 }   # Offset is extra space around each character
 glyph_offset = { x = 0, y = 0 }  
 builtin_box_drawing = true  # true | false
