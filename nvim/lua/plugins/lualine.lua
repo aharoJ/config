@@ -7,14 +7,15 @@ return {
 		-- "navarasu/onedark.nvim", -- WE USE INTERNAL INSTEAD!
 	},
 	config = function()
-		-- require("plugins.themes.onedark")
+		-- GIT MODE COLORS
 		-- Define mode colors for all components
 		local mode_colors = {
-			n = { bg = "#8A8DE0", fg = "#1c1e2b" }, -- Normal
-			i = { bg = "#77BE84", fg = "#1c1e2b" }, -- Insert
-			v = { bg = "#b8b57d", fg = "#1c1e2b" }, -- Visual
-			c = { bg = "#b48284", fg = "#1c1e2b" }, -- Command
-			[""] = { bg = "#8A8DE0", fg = "#1c1e2b" }, -- Fallback
+			n = { fg = "#8A8DE0", bg = "#1c1e2b" }, -- Normal
+			i = { fg = "#77BE84", bg = "#1c1e2b" }, -- Insert
+			v = { fg = "#b8b57d", bg = "#1c1e2b" }, -- Visual
+			c = { fg = "#b48284", bg = "#1c1e2b" }, -- Command
+
+			[""] = { fg = "#8A8DE0", bg = "#1c1e2b" }, -- Fallback
 		}
 
 		-- Helper to get current mode colors
@@ -26,6 +27,7 @@ return {
 			end
 			return mode_colors[mode] or mode_colors.n
 		end
+		-- ......................  --
 
 		local default_icon = "  "
 		local mode = {
@@ -57,16 +59,16 @@ return {
 
 		local diagnostics = {
 			"diagnostics",
-			symbols = { error = " ", warn = " ", info = " ", hint = " " },
+			symbols = { error = " ", warn = " ", info = " ", hint = " " },
 			colored = true, -- Displays diagnostics status in color if set to true.
 			update_in_insert = false, -- Update diagnostics in insert mode.
 			always_visible = false, -- Show diagnostics even if there are none.
-			color = { bg = "#1c1e2b" }, -- <-- pick yours
+			color = { bg = "#1c1e2b" }, 
 		}
 
 		local filetype = {
 			"filetype",
-			colored = true, -- Displays filetype icon in color if set to true
+			colored = false, -- Displays filetype icon in color if set to true
 			icon_only = false, -- Display only an icon for filetype
 			icon = { align = "left" },
 		}
@@ -83,7 +85,7 @@ return {
 				unnamed = " [No Name]",
 				newfile = " [New File]",
 			},
-			color = { fg = "#ecce96", bg = "#1c1e2b" },
+			color = { fg = "#adafe9", bg = "#1c1e2b" },
 		}
 
 		-------------------------------------
@@ -99,24 +101,27 @@ return {
 
 				-- Server icons mapping
 				local server_icons = {
-					["null-ls"] = "", -- null-ls icon
-					["ts_ls"] = "󰛦", -- TypeScript
-					["tailwindcss"] = "󱏿", -- Tailwind CSS
-					["copilot"] = "", -- GitHub Copilot
-					["lua_ls"] = "", -- Lua
-					["pyright"] = "", -- Python
-					["bashls"] = "", -- Bash
-					["rust_analyzer"] = "", -- Rust
-					["omnisharp"] = "󰪮", -- C#
-					["stylelint_lsp"] = "", -- CSS LSP
-					["jsonls"] = "", -- JSON
-					["marksman"] = "󰈔", -- Markdown
-					["dockerls"] = "󰡨", -- Docker
-					["lemminx"] = "󰈔", -- XML
-					["gopls"] = "", -- Go
-					["jdtls"] = "", -- Java
-					["kotlin_language_server"] = "", -- Kotlin
-					["clangd"] = "", -- C/C++
+					-- ["null-ls"] = "  ", -- null-ls icon
+					-- ["null-ls"] = "󱃓  ", -- null-ls icon
+					["null-ls"] = "󰿦 ", -- null-ls icon
+					["ts_ls"] = "󰛦 ", -- TypeScript
+					["tailwindcss"] = "󱏿 ", -- Tailwind CSS
+					["copilot"] = "󱜙 ", -- GitHub Copilot
+					["lua_ls"] = " ", -- Lua
+					-- ["pyright"] = " ", -- Python
+					["pyright"] = " ", -- Python
+					["bashls"] = " ", -- Bash
+					["rust_analyzer"] = " ", -- Rust
+					["omnisharp"] = "󰪮 ", -- C#
+					["stylelint_lsp"] = " ", -- CSS LSP
+					["jsonls"] = " ", -- JSON
+					["marksman"] = "󰈔 ", -- Markdown
+					["dockerls"] = "󰡨 ", -- Docker
+					["lemminx"] = "󰈔 ", -- XML
+					["gopls"] = " ", -- Go
+					["jdtls"] = " ", -- Java
+					-- ["kotlin_language_server"] = "  ", -- Kotlin
+					-- ["clangd"] = "  ", -- C/C++
 				}
 
 				-- Collect status icons
@@ -131,7 +136,7 @@ return {
 			color = function()
 				local clients = vim.lsp.get_clients({ bufnr = 0 })
 				if #clients == 0 then
-					return { fg = "#777777" } -- Gray when no LSP
+					return { bg = "#1c1e2b", fg = "#8A8DE0" } -- Gray when no LSP
 				end
 
 				-- Check if all LSPs are healthy
@@ -142,8 +147,8 @@ return {
 						break
 					end
 				end
-
-				return all_healthy and { fg = "#77BE84" } or { fg = "#E06C75" } -- Green/Red
+				-- #1c1e2b | 94e2d5 -> light blue 
+				return all_healthy and { bg = "#1c1e2b", fg = "#8A8DE0" } -- bottom right lsp-icons
 			end,
 			cond = function()
 				-- Only show in normal buffers
@@ -205,10 +210,12 @@ return {
 		local git_branch = {
 			"branch",
 			icon = "",
-			color = function()
-				local colors = get_mode_color()
-				return { bg = colors.bg, fg = colors.fg }
-			end,
+			color = { fg = "#8A8DE0", bg = "#1c1e2b" },
+
+			-- color = function()
+			-- 	local colors = get_mode_color()
+			-- 	return { bg = colors.bg, fg = colors.fg }
+			-- end,
 		}
 
 		-- Git differences with dynamic command-mode coloring
@@ -220,26 +227,48 @@ return {
 				modified = " ",
 				removed = " ",
 			},
-			color = function()
-				local colors = get_mode_color()
-				return { bg = colors.bg, fg = colors.fg }
-			end,
+			color = { fg = "#8A8DE0", bg = "#1c1e2b" },
+
+			-- color = function()
+			-- 	local colors = get_mode_color()
+			-- 	return { bg = colors.bg, fg = colors.fg }
+			-- end,
 		}
 
 		-- Get the built-in onedark theme from lualine
 		local custom_onedark = require("lualine.themes.onedark")
+		-- custom_onedark.normal.a.fg = "#1c1e2b"
+		custom_onedark.normal.a.fg = "#8A8DE0"
+		custom_onedark.normal.a.bg = "#1c1e2b"
+
+		custom_onedark.insert.a.fg = "#77BE84"
+		custom_onedark.insert.a.bg = "#1c1e2b"
+
+		custom_onedark.visual.a.fg = "#b8b57d"
+		custom_onedark.visual.a.bg = "#1c1e2b"
+
+		custom_onedark.command.a.fg = "#b48284"
+		custom_onedark.command.a.bg = "#1c1e2b"
+
 		-- Customize theme colors
-		custom_onedark.normal.a.fg = "#1c1e2b"
-		custom_onedark.normal.a.bg = "#8A8DE0"
-		custom_onedark.insert.a.fg = "#1c1e2b"
-		custom_onedark.insert.a.bg = "#77BE84"
-		custom_onedark.visual.a.fg = "#2c3043"
-		custom_onedark.visual.a.bg = "#b8b57d"
-		custom_onedark.command.a.fg = "#1c1e2b"
-		custom_onedark.command.a.bg = "#b48284"
+		-- custom_onedark.normal.a.fg = "#1c1e2b"
+		-- custom_onedark.normal.a.bg = "#8A8DE0"
+		-- custom_onedark.insert.a.fg = "#1c1e2b"
+		-- custom_onedark.insert.a.bg = "#77BE84"
+		-- custom_onedark.visual.a.fg = "#2c3043"
+		-- custom_onedark.visual.a.bg = "#b8b57d"
+		-- custom_onedark.command.a.fg = "#1c1e2b"
+		-- custom_onedark.command.a.bg = "#b48284"
 		custom_onedark.command = custom_onedark.command
 		custom_onedark.shell = custom_onedark.normal
 		custom_onedark.ex = custom_onedark.normal
+
+		-- expriemnet
+		-- BELOW PAINTS THE WHOLE BAR WHY? idk why?
+		custom_onedark.normal.c = { bg = "#1c1e2b", fg = "#8A8DE0" }
+		custom_onedark.insert.c = { bg = "#1c1e2b", fg = "#8A8DE0" }
+		custom_onedark.visual.c = { bg = "#1c1e2b", fg = "#8A8DE0" }
+		-- ..................... ---
 
 		require("lualine").setup({
 			options = {
@@ -266,20 +295,28 @@ return {
 						cond = require("noice").api.status.mode.has,
 						color = { link = "lualine_b_diff_added_insert" },
 					},
-					"selectioncount",
-					filetype,
+					-- "selectioncount",
+					-- filetype,
 				},
 				-- lualine_y = { clients_lsp }, -- TESTING DUPLICATE ISSUE
 				lualine_y = { lsp_status }, -- TESTING DUPLICATE ISSUE
-				lualine_z = { "location" },
+				lualine_z = {
+					{
+						"location",
+						color = function()
+							local colors = get_mode_color()
+							return { bg = colors.bg, fg = colors.fg }
+						end,
+					},
+				},
 			},
 			inactive_sections = {
-				lualine_a = {},
-				lualine_b = {},
-				lualine_c = { filename },
-				lualine_x = { "location" },
-				lualine_y = {},
-				lualine_z = {},
+				-- lualine_a = {},
+				-- lualine_b = {},
+				-- lualine_c = {},
+				-- lualine_x = {},
+				-- lualine_y = {},
+				-- lualine_z = {},
 			},
 			tabline = {
 				lualine_a = {
@@ -290,8 +327,8 @@ return {
 						show_modified_status = true,
 						use_mode_colors = true,
 						buffers_color = {
-							active = { fg = "#ecce96", bg = "#1c1e2b" },
-							inactive = { fg = "#8e7c5a", bg = "#333540" },
+							active = { fg = "#292a43", bg = "#9698e3" },
+							inactive = { fg = "#292a43", bg = "#535586" },
 						},
 						mode = 0,
 						max_length = vim.o.columns * 2 / 3,
@@ -310,7 +347,7 @@ return {
 					},
 				},
 				lualine_z = {
-					git_difference,
+					-- git_difference, -- I KINDA DONT LIKE THIS 
 					git_branch,
 				},
 			},
