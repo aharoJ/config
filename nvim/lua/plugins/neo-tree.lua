@@ -102,7 +102,6 @@ return {
             ["l"] = "open", -- This binds the 'l' key to the open action
             -- ["S"] = "open_split",
             ["s"] = "open_vsplit",
-            ["S"] = "split_with_window_picker",
             -- ["s"] = "vsplit_with_window_picker",
             ["t"] = "open_tabnew",
             -- ["<cr>"] = "open_drop",
@@ -189,7 +188,7 @@ return {
             leave_dirs_open = false,         -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
           },
           group_empty_dirs = false,          -- when true, empty folders will be grouped together
-          hijack_netrw_behavior = "disabled", --disabled | open_default
+          hijack_netrw_behavior = "open_default", --disabled | open_default
           -- netrw disabled, opening a directory opens neo-tree
           -- in whatever position is specified in window.position
           -- "open_current",  -- netrw disabled, opening a directory opens within the
@@ -281,7 +280,6 @@ return {
       })
 
       local neotree = require("neo-tree.command")
-
       vim.keymap.set("n", "ge", function()
         neotree.execute({
           action = "focus",              -- focus | show
@@ -293,6 +291,23 @@ return {
       end, { desc = "[tree] reveal current file" })
 
       -- vim.cmd([[nnoremap \ :Neotree reveal<cr>]])
+
+      -- Add this autocommand
+      vim.api.nvim_create_autocmd("VimEnter", {
+        desc = "Open Neo-tree for directories",
+        callback = function(data)
+          -- Only open if argument is a directory
+          local directory = vim.fn.isdirectory(data.file) == 1
+          if not directory then
+            return
+          end
+
+          -- Change to the directory
+          vim.cmd.cd(data.file)
+          -- Open Neo-tree
+          require("neo-tree.command").execute({ action = "show", source = "filesystem", reveal = true })
+        end,
+      })
     end,
   },
 
