@@ -1,5 +1,4 @@
-
--- File: after/plugin/treesitter-highlight.lua
+-- path: nvim/lua/after/plugin/treesitter-highlight.lua
 
 -- 1. Require the highlight module
 local highlight_mod = require("nvim-treesitter.highlight")
