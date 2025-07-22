@@ -5,16 +5,16 @@
 # SWAP  <~~>  WINDOWS
 hyper - j : yabai -m window --swap south
 hyper - k : yabai -m window --swap north
-# hyper - h : yabai -m window --swap west ## 0x21 is the "[" key
-# hyper - l : yabai -m window --swap east ## 0x1E is the "]" key
 hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
 hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
+# hyper - h : yabai -m window --swap west 
+# hyper - l : yabai -m window --swap east 
 
 # Navigation Panes
-# hyper - h : yabai -m window --focus west     # h <-
-# hyper - j : yabai -m window --focus south    # j v
-# hyper - k : yabai -m window --focus north    # k ^
-# hyper - l : yabai -m window --focus east     # l ->
+lalt - h : yabai -m window --focus west
+lalt - j : yabai -m window --focus south
+lalt - k : yabai -m window --focus north
+lalt - l : yabai -m window --focus east
 
 # Set insertion point for focused container  ~ like it highlights were the new pane will spawn ~ 
 # shift + alt - h : yabai -m window --insert west      # h <-
@@ -36,25 +36,38 @@ hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~     Workspaces == Desktop     ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# shift + alt - m : yabai -m window --space last; yabai -m space --focus last
-# shift + alt - p : yabai -m window --space prev; yabai -m space --focus prev
-# shift + alt - n : yabai -m window --space next; yabai -m space --focus next
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ACTIVE TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 rshift - a : /Applications/Alacritty.app/Contents/MacOS/alacritty
 rshift - v: /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
 rshift - g: open -na "Google Chrome" --args --new-window "https://www.google.com/" 
 rshift - f: open -a 'Finder.app' 
-hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
 rshift - d: /Applications/Discord.app/Contents/MacOS/Discord 
 rshift - k : /Applications/kitty.app/Contents/MacOS/kitty
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      CLI SCRIPTS         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       ROTATING         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+hyper - r : yabai -m space --rotate 90     # rotate tree 90
+hyper - x : yabai -m space --mirror x-axis # Rotate on X Axis 
+hyper - y : yabai -m space --mirror y-axis # Rotate on Y Axis
+#hyper - e : yabai -m space --mirror y-axis # Rotate on Y Axis
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      RANDOM GEMS       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+#hyper - 0x1B : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
+hyper - e : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
+rcmd - b : yabai -m window --toggle border                                     # toggle window border
+hyper - z : yabai -m window --toggle zoom-fullscreen                           # toggle window fullscreen zoom
+hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 # toggle sticky 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      NON-ACTIVE TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -74,39 +87,16 @@ rshift - k : /Applications/kitty.app/Contents/MacOS/kitty
 # rshift - a : /Applications/Alacritty.app/Contents/MacOS/alacritty
 # rshift - v: /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
 
-# rshift - ??? : /Applications/Firefox.app/Contents/MacOS/firefox  # NOT SURE WHAT TO BIND WITH?
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      CLI SCRIPTS         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
+# rshift - ? : /Applications/Firefox.app/Contents/MacOS/firefox  # NOT SURE WHAT TO BIND WITH?
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       ROTATING         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-hyper - r : yabai -m space --rotate 90     # rotate tree 90
-hyper - x : yabai -m space --mirror x-axis # Rotate on X Axis 
-hyper - y : yabai -m space --mirror y-axis # Rotate on Y Axis
-#hyper - e : yabai -m space --mirror y-axis # Rotate on Y Axis
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~     Workspaces == Desktop     ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# shift + alt - m : yabai -m window --space last; yabai -m space --focus last
+# shift + alt - p : yabai -m window --space prev; yabai -m space --focus prev
+# shift + alt - n : yabai -m window --space next; yabai -m space --focus next
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      RANDOM GEMS       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-#hyper - 0x1B : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
-hyper - e : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
-rcmd - b : yabai -m window --toggle border                                     # toggle window border
-hyper - z : yabai -m window --toggle zoom-fullscreen                           # toggle window fullscreen zoom
-hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 # toggle sticky 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-
-
-
-
-
-
 
 
 
