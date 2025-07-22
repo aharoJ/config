@@ -272,7 +272,7 @@ return {
     ----------------------------------------------------------------------
     -- KEYMAPS -----------------------------------------------------------
     ----------------------------------------------------------------------
-    vim.keymap.set("n", "<leader>gf", M.files, { desc = "[T] files" })
+    vim.keymap.set({"n","v"}, "gf", M.files, { desc = "[T] files" })
     vim.keymap.set("n", "<leader>fg", M.grep, { desc = "[T] live grep" })
     vim.keymap.set("n", "<leader>fb", M.buffers, { desc = "[T] buffers" })
     vim.keymap.set("n", "<leader>fG", M.git_status, { desc = "[T] git status" })
@@ -286,8 +286,8 @@ return {
     vim.keymap.set("n", "<leader>fk", M.keymaps, { desc = "[T] keymaps" })
     vim.keymap.set("n", "<leader>fS", M.spell_suggest, { desc = "[T] spell suggest" })
 
-    vim.keymap.set("n", "<leader>ff", M.current_buffer_fuzzy_find, { desc = "[T] current buffer fuzzy find" })
-    vim.keymap.set("n", "<leader>fF", M.project_fuzzy_find, { desc = "[T] current proj fuzzy find" })
+    vim.keymap.set({"n","v"}, "ff", M.current_buffer_fuzzy_find, { desc = "[T] current buffer fuzzy find" })
+    vim.keymap.set("n", "<leader>ff", M.project_fuzzy_find, { desc = "[T] current proj fuzzy find" })
     return M
   end,
 }
