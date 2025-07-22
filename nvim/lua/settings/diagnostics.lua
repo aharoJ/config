@@ -5,20 +5,18 @@
 -- ============================================================================
 vim.diagnostic.config({
 
-	-- source: "always" | "if_many" | "if_not_same" | false
-	virtual_text = { source = false, prefix = "●", spacing = 1 },
-	-- virtual_text = false,
+	-- virtual_text = { source = false, prefix = "●", spacing = 1 },
+	virtual_text = false,
 
+	-- signs = false,
 	signs = {
 		text = {
-			-- [vim.diagnostic.severity.ERROR] = "",
 			[vim.diagnostic.severity.ERROR] = " ",
 			[vim.diagnostic.severity.WARN] = " ",
 			[vim.diagnostic.severity.INFO] = " ",
 			[vim.diagnostic.severity.HINT] = " ",
 		},
 	},
-	-- signs = false,
 
 	underline = true,
 	update_in_insert = false,
