@@ -1,3 +1,5 @@
+-- nvim/lua/plugins/neo-tree.lua
+
 return {
   {
     "nvim-neo-tree/neo-tree.nvim",
@@ -11,7 +13,7 @@ return {
         close_if_last_window = true, -- true | false ~> Close Neo-tree if it is the last window left in the tab
         popup_border_style = "rounded",
         enable_git_status = true,
-        enable_diagnostics = true,
+        enable_diagnostics = true, -- DIAGNOSTICS
         open_files_do_not_replace_types = { "terminal", "trouble", "qf" }, -- when opening files, do not use windows containing these filetypes or buftypes
         sort_case_insensitive = false,
         sort_function = nil,
