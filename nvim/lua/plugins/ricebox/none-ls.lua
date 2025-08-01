@@ -57,7 +57,7 @@ return {
 				-- dont think there is a linter?
 
 				-------------------        PRETTIER FORMATTER       ------------------------
-				null_ls.builtins.formatting.prettierd.with({}),
+				null_ls.builtins.formatting.prettierd,
 				-- null_ls.builtins.formatting.prettier, // more popular
 			},
 		})
