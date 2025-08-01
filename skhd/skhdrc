@@ -1,12 +1,12 @@
 #SKHD STUFF ~ type  skhd --observe  in a terminal and type a key
-# HYPER == SHIFT + CMD + ALT + OPTION
+# HYPER == SHIFT + COMMAND + OPTION + CONTROL)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     WINDOW | PANES     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # SWAP  <~~>  WINDOWS
-hyper - j : yabai -m window --swap south
-hyper - k : yabai -m window --swap north
-hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
-hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
+# hyper - j : yabai -m window --swap south
+# hyper - k : yabai -m window --swap north
+# hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
+# hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
 # hyper - h : yabai -m window --swap west 
 # hyper - l : yabai -m window --swap east 
 
@@ -34,6 +34,19 @@ lalt - l : yabai -m window --focus east
 # hyper - b : yabai -m window --resize top:0:20     # n ^
 # hyper - v : yabai -m window --resize right:-20:0  # m ->
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      BST VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+hyper - j : yabai -m window --swap south
+hyper - k : yabai -m window --swap north
+hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
+hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      STACK VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# hyper - 0x21 : yabai -m window --focus stack.prev || yabai -m window --focus stack.last   # '['
+# hyper - 0x1E : yabai -m window --focus stack.next || yabai -m window --focus stack.first  # ']'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ACTIVE TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -97,9 +110,6 @@ hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 #
 # shift + alt - p : yabai -m window --space prev; yabai -m space --focus prev
 # shift + alt - n : yabai -m window --space next; yabai -m space --focus next
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-
-
 
 
 

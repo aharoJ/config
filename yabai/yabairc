@@ -1,12 +1,16 @@
 #!/usr/bin/env sh
 #YABAI STUFF
 
-# bsp or float (default: bsp)
-
-# for this to work you must configure sudo such that
-# it will be able to run the command without password
+# for this to work you must configure sudo such that it will be able to run the command without password
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-# sudo yabai --load-sa
+
+## Change how yabai looks
+yabai -m config layout bsp # bsp | float | stack
+yabai -m config top_padding 0
+yabai -m config bottom_padding 10
+yabai -m config left_padding 20
+yabai -m config right_padding 20
+yabai -m config window_gap 20
 
 #### float system preferences. Most of these just STOP yabai form resizing them.
 # yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
@@ -24,8 +28,28 @@ yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 # yabai -m rule --add app="^console$" manage=off
 # yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
 
+# ~~~~~~~~~~~~~~~~~~~~~~   EXPIRIMENTING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+yabai -m rule --add app="^System Settings$" manage=off
+yabai -m rule --add app="^FaceTime$" manage=off
+yabai -m rule --add app="^Finder$" manage=off
+yabai -m rule --add app="^Activity Monitor$" manage=off
+yabai -m rule --add app="^Disk Utility$" manage=off
+yabai -m rule --add app="^Calculator$" manage=off
+yabai -m rule --add app="^Console$" manage=off
+yabai -m rule --add app="^System Information$" manage=off
+yabai -m rule --add app="^Font Book$" manage=off
+yabai -m rule --add app="^Keychain Access$" manage=off
+yabai -m rule --add app="^Screenshot$" manage=off
+yabai -m rule --add app="^Migration Assistant$" manage=off
+yabai -m rule --add app="^Audio MIDI Setup$" manage=off
+yabai -m rule --add app="^ColorSync Utility$" manage=off
+yabai -m rule --add app="^VoiceOver Utility$" manage=off
+yabai -m rule --add app="^Bluetooth File Exchange$" manage=off
+yabai -m rule --add app="^QuickTime Player$" manage=off
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 # ~~~~~~~~~~~~~~~~~~~~~~   Iphone Developing with MAUI   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# yabai -m rule --add app="^Simulator$" manage=off
+yabai -m rule --add app="^Simulator$" manage=off
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # Window -> Stay on top
@@ -34,38 +58,26 @@ yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 # yabai -m config focus_follows_mouse          autoraise
 # yabai -m config focus_follows_mouse          on
 
-
 # New window spawns to the right if vertical split, or bottom if horizontal split
 yabai -m config window_placement second_child
 yabai -m config window_topmost on
 
 # yabai -m config window_shadow float
-yabai -m config window_opacity off
-yabai -m config window_opacity_duration 0.00
-yabai -m config active_window_opacity 1.0
-yabai -m config normal_window_opacity 0.97
+# yabai -m config window_opacity off
+# yabai -m config window_opacity_duration 0.00
+# yabai -m config active_window_opacity 1.0
+# yabai -m config normal_window_opacity 0.97
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
 
 ## some other settings
 yabai -m config auto_balance off
 yabai -m config split_ratio 0.50
-# # set mouse interaction modifier key (default: fn)
-yabai -m config mouse_modifier ctrl
-# set modifier + right-click drag to resize window (default: resize)
-yabai -m config mouse_action2 resize
-# set modifier + left-click drag to resize window (default: move)
-yabai -m config mouse_action1 move
-
-## Change how yabai looks
-yabai -m config layout bsp
-yabai -m config top_padding 10
-yabai -m config bottom_padding 10
-yabai -m config left_padding 10
-yabai -m config right_padding 10
-yabai -m config window_gap 10
-
-
+## set mouse interaction modifier key (default: fn)
+# yabai -m config mouse_modifier ctrl
+## set modifier + right-click drag to resize window (default: resize)
+# yabai -m config mouse_action2 resize
+## set modifier + left-click drag to resize window (default: move)
+# yabai -m config mouse_action1 move
 
 # # 1. Turn the feature on and choose a sensible width
 # yabai -m config window_border          on
@@ -77,15 +89,6 @@ yabai -m config window_gap 10
 #
 #
 # yabai -m signal --add event=application_front_switched action="/scripts/active_pane.sh"
-
-
-
-
-
-
-
-
-
 
 ### DEFAULTS ####
 # yabai -m config layout bsp
@@ -121,7 +124,6 @@ yabai -m config window_gap 10
 
 echo "yabai configuration loaded.."
 
-borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 &
-
+# borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 &
 
 #END
