@@ -92,7 +92,3 @@ end
 vim.keymap.set("n", "gP", reveal_in_file_manager, {
 	desc = "Reveal in Finder/Explorer",
 })
-
-
-
-

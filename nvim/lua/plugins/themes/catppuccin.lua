@@ -1,107 +1,152 @@
-return {
-	"catppuccin/nvim",
-	lazy = false,
-	name = "catppuccin",
-	priority = 1000,
-	config = function()
-		require("catppuccin").setup({
-			flavour = "mocha", -- latte, frappe, macchiato, mocha, auto
-			background = { -- :h background
-				light = "latte",
-				dark = "mocha",
-			},
-			transparent_background = true,
-			show_end_of_buffer = false, -- shows the '~' characters after the end of buffers
-			term_colors = false,
-			dim_inactive = {
-				enabled = false,
-				shade = "dark",
-				percentage = 0.15,
-			},
-			no_italic = false,
-			no_bold = false,
-			no_underline = false,
-			styles = {
-				comments = { "italic" },
-				conditionals = { "italic" },
-				loops = {},
-				functions = {},
-				keywords = {},
-				strings = {},
-				variables = {},
-				numbers = {},
-				booleans = {},
-				properties = {},
-				types = {},
-				operators = {},
-				-- miscs = {}, -- Uncomment to turn off hard-coded styles
-			},
-			color_overrides = {},
-			highlight_overrides = {
-				mocha = function(mocha)
-					return {
-						--
-						["@keyword.import.java"] = { fg = "#6C7891" }, -- import
-						["@lsp.type.modifier.java"] = { fg = "#B0C8A9" }, -- public class
-						-- ["@lsp.typemod.class.declaration.java"] = { fg = "#C0CAF5" }, -- DECLARATION_CLASS
-						-- ["@lsp.mod.declaration.java"] = { fg = "#C57F7F" }, -- DECLARATION_CLASS
-						--
-						-- ["@lsp.typemod.interface.public.java"] = { fg = "#8AA2A9" }, -- Map | Set | List
-						-- ["@keyword.operator.java"] = { fg = "#7F88C5" }, -- new
-						["@lsp.typemod.class.public.java"] = { fg = "#D1C8B0" }, -- HashMap | HashSet | ArrayList
-						-- ["@lsp.typemod.class.readonly.java"] = { fg = "#ffffff" }, -- <String, Integer>
-						-- ["@lsp.mod.public.java"] = { fg = "#ffffff" }, -- <String, Integer>
-						--
-						["@lsp.typemod.method.public.java"] = { fg = "#82A8DD" }, -- func name
-						-- ["@lsp.type.class.java"] = { fg = "#ffffff" }, -- PARAM Type Class
-						["@lsp.type.parameter.java"] = { fg = "#AA788D" }, -- PARAM var
-						--}
-						["@type.builtin.java"] = { fg = "#7E9C8C" }, -- int | double | float
-						["@keyword.conditional.java"] = { fg = "#7F88C5" }, -- if () else if ()
-						["@keyword.repeat.java"] = { fg = "#7F88C5" }, -- for
-						["@keyword.return.java"] = { fg = "#7F88C5" }, -- RETURN
-						--
-						["@number.java"] = { fg = "#D1C8B0" }, -- 12345
-						["@number.float.java"] = { fg = "#D1C8B0" }, -- 0.3245 + double
-						["@constant.builtin.java"] = { fg = "#D1C8B0" }, -- null
-						-- ["@boolean.java"] = { fg = "#D1C8B0" }, -- true | false
-						["@string.java"] = { fg = "#B0C8A9" }, -- 
-						["@attribute.java"] = { fg = "#7F88C5" }, -- TODO
-						-- ["@lsp.type.variable.java"] = { fg = "#D0D6F2" }, -- TODO
-						["@variable.java"] = { fg = "#C2CBF2" }, -- TODO
-						-- ["@comment.java"] = { fg = "#FF7F50" }, -- comments //
-						-- ["@comment.documentation.java"] = { fg = "#FF7F50" }, -- /*    */
-						-- #C0CAF5: soft blue
-						-- #6C7891: soft indigo
-						-- #B8AD9E: darker yellow
-						-- #D1C8B0: nice brownish-yellow
-						-- #A9BEDA: fucking light blue
-						-- #7E9C8C: stronger green
-						-- #B0C8A9: lighter green
-						-- #F2B8D2: pink
-						-- #B0A9C1: gray
-						-- C57F9E pink
-						-- ["@"] = { fg = "#ffffff" },
-						-- ["@"] = { fg = "#ffffff" },
-					}
-				end,
-			},
-			custom_highlights = {},
-			integrations = {
-				cmp = true,
-				gitsigns = true,
-				nvimtree = true,
-				treesitter = true,
-				notify = true,
-				mini = {
-					enabled = true,
-					indentscope_color = "",
-				},
-				-- For more plugins integrations please scroll down (https://github.com/catppuccin/nvim#integrations)
-			},
-		})
+-- nvim/lua/plugins/themes/catppuccin.lua
 
-		-- setup must be called before loading
-		vim.cmd.colorscheme("catppuccin")
-	end,
+return {
+  "catppuccin/nvim",
+  lazy = false,
+  name = "catppuccin",
+  priority = 1000,
+  config = function()
+    require("catppuccin").setup({
+      flavour = "mocha",
+      background = { light = "latte", dark = "mocha" },
+      transparent_background = true,
+      show_end_of_buffer = false,
+      term_colors = false,
+      dim_inactive = { enabled = false, shade = "dark", percentage = 0.15 },
+      no_italic = false,
+      no_bold = false,
+      no_underline = false,
+
+      styles = {
+        comments = { "italic" },
+        conditionals = { "italic" },
+        loops = {},
+        functions = {},
+        keywords = {},
+        strings = {},
+        variables = {},
+        numbers = {},
+        booleans = {},
+        properties = {},
+        types = {},
+        operators = {},
+      },
+
+      color_overrides = {},
+      highlight_overrides = {
+
+        mocha = function(mocha)
+          -----------------------------------------------------------------
+          -- palette inspired by Java section above
+          -----------------------------------------------------------------
+          local col = {
+            indigo = "#6C7891",
+            ltGreen = "#B0C8A9",
+            dkYellow = "#B8AD9E",
+            brnYel = "#D1C8B0",
+            blueLt = "#82A8DD",
+            green = "#7E9C8C",
+            purple = "#7F88C5",
+            pink = "#C57F9E",
+            pinkLt = "#F2B8D2",
+            bluLav = "#C2CBF2",
+            rose = "#AA788D",
+            bluSoft = "#A9BEDA",
+          }
+
+          return {
+            -----------------------------------------------------------------
+            -- JAVA (unchanged)
+            -----------------------------------------------------------------
+            ["@keyword.import.java"] = { fg = col.indigo },
+            ["@lsp.type.modifier.java"] = { fg = col.ltGreen },
+            ["@lsp.typemod.class.public.java"] = { fg = col.brnYel },
+            ["@lsp.typemod.method.public.java"] = { fg = col.blueLt },
+            ["@lsp.type.parameter.java"] = { fg = col.rose },
+            ["@type.builtin.java"] = { fg = col.green },
+            ["@keyword.conditional.java"] = { fg = col.purple },
+            ["@keyword.repeat.java"] = { fg = col.purple },
+            ["@keyword.return.java"] = { fg = col.purple },
+            ["@number.java"] = { fg = col.brnYel },
+            ["@number.float.java"] = { fg = col.brnYel },
+            ["@constant.builtin.java"] = { fg = col.brnYel },
+            ["@string.java"] = { fg = col.ltGreen },
+            ["@attribute.java"] = { fg = col.purple },
+            ["@variable.java"] = { fg = col.bluLav },
+
+            -----------------------------------------------------------------
+            -- TYPESCRIPT / JAVASCRIPT
+            -----------------------------------------------------------------
+            ["@variable.typescript"] = { fg = col.bluLav },
+            ["@type.builtin.typescript"] = { fg = col.green },
+            ["@keyword.return.typescript"] = { fg = col.purple },
+            ["@keyword.operator.javascript"] = { fg = col.pink },
+            ["@property.typescript"] = { fg = col.purple },
+            ["@lsp.type.enum.typescript"] = { fg = col.brnYel },
+
+            -----------------------------------------------------------------
+            -- TSX / JSX
+            -----------------------------------------------------------------
+            ["@tag.tsx"] = { fg = col.dkYellow, style = { "bold" } },
+            ["@tag.delimiter.tsx"] = { fg = col.indigo },
+            ["@tag.attribute.tsx"] = { fg = col.green, style = { "italic" } },
+            ["@tag.builtin.tsx"] = { fg = col.purple }, -- this
+            ["@attribute.tsx"] = { fg = col.rose },
+            ["@variable.tsx"] = { fg = col.bluLav },
+            ["@variable.member.tsx"] = { fg = col.bluLav },
+            ["@type.tsx"] = { fg = col.blueLt },
+            ["@function.tsx"] = { fg = col.blueLt },
+            ["@string.tsx"] = { fg = col.ltGreen }, -- THIS ONE
+            ["@property.tsx"] = { fg = col.bluSoft },
+            ["@_jsx_element.tsx"] = { fg = col.purple }, -- this
+            ["@_jsx_attribute.tsx"] = { fg = col.green },
+            ["@keyword.import.tsx"] = { fg = col.green },
+
+            ["@lsp.type.function.typescriptreact"] = { fg = col.blueLt },
+            ["@lsp.mod.declaration.typescriptreact"] = { fg = col.bluSoft },
+            ["@lsp.mod.readonly.typescriptreact"] = { fg = col.bluSoft, style = { "italic" } },
+            ["@lsp.typemod.function.declaration.typescriptreact"] = { fg = col.blueLt },
+            ["@lsp.typemod.function.readonly.typescriptreact"] = { fg = col.green },
+
+            -----------------------------------------------------------------
+            -- HTML
+            -----------------------------------------------------------------
+            ["@tag.html"] = { fg = col.pinkLt, style = { "bold" } },
+            ["@tag.delimiter.html"] = { fg = col.indigo },
+            ["@tag.attribute.html"] = { fg = col.green, style = { "italic" } },
+            ["@attribute.html"] = { fg = col.rose },
+            ["@string.special.html"] = { fg = col.ltGreen },
+            ["@punctuation.bracket.html"] = { fg = col.indigo },
+
+            -----------------------------------------------------------------
+            -- CSS
+            -----------------------------------------------------------------
+            ["@type.css"] = { fg = col.green },
+            ["@type.builtin.css"] = { fg = col.indigo },
+            ["@class.css"] = { fg = col.pink, style = { "italic" } },
+            ["@property.css"] = { fg = col.rose },
+            ["@number.css"] = { fg = col.brnYel },
+            ["@function.css"] = { fg = col.blueLt },
+            ["@function.builtin.css"] = { fg = col.blueLt },
+            ["@keyword.css"] = { fg = col.purple, style = { "bold" } },
+            ["@boolean.css"] = { fg = col.brnYel },
+            ["@string.css"] = { fg = col.ltGreen },
+            ["@constant.numeric"] = { fg = col.brnYel },
+          }
+        end,
+      },
+
+      custom_highlights = {},
+      integrations = {
+        cmp = true,
+        gitsigns = true,
+        nvimtree = true,
+        treesitter = true,
+        notify = true,
+        mini = { enabled = true, indentscope_color = "" },
+      },
+    })
+
+    vim.cmd.colorscheme("catppuccin")
+  end,
 }
