@@ -1,122 +1,131 @@
 -- path: nvim/lua/plugins/autocomplete.lua
 
 return {
-  -----------------------------------------------------------------------------
-  -- CORE COMPLETION ENGINE ---------------------------------------------------
-  -----------------------------------------------------------------------------
   {
     "hrsh7th/nvim-cmp",
     event = { "InsertEnter", "CmdlineEnter" },
     dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-path",
       "L3MON4D3/LuaSnip",
       "saadparwaiz1/cmp_luasnip",
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "hrsh7th/cmp-cmdline",
-      "onsails/lspkind-nvim",
-      "windwp/nvim-autopairs",
+      "rafamadriz/friendly-snippets",
     },
     config = function()
-      ------------------------------------------------------------------------
-      -- LuaSnip -------------------------------------------------------------
-      ------------------------------------------------------------------------
-      local luasnip = require("luasnip")
-      require("luasnip.loaders.from_vscode").lazy_load() -- Load VS Code snippets
-
-      ------------------------------------------------------------------------
-      -- nvim-autopairs integration ------------------------------------------
-      ------------------------------------------------------------------------
       local cmp = require("cmp")
-      require("nvim-autopairs").setup({})
-      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+      local luasnip = require("luasnip")
+      local cmp_enabled = true
 
-      ------------------------------------------------------------------------
-      -- lspkind (icons) -----------------------------------------------------
-      ------------------------------------------------------------------------
-      local lspkind = require("lspkind")
-      local kind_icons = {
-        Text = "",
-        Method = "󰆧",
-        Function = "󰊕",
-        Constructor = "",
-        Field = "",
-        Variable = "",
-        Class = "",
-        Interface = "",
-        Module = "",
-        Property = "",
-        Unit = "",
-        Value = "󰎠",
-        Enum = "",
-        Keyword = "",
-        Snippet = "",
-        Color = "",
-        File = "",
-        Reference = "",
-        Folder = "",
-        EnumMember = "",
-        Constant = "󰏿",
-        Struct = "",
-        Event = "",
-        Operator = "",
-        TypeParameter = "",
-      }
+      -- Toggle autocomplete with <leader>ta
+      vim.keymap.set("n", "<leader>ta", function()
+        cmp_enabled = not cmp_enabled
+        if not cmp_enabled then
+          cmp.close()
+        end
+        vim.notify("Autocomplete " .. (cmp_enabled and "ENABLED" or "DISABLED"))
+      end, { desc = "Toggle autocomplete" })
 
-      ------------------------------------------------------------------------
-      -- Custom border for completion and documentation windows --------------
-      ------------------------------------------------------------------------
-      local border = {
-        { "╭", "FloatBorder" },
-        { "─", "FloatBorder" },
-        { "╮", "FloatBorder" },
-        { "│", "FloatBorder" },
-        { "╯", "FloatBorder" },
-        { "─", "FloatBorder" },
-        { "╰", "FloatBorder" },
-        { "│", "FloatBorder" },
-      }
+      -- Load snippets
+      require("luasnip.loaders.from_vscode").lazy_load()
 
-      ------------------------------------------------------------------------
-      -- cmp.setup() ---------------------------------------------------------
-      ------------------------------------------------------------------------
       cmp.setup({
-        completion = {
-          completeopt = "menu,menuone,noinsert,noselect", -- Keep noselect
-          autocomplete = false,                      -- Disable auto-popup on typing
-        },
-        -- Disable ghost text completely
-        experimental = { ghost_text = true },
+        enabled = function()
+          return cmp_enabled
+        end,
         snippet = {
           expand = function(args)
             luasnip.lsp_expand(args.body)
           end,
         },
         window = {
-          completion = cmp.config.window.bordered({
-            border = border,
-            winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,CursorLine:Visual,Search:None",
-          }),
-          documentation = cmp.config.window.bordered({
-            border = border,
-            winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,CursorLine:Visual,Search:None",
-          }),
+          completion = cmp.config.window.bordered(),
+          documentation = cmp.config.window.bordered(),
+        },
+        formatting = {
+          fields = { "kind", "abbr", "menu" },
+          format = function(entry, vim_item)
+            -- Kind icons
+            local icons = {
+              Text = "",
+              Method = "󰆧",
+              Function = "󰊕",
+              Constructor = "",
+              Field = "",
+              Variable = "",
+              Class = "",
+              Interface = "",
+              Module = "",
+              Property = "",
+              Unit = "",
+              Value = "󰎠",
+              Enum = "",
+              Keyword = "",
+              Snippet = "",
+              Color = "",
+              File = "",
+              Reference = "",
+              Folder = "",
+              EnumMember = "",
+              Constant = "󰏿",
+              Struct = "",
+              Event = "",
+              Operator = "",
+              TypeParameter = "",
+            }
+            vim_item.kind = string.format("%s %s", icons[vim_item.kind] or "", vim_item.kind)
+
+            -- Source/module information
+            local source_names = {
+              nvim_lsp = "LSP",
+              luasnip = "Snippet",
+              path = "Path",
+            }
+
+            local source_name = source_names[entry.source.name] or entry.source.name
+            local module_name = ""
+
+            -- Try different sources for module information
+            if entry.completion_item then
+              -- 1. Try LSP 3.17 labelDetails.description
+              if
+                  entry.completion_item.labelDetails and entry.completion_item.labelDetails.description
+              then
+                module_name = entry.completion_item.labelDetails.description
+
+                -- 2. Handle Python auto-import case
+              elseif
+                  entry.completion_item.detail == "auto-import"
+                  and entry.completion_item.data
+                  and entry.completion_item.data.import
+              then
+                module_name = entry.completion_item.data.import:match("[%w_]+$") or ""
+
+                -- 3. Fallback to detail field
+              elseif entry.completion_item.detail then
+                module_name = entry.completion_item.detail
+              end
+            end
+
+            -- Format menu text
+            if module_name ~= "" then
+              vim_item.menu = string.format("%s • %s", source_name, module_name)
+            else
+              vim_item.menu = source_name
+            end
+
+            return vim_item
+          end,
         },
         mapping = cmp.mapping.preset.insert({
-          ["<C-Space>"] = cmp.mapping.complete(), -- Manual trigger
+          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-Space>"] = cmp.mapping.complete(),
           ["<C-e>"] = cmp.mapping.abort(),
-          ["<C-c>"] = cmp.mapping.close(),
-
-          -- Only confirm when explicitly selected
-          ["<CR>"] = cmp.mapping.confirm({
-            select = false, -- Require explicit selection
-            behavior = cmp.ConfirmBehavior.Replace,
-          }),
+          ["<CR>"] = cmp.mapping.confirm({ select = true }),
           ["<Tab>"] = cmp.mapping(function(fallback)
             if cmp.visible() then
               cmp.select_next_item()
-            elseif luasnip.expand_or_jumpable() then
+            elseif luasnip.expand_or_locally_jumpable() then
               luasnip.expand_or_jump()
             else
               fallback()
@@ -131,80 +140,30 @@ return {
               fallback()
             end
           end, { "i", "s" }),
-          ["<C-f>"] = cmp.mapping.scroll_docs(4),
-          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-          ["<Down>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
-          ["<Up>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
         }),
-        formatting = {
-          format = lspkind.cmp_format({
-            mode = "symbol_text",
-            maxwidth = 50,
-            ellipsis_char = "…",
-            symbol_map = kind_icons,
-          }),
-        },
-        sources = {
-          { name = "nvim_lsp", dup = 0 },
-          { name = "luasnip",  dup = 0 },
-          { name = "path",     dup = 0 },
-          { name = "buffer",   dup = 0 },
-        },
-      })
-
-      ------------------------------------------------------------------------
-      -- Cmd-line completion -------------------------------------------------
-      ------------------------------------------------------------------------
-      cmp.setup.cmdline({ "/", "?" }, {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = { { name = "buffer" } },
-      })
-      cmp.setup.cmdline(":", {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = cmp.config.sources({ { name = "path" } }, { { name = "cmdline" } }),
+        sources = cmp.config.sources({
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "path" },
+        }),
       })
     end,
   },
-
-  -----------------------------------------------------------------------------
-  -- LSPCONFIG WRAPPER WITH PER-SERVER CAPABILITIES --------------------------
-  -----------------------------------------------------------------------------
-  {
-    "neovim/nvim-lspconfig",
-    dependencies = { "hrsh7th/cmp-nvim-lsp" },
+  { -- auto paiting {} () " " ...
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    dependencies = { "hrsh7th/nvim-cmp" }, 
     config = function()
-      local cmp_cap = require("cmp_nvim_lsp").default_capabilities()
-      local common_on_attach = function(_, _) end
-
-      ----------------------------------------------------------------------
-      -- Default servers ----------------------------------------------------
-      ----------------------------------------------------------------------
-      local lsp = require("lspconfig")
-      local simple_servers = {
-        "pyright",
-        "tsserver",
-        "rust_analyzer",
-        "gopls",
-        "html",
-        "cssls",
-        "lua_ls",
-      }
-      for _, s in ipairs(simple_servers) do
-        lsp[s].setup({
-          capabilities = cmp_cap,
-          on_attach = common_on_attach,
-        })
-      end
-
-      ----------------------------------------------------------------------
-      -- JDTLS (Java) – snippets disabled -----------------------------------
-      ----------------------------------------------------------------------
-      local jdt_cap = vim.deepcopy(cmp_cap)
-      jdt_cap.textDocument.completion.completionItem.snippetSupport = false
-      lsp.jdtls.setup({
-        capabilities = jdt_cap,
-        on_attach = common_on_attach,
+      local autopairs = require("nvim-autopairs")
+      autopairs.setup({
+        check_ts = true,
+        fast_wrap = {}, -- <M-e> surrounds selection
       })
+
+      -- cmp integration -------------------------------------------------------
+      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+      local cmp = require("cmp") -- moved after require(...)
+      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
     end,
   },
 }
