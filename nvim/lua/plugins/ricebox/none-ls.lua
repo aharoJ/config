@@ -5,7 +5,7 @@
 return {
 	"nvimtools/none-ls.nvim", -- https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
 	dependencies = {
-		"gbprod/none-ls-shellcheck.nvim", -- shellcheck
+		"gbprod/none-ls-shellcheck.nvim", -- BASH
 		"nvimtools/none-ls-extras.nvim", -- eslint_d --> TS/JS
 	},
 	config = function()

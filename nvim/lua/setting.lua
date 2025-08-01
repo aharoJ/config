@@ -5,4 +5,5 @@ require("settings.files")
 require("settings.visuals")
 require("settings.terminal")
 require("settings.functions")
-require("settings.temp").setup() -- temp dev stuff
+-- require("settings.temp").setup() -- temp dev stuff
+-- require("settings.all_settings")

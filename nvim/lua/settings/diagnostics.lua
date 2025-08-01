@@ -8,7 +8,6 @@ vim.diagnostic.config({
 	-- virtual_text = { source = false, prefix = "●", spacing = 1 },
 	virtual_text = false,
 
-	-- signs = false,
 	signs = {
 		text = {
 			[vim.diagnostic.severity.ERROR] = " ",
