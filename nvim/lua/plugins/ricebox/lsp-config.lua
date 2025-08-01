@@ -99,6 +99,11 @@ return {
 				capabilities = capabilities,
 			})
 
+			-------------------        TOML       ------------------------
+			lspconfig.taplo.setup({
+				capabilities = capabilities,
+			})
+
 			---------------------        RUST       ------------------------
 			lspconfig.rust_analyzer.setup({
 				capabilities = capabilities,
@@ -147,7 +152,7 @@ return {
 			vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "[lsp] code action" })
 
 			-- Diagnostic navigation
-			vim.keymap.set("n", "co", vim.diagnostic.open_float, { desc = "[diag] hover line" })
+			vim.keymap.set("n", "<leader>co", vim.diagnostic.open_float, { desc = "[diag] hover line" })
 			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "[diag] previous" })
 			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "[diag] next" })
 			vim.keymap.set("n", "<leader>gl", vim.diagnostic.setloclist, { desc = "[diag] get diag loclist" })
