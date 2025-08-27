@@ -68,8 +68,10 @@ local config = {
       signatureHelp = { enabled = true },
     },
   },
-  on_attach = function(client, bufnr)
+on_attach = function(client, bufnr)
     pcall(vim.lsp.codelens.refresh)
+    -- Set buffer-local keymap for formatting with JDTLS
+    vim.keymap.set("n", "<leader>cf", vim.lsp.buf.format, { buffer = bufnr, desc = "Format with JDTLS" })
   end,
 }
 
