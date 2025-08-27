@@ -20,7 +20,7 @@ map("c", "<Down>", "<C-n>")
 map("n", "<Leader>w", ":w<CR>", { desc = "" })
 map("n", "<Leader>q", ":q!<CR>", { desc = "" })
 map("n", "<Leader>Q", ":qa!<CR>", { desc = "" })
-map("n", "<leader>x", "<cmd>silent! x<CR>", { desc = "Save and quit silently" })
+map("n", "<leader>X", "<cmd>silent! x<CR>", { desc = "Save and quit silently" })
 
 -- Indentation
 -- map("x", ">", ">gv")
