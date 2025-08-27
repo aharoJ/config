@@ -3,6 +3,7 @@ tools/
 dev/
 link.py
 unlink.py
+.dev/
 
 # Ignore specific directories
 /.trash
