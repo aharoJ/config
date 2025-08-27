@@ -31,12 +31,17 @@ return {
 				null_ls.builtins.diagnostics.staticcheck,
 				null_ls.builtins.formatting.asmfmt,
 
+				-------------------        RUBY/RAILS       ------------------------
+				null_ls.builtins.diagnostics.rubocop,
+				null_ls.builtins.formatting.rubocop,
+
 				-------------------        PHP       ------------------------
 				null_ls.builtins.diagnostics.phpstan,
 				null_ls.builtins.formatting.phpcsfixer,
 
 				-------------------        FISH       ------------------------
 				null_ls.builtins.diagnostics.fish,
+        null_ls.builtins.formatting.fish_indent,
 
 				-------------------        PYTHON       ------------------------
 				null_ls.builtins.formatting.black,
@@ -61,7 +66,15 @@ return {
 				-- null_ls.builtins.formatting.prettier, // more popular
 			},
 		})
+		-- vim.keymap.set("n", "<leader>cf", function()
+		-- 	vim.lsp.buf.format({
+		-- 		filter = function(client)
+		-- 			-- Only use none-ls for formatting, ignore LSP formatters
+		-- 			return client.name == "null-ls"
+		-- 		end,
+		-- 	})
+		-- end, { desc = "Format with none-ls only" })
 
-		vim.keymap.set("n", "<leader>cf", vim.lsp.buf.format, {})
+		-- vim.keymap.set("n", "<leader>cf", vim.lsp.buf.format, {})
 	end,
 }
