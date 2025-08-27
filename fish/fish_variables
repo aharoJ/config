@@ -12,8 +12,8 @@ SETUVAR Z_CMD:z
 SETUVAR Z_DATA:/Users/aharo/\x2elocal/share/z/data
 SETUVAR Z_DATA_DIR:/Users/aharo/\x2elocal/share/z
 SETUVAR Z_EXCLUDE:\x5e/Users/aharo\x24
-SETUVAR --export __ABBR_TIPS_KEYS:\x1d
-SETUVAR --export __ABBR_TIPS_VALUES:\x1d
+SETUVAR --export __ABBR_TIPS_KEYS:a__ys
+SETUVAR --export __ABBR_TIPS_VALUES:yabai\x20\x2d\x2dstart\x2dservice\x20alias\x20yr\x20\x22yabai\x20\x2d\x2drestart\x2dservice\x20alias\x20yS\x20\x22yabai\x20\x2d\x2dstop\x2dservice
 SETUVAR __fish_initialized:3400
 SETUVAR _fisher_edc_2F_bass_files:\x7e/\x2econfig/fish/functions/__bass\x2epy\x1e\x7e/\x2econfig/fish/functions/bass\x2efish
 SETUVAR _fisher_franciscolourenco_2F_done_files:\x7e/\x2econfig/fish/conf\x2ed/done\x2efish
@@ -53,7 +53,7 @@ SETUVAR fish_pager_color_description:B3A06D\x1eyellow\x1e\x2di
 SETUVAR fish_pager_color_prefix:cyan\x1e\x2d\x2dbold\x1e\x2d\x2dunderline
 SETUVAR fish_pager_color_progress:brwhite\x1e\x2d\x2dbackground\x3dcyan
 SETUVAR fish_pager_color_selected_background:\x2dr
-SETUVAR --export fish_user_paths:/Applications/MacPorts/Emacs\x2eapp/Contents/MacOS\x1e/Users/aharo/\x2elocal/bin\x1e/Users/aharo/\x2ecargo/bin\x1e/usr/local/opt/python\x403\x2e12/libexec/bin\x1e/usr/local/bin\x1e/Users/aharo/\x2epyenv/bin\x1e/usr/local/sbin\x1e/usr/local/Cellar/node/23\x2e5\x2e0/bin\x1e/usr/local/opt/openjdk\x4017/bin\x1e/usr/local/opt/openjdk\x4011/bin\x1e/usr/local/opt/python\x403\x2e9/bin\x1e/usr/local/opt/openjdk\x4021/bin\x1e/Library/Java/JavaVirtualMachines/openjdk\x4021\x2ejdk/Contents/Home/bin\x1e/Library/Java/JavaVirtualMachines/temurin\x2d11\x2ejdk/Contents/Home/bin\x1e/usr/local/opt/openjdk/bin\x1e/Users/aharo/\x2econfig/bin\x1e/Users/aharo/\x2elocal/share/nvim/postgresql\x2dstuff/postgres_lsp/target/release
+SETUVAR --export fish_user_paths:/Applications/MacPorts/Emacs\x2eapp/Contents/MacOS\x1e/Users/aharo/\x2elocal/bin\x1e/Users/aharo/\x2ecargo/bin\x1e/usr/local/opt/python\x403\x2e12/libexec/bin\x1e/Users/aharo/\x2elocal/share/nvim/mason/bin\x1e/usr/local/opt/ruby/bin\x1e/usr/local/bin\x1e/Users/aharo/\x2epyenv/bin\x1e/usr/local/sbin\x1e/usr/local/Cellar/node/23\x2e5\x2e0/bin\x1e/usr/local/opt/openjdk\x4017/bin\x1e/usr/local/opt/openjdk\x4011/bin\x1e/usr/local/opt/python\x403\x2e9/bin\x1e/usr/local/opt/openjdk\x4021/bin\x1e/Library/Java/JavaVirtualMachines/openjdk\x4021\x2ejdk/Contents/Home/bin\x1e/Library/Java/JavaVirtualMachines/temurin\x2d11\x2ejdk/Contents/Home/bin\x1e/usr/local/opt/openjdk/bin\x1e/Users/aharo/\x2econfig/bin\x1e/Users/aharo/\x2elocal/share/nvim/postgresql\x2dstuff/postgres_lsp/target/release\x1e/usr/local/lib/ruby/gems/3\x2e4\x2e0/bin
 SETUVAR sponge_allow_previously_successful:true
 SETUVAR sponge_delay:2
 SETUVAR sponge_filters:sponge_filter_failed\x1esponge_filter_matched
