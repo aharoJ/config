@@ -62,3 +62,7 @@ vim.opt.encoding = "UTF-8" -- Set encoding
 vim.opt.wildmenu = true
 vim.opt.wildmode = "longest:full,full"
 vim.opt.wildignore:append({ "*.o", "*.obj", "*.pyc", "*.class", "*.jar" })
+
+-- testing new options
+vim.opt.virtualedit = "block"
+vim.opt.inccommand = "split"
