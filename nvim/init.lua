@@ -1,4 +1,5 @@
 -- path: nvim/init.lua
+
 -- Bootstrap Lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -33,5 +34,6 @@ require("lazy").setup({
 	-- automatically check for plugin updates
 	checker = { enabled = true },
 })
+
 -- Misc config
 vim.o.cmdheight = 1
