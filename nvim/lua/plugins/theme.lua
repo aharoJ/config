@@ -2,5 +2,5 @@
 return {
 	-- require("plugins.themes.onedark"), -- LUALINE WE USE INTERNAL INSTEAD
 	require("plugins.themes.catppuccin"),
-	require("plugins.themes.tokyonight"),
+	-- require("plugins.themes.tokyonight"),
 }

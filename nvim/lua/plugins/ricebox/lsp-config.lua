@@ -1,4 +1,5 @@
 -- path: nvim/lua/plugins/ricebox/lsp-config.lua
+
 return {
 	{
 		"mfussenegger/nvim-jdtls", -- ***Java LSP***
@@ -35,7 +36,6 @@ return {
 		"neovim/nvim-lspconfig", -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
 		dependencies = {
 			{ "folke/neodev.nvim" },
-			-- { 'nvim-java/nvim-java' }, -- ITS NOT WORKING BUT JDTLS WORK IDK HOW
 			-- { "Hoffs/omnisharp-extended-lsp.nvim", lazy = false }, -- C# *** REQUIRED *** -- DEBUGGING
 		},
 		lazy = false,
@@ -45,6 +45,11 @@ return {
 				return
 			end
 			vim.g.lsp_config_loaded = true
+
+			local function disable_formatting(client)
+				client.server_capabilities.documentFormattingProvider = false
+				client.server_capabilities.documentRangeFormattingProvider = false
+			end
 
 			-------------------        CONFIG STARTS HERE       ------------------------
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -57,56 +62,79 @@ return {
 			-------------------        TS | JS       ------------------------
 			lspconfig.ts_ls.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        HTML       ------------------------
 			lspconfig.html.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        TAILWINDCSS       ------------------------
 			lspconfig.tailwindcss.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        CSS       ------------------------
 			lspconfig.stylelint_lsp.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        XML       ------------------------
 			lspconfig.lemminx.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        MARKDOWN       ------------------------
 			lspconfig.marksman.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        PYTHON       ------------------------
 			lspconfig.pyright.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        LUA       ------------------------
 			lspconfig.lua_ls.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        YAML       ------------------------
 			lspconfig.yamlls.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			-------------------        TOML       ------------------------
 			lspconfig.taplo.setup({
 				capabilities = capabilities,
+				-- on_attach = disable_formatting,-- LSP DEPENDENT
 			})
 
 			---------------------        RUST       ------------------------
 			lspconfig.rust_analyzer.setup({
 				capabilities = capabilities,
+				-- on_attach = disable_formatting, -- LSP DEPENDENT
+			})
+
+			-------------------        RUBY / RoR       ------------------------
+			lspconfig.ruby_lsp.setup({
+				capabilities = capabilities,
+				on_attach = disable_formatting,
+			})
+
+			-------------------        FISH SHELL       ------------------------
+			lspconfig.fish_lsp.setup({
+				capabilities = capabilities,
+				on_attach = disable_formatting,
 			})
 
 			---------------------  C# OmniSharp Setup  ------------------------
@@ -115,6 +143,7 @@ return {
 			-------------------        SWIFT       ------------------------
 			lspconfig.sourcekit.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 				cmd = { "/Users/aharo/.local/share/nvim/swift-stuff/sourcekit-lsp/.build/release/sourcekit-lsp" },
 				filetypes = { "swift", "c", "cpp", "objective-c", "objective-cpp" },
 				root_dir = lspconfig.util.root_pattern("Package.swift", ".git"), -- or specify a fixed path
@@ -123,6 +152,7 @@ return {
 			-------------------        BASH       ------------------------
 			lspconfig.bashls.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 				cmd = { "bash-language-server", "start" },
 				filetypes = { "sh", "bash" }, -- You can add more file types here if needed
 			})
@@ -130,6 +160,7 @@ return {
 			-------------------        PHP       ------------------------
 			lspconfig.intelephense.setup({
 				capabilities = capabilities,
+				on_attach = disable_formatting,
 				root_dir = function(fname)
 					-- return is VERY IMPORTANT
 					return require("lspconfig").util.root_pattern("*.php", ".git")(fname) or vim.fn.getcwd()
@@ -166,6 +197,14 @@ return {
 			vim.keymap.set("n", "<leader>td", function()
 				vim.diagnostic.enable(not vim.diagnostic.is_enabled())
 			end, { silent = true, noremap = true, desc = "[lsp] diag ON|OFF" })
+
+			vim.keymap.set("n", "<leader>cf", function()
+				vim.lsp.buf.format({
+					filter = function(client)
+						return client.name == "null-ls" -- ONLY none-ls
+					end,
+				})
+			end, { desc = "Format with none-ls" })
 		end,
 	},
 }

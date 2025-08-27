@@ -1,54 +1,118 @@
-#!/usr/bin/env bash
-CURRENT_TERM=$(ps -p $PPID -o comm=)
-
+#!/bin/sh
+# Args: file w h x y
 file=$1
 w=$2
 h=$3
 x=$4
 y=$5
+have() { command -v "$1" >/dev/null 2>&1; }
 
-preview() {
-    if [[ "$CURRENT_TERM" == "alacritty" ]]; then
-        # If in Alacritty, open a new kitty terminal to show the preview.
-        kitty -e "kitty +kitten icat --silent --stdin no --transfer-mode file \"$1\""
-    else
-        # If in kitty or any other terminal, use the original method.
-        kitty +kitten icat --silent --stdin no --transfer-mode file --place "${w}x${h}@${x}x${y}" "$1" < /dev/null > /dev/tty
-    fi
+draw() {
+	kitty +kitten icat --stdin no --transfer-mode memory \
+		--place "${w}x${h}@${x}x${y}" -- "$1" </dev/null >/dev/tty
+	exit 1
 }
 
+ckey() {
+	inode="$(/usr/bin/stat -f %i -- "$1" 2>/dev/null || echo 0)"
+	mtime="$(/usr/bin/stat -f %m -- "$1" 2>/dev/null || echo 0)"
+	echo "${inode}-${mtime}"
+}
 
-TEMPDIR=/Users/aharo/.cache
+mime="$(file -Lb --mime-type -- "$file")"
+tmp="${TMPDIR:-/tmp}"
 
-file="$1"; shift
-case "$(basename "$file" | tr '[A-Z]' '[a-z]')" in
-*.tar*) tar tf "$file" ;;
-*.zip) unzip -l "$file" ;;
-*.rar) unrar l "$file" ;;
-*.7z) 7z l "$file" ;;
-*.avi|*.mp4|*.mkv)
-	thumbnail="$TEMPDIR/thumbnail.png"
-	ffmpeg -y -i "$file" -vframes 1 "$thumbnail"
-    preview "$thumbnail"
+case "$mime" in
+image/*)
+	if have magick; then
+		if orient="$(magick identify -quiet -format '%[orientation]' -- "$file[0]" 2>/dev/null)" &&
+			[ -n "$orient" ] && [ "$orient" != TopLeft ] && [ "$orient" != Undefined ]; then
+			key="$(ckey "$file")"
+			thumb="$tmp/lfimg-$USER-$key.jpg"
+			[ -f "$thumb" ] || magick -- "$file[0]" -auto-orient -quality 92 "$thumb" >/dev/null 2>&1 || thumb="$file"
+			draw "$thumb"
+		fi
+	fi
+	draw "$file"
 	;;
-*.pdf)
-	thumbnail="$TEMPDIR/thumbnail.png"
-	gs -o "$thumbnail" -sDEVICE=pngalpha -dLastPage=1 "$file" >/dev/null
-    preview "$thumbnail"
+
+application/pdf)
+	key="$(ckey "$file")"
+	base="$tmp/lfpdf-$USER-$key"
+	thumb="$base.jpg"
+	if [ ! -f "$thumb" ]; then
+		if have pdftoppm; then
+			pdftoppm -jpeg -singlefile -f 1 -- "$file" "$base" >/dev/null 2>&1
+		elif have magick; then
+			magick -density 150 -- "$file[0]" "$thumb" >/dev/null 2>&1
+		fi
+	fi
+	[ -f "$thumb" ] && draw "$thumb" || {
+		echo "binary"
+		exit 1
+	}
 	;;
-*.jpg|*.jpeg|*.png|*.bmp)
-    preview "$file"
-    ;;
-*.ttf|*.otf|*.woff)
-	thumbnail="$TEMPDIR/thumbnail.png"
-	fontpreview -i "$file" -o "$thumbnail"
-	preview "$thumbnail"
+
+video/*)
+	key="$(ckey "$file")"
+	thumb="$tmp/lfvid-$USER-$key.jpg"
+	if [ ! -f "$thumb" ]; then
+		if have ffmpegthumbnailer; then
+			ffmpegthumbnailer -i "$file" -o "$thumb" -s 0 >/dev/null 2>&1
+		elif have ffmpeg; then
+			ffmpeg -y -v error -ss 1 -i "$file" -frames:v 1 "$thumb" >/dev/null 2>&1
+		fi
+	fi
+	[ -f "$thumb" ] && draw "$thumb" || {
+		echo "binary"
+		exit 1
+	}
 	;;
-*.svg)
-	thumbnail="$TEMPDIR/thumbnail.png"
-	convert "$file" "$thumbnail"
-	preview "$thumbnail"
+
+image/svg+xml)
+	key="$(ckey "$file")"
+	thumb="$tmp/lfsvg-$USER-$key.png"
+	if [ ! -f "$thumb" ]; then
+		if have rsvg-convert; then
+			rsvg-convert --keep-aspect-ratio --format=png --output "$thumb" "$file" 2>/dev/null
+		elif have magick; then
+			magick -- "$file" "$thumb" >/dev/null 2>&1
+		fi
+	fi
+	[ -f "$thumb" ] && draw "$thumb" || {
+		echo "binary"
+		exit 1
+	}
 	;;
-*) lf_bat_preview "$file" ;;
+
+text/* | application/json | application/xml)
+	if have bat; then
+		exec bat --style=plain --color=always --paging=never -- "$file"
+	else
+		exec cat -- "$file"
+	fi
+	;;
+
+*)
+	# Minimal, pistol-free fallbacks:
+
+	# Try generic archive listing (many formats)
+	if tar -tf "$file" >/dev/null 2>&1; then
+		tar -tf "$file" | head -n 500
+		exit 0
+	fi
+	# Zip/JAR/OOXML/etc.
+	if unzip -l "$file" >/dev/null 2>&1; then
+		unzip -l "$file" | head -n 500
+		exit 0
+	fi
+	# macOS metadata as a last resort
+	if have mdls; then
+		mdls "$file"
+		exit 0
+	fi
+
+	echo "binary"
+	exit 1
+	;;
 esac
-return 127 # nonzero retcode required for lf previews to reload

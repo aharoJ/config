@@ -36,15 +36,17 @@ lalt - l : yabai -m window --focus east
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      BST VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-hyper - j : yabai -m window --swap south
-hyper - k : yabai -m window --swap north
-hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
-hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
+# hyper - j : yabai -m window --swap south
+# hyper - k : yabai -m window --swap north
+# hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
+# hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      STACK VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# hyper - 0x21 : yabai -m window --focus stack.prev || yabai -m window --focus stack.last   # '['
-# hyper - 0x1E : yabai -m window --focus stack.next || yabai -m window --focus stack.first  # ']'
+hyper - 0x21 : yabai -m window --focus stack.prev || yabai -m window --focus stack.last   # '['
+hyper - 0x1E : yabai -m window --focus stack.next || yabai -m window --focus stack.first  # ']'
+hyper - k : yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+hyper - j : yabai -m window --focus stack.next || yabai -m window --focus stack.first
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
