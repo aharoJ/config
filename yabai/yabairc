@@ -5,12 +5,26 @@
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 
 ## Change how yabai looks
-yabai -m config layout bsp # bsp | float | stack
+yabai -m config layout stack # bsp | float | stack
+
+# ~~~~~~~~~~~~~~~~~~~~~~   MACBOOK   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 yabai -m config top_padding 0
-yabai -m config bottom_padding 10
+yabai -m config bottom_padding 20
 yabai -m config left_padding 20
 yabai -m config right_padding 20
 yabai -m config window_gap 20
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+# ~~~~~~~~~~~~~~~~~~~~~~   ULTRAWIDE MONITOR   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# yabai -m config top_padding 0
+# yabai -m config bottom_padding 20
+# yabai -m config left_padding 350
+# yabai -m config right_padding 350
+# yabai -m config window_gap 20
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
 
 #### float system preferences. Most of these just STOP yabai form resizing them.
 # yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
