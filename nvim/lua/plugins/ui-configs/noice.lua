@@ -98,7 +98,7 @@ require("noice").setup({
 		override = {
 			["vim.lsp.util.convert_input_to_markdown_lines"] = true,
 			["vim.lsp.util.stylize_markdown"] = true,
-			["cmp.entry.get_documentation"] = true,
+			["cmp.entry.get_documentation"] = false,
 		},
 		opts = {},
 		signature = {
@@ -121,7 +121,8 @@ require("noice").setup({
 		},
 		-- defaults for hover and signature help
 		documentation = {
-			view = "hover",
+			-- view = "hover",
+			view = "mini",
 			---@type NoiceViewOptions
 			opts = {
 				lang = "markdown",

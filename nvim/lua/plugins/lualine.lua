@@ -107,14 +107,11 @@ return {
 
 				-- Server icons mapping
 				local server_icons = {
-					-- ["null-ls"] = "  ", -- null-ls icon
-					-- ["null-ls"] = "󱃓  ", -- null-ls icon
 					["null-ls"] = "󰿦 ", -- null-ls icon
 					["ts_ls"] = "󰛦 ", -- TypeScript
 					["tailwindcss"] = "󱏿 ", -- Tailwind CSS
 					["copilot"] = "󱜙 ", -- GitHub Copilot
 					["lua_ls"] = " ", -- Lua
-					-- ["pyright"] = " ", -- Python
 					["pyright"] = " ", -- Python
 					["bashls"] = " ", -- Bash
 					["rust_analyzer"] = " ", -- Rust
@@ -127,8 +124,8 @@ return {
 					["gopls"] = " ", -- Go
 					["jdtls"] = " ", -- Java
 					["taplo"] = " ", -- TOML
-					-- ["kotlin_language_server"] = "  ", -- Kotlin
-					-- ["clangd"] = "  ", -- C/C++
+					["fish_lsp"] = " ", -- Fish
+					["ruby_lsp"] = " ", -- Ruby
 				}
 
 				-- Collect status icons
@@ -229,6 +226,7 @@ return {
 		}
 
 		-- Git differences with dynamic command-mode coloring
+		---@diagnostic disable-next-line: unused-local
 		local git_difference = {
 			"diff",
 			colored = false,
