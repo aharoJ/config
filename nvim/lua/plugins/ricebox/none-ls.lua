@@ -41,7 +41,11 @@ return {
 
 				-------------------        FISH       ------------------------
 				null_ls.builtins.diagnostics.fish,
-        null_ls.builtins.formatting.fish_indent,
+				null_ls.builtins.formatting.fish_indent,
+
+				-------------------        MARKDOWN       ------------------------
+				-- null_ls.builtins.diagnostics.markdownlint,
+				null_ls.builtins.formatting.markdownlint,
 
 				-------------------        PYTHON       ------------------------
 				null_ls.builtins.formatting.black,
