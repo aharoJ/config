@@ -1,0 +1,67 @@
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │              ~/.tmux.conf — Hybrid Modern Arch Linux Inspired UI             │
+# │                                (Visual Only)                                 │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+
+# ╭────────────────────────────── Terminal / Truecolor ───────────────────────────╮
+# Advertise 24-bit color and override common TERM entries for truecolor-capable apps.
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",alacritty:Tc,xterm-256color:Tc,screen-256color:Tc"
+
+# ╭──────────────────────────────── Status Bar: Base ─────────────────────────────╮
+# Transparent status line, pinned to the top, refreshed every 2s, left-justified.
+set-option -g status-style bg=default,fg=default # Transparent background
+set -g status-position bottom                        # bottom | top
+set -g status-interval 2                          # Update interval
+set -g status-justify left                       # left | centre | right
+
+# ╭─────────────────────────────── Palette Reference ─────────────────────────────╮
+# Arch/cyberpunk palette (for reference when theming):
+# base=#1a1b26  accent=#7aa2f7  dim=#414868  text=#c0caf5  sub=#565f89
+# neon=#1ef2b7  warn=#f7768e
+
+# ╭────────────────────────────── Pane / Border Styles ───────────────────────────╮
+# Inactive/active pane borders for better spatial separation.
+set -g pane-border-style "fg=#414868"
+set -g pane-active-border-style "fg=#7aa2f7"
+
+# ╭──────────────────────────── Messages / Modes / Alerts ────────────────────────╮
+# Message area, command prompt styling, copy-mode look, clock, bell, and activity.
+set-option -g message-style bg=#414868,fg=#1ef2b7           # Softer neon for messages
+set-option -g message-command-style bg=#414868,fg=#1ef2b7
+setw -g mode-style "bg=#565f89,fg=#c0caf5"                  # Dimmer, no bold for copy-mode elegance
+set-window-option -g clock-mode-colour "#7aa2f7"
+set-window-option -g window-status-bell-style bg=#f7768e,fg=#1a1b26
+set-window-option -g window-status-activity-style bg=#414868,fg=#c0caf5
+
+# ╭────────────────────────────── Window Tabs / Titles ───────────────────────────╮
+setw -g window-status-separator " "
+### setw -g window-status-separator "  "
+# Active window: brighter accent + current pane’s path.
+setw -g window-status-current-format "#[fg=#87a1ee ](#{b:pane_current_path})"
+# Inactive windows: muted color + their current pane’s path.
+setw -g window-status-format        "#[fg=#737373](#{b:pane_current_path})"
+
+### setw -g window-status-current-format "#[fg=#7aa2f7](#{window_index} #{b:pane_current_path})#[default]"
+### setw -g window-status-format "#[fg=#565f89](#{window_index} #{b:pane_current_path})#[default]"
+
+# ╭────────────────────────────────── Status: Left ───────────────────────────────╮
+set -g status-left-length 120
+set-option -g status-left "#[fg=#7aa2f7]#{?client_prefix,#[fg=#1ef2b7#,italics],} 󰘍 #S #{?client_prefix, ⌨ Prefix ,}#[fg=#7aa2f7]#{?window_zoomed_flag, 󰊓,}#{?pane_synchronized, 󱓷,}"
+
+# ╭───────────────────────────────── Status: Right ───────────────────────────────╮
+# Minimal clock/date block, sized to fit the right segment comfortably.
+set -g status-right-length 35
+set-option -g status-right "#[fg=#1ef2b7](%I:%M %p | %B %d, %Y)"
+### set-option -g status-right "#[fg=#1ef2b7] \%I:%M %p | %B %d, %Y\ "
+### set -g status-right "#[fg=#1ef2b7]󱑎 %H:%M │ %d.%m.%y"
+
+# ╭─────────────────────────────── Custom Key Unbinds/Binds ──────────────────────╮
+# (KEEP MY STUFF BELOW ONLY)
+# Replace default pane/window behaviors with your preferred actions.
+unbind c                                            # Unbind default key
+unbind t                                            # Unbind default key, originally for time display
+bind-key c kill-pane                                # Kill current pane without confirmation
+bind t new-window -c '#{pane_current_path}'         # Create a new window with current path
+unbind ','                                          # Unbind default rename key
+bind-key , command-prompt -p "Rename session to:" "rename-session '%%'"  # Rename session command
