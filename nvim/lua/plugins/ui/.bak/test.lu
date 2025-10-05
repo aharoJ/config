@@ -1,0 +1,183 @@
+-- path: ~/.config/nvim/lua/plugins/lualine.lua
+return {
+    'nvim-lualine/lualine.nvim',
+    event = 'VeryLazy',                             -- load after UI is ready (buttery)
+    dependencies = { 'nvim-tree/nvim-web-devicons' }, -- optional (icons)
+    config = function()
+        local ok, lualine = pcall(require, 'lualine')
+        if not ok then return end
+
+        ---------------------------------------------------------------------------
+        -- Base: full defaults from upstream, tuned for smoothness & clarity
+        -- Docs source for defaults/components/options: :h lualine (README) :contentReference[oaicite:2]{index=2}
+        ---------------------------------------------------------------------------
+        local opts = {
+            options = {
+                icons_enabled        = true, -- set false to kill all icons globally
+                theme                = 'auto', -- auto-pick from your colorscheme
+                component_separators = { left = '', right = '' },
+                section_separators   = { left = '', right = '' },
+
+                disabled_filetypes   = {
+                    statusline = {}, -- e.g. { 'neo-tree', 'dashboard' }
+                    winbar     = {},
+                },
+                ignore_focus         = {}, -- e.g. { 'neo-tree' } to keep its line inactive
+                always_divide_middle = true,
+                always_show_tabline  = true, -- tabline shows even with 1 tab
+                globalstatus         = false, -- set true for a single global statusline (nvim 0.7+)
+
+                -- Refresh cadence: upstream defaults; ~60fps queue processing
+                refresh              = {
+                    statusline   = 1000,
+                    tabline      = 1000,
+                    winbar       = 1000,
+                    refresh_time = 16, -- ~60fps queue window
+                    events       = {
+                        'WinEnter', 'BufEnter', 'BufWritePost', 'SessionLoadPost', 'FileChangedShellPost',
+                        'VimResized', 'Filetype', 'CursorMoved', 'CursorMovedI', 'ModeChanged',
+                    },
+                },
+            },
+
+            -- Active windows
+            sections = {
+                lualine_a = { 'mode' },
+                -- lualine_b = { 'branch', 'diff', 'diagnostics' },
+                lualine_c = { 'filename' },
+                lualine_x = { 'encoding', 'fileformat', 'filetype' },
+                lualine_y = { 'progress' },
+                lualine_z = { 'location' },
+            },
+
+            -- Inactive windows
+            inactive_sections = {
+                lualine_a = {},
+                lualine_b = {},
+                lualine_c = { 'filename' },
+                lualine_x = { 'location' },
+                lualine_y = {},
+                lualine_z = {},
+            },
+
+            -- OFF by default: turn these on by uncommenting what you want ↓
+            tabline = {
+                -- lualine_a = { 'buffers' },     -- classic bufferline style (jump: :LualineBuffersJump) :contentReference[oaicite:3]{index=3}
+                -- lualine_b = { 'branch' },
+                -- lualine_c = { 'filename' },
+                -- lualine_x = {},
+                -- lualine_y = {},
+                -- lualine_z = { 'tabs' },        -- tab items + :LualineRenameTab  :contentReference[oaicite:4]{index=4}
+            },
+
+            winbar = {
+                -- lualine_c = { 'filename' },    -- enable winbar (nvim ≥0.8)  :contentReference[oaicite:5]{index=5}
+            },
+            inactive_winbar = {
+                -- lualine_c = { 'filename' },
+            },
+
+            extensions = {
+                -- Load per-filetype extensions (appearance tweaks). Examples:
+                -- 'neo-tree','lazy','mason','fzf','toggleterm','trouble','nvim-dap-ui','man','quickfix'
+                -- Keep empty for max perf; add only what you use. :contentReference[oaicite:6]{index=6}
+            },
+        }
+
+        ---------------------------------------------------------------------------
+        -- Toggle cookbook (all OFF by default; uncomment to opt-in)
+        ---------------------------------------------------------------------------
+
+        -- 1) Minimal look: kill all separators
+        -- opts.options.section_separators   = ''
+        -- opts.options.component_separators = ''
+
+        -- 2) Fancy rounded separators (left on ABC, right on XYZ)
+        -- opts.options.section_separators   = { left = '', right = '' }
+        -- opts.options.component_separators = { left = '', right = '' } -- :contentReference[oaicite:7]{index=7}
+
+        -- 3) Diagnostics: make it explicit / customize symbols & sources
+        -- opts.sections.lualine_b[3] = {
+        --   'diagnostics',
+        --   sources = { 'nvim_diagnostic' }, -- add 'coc','ale' if you use them  :contentReference[oaicite:8]{index=8}
+        --   sections = { 'error','warn','info','hint' },
+        --   symbols  = { error='E', warn='W', info='I', hint='H' },
+        --   colored = true,
+        --   update_in_insert = false,
+        --   always_visible = false,
+        -- }
+
+        -- 4) Diff: tune colors/symbols or wire your own source function
+        -- opts.sections.lualine_b[2] = {
+        --   'diff',
+        --   colored = true,
+        --   symbols = { added = '+', modified = '~', removed = '-' }, -- :contentReference[oaicite:9]{index=9}
+        --   -- source = function() return { added=0, modified=0, removed=0 } end
+        -- }
+
+        -- 5) Filename path style (0..4)
+        -- opts.sections.lualine_c[1] = {
+        --   'filename',
+        --   path = 1,                 -- 0=name, 1=relative, 2=absolute, 3=abs w/ ~, 4=parent/name w/ ~  :contentReference[oaicite:10]{index=10}
+        --   newfile_status = true,
+        --   symbols = { modified='[+]', readonly='[-]', unnamed='[No Name]', newfile='[New]' },
+        -- }
+
+        -- 6) Fileformat icons (unix/dos/mac)
+        -- opts.sections.lualine_x[2] = {
+        --   'fileformat',
+        --   symbols = { unix='', dos='', mac='' },  -- needs devicons + patched font  :contentReference[oaicite:11]{index=11}
+        -- }
+
+        -- 7) Encoding with BOM marker
+        -- opts.sections.lualine_x[1] = {
+        --   'encoding',
+        --   show_bomb = true,         -- show "[BOM]" when present  :contentReference[oaicite:12]{index=12}
+        -- }
+
+        -- 8) LSP progress/name readout (built-in 'lsp_status' component)
+        -- table.insert(opts.sections.lualine_c, {
+        --   'lsp_status',
+        --   icon = '',
+        --   symbols = {
+        --     spinner = { '⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏' },
+        --     done = '✓', separator = ' ',
+        --   },
+        --   ignore_lsp = {},          -- e.g. { 'null-ls' }  :contentReference[oaicite:13]{index=13}
+        -- })
+
+        -- 9) Winbar on (top line) mirroring filename
+        -- opts.winbar         = { lualine_c = { 'filename' } }        -- active  :contentReference[oaicite:14]{index=14}
+        -- opts.inactive_winbar= { lualine_c = { 'filename' } }        -- inactive
+
+        -- 10) Tabline as your statusline (all top)
+        -- opts.tabline = {
+        --   lualine_a = { 'buffers' },
+        --   lualine_b = { 'branch' },
+        --   lualine_c = { 'filename' },
+        --   lualine_z = { 'tabs' },
+        -- }
+        -- opts.sections = {}
+        -- opts.inactive_sections = {}                                   -- :contentReference[oaicite:15]{index=15}
+
+        -- 11) Theme tweak example
+        -- local custom = require('lualine.themes.gruvbox')              -- any installed theme  :contentReference[oaicite:16]{index=16}
+        -- custom.normal.c.bg = '#112233'
+        -- opts.options.theme = custom
+
+        -- 12) Disable for certain filetypes completely (or later via hide())
+        -- opts.options.disabled_filetypes.statusline = { 'help', 'neo-tree', 'dashboard' }
+
+        -- 13) Manual refresh (rarely needed)
+        -- require('lualine').refresh()                                  -- or with {force=true}  :contentReference[oaicite:17]{index=17}
+
+        lualine.setup(opts)
+
+        ---------------------------------------------------------------------------
+        -- Extra API (useful to know; all built-in):
+        -- :LualineBuffersJump {n|$|!n}  — jump to Nth buffer in 'buffers' tabline   :contentReference[oaicite:18]{index=18}
+        -- :LualineRenameTab [name]      — set/clear tab name when using tabs       :contentReference[oaicite:19]{index=19}
+        -- require('lualine').hide({ place={'statusline','tabline','winbar'}, unhide=false }) -- toggle off/on  :contentReference[oaicite:20]{index=20}
+        ---------------------------------------------------------------------------
+    end,
+}
