@@ -1,0 +1,142 @@
+
+###############################################################################
+# THEME: default-behavior skeleton (safe to drop in)
+# Reference:
+# - Docs: https://yazi-rs.github.io/docs/configuration/theme/
+# - Flavors: https://github.com/yazi-rs/flavors
+###############################################################################
+
+# ── Flavor selection ───────────────────────────────────────────────────────────
+# Leave these commented to use Yazi's built-in dark/light themes automatically.
+# If you install a flavor (e.g. "dracula", "tokyo-night", "ayu-dark"), set it here.
+# See flavors README for install + names.
+# [flavor]
+# dark  = "dracula"      # string | name of installed flavor for dark terminals
+# light = "one-light"    # string | name of installed flavor for light terminals
+# # Legacy single-flavor (pre-0.4) would be:
+# # use = "dracula"
+
+# ── Manager styles (optional overrides) ───────────────────────────────────────
+# Tip: Uncomment and change just the bits you want; otherwise, defaults are used.
+# [mgr]
+# cwd              = { fg = "lightblue", bold = true }  # current directory text
+# hovered          = { reversed = true }                # hovered file
+# preview_hovered  = { underline = true }               # hovered file in preview
+# find_keyword     = { fg = "yellow", bold = true }
+# find_position    = { fg = "gray" }
+# marker_copied    = { fg = "green",   bold = true }
+# marker_cut       = { fg = "red",     bold = true }
+# marker_marked    = { fg = "cyan",    bold = true }
+# marker_selected  = { fg = "blue",    bold = true }
+# count_copied     = { fg = "green" }
+# count_cut        = { fg = "red" }
+# count_selected   = { fg = "blue" }
+# border_symbol    = "│"                                # string
+# border_style     = { fg = "darkgray" }
+# # Code preview syntax highlighting theme (tmTheme path):
+# # syntect_theme   = ""  # If you use a flavor, it brings its own tmtheme. Leave empty.
+
+# ── Tabs (optional) ───────────────────────────────────────────────────────────
+# [tabs]
+# active   = { fg = "white",  bold = true }
+# inactive = { fg = "gray" }
+# sep_inner = { open = "[", close = "]" }
+# sep_outer = { open = "",  close = "" }
+
+# ── Mode badges (optional) ────────────────────────────────────────────────────
+# [mode]
+# normal_main = { fg = "white" }
+# normal_alt  = { fg = "gray" }
+# select_main = { fg = "yellow", bold = true }
+# select_alt  = { fg = "darkgray" }
+# unset_main  = { fg = "white" }
+# unset_alt   = { fg = "gray" }
+
+# ── Statusline (optional) ─────────────────────────────────────────────────────
+# [status]
+# overall        = { fg = "white", bg = "black" }
+# sep_left       = { open = "",  close = "]" }
+# sep_right      = { open = "[", close = "" }
+# perm_type      = { fg = "cyan" }
+# perm_read      = { fg = "green" }
+# perm_write     = { fg = "yellow" }
+# perm_exec      = { fg = "red" }
+# perm_sep       = { fg = "darkgray" }
+# progress_label = { fg = "white" }
+# progress_normal= { fg = "green" }
+# progress_error = { fg = "red", bold = true }
+
+# ── Which-key popup (optional) ────────────────────────────────────────────────
+# [which]
+# cols            = 2
+# mask            = { bg = "black" }
+# cand            = { fg = "lightblue", bold = true }
+# rest            = { fg = "gray" }
+# desc            = { fg = "white" }
+# separator       = " -> "
+# separator_style = { fg = "darkgray" }
+
+# ── Confirm / Input / Pick / Cmp / Tasks / Help (optional) ───────────────────
+# [confirm]
+# border  = { fg = "darkgray" }
+# title   = { fg = "white", bold = true }
+# content = { fg = "white" }
+# list    = { fg = "white" }
+# btn_yes = { fg = "black", bg = "green", bold = true }
+# btn_no  = { fg = "black", bg = "red",   bold = true }
+# btn_labels = [ "Yes", "No" ]
+
+# [pick]
+# border  = { fg = "darkgray" }
+# active  = { fg = "white", bold = true }
+# inactive= { fg = "gray" }
+
+# [input]
+# border   = { fg = "darkgray" }
+# title    = { fg = "white", bold = true }
+# value    = { fg = "white" }
+# selected = { reversed = true }
+
+# [cmp]
+# border   = { fg = "darkgray" }
+# active   = { fg = "white", bold = true }
+# inactive = { fg = "gray" }
+# icon_file   = ""   # optional custom icons
+# icon_folder = ""
+# icon_command= ""
+
+# [tasks]
+# border  = { fg = "darkgray" }
+# title   = { fg = "white", bold = true }
+# hovered = { reversed = true }
+
+# [help]
+# on      = { fg = "lightblue" }
+# run     = { fg = "white" }
+# desc    = { fg = "gray" }
+# hovered = { reversed = true }
+# footer  = { fg = "darkgray" }
+# icon_info  = ""
+# icon_warn  = ""
+# icon_error = ""
+
+# ── Filetype coloring (optional, good baseline) ───────────────────────────────
+# [filetype]
+# rules = [
+#   { mime = "image/*",         fg = "yellow"  },
+#   { mime = "video/*",         fg = "magenta" },
+#   { mime = "audio/*",         fg = "magenta" },
+#   { mime = "inode/empty",     fg = "cyan"    },
+#   { name = "*", is = "orphan", fg = "red"    },
+#   { name = "*/",              fg = "blue"    },    # directories (fallback)
+# ]
+
+# ── Icon overrides (optional; Yazi has built-in devicons) ─────────────────────
+# [icon]
+# # Quickly add/override a couple:
+# prepend_dirs = [
+#   { name = "desktop", text = "", fg = "#563d7c" },
+# ]
+# append_exts = [
+#   { name = "mp3",     text = "", fg = "#00afff" },
+# ]
