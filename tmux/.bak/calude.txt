@@ -1,0 +1,179 @@
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │           ~/.tmux.conf — Hybrid Loaded Arch Linux Cyberpunk UI               │
+# │                        Maximum Visual Information Density                    │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+
+# ╭────────────────────────────── Terminal / Truecolor ───────────────────────────╮
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",alacritty:Tc,xterm-256color:Tc,screen-256color:Tc"
+
+# ╭──────────────────────────────── Status Bar: Base ─────────────────────────────╮
+set-option -g status-style bg=default,fg=default
+set -g status-position bottom
+set -g status-interval 1                           # Faster updates for loaded UI
+set -g status-justify left
+
+# ╭─────────────────────────────── Extended Palette ───────────────────────────────╮
+# Enhanced cyberpunk palette for loaded interface
+# base=#1a1b26  accent=#7aa2f7  dim=#414868  text=#c0caf5  sub=#565f89
+# neon=#1ef2b7  warn=#f7768e  orange=#ff9e64  purple=#bb9af7  cyan=#7dcfff
+
+# ╭────────────────────────────── Pane / Border Styles ───────────────────────────╮
+set -g pane-border-style "fg=#414868"
+set -g pane-active-border-style "fg=#7aa2f7,bg=default"
+set -g pane-border-format "#[fg=#565f89]─#{?pane_active,#[fg=#7aa2f7]━━━ #{pane_index}:#{pane_current_command} ━━━,─#{pane_index}─}─"
+set -g pane-border-status top
+
+# ╭──────────────────────────── Messages / Modes / Alerts ────────────────────────╮
+set-option -g message-style bg=#414868,fg=#1ef2b7,bold
+set-option -g message-command-style bg=#7aa2f7,fg=#1a1b26,bold
+setw -g mode-style "bg=#bb9af7,fg=#1a1b26,bold"
+set-window-option -g clock-mode-colour "#7aa2f7"
+set-window-option -g window-status-bell-style bg=#f7768e,fg=#1a1b26,bold
+set-window-option -g window-status-activity-style bg=#ff9e64,fg=#1a1b26,bold
+
+# ╭────────────────────────────── Window Tabs / Titles ───────────────────────────╮
+setw -g window-status-separator ""
+# Active window: Full information block with indicators
+setw -g window-status-current-format "#[fg=#1a1b26,bg=#7aa2f7,bold] #{window_index} #[fg=#7aa2f7,bg=#414868]#[fg=#c0caf5,bg=#414868] #{b:pane_current_path} #[fg=#414868,bg=default]#[fg=#7aa2f7]#{?window_zoomed_flag, 󰊓,}#{?pane_synchronized, 󱓷,} "
+# Inactive windows: Subtle but informative
+setw -g window-status-format "#[fg=#565f89] #{window_index}#[fg=#737373] #{b:pane_current_path} "
+
+# ╭────────────────────────────────── Status: Left ───────────────────────────────╮
+# Loaded session info with multiple indicators and system info
+set-option -g status-left "#[fg=#1a1b26,bg=#1ef2b7,bold] 󰘍 #S #[fg=#1ef2b7,bg=#414868]#{?client_prefix,#[bg=#f7768e],}#[fg=#c0caf5,bg=#414868]#{?client_prefix,#[fg=#1a1b26#,bg=#f7768e], ⌨ } PREFIX #{?client_prefix, ,}#[fg=#414868,bg=default]#{?client_prefix,#[fg=#f7768e],} #[fg=#7aa2f7]󰇘 #{session_windows}w #{session_clients}c #[fg=#1ef2b7]󱑆 %H:%M:%S #[fg=#bb9af7]󰃭 #{continuum_status}#{?window_zoomed_flag,#[fg=#ff9e64] 󰊓 ZOOM,}#{?pane_synchronized,#[fg=#f7768e] 󱓷 SYNC,} "
+set -g status-left-length 200
+
+# ╭───────────────────────────────── Status: Right ───────────────────────────────╮
+# System monitoring and Git status (loaded interface)
+set -g status-right-length 150
+set-option -g status-right "#[fg=#565f89]#(uptime | cut -f 4-5 -d ' ' | cut -f 1 -d ',') #[fg=#7dcfff]󰍛 #(ps aux | wc -l) #[fg=#bb9af7]󰘚 #(df -h / | awk 'NR==2{print $5}') #[fg=#ff9e64]󱐋 #(free | grep Mem | awk '{printf \"%.0f%%\", $3/$2 * 100.0}') #[fg=#414868,bg=default]#[fg=#c0caf5,bg=#414868] #(cd #{pane_current_path}; git branch 2>/dev/null | grep '*' | cut -d' ' -f2 || echo 'no-git') #[fg=#414868,bg=#7dcfff]#[fg=#1a1b26,bg=#7dcfff,bold] 󰸗 %a %d.%m.%y "
+
+# ╭─────────────────────────────── Enhanced Visual Features ──────────────────────╮
+# Activity monitoring for loaded interface
+set -g monitor-activity on
+set -g monitor-bell on
+set -g visual-activity off
+set -g visual-bell off
+set -g bell-action other
+
+# Window activity indicators
+setw -g window-status-activity-style "fg=#ff9e64,bg=default,bold"
+setw -g window-status-bell-style "fg=#f7768e,bg=default,bold,blink"
+
+# ╭─────────────────────────────── Navigation & Vim Bindings ─────────────────────╮
+# Neovim-inspired navigation
+bind -r h select-pane -L
+bind -r j select-pane -D
+bind -r k select-pane -U
+bind -r l select-pane -R
+
+# Resize panes with visual feedback
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Quick layout cycling
+bind Space next-layout
+bind-key M-Space previous-layout
+
+# Copy mode enhancements
+setw -g mode-keys vi
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind -T copy-mode-vi Escape send-keys -X cancel
+bind -T copy-mode-vi C-v send-keys -X rectangle-toggle
+
+# ╭─────────────────────────────── Custom Key Bindings ───────────────────────────╮
+unbind c
+unbind t
+bind-key c kill-pane
+bind t new-window -c '#{pane_current_path}'
+
+# Enhanced window/pane management
+bind '"' split-window -v -c "#{pane_current_path}"
+bind % split-window -h -c "#{pane_current_path}"
+bind Tab last-window
+bind-key x kill-pane
+bind-key X kill-window
+bind-key Q kill-session
+
+# Pane synchronization toggle with visual feedback
+bind S set-window-option synchronize-panes\; display-message "Synchronize-panes #{?pane_synchronized,ON,OFF}"
+
+# ╭─────────────────────────────── Advanced Features ─────────────────────────────╮
+# Mouse support
+set -g mouse on
+
+# History and performance
+set -g history-limit 50000
+set -g escape-time 0
+set -g focus-events on
+set -g aggressive-resize on
+
+# Terminal title
+set -g set-titles on
+set -g set-titles-string "#S:#I:#P - #W - #T"
+
+# Pane numbering
+set -g display-panes-time 2000
+set -g display-panes-colour "#565f89"
+set -g display-panes-active-colour "#1ef2b7"
+
+# ╭─────────────────────────────── Status Line Toggles ───────────────────────────╮
+# Toggle status bar visibility (zen mode)
+bind z set-option -g status
+
+# Toggle status position
+bind-key b if -F '#{s/off//:status}' 'set status off' 'set status on'
+bind-key t if -F '#{s/top//:status-position}' 'set status-position bottom' 'set status-position top'
+
+# ╭─────────────────────────────── Window Monitoring ─────────────────────────────╮
+# Enhanced window monitoring
+bind m set-window-option monitor-activity\; display-message "Monitor activity #{?monitor-activity,ON,OFF}"
+bind M set-window-option monitor-silence 30\; display-message "Monitor silence #{?monitor-silence,ON,OFF}"
+
+# ╭─────────────────────────────── Plugin Support Ready ──────────────────────────╮
+# Ready for tmux plugins (uncomment if you want to add them)
+# set -g @plugin 'tmux-plugins/tpm'
+# set -g @plugin 'tmux-plugins/tmux-sensible'
+# set -g @plugin 'tmux-plugins/tmux-resurrect'
+# set -g @plugin 'tmux-plugins/tmux-continuum'
+# set -g @plugin 'tmux-plugins/tmux-battery'
+
+# Plugin configurations
+# set -g @resurrect-capture-pane-contents 'on'
+# set -g @continuum-restore 'on'
+# set -g @continuum-boot 'on'
+
+# ╭─────────────────────────────── Development Helpers ───────────────────────────╮
+# Quick config reload
+bind r source-file ~/.tmux.conf \; display-message "Config reloaded!"
+
+# Session management shortcuts
+bind-key C-a send-prefix
+bind-key a send-prefix
+bind-key C-s choose-session
+bind-key s choose-tree -Zs
+
+# Window movement
+bind-key -r < swap-window -t -1
+bind-key -r > swap-window -t +1
+
+# ╭─────────────────────────────── Visual Debug Mode ─────────────────────────────╮
+# Toggle for showing all tmux info (debug mode)
+bind-key D if -F '#{s/on//:status-right}' \
+    'set status-right "#[fg=#f7768e]DEBUG: #S:#I:#P W:#{window_width}x#{window_height} P:#{pane_width}x#{pane_height} #[fg=#7aa2f7]%H:%M:%S"' \
+    'source-file ~/.tmux.conf'
+
+
+# ╭─────────────────────────────── Custom Key Unbinds/Binds ──────────────────────╮
+# (KEEP MY STUFF BELOW ONLY)
+# Replace default pane/window behaviors with your preferred actions.
+unbind c                                            # Unbind default key
+unbind t                                            # Unbind default key, originally for time display
+bind-key c kill-pane                                # Kill current pane without confirmation
+bind t new-window -c '#{pane_current_path}'         # Create a new window with current path
+unbind ','                                          # Unbind default rename key
+bind-key , command-prompt -p "Rename session to:" "rename-session '%%'"  # Rename session command

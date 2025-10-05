@@ -1,0 +1,47 @@
+# ~/.tmux.conf — Hybrid Modern Arch Linux Inspired UI (Visual Only)
+
+# Terminal settings for true color support
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",alacritty:Tc,xterm-256color:Tc,screen-256color:Tc"
+
+# Status bar configuration
+set-option -g status-style bg=default,fg=default # Transparent background
+set -g status-position top # macOS / darwin style
+set -g status-interval 2 # Update interval
+set -g status-justify left
+
+# Color palette (Arch Linux inspired: cyberpunk/neon aesthetic)
+# base=#1a1b26 accent=#7aa2f7 dim=#414868 text=#c0caf5 sub=#565f89 neon=#1ef2b7 warn=#f7768e
+
+# Pane borders
+set -g pane-border-style "fg=#414868"
+set -g pane-active-border-style "fg=#7aa2f7"
+
+# Message and mode styles (refined for elegance)
+set-option -g message-style bg=#414868,fg=#1ef2b7 # Softer neon for messages
+set-option -g message-command-style bg=#414868,fg=#1ef2b7
+setw -g mode-style "bg=#565f89,fg=#c0caf5" # Dimmer, no bold for copy-mode elegance
+set-window-option -g clock-mode-colour "#7aa2f7"
+set-window-option -g window-status-bell-style bg=#f7768e,fg=#1a1b26
+set-window-option -g window-status-activity-style bg=#414868,fg=#c0caf5
+
+# Window status
+setw -g window-status-separator " " # Extra space for breathing room
+setw -g window-status-current-format "#[fg=#7aa2f7]( #{b:pane_current_path} )"
+setw -g window-status-format "#[fg=#565f89]( #{b:pane_current_path} )"
+
+# Status bar lengths (increased slightly for elegance)
+set -g status-left-length 120
+set -g status-right-length 120
+
+# Left status: session name + indicators (elegant prefix handling)
+set-option -g status-left "#[fg=#7aa2f7]#{?client_prefix,#[fg=#1ef2b7#,italics],} 󰘍 #S #{?client_prefix, ⌨ Prefix ,}#[fg=#7aa2f7]#{?window_zoomed_flag, 󰊓,}#{?pane_synchronized, 󱓷,} "
+
+# Right status: time and date (unchanged, but with neon for consistency)
+set-option -g status-right "#[fg=#1ef2b7]( %I:%M %p | %B %d, %Y )"
+
+# KEEP MY STUFFF BELOW ONLY
+unbind c # Unbind default key
+unbind t # Unbind default key, originally for time display
+bind-key c kill-pane # Kill current pane without confirmation
+bind t new-window -c '#{pane_current_path}' # Create a new window with current path
