@@ -8,10 +8,11 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  GENERAL   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 [general]
 import = [
-  # "~/.config/alacritty/themes/catppuccin/themescatppuccin-mocha.toml",
+#   "~/.config/alacritty/themes/catppuccin/themescatppuccin-mocha.toml",
   "~/.config/alacritty/themes/catppuccin/catppuccin-macchiato.toml",
-  # "~/.config/alacritty/themes/catppuccin/catppuccin-frappe.toml",
-  # "~/.config/alacritty/themes/catppuccin/catppuccin-latte.toml",
+#   "~/.config/alacritty/themes/kanagawa_wave.toml",
+#   "~/.config/alacritty/themes/catppuccin/catppuccin-frappe.toml",
+#   "~/.config/alacritty/themes/catppuccin/catppuccin-latte.toml",
 ]
 working_directory = "None"
 live_config_reload = true
@@ -33,7 +34,7 @@ position = "None"                                         # None | { x = <intege
 padding = { x = 15, y = 5 }
 dynamic_padding = false                                   # true | false
 decorations = "Buttonless"                                # Full | None | Transparent | Buttonless 
-opacity = 0.85
+opacity = 0.70
 startup_mode = "Windowed"                                 # Windowed | Maximized | Fullscreen | SimpleFullscreen
 title = "Alacritty"                                       # Default: "Alacritty"
 dynamic_title = true                                      # true | false
@@ -47,7 +48,7 @@ option_as_alt = "None"                                    # Leave as is for MacO
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  SCROLLING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 [scrolling]
 history = 10000 # 0 | 10000
-multiplier = 5  # Default: 3
+multiplier = 9  # Default: 3
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
@@ -99,6 +100,10 @@ thickness = 0.1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  TERMINAL   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 [terminal]
 osc52 = "CopyPaste" # Default: "OnlyCopy"
+
+[terminal.shell]
+program = "/opt/homebrew/bin/fish"
+args = ["--login"]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
