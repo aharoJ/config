@@ -1,0 +1,32 @@
+return {
+    {
+        "neovim/nvim-lspconfig",
+        -- -- MANUAL SETUP before plugin (to learn)
+        -- config = function()
+        --     local lspconfig = require("lspconfig")
+        --     lspconfig.clangd.setup({})
+        -- end,
+    },
+    {
+        "mason-org/mason.nvim",
+        config = function()
+            require("mason").setup()
+        end,
+        -- opts={}, -- same as::above
+    },
+    {
+        "mason-org/mason-lspconfig.nvim",
+        dependencies = {
+            "mason-org/mason.nvim",
+            "neovim/nvim-lspconfig", -- <- ensure lspconfig is available first (read docs)
+        },
+        config = function()
+            require("mason-lspconfig").setup({
+                -- ensure_installed = { "clangd"},
+                automatic_enable = {
+                    exclude = { "jdtls" }, -- <- mason won’t touch JDTLS (future issue)
+                },
+            })
+        end,
+    },
+}
