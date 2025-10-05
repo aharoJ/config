@@ -1,0 +1,111 @@
+---@diagnostic disable: undefined-global, undefined-doc-name
+-- path: nvim/lua/plugins/formatting/conform.lua
+
+return {
+	"stevearc/conform.nvim",
+	cmd = { "ConformInfo" },
+	keys = {
+		{
+			"<leader>cf",
+			function()
+				require("conform").format({ async = true, lsp_format = "fallback" })
+			end,
+			desc = "Format buffer",
+		},
+		{
+			"<leader>cF",
+			function()
+				-- optional: visual range format
+				local start = vim.api.nvim_buf_get_mark(0, "<")
+				local finish = vim.api.nvim_buf_get_mark(0, ">")
+				require("conform").format({
+					async = true,
+					lsp_format = "fallback",
+					range = { start = { start[1], start[2] }, ["end"] = { finish[1], finish[2] } },
+				})
+			end,
+			mode = "v",
+			desc = "Format selection",
+		},
+	},
+	opts = function()
+		local conform = require("conform")
+		local util = require("conform.util")
+
+		-- Tailwind-aware prettier
+		conform.formatters.prettier_tailwind = {
+			command = "prettier",
+			args = function(ctx)
+				local args = { "--stdin-filepath", "$FILENAME" }
+				local tw = vim.fn.globpath(ctx.cwd or vim.loop.cwd(), "node_modules/prettier-plugin-tailwindcss", 0, 1)
+				if #tw > 0 then
+					table.insert(args, "--plugin")
+					table.insert(args, "prettier-plugin-tailwindcss")
+				end
+				return args
+			end,
+			stdin = true,
+			cwd = util.root_file({ "package.json", ".git" }),
+		}
+
+		-- Prefer yamlfmt if installed; fall back to prettier
+		conform.formatters.yamlfmt = { command = "yamlfmt", stdin = true }
+
+		-- Fast fixer before prettier
+		conform.formatters.eslint_d = {
+			command = "eslint_d",
+			args = { "--fix-to-stdout", "--stdin", "--stdin-filename", "$FILENAME" },
+			stdin = true,
+			cwd = util.root_file({ "package.json", ".git" }),
+			condition = util.root_file({
+				"eslint.config.js",
+				"eslint.config.mjs",
+				"eslint.config.cjs",
+				".eslintrc",
+				".eslintrc.js",
+				".eslintrc.cjs",
+				".eslintrc.json",
+				".eslintrc.yaml",
+				".eslintrc.yml",
+				"package.json",
+			}),
+		}
+
+		return {
+			format_on_save = false, -- manual only
+			default_format_opts = { lsp_format = "fallback", timeout_ms = 2000 },
+
+			formatters_by_ft = {
+				lua = { "stylua" },
+				-- web stack
+				javascript = { "eslint_d", "prettier_tailwind" },
+				javascriptreact = { "eslint_d", "prettier_tailwind" },
+				typescript = { "eslint_d", "prettier_tailwind" },
+				typescriptreact = { "eslint_d", "prettier_tailwind" },
+				json = { "prettier_tailwind" },
+				jsonc = { "prettier_tailwind" },
+				html = { "prettier_tailwind" },
+				css = { "prettier_tailwind" },
+				scss = { "prettier_tailwind" },
+				less = { "prettier_tailwind" },
+				markdown = { "prettier_tailwind" },
+
+				-- optional java if you want: uncomment and `brew install google-java-format`
+				-- java = { "google_java_format" },
+
+				-- NEW: YAML/TOML/Shell/Fish
+				yaml = { "yamlfmt", "prettier_tailwind" },
+				yml = { "yamlfmt", "prettier_tailwind" },
+				toml = { "taplo" }, -- taplo CLI formatter
+				sh = { "shfmt" }, -- POSIX shell/bash
+				-- zsh = { "shfmt" },               -- optional: shfmt isn't zsh-aware; enable only if you want
+				fish = { "fish_indent" }, -- fish formatter
+			},
+			notify_on_error = true,
+		}
+	end,
+	init = function()
+		-- enables gw/gq via Conform (manual)
+		vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
+	end,
+}
