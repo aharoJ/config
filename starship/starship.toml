@@ -1,71 +1,27 @@
-# Order of modules on prompt
+# path: ~/.config/starship/starship.toml
+
+# ------------------------------------------------------------------------------
+# GLOBAL PROMPT STRUCTURE
+# - `format` controls the left prompt order (high-level). Here we render $all.
+# - `right_format` renders on the right prompt (time in this setup).
+# NOTE: The per-module visual/behavior is configured in sections below.
+# ------------------------------------------------------------------------------
+
+# Order of modules on prompt (left side)
 format = """
  $all 
 """
-right_format = """$time"""
-# $time\
-# $hostname\
-# $directory\
-# $aws\
-# $gcloud\
-# $singularity\
-# $kubernetes\
-# $docker_context\
-# (↓ Source control - for right side ↓)\
-# $hg_branch\
-# $git_branch\
-# $git_commit\
-# $git_status\
-# $git_state\
-# (↑ Source control - for right side ↑)\
-# (↓ Toolchain version modules ↓)\
-# $crystal\
-# $dart\
-# $dotnet\
-# $elixir\
-# $elm\
-# $erlang\
-# $golang\
-# $java\
-# $lua\
-# $julia\
-# $nim\
-# $nodejs\
-# $ocaml\
-# $perl\
-# $php\
-# $purescript\
-# $python\
-# $ruby\
-# $rust\
-# $swift\
-# $terraform\
-# $zig\
-# (↑ Toolchain version modules ↑)\
-# (↓ Package modules ↓)\
-# $helm\
-# $package\
-# $cmake\
-# $conda\
-# (↑ Package modules ↑)\
-# $nix_shell\
-# $memory_usage\
-# $env_var\
-# $custom\
-# (↑ above input line ↑)\
-# $line_break\
-# (↓ on input line ↓)\
-# $battery\
-# $shlvl\
-# $jobs\
-# $cmd_duration\
-# $status\
-# $character"""
+
+# Right side of the prompt (clock only by default)
+right_format = """$time """
+### right_format = """$time $battery"""
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~     DIRECTORY     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ==============================================================================
+# DIRECTORY
+# ==============================================================================
 [directory]
-style = "fg:#6A8AEA"
+style = "fg:#9b9578"
 truncation_length = 4
 truncate_to_repo = true
 fish_style_pwd_dir_length = 3
@@ -79,20 +35,29 @@ fish_style_pwd_dir_length = 3
 "Downloads" = "  "
 # "~" = "  "
 "~" = ""
-"/" = "  "
+"/" = "  "
 
+
+# Single-line prompt (no blank line between modules and input)
 [line_break]
 disabled = true # leave as TRUE  
 
+# Prompt character (final symbol only; success/error variants)
 [character]
-success_symbol = "[󰁔](fg:#6A8AEA)"
-error_symbol = "[](fg:#d56767)[ ](fg:#d56767) "
+success_symbol = "[󰁔](fg:#9b9578)"
+# success_symbol = "[](fg:#0bce98)"
+# error_symbol = "[](fg:#d56767)[](fg:#d56767)"
+error_symbol = "[](fg:#d56767) [󱠳](fg:#d56767) [](fg:#0bce98)"
 format = "$symbol"
 disabled = false
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ GIT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ==============================================================================
+# GIT (branch/commit/state/status)
+# - Lightweight, fast indicators tailored for an always-on VCS workflow.
+# - Note: if you hit performance issues, consider Starship’s global `command_timeout`
+#   (top-level key) rather than adding it under a module that doesn’t support it.
+# ==============================================================================
 [git_branch]
 disabled = false
 symbol = " "
@@ -127,11 +92,16 @@ renamed = " ${count} "
 modified = " ${count} "
 staged = " ${count} "
 untracked = "󱅘 ${count} "
+# NOTE: `command_timeout` here would error; use the top-level `command_timeout` if needed.
 # command_timeout = 2000   # or 0 to wait indefinitely ERROR HERE 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~     LANGUAGES     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ==============================================================================
+# LANGUAGES & TOOLCHAINS
+# - Minimal, uniform styling across runtimes for quick stack recognition.
+# - Symbols prefixed with "•" to keep a low-contrast, elegant signal.
+# ==============================================================================
+
 [java]
 disabled = false
 symbol = "•  "
@@ -183,14 +153,69 @@ disabled = false
 symbol = " "
 format = '[${symbol}]($style)'
 heuristic = true
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~     CMD-DURATION     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ==============================================================================
+# RUNTIME / PERFORMANCE
+# - Execution timing for long-running commands.
+# ==============================================================================
 [cmd_duration]
 disabled = false
 min_time = 2_000
 show_milliseconds = false
 show_notifications = false
 min_time_to_notify = 45_000
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  ARCHITECT ADD-ONS (COMMENTED OUT)                                         ║
+# ║  These are optional, production-proven snippets. They do NOTHING until     ║
+# ║  you uncomment them. Your core configuration above remains intact.         ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+# ------------------------------------------------------------------------------
+# GLOBAL PERFORMANCE TUNING
+# - If git-heavy repos feel slow, set a conservative command timeout globally.
+# - This key must live at top-level (not within a module).
+# ------------------------------------------------------------------------------
+# command_timeout = 1200  # in milliseconds (e.g., 1.2s)
+
+# ------------------------------------------------------------------------------
+# RIGHT PROMPT ENHANCEMENTS
+# - Keep time on the right; append ephemeral context (battery/wifi) for laptops.
+# ------------------------------------------------------------------------------
+# [time]
+# disabled = false
+# time_format = "  ⏲  %I:%M %P      %B %d, %Y    "
+# style = "fg:#9b9578"
+# format = '[$time]($style)'
+
+# [battery]
+# disabled = false
+# full_symbol = " "
+# charging_symbol = " "
+# discharging_symbol = " "
+# display = [{ threshold = 100, style = "fg:#d56767 bold" }]
+
+# ------------------------------------------------------------------------------
+# CLOUD & PLATFORM CONTEXT (AWS/GCP/K8s/Containers)
+# ------------------------------------------------------------------------------
+# [aws]
+# disabled = false
+# symbol = " "
+# style = "fg:#a48989"
+# format = '[$symbol($profile)(@$region)]($style)'
+
+# [gcloud]
+# disabled = false
+# symbol = "󱇶 "
+# style = "fg:#a48989"
+# format = '[$symbol($project)]($style)'
+
+# [kubernetes]
+# disabled = false
+# symbol = "󱃾 "
+# style = "fg:#a48989"
+# detect_files = ["k8s", "kubernetes", "kustomization.yaml", "Chart.yaml"]
+# format = '[$sym]()
