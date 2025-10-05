@@ -1,316 +1,203 @@
+-- path: lua/plugins/telescope.lua
+
 return {
-	"nvim-telescope/telescope.nvim",
-	tag = "0.1.8",
-	dependencies = {
-		{ "nvim-telescope/telescope-fzf-native.nvim", build = "make", cond = vim.fn.executable("make") == 1 },
-		{ "nvim-telescope/telescope-ui-select.nvim" },
-	},
-	config = function()
-		local ok, telescope = pcall(require, "telescope")
-		if not ok then
-			vim.notify("telescope.nvim not found!", vim.log.levels.ERROR)
-			return
-		end
+  "nvim-telescope/telescope.nvim",
+  version = "0.1.x",
+  event = "VeryLazy",
+  cmd = "Telescope",
+  dependencies = {
+    "nvim-lua/plenary.nvim",
+    {
+      "nvim-telescope/telescope-fzf-native.nvim",
+      build = "make",
+      cond = function() return vim.fn.executable("make") == 1 end,
+    },
+    { "nvim-telescope/telescope-ui-select.nvim", lazy = true },
+    -- { "nvim-tree/nvim-web-devicons", enabled = vim.g.have_nerd_font ~= false },
+  },
 
-		local actions = require("telescope.actions")
-		local builtin = require("telescope.builtin")
-		local themes = require("telescope.themes")
+  -- Minimal, high-signal keymaps
+  keys = {
+    -- Files / grep
+    { "<leader>ff", function() require("telescope.builtin").find_files({ hidden = true }) end, desc = "[󰭎] Files" },
+    { "<leader>fg", function() require("telescope.builtin").live_grep() end,desc = "[󰭎] Grep" },
+    { "<leader>fb", function() require("telescope.builtin").buffers() end,desc = "[󰭎] Buffers" },
+    { "<leader>fo", function() require("telescope.builtin").oldfiles({ only_cwd = true }) end,desc = "[󰭎] Recent (cwd)" },
+    { "<leader>fr", function() require("telescope.builtin").resume() end,desc = "[󰭎] Resume" },
+    -- ..
+    -- ..
+    -- ..
+    { "<leader>fw", function() require("telescope.builtin").grep_string({ use_regex = false,additional_args = { "--fixed-strings" }, }) end, desc = "[󰭎] Grep word/selection" },
+    { "<leader>fO", function() require("telescope.builtin").live_grep({ grep_open_files = true,}) end, desc = "[󰭎] Grep (open files)" },
+    { "<leader>fN", function() require("telescope.builtin").find_files({ hidden = true, follow = true, search_file = vim.fn.input("file name > "), }) end, desc = "[󰭎] Files by name" },
+    { "<leader>f,", function() require("telescope.builtin").current_buffer_fuzzy_find({ results_ts_highlight = true, }) end, desc = "[󰭎] Buffer fuzzy" },
+    { "<leader>f.", function() require("telescope.builtin").live_grep() end, desc = "[󰭎] Project fuzzy text" },
 
-		---------------------------------------------------------------------
-		-- THEMED WRAPPERS --------------------------------------------------
-		---------------------------------------------------------------------
-		local M = {}
 
-		-- ░█▀▀░█░█░█▀▀░░░█▀▀░█▀█░█░█
-		-- ░█░█░█▀█░█▀▀░░░█░░░█░█░█▀▄
-		-- ░▀▀▀░▀░▀░▀▀▀░░░▀▀▀░▀░▀░▀░▀
-		function M.files()
-			builtin.find_files(themes.get_dropdown({
-				prompt_title = "Files",
-				layout_config = {
-					width = 0.9,
-					height = 0.3,
-				},
-				previewer = false,
-				path_display = { "smart" }, -- or hidden | tail | absolute | relative | smart | shorten | truncate | filename_first
-			}))
-		end
+    -- Git
+    { "<leader>ggc", function() require("telescope.builtin").git_commits() end,desc = "[󰭎][git] commits" },
+    { "<leader>ggs", function() require("telescope.builtin").git_status() end,desc = "[󰭎][git] status" },
+    -- ..
+    -- ..
+    -- ..
+    { "<leader>ggf", function() require("telescope.builtin").git_files({ show_untracked = true, recurse_submodules = false }) end, desc = "[󰭎][git] files" },
+    { "<leader>ggb", function() require("telescope.builtin").git_branches({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][git] branches" },
+    { "<leader>ggB", function() require("telescope.builtin").git_bcommits({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][git] buffer commits" },
+    { "<leader>ggR", function() require("telescope.builtin").git_bcommits_range({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][git] range history" },
+    { "<leader>ggS", function() require("telescope.builtin").git_stash({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][git] stash" },
 
-		-- ░█░░░█▀█░█▄█░█▀█
-		-- ░█░░░█▀█░█░█░█▀█
-		-- ░▀▀▀░▀░▀░▀░▀░▀░▀
-		function M.grep()
-			builtin.live_grep({
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				layout_config = {
-					width = 0.5,
-					height = 0.9,
-					prompt_position = "top",
-				},
-			})
-		end
 
-		-- ░█▄▄░█░█░█▀▀░█▀█░█▀▀░█▀█
-		-- ░█▄█░█▀█░█░█░█░█░█▀▀░█░█
-		-- ░▀░▀░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀░▀
-		function M.buffers()
-			builtin.buffers(themes.get_dropdown({
-				bufnr = 0, -- Current buffer only
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				previewer = false, -- true | false
-				initial_mode = "normal",
-				-- 👇 hide the long path column & show the full message
-				path_display = { "filename_first" }, -- or hidden | tail | absolute | relative | smart | shorten | truncate | filename_first
-				line_width = "full",
-				layout_config = {
-					width = 0.9,
-					height = 0.4,
-					preview_height = 0.2,
-					-- mirror = true,
-					prompt_position = "top", -- Keep prompt at top but minimal
-				},
-				-- prompt_title = "Current Buffer Diagnostics",
-				prompt_title = "", -- EMPTY STRING HIDES TITLE
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }, -- Clean border
-				border = true,
-			}))
-		end
+    -- LSP essentials
+    { "gd",function() require("telescope.builtin").lsp_definitions() end,desc = "[󰭎][lsp] defs" },
+    { "gD",function() vim.lsp.buf.declaration() end, desc = "[󰭎][lsp] declaration" },
+    { "gr",function() require("telescope.builtin").lsp_references({ include_declaration = false }) end, desc = "[󰭎][lsp] refs" },
+    { "gT",function() require("telescope.builtin").lsp_type_definitions() end,desc = "[󰭎][lsp] type defs" },
+    { "gi",function() require("telescope.builtin").lsp_implementations({ show_line = false, fname_width = 80, layout_strategy = "vertical", layout_config   = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] implementations" },
+    { "<leader>ci", function() require("telescope.builtin").lsp_incoming_calls() end,desc = "[󰭎][lsp] incoming calls" },
+    { "<leader>co", function() require("telescope.builtin").lsp_outgoing_calls() end,desc = "[󰭎][lsp] outgoing calls" },
+    { "<leader>cs", function() require("telescope.builtin").lsp_document_symbols({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] document symbols" },
+    { "<leader>cC", function() require("telescope.builtin").lsp_document_symbols({ symbols = { "class", "interface", "struct", "module" }, layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] classes/interfaces" },
+    { "<leader>cS", function() local q = vim.fn.input("workspace symbols > ") if q and #q > 0 then require("telescope.builtin").lsp_workspace_symbols({ query = q }) end end, desc = "[󰭎][lsp] workspace symbols (prompt)" },
+    { "<leader>cD", function() require("telescope.builtin").lsp_dynamic_workspace_symbols({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] workspace symbols (dynamic)" },
+    { "<leader>ca", function() vim.lsp.buf.code_action() end,desc = "[󰭎][lsp] code action" },
+    { "<leader>cr", function() vim.lsp.buf.rename() end,desc = "[󰭎][lsp] rename" },
 
-		-- ░█▀▄░█▀▀░█░█░▀█▀░█░█
-		-- ░█▀▄░█▀▀░█░█░░█░░█▀█
-		-- ░▀░▀░▀▀▀░▀▀▀░░▀░░▀░▀
-		function M.git_status()
-			builtin.git_status(themes.get_ivy({ layout_config = { height = 15 } }))
-		end
 
-		function M.treesitter_dropdown()
-			builtin.treesitter(themes.get_dropdown({
-				border = true,
-				previewer = true, -- true | false
-				shorten_path = false,
-				layout_config = {
-					width = 0.8,
-					height = 0.7,
-				},
-			}))
-		end
 
-		-- ░█▀▀░█▀▄░█▀█░█▀▀░▀█▀░▄▀█░▀█▀░█▀█░█▀▀
-		-- ░█▄▄░█▀▄░█▀█░▀▀█░░█░░█▀█░░█░░█░█░█▀▀
-		-- ░▀░░░▀░▀░▀░▀░▀▀▀░░▀░░▀░▀░░▀░░▀░▀░▀▀▀
-		function M.diagnostics_buffer()
-			builtin.diagnostics({
-				bufnr = 0, -- Current buffer only
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				previewer = true, -- true | false
-				initial_mode = "normal",
-				layout_config = {
-					width = 0.9,
-					height = 0.7,
-					preview_height = 0.4,
-					preview_cutoff = 0,
-					mirror = true,
-					prompt_position = "bottom", -- Keep prompt at top but minimal
-				},
-				-- prompt_title = "Current Buffer Diagnostics",
-				prompt_title = "", -- EMPTY STRING HIDES TITLE
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }, -- Clean border
-				border = true,
-			})
-		end
+    -- Diagnostics (focused filters)
+    { "<leader>da", function() require("telescope.builtin").diagnostics({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, line_width = math.max(60, math.floor(vim.o.columns * 0.55)), }) end, desc = "[󰭎][diag] (all)" },
+    { "<leader>db", function() require("telescope.builtin").diagnostics({ bufnr = 0, layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, line_width = math.max(60, math.floor(vim.o.columns * 0.55)), }) end, desc = "[󰭎][diag] (buffer)" },
+    { "<leader>de", function() require("telescope.builtin").diagnostics({ severity = "ERROR" }) end, desc = "[󰭎][diag] (errors)" },
+    { "<leader>dw", function() require("telescope.builtin").diagnostics({ severity = "WARN"  }) end, desc = "[󰭎][diag] (warnings)" },
+    { "<leader>di", function() require("telescope.builtin").diagnostics({ severity = "INFO"  }) end, desc = "[󰭎][diag] (info)" },
+    { "<leader>dh", function() require("telescope.builtin").diagnostics({ severity = "HINT"  }) end, desc = "[󰭎][diag] (hints)" },
+    { "<leader>dW", function() require("telescope.builtin").diagnostics({ severity_limit = "WARN" }) end, desc = "[󰭎][diag] (≥ warn)" },
+    { "<leader>dP", function() require("telescope.builtin").diagnostics({ root_dir = vim.loop.cwd() }) end, desc = "[󰭎][diag] (project/cwd)" },
+    { "<leader>dv", function() local cfg = vim.diagnostic.config() vim.diagnostic.config({ virtual_text = not cfg.virtual_text }) vim.notify("diagnostic virtual_text: " .. (not cfg.virtual_text and "ON" or "OFF")) end, desc = "[󰭎][diag] toggle virtual text" },
+    -- ..
+    -- ..
+    -- ..
+    { "<leader>dS", function() require("telescope.builtin").diagnostics({ sort_by = "severity",layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, line_width = "full",             }) end, desc = "[󰭎][diag] workspace (severity-first)" },
+    { "<leader>dB", function() require("telescope.builtin").diagnostics({ bufnr = 0, no_unlisted = true,layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, line_width = math.max(60, math.floor(vim.o.columns * 0.55)), }) end, desc = "[󰭎][diag] buffer (listed only)" },
+    { "<leader>dR", function() require("telescope.builtin").diagnostics({ root_dir = true,layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, line_width = "full", }) end, desc = "[󰭎][diag] workspace (cwd only)" },
 
-		function M.diagnostics_workspace()
-			builtin.diagnostics({
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				previewer = true, -- true | false
-				initial_mode = "normal",
-				-- 👇 hide the long path column & show the full message
-				path_display = { "hidden" }, -- hidden
-				line_width = "full",
-				layout_config = {
-					width = 0.9,
-					height = 0.7,
-					preview_height = 0.4,
-					-- preview_height = 0.2, -- CURSOR DONT EXIST
-					-- preview_width = 0.3, -- VERTICAL DONT EXIST
-					-- mirror = true, -- CURSOR DONT EXIST
-					preview_cutoff = 0,
-					mirror = true,
-					prompt_position = "bottom",
-				},
-				-- prompt_title    = "Workspace Diagnostics",
-				prompt_title = "", -- EMPTY STRING HIDES TITLE
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }, -- Clean border
-				border = true,
-			})
-		end
 
-		function M.commands()
-			builtin.commands(themes.get_dropdown({
-				previewer = false, -- true | false
-				layout_config = { width = 0.5, height = 0.4 },
-			}))
-		end
 
-		function M.keymaps()
-			builtin.keymaps(themes.get_ivy({
-				previewer = false, -- true | false
-				layout_config = { width = 0.7, height = 0.5 },
-			}))
-		end
+    -- Vim pickers 
+    { "<leader>g;", function() require("telescope.builtin").command_history() end, desc = "[󰭎] command history" },
+    { "<leader>g/", function() require("telescope.builtin").search_history() end, desc = "[󰭎] search history" },
+    -- ..
+    -- ..
+    -- ..
+    { "<leader>gk", function() require("telescope.builtin").keymaps() end, desc = "[󰭎] keymaps" },
+    { "<leader>gH", function() require("telescope.builtin").help_tags({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, fallback = true, }) end, desc = "[󰭎] help tags" },
+    { "<leader>tc", function() require("telescope.builtin").colorscheme({ enable_preview = true }) end, desc = "[󰭎] colorschemes" },
+    -- ..
+    -- ..
+    -- ..
+    { "<leader>gl", function() if #vim.fn.getloclist(0) == 0 then vim.diagnostic.setloclist({ open = false }) end require("telescope.builtin").loclist() end, desc = "[󰭎] loclist" },
+    { "<leader>gL", function() require("telescope.builtin").diagnostics({ bufnr = 0 }) end, desc = "[󰭎] loclist ." },
 
-		function M.current_buffer_fuzzy_find()
-			builtin.current_buffer_fuzzy_find(themes.get_dropdown({
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				previewer = false, -- true | false
-				-- 👇 hide the long path column & show the full message
-				path_display = { "hidden" }, -- hidden
-				line_width = "full",
-				layout_config = {
-					width = 0.9,
-					height = 0.5,
-				},
-				prompt_title = "", -- EMPTY STRING HIDES TITLE
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
-				border = true,
-			}))
-		end
+  },
 
-		function M.project_fuzzy_find()
-			-- live_grep → ripgrep over the entire cwd
-			builtin.live_grep(themes.get_dropdown({
-				cwd = vim.loop.cwd(), -- explicit for clarity
-				layout_strategy = "vertical",
-				previewer = false,
-				path_display = { "hidden" },
-				line_width = "full",
-				layout_config = {
-					width = 0.9,
-					height = 0.6,
-				},
-				prompt_title = "", -- hide title
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
-				border = true,
-			}))
-		end
+  opts = function()
+    local has_fd = vim.fn.executable("fd") == 1
+    local has_rg = vim.fn.executable("rg") == 1
 
-		function M.spell_suggest()
-			builtin.spell_suggest(themes.get_cursor({
-				previewer = false, -- true | false
-				layout_config = { width = 0.6, height = 0.3 },
-			}))
-		end
+    local vimgrep_args = has_rg and {
+      "rg", "--color=never", "--no-heading", "--with-filename",
+      "--line-number", "--column", "--smart-case", "--hidden",
+      "--glob", "!.git/*",
+    } or nil
 
-		function M.doc_symbols()
-			builtin.lsp_document_symbols(themes.get_dropdown({
-				prompt_title = "Doc Symbols",
-				layout_strategy = "vertical", -- cursor | vertical | horizontal
-				previewer = true, -- true | false
-				initial_mode = "normal",
-				layout_config = {
-					width = 0.9,
-					height = 0.7,
-					preview_height = 0.4,
-					preview_cutoff = 0,
-					mirror = true,
-					prompt_position = "bottom", -- Keep prompt at top but minimal
-				},
-				-- prompt_title = "Current Buffer Diagnostics",
-				borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }, -- Clean border
-				border = true,
-			}))
-		end
+    local find_command = has_fd and
+      { "fd", "--type", "f", "--strip-cwd-prefix", "--hidden", "--exclude", ".git" } or
+      (has_rg and { "rg", "--files", "--hidden", "--glob", "!.git/*" } or nil)
 
-		---------------------------------------------------------------------
-		-- CORE SETUP -------------------------------------------------------
-		---------------------------------------------------------------------
+    return {
+      defaults = {
+        sorting_strategy = "ascending",
+        layout_strategy = "horizontal",
+        layout_config = {
+          width = 0.95, height = 0.90,
+          horizontal = { prompt_position = "top", preview_width = 0.55 },
+        },
+        prompt_prefix = "   ",
+        selection_caret = " ",
+        path_display = { "truncate", filename_first = { reverse_directories = true } },
+        vimgrep_arguments = vimgrep_args,
+        file_ignore_patterns = { "^%.git/", "node_modules", "target", "dist", "build", "^%.next/", "%.lock" },
+        mappings = {
+          i = {
+            ["<Esc>"] = require("telescope.actions").close,
+            ["<C-j>"] = require("telescope.actions").move_selection_next,
+            ["<C-k>"] = require("telescope.actions").move_selection_previous,
+            ["<C-u>"] = require("telescope.actions").preview_scrolling_up,
+            ["<C-d>"] = require("telescope.actions").preview_scrolling_down,
+            ["<C-q>"] = require("telescope.actions").smart_send_to_qflist
+                        + require("telescope.actions").open_qflist,
+          },
+          n = {
+            ["q"] = require("telescope.actions").close,
+            ["<C-q>"] = require("telescope.actions").smart_send_to_qflist
+                        + require("telescope.actions").open_qflist,
+          },
+        },
+      },
 
-		telescope.setup({
-			defaults = {
-				prompt_prefix = "> ",
-				selection_caret = " ",
-				winblend = 0,
-				path_display = { "truncate" },
+      pickers = {
+        -- speed wins
+        find_files = { hidden = true, follow = true, previewer = false, find_command = find_command },
+        buffers    = { sort_mru = true, ignore_current_buffer = true, previewer = false },
 
-				mappings = {
-					i = {
-						["<C-j>"] = actions.move_selection_next,
-						["<C-k>"] = actions.move_selection_previous,
-						["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
-					},
-					n = { ["q"] = actions.close },
-				},
+        -- LSP QoL
+        lsp_references        = { include_declaration = false, show_line = false, fname_width = 80 },
+        lsp_definitions       = { show_line = false, fname_width = 80 },
+        lsp_type_definitions  = { show_line = false, fname_width = 80 },
+        lsp_implementations   = { show_line = false, fname_width = 80 },
 
-				layout_strategy = "horizontal", -- cursor | vertical | horizontal
-				layout_config = {
-					horizontal = {
-						prompt_position = "top",
-						preview_width = 0.55,
-						results_width = 0.45,
-					},
-					vertical = { mirror = false },
-					width = 0.85,
-					height = 0.85,
-					-- preview_cutoff = 120,
-					preview_cutoff = 0,
-				},
-			},
+        -- Diagnostics (focused, legible)
+        diagnostics = {
+          layout_strategy = "vertical",
+          layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" },
+          line_width = math.max(60, math.floor(vim.o.columns * 0.55)),
+          no_sign = false,
+        },
 
-			pickers = {
-				find_files = {
-					theme = "dropdown",
-					previewer = false, -- true | false
-				},
-				buffers = {
-					theme = "cursor",
-					previewer = false,
-					initial_mode = "normal",
-					sort_lastused = true,
-					mappings = {
-						-- n = { ["d"] = actions.delete_buffer },
-					},
-				},
-				live_grep = {
-					layout_strategy = "vertical", -- cursor | vertical | horizontal
-				},
-				git_status = { theme = "ivy" },
-			},
+        -- Vim pickers polish
+        help_tags   = { fallback = true },
+        colorscheme = { enable_preview = false },
+        command_history = {},
+        search_history  = {},
+        quickfix        = {},
+        quickfixhistory = {},
+        loclist         = {},
+        tags            = {},
+        current_buffer_tags = {},
+      },
 
-			extensions = {
-				["ui-select"] = {
-					themes.get_dropdown({}),
-				},
-			},
-		})
+      extensions = {
+        fzf = {
+          fuzzy = true,
+          override_generic_sorter = true,
+          override_file_sorter = true,
+          case_mode = "smart_case",
+        },
+        ["ui-select"] = function()
+          return require("telescope.themes").get_dropdown {
+            previewer = false,
+            sorting_strategy = "ascending",
+            layout_config = { width = 0.5, height = 0.4, prompt_position = "top" },
+          }
+        end,
+      },
+    }
+  end,
 
-		----------------------------------------------------------------------
-		-- EXTENSIONS --------------------------------------------------------
-		----------------------------------------------------------------------
-		pcall(telescope.load_extension, "fzf")
-		pcall(telescope.load_extension, "ui-select")
-
-		----------------------------------------------------------------------
-		-- KEYMAPS -----------------------------------------------------------
-		----------------------------------------------------------------------
-		vim.keymap.set({ "n", "v" }, "gf", M.files, { desc = "[T] files" })
-		vim.keymap.set("n", "<leader>fg", M.grep, { desc = "[T] live grep" })
-		vim.keymap.set("n", "<leader>fb", M.buffers, { desc = "[T] buffers" })
-		vim.keymap.set("n", "<leader>fG", M.git_status, { desc = "[T] git status" })
-		vim.keymap.set("n", "<leader>ft", M.treesitter_dropdown, { desc = "[T] treesitter" }) -- deep
-
-		vim.keymap.set("n", "<leader>gd", M.diagnostics_buffer, { desc = "[T] get diag" })
-		vim.keymap.set("n", "<leader>gD", M.diagnostics_workspace, { desc = "[T] get project diag" })
-
-		-- -------------------------------------------------
-		vim.keymap.set("n", "<leader>fc", M.commands, { desc = "[T] commands" })
-		vim.keymap.set("n", "<leader>fk", M.keymaps, { desc = "[T] keymaps" })
-		vim.keymap.set("n", "<leader>fS", M.spell_suggest, { desc = "[T] spell suggest" })
-
-		vim.keymap.set({ "n", "v" }, "ff", M.current_buffer_fuzzy_find, { desc = "[T] current buffer fuzzy find" })
-		vim.keymap.set("n", "<leader>ff", M.project_fuzzy_find, { desc = "[T] current proj fuzzy find" })
-
-		vim.keymap.set("n", "<leader>fs", M.doc_symbols, { desc = "[T] doc symbols" })
-
-		return M
-	end,
+  config = function(_, opts)
+    local telescope = require("telescope")
+    telescope.setup(opts)
+    pcall(telescope.load_extension, "fzf")
+    pcall(telescope.load_extension, "ui-select")
+  end,
 }
