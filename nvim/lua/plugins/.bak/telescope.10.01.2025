@@ -1,0 +1,394 @@
+-- path: lua/plugins/telescope.lua
+---@diagnostic disable: missing-fields
+return {
+	{
+		"nvim-telescope/telescope.nvim",
+		version = false, -- track latest
+		event = "VeryLazy",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			{
+				"nvim-telescope/telescope-fzf-native.nvim",
+				build = "make",
+				cond = function()
+					return vim.fn.executable("make") == 1
+				end,
+			},
+			-- "nvim-telescope/telescope-ui-select.nvim", -- optional dropdowns
+		},
+		config = function()
+			local telescope = require("telescope")
+			local actions = require("telescope.actions")
+			local layout = require("telescope.actions.layout")
+			local themes = require("telescope.themes")
+			local sorters = require("telescope.sorters")
+
+			local builtin = require("telescope.builtin")
+			local themes = require("telescope.themes")
+
+			local function buffers_quick()
+				builtin.buffers(themes.get_dropdown({
+					prompt_title = "Buffers",
+					previewer = false, -- faster + no visual noise
+					initial_mode = "normal", -- start in NORMAL so you can just j/k or arrows
+					winblend = vim.o.winblend,
+					sort_mru = true,
+					ignore_current_buffer = true,
+					layout_config = { width = 0.5, height = 0.5 },
+
+					-- no typing; just navigate + pick. add comfy keys for speed.
+					attach_mappings = function(_, map)
+						local actions = require("telescope.actions")
+						map("n", "j", actions.move_selection_next)
+						map("n", "k", actions.move_selection_previous)
+						map("n", "<Down>", actions.move_selection_next)
+						map("n", "<Up>", actions.move_selection_previous)
+						map("n", "<Tab>", actions.move_selection_next)
+						map("n", "<S-Tab>", actions.move_selection_previous)
+						map("n", "<CR>", actions.select_default) -- open buffer
+						map("n", "d", actions.delete_buffer) -- delete without typing
+						map("n", "q", actions.close)
+						return true
+					end,
+				}))
+			end
+
+			-- ---------- Helpers ----------
+			-- LSP workspace root > Git root > current working directory
+			local function get_project_root()
+				local bufnr = 0
+				local clients = vim.lsp.get_clients({ bufnr = bufnr })
+				if clients and #clients > 0 then
+					local c = clients[1]
+					local ws = c.config and c.config.workspace_folders
+					if ws and #ws > 0 and ws[1] and ws[1].uri then
+						return vim.uri_to_fname(ws[1].uri)
+					end
+					local root_dir = c.config and c.config.root_dir
+					if root_dir and root_dir ~= "" then
+						return root_dir
+					end
+				end
+				local file_dir = vim.fn.expand("%:p:h")
+				if file_dir ~= "" then
+					local cmd = "git -C " .. vim.fn.shellescape(file_dir) .. " rev-parse --show-toplevel"
+					local out = vim.fn.systemlist(cmd)
+					if vim.v.shell_error == 0 and out and out[1] and out[1] ~= "" then
+						return out[1]
+					end
+				end
+				return vim.loop.cwd()
+			end
+
+			-- Guard giant/binary previews to keep UI snappy
+			local MAX_PREVIEW_MB = 5
+			local function filesize_hook(filepath, bufnr, opts)
+				local ok_plenary, Path = pcall(require, "plenary.path")
+				if not ok_plenary then
+					return
+				end
+				local stat = Path:new(filepath):stat()
+				if stat and stat.size and stat.size > (MAX_PREVIEW_MB * 1024 * 1024) then
+					require("telescope.previewers.utils").set_preview_message(
+						bufnr,
+						opts.winid,
+						("File too large to preview (> %d MB)"):format(MAX_PREVIEW_MB)
+					)
+					return false
+				end
+				return true
+			end
+
+			local function diag_loclist_dropdown(opts)
+				opts = opts or {}
+				-- populate the current window’s location list without opening it
+				vim.diagnostic.setloclist({ open = false, severity = opts.severity, bufnr = opts.bufnr })
+
+				-- show it nicely with Telescope’s loclist picker (dropdown, no preview)
+				local pick = themes.get_dropdown({
+					previewer = false,
+					winblend = vim.o.winblend,
+				})
+				pick.show_line = true -- include source line in results
+				pick.trim_text = false -- keep full text
+				builtin.loclist(pick)
+			end
+
+			-- Command + keymap
+			vim.api.nvim_create_user_command("DiagLoclist", function()
+				diag_loclist_dropdown()
+			end, { desc = "Diagnostics via loclist (Telescope)" })
+
+			local function diagnostics_buffer()
+				builtin.diagnostics({
+					bufnr = 0, -- Current buffer only
+					layout_strategy = "vertical", -- cursor | vertical | horizontal
+					previewer = true, -- true | false
+					initial_mode = "normal",
+					layout_config = {
+						width = 0.9,
+						height = 0.7,
+						preview_height = 0.4,
+						preview_cutoff = 0,
+						mirror = true,
+						prompt_position = "bottom", -- Keep prompt at top but minimal
+					},
+					-- prompt_title = "Current Buffer Diagnostics",
+					prompt_title = "", -- EMPTY STRING HIDES TITLE
+					borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }, -- Clean border
+					border = true,
+				})
+			end
+
+			-- ---------- Setup ----------
+			telescope.setup({
+				defaults = {
+					prompt_prefix = "  ",
+					selection_caret = " ",
+					entry_prefix = "  ",
+					initial_mode = "insert",
+					sorting_strategy = "ascending",
+					layout_strategy = "horizontal",
+					layout_config = {
+						horizontal = {
+							prompt_position = "top",
+							width = 0.95,
+							height = 0.90,
+							preview_width = 0.55,
+							preview_cutoff = 120,
+						},
+						vertical = { width = 0.90, height = 0.95, preview_height = 0.50, preview_cutoff = 40 },
+						center = { width = 0.60, height = 0.60, prompt_position = "top" },
+					},
+					cycle_layout_list = { "horizontal", "vertical" },
+					winblend = vim.o.winblend,
+					border = true,
+					path_display = { "filename_first", "smart" },
+
+					-- keep vimgrep args canonical per docs
+					vimgrep_arguments = {
+						"rg",
+						"--color=never",
+						"--no-heading",
+						"--with-filename",
+						"--line-number",
+						"--column",
+						"--smart-case",
+					},
+
+					-- Keep global ignores *light*; push heavy ignores to pickers below
+					file_ignore_patterns = { "%.git/" },
+
+					preview = {
+						check_mime_type = true,
+						filesize_limit = 5,
+						timeout = 400,
+						hook = filesize_hook, -- your guard
+						treesitter = { enable = true, disable = { "markdown" } },
+					},
+
+					history = {
+						path = vim.fn.stdpath("data") .. "/telescope_history",
+						limit = 200,
+						cycle_wrap = false,
+					},
+
+					cache_picker = { num_pickers = 2, limit_entries = 1000, ignore_empty_prompt = true },
+
+					mappings = {
+						i = {
+							["<C-j>"] = actions.move_selection_next,
+							["<C-k>"] = actions.move_selection_previous,
+							["<C-Down>"] = require("telescope.actions").cycle_history_next, -- add per docs
+							["<C-Up>"] = require("telescope.actions").cycle_history_prev, -- add per docs
+							["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+							["<C-s>"] = actions.select_horizontal,
+							["<C-v>"] = actions.select_vertical,
+							["<C-t>"] = actions.select_tab,
+							["<C-p>"] = layout.toggle_preview,
+							["<M-l>"] = layout.cycle_layout_next,
+							["<M-h>"] = layout.cycle_layout_prev,
+							["<C-Space>"] = actions.to_fuzzy_refine,
+						},
+						n = {
+							["q"] = actions.close,
+							["<C-p>"] = layout.toggle_preview,
+							["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+							["s"] = actions.select_horizontal,
+							["v"] = actions.select_vertical,
+							["t"] = actions.select_tab,
+							["<M-l>"] = layout.cycle_layout_next,
+							["<M-h>"] = layout.cycle_layout_prev,
+						},
+					},
+
+					-- fzf-native will override these; we leave them as hints
+					file_sorter = sorters.get_fzy_sorter,
+					generic_sorter = sorters.get_fzy_sorter,
+				},
+
+				pickers = {
+					find_files = {
+						hidden = true,
+						follow = true,
+						-- move heavier filtering here instead of global file_ignore_patterns
+						find_command = (function()
+							local cmd
+							if vim.fn.executable("fdfind") == 1 then
+								cmd = {
+									"fdfind",
+									"--type",
+									"f",
+									"--hidden",
+									"--follow",
+									"--exclude",
+									".git",
+									"--strip-cwd-prefix",
+								}
+							elseif vim.fn.executable("fd") == 1 then
+								cmd = {
+									"fd",
+									"--type",
+									"f",
+									"--hidden",
+									"--follow",
+									"--exclude",
+									".git",
+									"--strip-cwd-prefix",
+								}
+							end
+							return cmd
+						end)(),
+					},
+					live_grep = {
+						additional_args = function(_)
+							return { "--hidden", "--glob", "!.git/*" }
+						end,
+					},
+					grep_string = {
+						word_match = "-w",
+						additional_args = function(_)
+							return { "--hidden", "--glob", "!.git/*" }
+						end,
+					},
+					buffers = {
+						sort_mru = true,
+						ignore_current_buffer = true,
+						mappings = {
+							i = { ["<M-d>"] = actions.delete_buffer },
+							n = { ["d"] = actions.delete_buffer },
+						},
+					},
+					oldfiles = { only_cwd = false },
+					diagnostics = {}, -- keep; new replacement for old lsp_*_diagnostics
+				},
+
+				extensions = {
+					fzf = {
+						fuzzy = true,
+						override_generic_sorter = true,
+						override_file_sorter = true,
+						case_mode = "smart_case",
+					},
+					["ui-select"] = require("telescope.themes").get_dropdown({}), -- enable per changelog
+				},
+			})
+
+			-- ---------- Extensions ----------
+			pcall(telescope.load_extension, "fzf")
+			pcall(telescope.load_extension, "ui-select")
+
+			-- ---------- Keymaps ----------
+			local builtin = require("telescope.builtin")
+			local function km(mode, lhs, rhs, desc)
+				vim.keymap.set(mode, lhs, rhs, { noremap = true, silent = true, desc = desc })
+			end
+
+			-- Your requested fuzzy search bindings:
+			-- <leader>ff  : fuzzy find words in current file
+			-- <leader>fF  : fuzzy find words across the project root
+			km("n", "<leader>ff", function()
+				builtin.current_buffer_fuzzy_find(themes.get_dropdown({
+					previewer = false,
+					winblend = vim.o.winblend,
+				}))
+			end, "Fuzzy find (current file)")
+
+			km("n", "<leader>fF", function()
+				builtin.live_grep({ cwd = get_project_root() })
+			end, "Fuzzy find (project root)")
+
+			-- VSCode-style extras (kept, won’t collide with your <leader>/ comment toggle):
+			km({ "n", "x" }, "<D-p>", function()
+				builtin.find_files({ cwd = get_project_root() })
+			end, "Find files (project)")
+			km({ "n", "x" }, "<D-S-f>", function()
+				builtin.live_grep({ cwd = get_project_root() })
+			end, "Live grep (project)")
+			km({ "n", "x" }, "<D-b>", builtin.buffers, "Buffers")
+
+			-- Leader fallbacks (adjust or keep as you prefer)
+			km("n", "<leader>fp", function()
+				builtin.find_files({ cwd = get_project_root() })
+			end, "Find files (project)")
+			km("n", "<leader>fo", builtin.oldfiles, "Recent files")
+			km("n", "<leader>fh", builtin.help_tags, "Help tags")
+			km("n", "<leader>fd", builtin.diagnostics, "Diagnostics")
+			km("n", "<leader>fr", builtin.resume, "Resume last picker")
+
+			-- km("n", "<leader>gb", builtin.buffers,    "Buffers")
+			vim.keymap.set("n", "<leader>gb", buffers_quick, { desc = "Buffers (quick picker)" })
+
+			-- Handy dropdowns
+			km("n", "<leader>fc", function()
+				builtin.commands(themes.get_dropdown({ previewer = false, winblend = vim.o.winblend }))
+			end, "Commands (dropdown)")
+			km("n", "<leader>fk", function()
+				builtin.keymaps(themes.get_dropdown({ previewer = false }))
+			end, "Keymaps (dropdown)")
+
+			-- Smart "get file": git_files if possible, else find_files
+			do
+				local builtin = require("telescope.builtin")
+
+				local function smart_files()
+					local cwd = get_project_root()
+
+					-- try git_files (fast) only if cwd is a git repo
+					local is_git = (
+						vim.fn.system("git -C " .. vim.fn.shellescape(cwd) .. " rev-parse --is-inside-work-tree")
+						== "true\n"
+					)
+
+					if is_git then
+						builtin.git_files({
+							cwd = cwd,
+							show_untracked = true, -- keep this
+							-- recurse_submodules = true, -- ❌ REMOVE THIS LINE
+						})
+					else
+						builtin.find_files({
+							cwd = cwd,
+							hidden = true,
+							follow = true,
+						})
+					end
+				end
+				-- <leader>gf -> "Get File"
+				vim.keymap.set(
+					"n",
+					"<leader>gf",
+					smart_files,
+					{ noremap = true, silent = true, desc = "Get file (git_files → find_files)" }
+				)
+			end
+
+			-- vim.keymap.set("n", "<leader>gd", diag_loclist_dropdown, { desc = "Diagnostics (loclist → Telescope)" })
+			vim.keymap.set("n", "<leader>gd", diagnostics_buffer, { desc = "[T] get diag" })
+
+			vim.keymap.set("n", "<leader>gD", diag_loclist_dropdown, { desc = "Diagnostics (loclist → Telescope)" })
+
+			-- EMD
+		end,
+	},
+}
