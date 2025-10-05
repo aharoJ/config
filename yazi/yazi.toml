@@ -1,0 +1,216 @@
+# ~/.config/yazi/yazi.toml
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Manager (file list, sorting, panels, UI)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#mgr
+# ───────────────────────────────────────────────────────────────────────────────
+[mgr]
+ratio = [1, 4, 3]                                           # [parent, current, preview] columns (0 hides a pane)
+sort_by = "natural"                                         # "none" | "mtime" | "btime" | "extension" | "alphabetical" | "natural" | "size" | "random"
+sort_sensitive = false                                      # false | true  (case-insensitive by default)
+sort_reverse = false                                        # false | true  (reverse order)
+sort_dir_first = true                                       # true | false  (directories first)
+sort_translit = false                                       # false | true  (only applies when sort_by="natural")
+linemode = "none"                                           # "none" | "size" | "btime" | "mtime" | "permissions" | "owner" | <custom 1–20 chars>
+show_hidden = false                                         # false | true   → show dotfiles (e.g. .DS_Store)
+show_symlink = true                                         # false | true   → show “→ target” after symlink names
+scrolloff = 0                                               # 0..N (>= half screen centers the cursor)
+mouse_events = ["click", "scroll", "touch", "move", "drag"] # [] disables mouse
+title_format = "{cwd}"                                      # "{cwd}" | "" (empty disables setting terminal title)
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Preview (code/image/video/PDF preview behavior)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#preview
+# ───────────────────────────────────────────────────────────────────────────────
+[preview]
+wrap = "no" # "no" | "yes"  (wrap long lines)
+tab_size = 4 # 2 | 4 | 8 …   (tab width in spaces)
+max_width = 0 # 0 = auto; otherwise px used for image preview & preloading
+max_height = 0 # 0 = auto; otherwise px used for image preview & preloading
+cache_dir = "" # "" = system cache dir; set absolute path for persistent cache
+image_delay = 0 # ms to defer sending image data (helps slow terminals)
+image_filter = "lanczos3" # "nearest" | "triangle" | "catmull-rom" | "lanczos3"
+image_quality = 85 # 50..90 (pre-cache quality vs CPU/disk)
+ueberzug_scale = 1.0 # Wayland/HiDPI fix (Überzug++); leave 1.0 unless needed
+ueberzug_offset = [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+] # [x, y, width, height] cell offsets for Überzug++
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Openers (what command runs for “open”, “edit”, “play”, etc.)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#opener
+# Notes:
+# - $@ / %*  = all selected; $1 / %1 = first selected; $0 / %0 = hovered.
+# - block=true: yazi hides while the app runs (interactive).
+# - orphan=true: process detaches from yazi (keeps running after yazi exits).
+# Defaults use system “openers” per-OS for broad compatibility. :contentReference[oaicite:1]{index=1}
+# ───────────────────────────────────────────────────────────────────────────────
+[opener]
+# Text/code editor (respects $EDITOR / %EDITOR%)
+edit = [
+  { run = '$EDITOR "$@"', block = true, for = "unix" },
+  { run = '%EDITOR% %*', block = true, for = "windows" },
+]
+
+# System default “open”
+open = [
+  { run = 'xdg-open "$1"', desc = "Open", for = "linux" }, # platform default opener
+  { run = 'open "$1"', desc = "Open", for = "macos" },
+  { run = 'start "" %1', desc = "Open", for = "windows" },
+]
+
+# Reveal in system file manager (show the file’s folder and select it if supported)
+reveal = [
+  { run = 'xdg-open "$(dirname "$1")"', desc = "Reveal", for = "linux" },
+  { run = 'open -R "$1"', desc = "Reveal", for = "macos" },
+  { run = 'explorer /select,%1', desc = "Reveal", for = "windows" },
+]
+
+# Media player
+play = [
+  { run = 'mpv -- "$@"', orphan = true, desc = "Play", for = "unix" },
+  # You can add a Windows variant for VLC or mpv if installed, e.g.:
+  # { run = '"C:\\\\Program Files\\\\VideoLAN\\\\VLC\\\\vlc.exe" %*', orphan = true, desc = "Play", for = "windows" },
+]
+
+# Archives: open with system app (fallback) or extract in place
+archive = [
+  { run = 'xdg-open "$1"', desc = "Open archive", for = "linux" },
+  { run = 'open "$1"', desc = "Open archive", for = "macos" },
+  { run = 'start "" %1', desc = "Open archive", for = "windows" },
+]
+extract = [
+  { run = '7z x -y -- "$@" -o"$PWD"', desc = "Extract here", for = "unix" },
+  { run = '7z x -y %* -o"%CD%"', desc = "Extract here", for = "windows" },
+]
+
+# ——— my custom CLI  ————————————————————————————————————————————————
+nvim = [
+  { run = 'nvim "$@"', block = true, for = "unix", desc = "Neovim" },
+  { run = 'wsl nvim %*', block = true, for = "windows", desc = "Neovim" },
+]
+
+code = [
+  { run = 'open -a "Visual Studio Code" "$1"', orphan = true, for = "macos", desc = "Visual Studio Code" },
+]
+
+# modern_csv = [
+#   { run = 'open -a "Modern CSV" "$0"', orphan = true, for = "macos", desc = "Modern CSV" },
+# ]
+
+modern_csv = [
+  { run = 'open -a "Modern CSV" "$@"', orphan = true, for = "macos", desc = "Modern CSV" },
+]
+
+# ---
+
+# Images / PDFs can still route through [open] rules below (system viewer).
+# Add custom entries as needed:
+# image = [ { run = 'imv "$@"', orphan = true, for = "unix" } ]
+# pdf   = [ { run = 'zathura "$@"', orphan = true, for = "linux" } ]
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Open rules (map mime/name to openers)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#open
+# The following mirrors the common shipped defaults:
+#   - text → edit
+#   - audio/video → play
+#   - images/PDF → open (system viewer)
+#   - *.html → offer both open and edit
+#   - fallback → open
+# :contentReference[oaicite:2]{index=2}
+# ───────────────────────────────────────────────────────────────────────────────
+[open]
+rules = [
+
+  { name = "*.csv", use = ["modern_csv", "nvim", "code", "open"] },
+
+
+  # Text/code gets both terminal and GUI choices:
+  { mime = "text/*", use = ["nvim", "code", "open", "edit"] },
+  { name = "*.md", use = ["nvim", "code", "open", "edit"] },
+
+  # { mime = "text/*",       use = "edit" },
+  { mime = "video/*", use = "play" },
+  { mime = "audio/*", use = "play" },
+  { mime = "image/*", use = "open" },
+  { mime = "application/pdf", use = "open" },
+
+  # Handy name-based rules
+  { name = "*.json", use = "edit" },
+  { name = "*.html", use = ["open", "edit", "nvim", "code"] },
+
+  # Final fallback
+  { name = "*", use = "open" },
+]
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Tasks (concurrency, preloads, memory bounds)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#tasks
+# Leave these at defaults unless you have a reason to change them on low-RAM or
+# very slow machines.
+# ───────────────────────────────────────────────────────────────────────────────
+[tasks]
+# micro_workers    = 0        # 0 = auto; glitches yazi 
+# macro_workers    = 0        # 0 = auto; glitches yazi
+bizarre_retry = 3       # retries on rare transient failures
+suppress_preload = true # true | false (hide system preloads from task list)
+image_alloc = 0         # 0 = unlimited bytes per image decode (set a cap if you OOM)
+image_bound = [0, 0]    # [max_width, max_height] in pixels; 0 disables bound
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Plugins: previewers/preloaders (extend or override built-ins)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#plugin
+# Most users can keep these empty. Use prepend_* / append_* to add rules without
+# replacing built-in defaults. See docs for HEIC/RAF examples. :contentReference[oaicite:3]{index=3}
+# ───────────────────────────────────────────────────────────────────────────────
+[plugin]
+prepend_previewers = [] # e.g., { mime = "image/heic", run = "heic" }
+append_previewers = []  # e.g., { name = "*", run = "binary" }
+prepend_preloaders = [] # e.g., { mime = "image/heic", run = "heic" }
+append_preloaders = []
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Input widgets (positions, titles, cursor blink)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#input
+# ───────────────────────────────────────────────────────────────────────────────
+[input]
+cursor_blink = true # false | true
+
+# Example positional overrides (off by default):
+# cd_origin     = "TopLeft"               # See “Origin” in docs
+# cd_offset     = [0, 0, 60, 1]           # [x, y, w, h]
+# cd_title      = "Change directory"      # String
+# create_title  = ["Create", "Create dir"]
+# rename_title  = "Rename"
+# filter_title  = "Filter"
+# find_title    = ["Find", "Find (previous)"]
+# search_title  = "{n}"                   # {n} = current engine
+# shell_title   = ["Shell", "Shell (block)"]
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Confirm dialogs (trash/delete/overwrite/quit)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#confirm
+# ───────────────────────────────────────────────────────────────────────────────
+[confirm]
+# Positions/titles follow the same pattern as [input] if you need them.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Pickers (e.g. “open with”)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#pick
+# ───────────────────────────────────────────────────────────────────────────────
+[pick]
+# Use defaults; customize like [input]/[confirm] when necessary.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# :which menu (key-hint list sorting)
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi/#which
+# ───────────────────────────────────────────────────────────────────────────────
+[which]
+sort_by = "key"        # "none" | "key" | "desc"
+sort_sensitive = false # false | true
+sort_reverse = false   # false | true
+sort_translit = false  # false | true
