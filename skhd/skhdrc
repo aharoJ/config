@@ -62,7 +62,7 @@ rshift - k : /Applications/kitty.app/Contents/MacOS/kitty
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      CLI SCRIPTS         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-hyper - b : python3 /Users/aharo/.config/alacritty/scripts/toggle_blur.py
+hyper - b : python3 /Users/aharoj/.config/alacritty/scripts/toggle_blur.py
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ...............       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
