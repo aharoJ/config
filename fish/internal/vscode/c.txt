@@ -1,0 +1,12 @@
+# ~/.config/fish/internal/vscode/c.fish
+# desc: open vscode with `c` instead of `code`
+
+### DO NOT LIKE 
+# function c --wraps=code --description 'VS Code: smart cwd or file open'
+#     if test (count $argv) -eq 0
+#         code .
+#     else
+#         code $argv
+#     end
+# end
+# complete -c c -w code
