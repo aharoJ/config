@@ -54,7 +54,7 @@ return {
     { "gT",function() require("telescope.builtin").lsp_type_definitions() end,desc = "[󰭎][lsp] type defs" },
     { "gi",function() require("telescope.builtin").lsp_implementations({ show_line = false, fname_width = 80, layout_strategy = "vertical", layout_config   = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] implementations" },
     { "<leader>ci", function() require("telescope.builtin").lsp_incoming_calls() end,desc = "[󰭎][lsp] incoming calls" },
-    { "<leader>co", function() require("telescope.builtin").lsp_outgoing_calls() end,desc = "[󰭎][lsp] outgoing calls" },
+    { "<leader>cO", function() require("telescope.builtin").lsp_outgoing_calls() end,desc = "[󰭎][lsp] outgoing calls" },
     { "<leader>cs", function() require("telescope.builtin").lsp_document_symbols({ layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] document symbols" },
     { "<leader>cC", function() require("telescope.builtin").lsp_document_symbols({ symbols = { "class", "interface", "struct", "module" }, layout_strategy = "vertical", layout_config = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] classes/interfaces" },
     { "<leader>cS", function() local q = vim.fn.input("workspace symbols > ") if q and #q > 0 then require("telescope.builtin").lsp_workspace_symbols({ query = q }) end end, desc = "[󰭎][lsp] workspace symbols (prompt)" },
