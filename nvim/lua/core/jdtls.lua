@@ -161,7 +161,6 @@ local function on_attach(_, bufnr)
 	-- DAP wiring (only if nvim-dap present)
 	if pcall(require, "dap") then
 		pcall(jdtls.setup_dap, { hotcodereplace = "auto" })
-		-- ⬇️ correct call (no .dap)
 		pcall(function()
 			if jdtls.setup_dap_main_class_configs then
 				jdtls.setup_dap_main_class_configs()
