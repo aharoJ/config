@@ -1,155 +1,155 @@
+---@diagnostic disable: param-type-mismatch
 -- path: lua/core/files.lua
-
-
 local M = {}
 
--- tiny helper
-local fn, api, o = vim.fn, vim.api, vim.opt
-local function ensure_dir(dir) if fn.isdirectory(dir) == 0 then fn.mkdir(dir, "p") end end
-local function map(modes, lhs, rhs, desc, opts)
-    opts = opts or {}; opts.silent = (opts.silent ~= false); opts.desc = desc
-    for _, m in ipairs(type(modes) == "table" and modes or { modes }) do vim.keymap.set(m, lhs, rhs, opts) end
+local function ensure_dir(dir)
+	if vim.fn.isdirectory(dir) == 0 then
+		vim.fn.mkdir(dir, "p")
+	end
 end
 
---- Setup high-quality file behavior.
---- @param cfg table|nil { autosave = false|true, autosave_events = {..} }
 function M.setup(cfg)
-    cfg                   = cfg or {}
-    local AUTOSAVE        = cfg.autosave == true
-    local AUTOSAVE_EVENTS = cfg.autosave_events or { "FocusLost", "BufLeave", "WinLeave" }
+	cfg = cfg or {}
+	local AUTOSAVE = cfg.autosave == true
+	local AUTOSAVE_EVENTS = cfg.autosave_events or { "FocusLost", "BufLeave", "WinLeave" }
 
-    -- ----- State paths (portable, cache-safe) -----
-    local state_dir       = fn.stdpath("state") -- e.g. ~/.local/state/nvim
-    local undo_dir        = state_dir .. "/undo"
-    local swap_dir        = state_dir .. "/swap"
-    local backup_dir      = state_dir .. "/backup"
-    local view_dir        = state_dir .. "/view"
+	-- ── State paths ──────────────────────────────────────────────
+	local state_dir = vim.fn.stdpath("state")
+	local undo_dir = state_dir .. "/undo"
+	local swap_dir = state_dir .. "/swap"
+	local backup_dir = state_dir .. "/backup"
+	local view_dir = state_dir .. "/view"
 
-    ensure_dir(undo_dir); ensure_dir(swap_dir); ensure_dir(backup_dir); ensure_dir(view_dir)
+	ensure_dir(undo_dir)
+	ensure_dir(swap_dir)
+	ensure_dir(backup_dir)
+	ensure_dir(view_dir)
 
-    -- ----- Persistent undo (close, reopen, still undo/redo) -----
-    o.undofile     = true
-    o.undodir      = undo_dir
-    o.undolevels   = 10000
-    o.undoreload   = 10000
+	-- ── Persistent undo ──────────────────────────────────────────
+	vim.opt.undofile = true
+	vim.opt.undodir = undo_dir
+	vim.opt.undolevels = 10000
+	vim.opt.undoreload = 10000
 
-    -- ----- Crash/OS safety (keep repo clean) -----
-    o.swapfile     = true
-    o.directory    = swap_dir .. "//" -- // for unique per-path names
-    o.backup       = true
-    o.writebackup  = true
-    o.backupdir    = backup_dir
-    o.backupcopy   = "auto"
-    o.backupext    = ".backup"
+	-- ── Crash/OS safety ──────────────────────────────────────────
+	vim.opt.swapfile = true
+	vim.opt.directory = swap_dir .. "//"
+	vim.opt.backup = true
+	vim.opt.writebackup = true
+	vim.opt.backupdir = backup_dir
+	vim.opt.backupcopy = "auto"
+	vim.opt.backupext = ".backup"
 
-    -- ----- Encoding & EOL (cross-platform repos) -----
-    o.encoding     = "utf-8"
-    o.fileencoding = "utf-8"
-    o.fileformats  = { "unix", "mac", "dos" }
+	-- ── Encoding & EOL ───────────────────────────────────────────
+	vim.opt.encoding = "utf-8"
+	vim.opt.fileencoding = "utf-8"
+	vim.opt.fileformats = { "unix", "mac", "dos" }
 
-    -- ----- Pro workflow niceties -----
-    o.hidden       = true -- switch buffers without forcing save (keeps undo in memory)
-    o.confirm      = true -- dialogs instead of erroring on :q/:w when needed
-    o.autoread     = true -- pick up external changes on focus/checktime
-    o.updatetime   = 3000 -- conservative (swap/diagnostics timers)
-    o.updatecount  = 200
+	-- ── Workflow niceties ────────────────────────────────────────
+	vim.opt.hidden = true
+	vim.opt.confirm = true
+	vim.opt.autoread = true
+	vim.opt.updatetime = 3000
+	vim.opt.updatecount = 200
+	vim.opt.shada = { "'1000", "<100", "s20", "h" }
+	vim.opt.viewoptions = "folds,cursor,curdir,slash,unix"
 
-    -- Remember stuff without bloat (marks, registers, etc.)
-    o.shada        = { "'1000", "<100", "s20", "h" }
+	-- ── Autocommands ─────────────────────────────────────────────
+	local augroup = vim.api.nvim_create_augroup("core.files", { clear = true })
 
-    -- Store & restore view (folds, cursor pos, etc.) per file
-    o.viewoptions  = "folds,cursor,curdir,slash,unix"
+	-- External file check
+	vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
+		group = augroup,
+		callback = function()
+			if vim.o.buftype == "" then
+				pcall(vim.cmd, "checktime")
+			end
+		end,
+	})
 
-    -- ----- Autocommands (resilience + VSCode-y feel) -----
-    local aug      = api.nvim_create_augroup("core.files", { clear = true })
+	-- Restore last cursor pos + folds
+	vim.api.nvim_create_autocmd("BufReadPost", {
+		group = augroup,
+		callback = function(args)
+			if vim.bo[args.buf].filetype:match("^git") then
+				return
+			end
+			local mark = vim.fn.line([['"]])
+			local last = vim.fn.line("$")
+			if mark > 1 and mark <= last then
+				pcall(vim.cmd, 'silent! normal! g`"')
+				pcall(vim.cmd, "silent! normal! zv")
+			end
+		end,
+	})
 
-    -- Re-check external file changes sanely (no spam)
-    api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
-        group = aug,
-        callback = function() if vim.o.buftype == "" then pcall(vim.cmd, "checktime") end end,
-    })
+	-- Save/load per-file view
+	vim.api.nvim_create_autocmd("BufWinLeave", {
+		group = augroup,
+		callback = function(args)
+			if vim.bo[args.buf].buftype == "" and vim.fn.filereadable(args.file) == 1 then
+				ensure_dir(view_dir)
+				pcall(vim.cmd, "silent! mkview")
+			end
+		end,
+	})
+	vim.api.nvim_create_autocmd("BufWinEnter", {
+		group = augroup,
+		callback = function(args)
+			if vim.bo[args.buf].buftype == "" and vim.fn.filereadable(args.file) == 1 then
+				pcall(vim.cmd, "silent! loadview")
+			end
+		end,
+	})
 
-    -- Restore last cursor position on reopen (and open folds there)
-    api.nvim_create_autocmd("BufReadPost", {
-        group = aug,
-        callback = function(args)
-            if vim.bo[args.buf].filetype:match("^git") then return end
-            local mark, last = fn.line([['"]]), fn.line("$")
-            if mark > 1 and mark <= last then
-                pcall(vim.cmd, "silent! normal! g`\"")
-                pcall(vim.cmd, "silent! normal! zv")
-            end
-        end,
-    })
+	-- Re-ensure dirs on startup
+	vim.api.nvim_create_autocmd("VimEnter", {
+		group = augroup,
+		callback = function()
+			ensure_dir(undo_dir)
+			ensure_dir(swap_dir)
+			ensure_dir(backup_dir)
+			ensure_dir(view_dir)
+		end,
+	})
 
-    -- Save/load per-file view (folds, cursor) without touching your repo
-    api.nvim_create_autocmd("BufWinLeave", {
-        group = aug,
-        callback = function(args)
-            if vim.bo[args.buf].buftype == "" and fn.filereadable(args.file) == 1 then
-                ensure_dir(view_dir); pcall(vim.cmd, "silent! mkview")
-            end
-        end,
-    })
-    api.nvim_create_autocmd("BufWinEnter", {
-        group = aug,
-        callback = function(args)
-            if vim.bo[args.buf].buftype == "" and fn.filereadable(args.file) == 1 then
-                pcall(vim.cmd, "silent! loadview")
-            end
-        end,
-    })
+	-- Auto-create dirs before writing new files
+	vim.api.nvim_create_autocmd("BufWritePre", {
+		group = augroup,
+		callback = function(a)
+			local dir = vim.fn.fnamemodify(a.match, ":p:h")
+			if vim.fn.isdirectory(dir) == 0 then
+				vim.fn.mkdir(dir, "p")
+			end
+		end,
+	})
 
-    -- Ensure dirs exist even if state path changes during run
-    api.nvim_create_autocmd("VimEnter", {
-        group = aug,
-        callback = function()
-            ensure_dir(undo_dir); ensure_dir(swap_dir); ensure_dir(backup_dir); ensure_dir(view_dir)
-        end,
-    })
+	-- Optional autosave
+	if AUTOSAVE then
+		vim.api.nvim_create_autocmd(AUTOSAVE_EVENTS, {
+			group = augroup,
+			callback = function()
+				if vim.bo.modified and vim.bo.buftype == "" and vim.fn.getcmdwintype() == "" then
+					pcall(vim.cmd, "silent! write")
+				end
+			end,
+			desc = "Autosave (safe events only)",
+		})
+	end
 
-    -- Create missing parent dirs before writing new files
-    api.nvim_create_autocmd("BufWritePre", {
-        group = aug,
-        callback = function(a)
-            local dir = fn.fnamemodify(a.match, ":p:h")
-            if fn.isdirectory(dir) == 0 then fn.mkdir(dir, "p") end
-        end,
-    })
+	-- ── Mac-style Undo/Redo ───────────────────────────────────────
+	vim.keymap.set({ "n", "x" }, "<M-z>", "<Cmd>undo<CR>", { desc = "Undo (Alt+Z fallback)", silent = true })
+	vim.keymap.set({ "n", "x" }, "<M-S-z>", "<Cmd>redo<CR>", { desc = "Redo (Alt+Shift+Z fallback)", silent = true })
+	vim.keymap.set("i", "<M-z>", "<C-o>u", { desc = "Undo (Alt+Z fallback)", silent = true })
+	vim.keymap.set("i", "<M-S-z>", "<C-o><C-r>", { desc = "Redo (Alt+Shift+Z fallback)", silent = true })
 
-    -- Optional, conservative autosave (off by default)
-    if AUTOSAVE then
-        api.nvim_create_autocmd(AUTOSAVE_EVENTS, {
-            group = aug,
-            callback = function()
-                if vim.bo.modified and vim.bo.buftype == "" and fn.getcmdwintype() == "" then
-                    pcall(vim.cmd, "silent! write")
-                end
-            end,
-            desc = "Autosave (safe events only)",
-        })
-    end
-
-    -- ----- Mac-style Undo/Redo (with terminal fallbacks) -----
-    -- Native Cmd keys require a GUI (Neovide, VimR, Goneovim). For terminals, use the Alt fallbacks.
-    map({ "n", "x" }, "<D-z>", "<Cmd>undo<CR>", "Undo (Cmd+Z)")
-    map({ "n", "x" }, "<D-S-z>", "<Cmd>redo<CR>", "Redo (Shift+Cmd+Z)")
-    map({ "n", "x" }, "<M-z>", "<Cmd>undo<CR>", "Undo (Alt+Z fallback)")
-    map({ "n", "x" }, "<M-S-z>", "<Cmd>redo<CR>", "Redo (Alt+Shift+Z fallback)")
-
-    -- Insert mode (stay in insert after action)
-    map("i", "<D-z>", "<C-o>u", "Undo (Cmd+Z)")
-    map("i", "<D-S-z>", "<C-o><C-r>", "Redo (Shift+Cmd+Z)")
-    map("i", "<M-z>", "<C-o>u", "Undo (Alt+Z fallback)")
-    map("i", "<M-S-z>", "<C-o><C-r>", "Redo (Alt+Shift+Z fallback)")
-
-    -- Linux/Windows optional fallbacks (comment out if you don’t want):
-    if fn.has("mac") == 0 then
-        map({ "n", "x" }, "<C-z>", "u", "Undo (Ctrl+Z)")
-        map({ "n", "x" }, "<C-y>", "<C-r>", "Redo (Ctrl+Y)")
-        map("i", "<C-z>", "<C-o>u", "Undo (Ctrl+Z)")
-        map("i", "<C-y>", "<C-o><C-r>", "Redo (Ctrl+Y)")
-    end
+	-- Linux/Windows fallbacks
+	if vim.fn.has("mac") == 0 then
+		vim.keymap.set({ "n", "x" }, "<C-z>", "u", { desc = "Undo (Ctrl+Z)", silent = true })
+		vim.keymap.set({ "n", "x" }, "<C-y>", "<C-r>", { desc = "Redo (Ctrl+Y)", silent = true })
+		vim.keymap.set("i", "<C-z>", "<C-o>u", { desc = "Undo (Ctrl+Z)", silent = true })
+		vim.keymap.set("i", "<C-y>", "<C-o><C-r>", { desc = "Redo (Ctrl+Y)", silent = true })
+	end
 end
 
 return M
