@@ -1,5 +1,5 @@
 -- path: nvim/lua/core/keymaps.lua
----@diagnostic disable: undefined-global
+---@diagnostic disable: param-type-mismatch,undefined-global
 
 -- ── Indentation ───────────────────────────────────────────────────────────────────
 vim.keymap.set("v", "<", "<gv", { desc = "Indent left and reselect" })
@@ -20,6 +20,6 @@ vim.keymap.set("n", "<leader>bC", "<cmd>%bd|e#<CR>", { desc = "[buf] close ." })
 
 
 -- ── HARDCORE EDITING ───────────────────────────────────────────────────────────────────
--- vim.keymap.set("n", "<A-j>", ":m .+1<CR>==", { desc = "Move line down" })
--- vim.keymap.set("n", "<A-k>", ":m .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set({"n", "v"}, "<M-j>", ":m .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set({"n", "v"}, "<M-k>", ":m .-2<CR>==", { desc = "Move line up" })
 
