@@ -78,25 +78,6 @@ scrollback-limit = 10000000
 # =======================
 # Keybinds — no tabs, no splits
 # =======================
-# Start from a clean slate
-
-keybind = clear
-keybind = cmd+n=new_window
-
-
-# Global quick terminal (needs Accessibility permission)
-keybind = global:cmd+backquote=toggle_quick_terminal
-
-# Make ⌘Q close only the current window; keep real quit on ⌥⌘Q
-keybind = cmd+q=close_window
-keybind = cmd+opt+q=quit
-
-
-
-
-# =======================
-# Keybinds — minimal core
-# =======================
 
 keybind = clear
 
