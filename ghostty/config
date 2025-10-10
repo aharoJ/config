@@ -17,7 +17,7 @@ cursor-style-blink = true
 right-click-action = copy-or-paste
 
 # ---- Background & Effects (macOS) ----
-background-opacity = 0.50
+background-opacity = 0.70
 background-blur = false
 window-vsync = true
 
