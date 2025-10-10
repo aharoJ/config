@@ -14,7 +14,7 @@ function M.enable()
 	vim.lsp.enable("pyright")
 	vim.lsp.enable("ruff")
 	-- Web stack:
-	vim.lsp.enable("vtsls")
+	vim.lsp.enable("vtsls") -- dont seem to be the dup issue? tailwindcss?
 	vim.lsp.enable("eslint")
 	vim.lsp.enable("tailwindcss")
 	vim.lsp.enable("cssls")

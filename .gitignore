@@ -203,3 +203,4 @@ backend/src/main/resources/application.properties
 # Ignore Obsidian specific files
 programming/app projects/twitter/.obsidian/workspace.json
 gh
+yabai/scripts/profiles/.current_profile
