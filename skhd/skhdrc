@@ -79,7 +79,7 @@ hyper - y : yabai -m space --mirror y-axis # Rotate on Y Axis
 hyper - e : yabai -m window --toggle split                                  # | 0x1B is the "-" key | toggle window split type 
 rcmd - b : yabai -m window --toggle border                                     # toggle window border
 hyper - z : yabai -m window --toggle zoom-fullscreen                           # toggle window fullscreen zoom
-hyper - t : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 # toggle sticky 
+hyper - d : yabai -m window --toggle float;\yabai -m window --grid 4:4:1:1:2:2 # toggle sticky 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
