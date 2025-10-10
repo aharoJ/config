@@ -1,36 +1,60 @@
 #!/usr/bin/env sh
 #YABAI STUFF
+# Base configuration – neutral mode, profile-independent
+# Allows manual profile switching via `yp -P stack` or `yp -P ultrawide`
 
+# ~~~~~~~~~~~~~~~~~~~~~~   SYSTEM ADDITION   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # for this to work you must configure sudo such that it will be able to run the command without password
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-## Change how yabai looks
-yabai -m config layout stack # bsp | float | stack
+# ~~~~~~~~~~~~~~~~~~~~~~   LAYOUT & CORE SETTINGS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# neutral defaults (never enforce stack/bsp)
+yabai -m config layout bsp
+yabai -m config auto_balance off
+yabai -m config split_ratio 0.50
+
+# New window spawns to the right if vertical split, or bottom if horizontal split
+yabai -m config window_placement second_child
+yabai -m config window_topmost off
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~   MACBOOK   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# (reference only – actual applied via profile)
 # yabai -m config top_padding 00
 # yabai -m config bottom_padding 20
 # yabai -m config left_padding 20
 # yabai -m config right_padding 20
 # yabai -m config window_gap 00
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 # ~~~~~~~~~~~~~~~~~~~~~~   ULTRAWIDE MONITOR   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# (reference only – actual applied via profile)
 # yabai -m config top_padding 0
 # yabai -m config bottom_padding 40
-# yabai -m config left_padding 300
+# yabai -m config left_padding 250
 # yabai -m config right_padding 300
 # yabai -m config window_gap 40
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # ~~~~~~~~~~~~~~~~~~~~~~   ARCH LINUX   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-yabai -m config top_padding 20
-yabai -m config bottom_padding 30
-yabai -m config right_padding 40
-yabai -m config left_padding 40
+# (reference only – example legacy setup)
+# yabai -m config top_padding 20
+# yabai -m config bottom_padding 30
+# yabai -m config right_padding 40
+# yabai -m config left_padding 40
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
+# ~~~~~~~~~~~~~~~~~~~~~~   GLOBAL PADDING DEFAULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# neutral (profile overrides these)
+yabai -m config top_padding 0
+yabai -m config bottom_padding 0
+yabai -m config left_padding 0
+yabai -m config right_padding 0
+yabai -m config window_gap 0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-#### float system preferences. Most of these just STOP yabai form resizing them.
+#### float system preferences. Most of these just STOP yabai from resizing them.
 # yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
 # yabai -m rule --add app="^Karabiner-Elements$" sticky=on layer=above manage=off
 # yabai -m rule --add app="^Karabiner-EventViewer$" sticky=on layer=above manage=off
@@ -46,10 +70,9 @@ yabai -m config left_padding 40
 # yabai -m rule --add app="^console$" manage=off
 # yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
 
-# ~~~~~~~~~~~~~~~~~~~~~~   EXPIRIMENTING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~   EXPERIMENTING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 yabai -m rule --add app="^System Settings$" manage=off
 yabai -m rule --add app="^FaceTime$" manage=off
-# yabai -m rule --add app="^Finder$" manage=off
 yabai -m rule --add app="^Activity Monitor$" manage=off
 yabai -m rule --add app="^Disk Utility$" manage=off
 yabai -m rule --add app="^Calculator$" manage=off
@@ -66,82 +89,48 @@ yabai -m rule --add app="^Bluetooth File Exchange$" manage=off
 yabai -m rule --add app="^QuickTime Player$" manage=off
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-# ~~~~~~~~~~~~~~~~~~~~~~   Iphone Developing with MAUI   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~   IPHONE DEVELOPING WITH MAUI   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 yabai -m rule --add app="^Simulator$" manage=off
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 # Window -> Stay on top
-
 ## Some random global settings
 # yabai -m config focus_follows_mouse          autoraise
 # yabai -m config focus_follows_mouse          on
 
-# New window spawns to the right if vertical split, or bottom if horizontal split
-yabai -m config window_placement second_child
-yabai -m config window_topmost off
-
-# yabai -m config window_shadow float
-# yabai -m config window_opacity off
-# yabai -m config window_opacity_duration 0.00
-# yabai -m config active_window_opacity 1.0
-# yabai -m config normal_window_opacity 0.97
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-## some other settings
-yabai -m config auto_balance off
-yabai -m config split_ratio 0.50
 ## set mouse interaction modifier key (default: fn)
 # yabai -m config mouse_modifier ctrl
 ## set modifier + right-click drag to resize window (default: resize)
 # yabai -m config mouse_action2 resize
-## set modifier + left-click drag to resize window (default: move)
+## set modifier + left-click drag to move window (default: move)
 # yabai -m config mouse_action1 move
 
 # # 1. Turn the feature on and choose a sensible width
 # yabai -m config window_border          on
-#
-# # Border highlighting for focused window
 # yabai -m config border_width                3
 # yabai -m config active_window_border_color  0xff7755ff  # Bright orange-red
 # yabai -m config normal_window_border_color  0x555555ff  # Dark gray
 #
-#
 # yabai -m signal --add event=application_front_switched action="/scripts/active_pane.sh"
 
-### DEFAULTS ####
-# yabai -m config layout bsp
-# yabai -m config top_padding 0 # 33 for monitor  #2 for mac
-# yabai -m config bottom_padding 4
-# yabai -m config left_padding 2
-# yabai -m config right_padding 2
-# yabai -m config window_gap 6
+# #Übersicht widget bar stuff (disabled)
+# yabai -m signal --add event=space_changed \
+#   action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
+# yabai -m signal --add event=display_changed \
+#   action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
 
-# #Ubersicht widget bar stuff
-#yabai -m signal --add event=space_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
-#yabai -m signal --add event=display_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
+# yabai -m signal --add event=space_changed \
+#   action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
+# yabai -m signal --add event=display_changed \
+#   action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
 
-#yabai -m signal --add event=space_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
-#yabai -m signal --add event=display_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
-
-# signals
-# yabai -m signal --add event=window_destroyed action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
-#yabai -m signal --add event=space_changed action="yabai -m window --focus $(yabai -m query --windows --window | jq ".id")"
-# yabai -m signal --add event=application_terminated action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
-
-#testing signals
+#testing signals (disabled)
 # yabai -m signal --add event=window_destroyed action="terminal-notifier -message 'window_destroyed'"
 # yabai -m signal --add event=application_terminated action="terminal-notifier -message 'application_terminated'"
 
-## If I close the active window, focus on any other visible window.
+# # If I close the active window, focus on any other visible window.
 # yabai -m signal --add event=window_destroyed action="bash /Users/aharo/.config/yabai/scripts/switchspaces/window-focus-on-destroy.sh"
 # yabai -m signal --add event=space_changed action="export CUR_ACTIVE_APP=\"iTerm2\""
 
-echo "yabai configuration loaded.."
-
-# borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 &
-
+echo "🧠 Base yabairc loaded (neutral mode)"
 #END
