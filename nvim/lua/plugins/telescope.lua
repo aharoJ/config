@@ -50,7 +50,7 @@ return {
     -- LSP essentials
     { "gd",function() require("telescope.builtin").lsp_definitions() end,desc = "[󰭎][lsp] defs" },
     { "gD",function() vim.lsp.buf.declaration() end, desc = "[󰭎][lsp] declaration" },
-    { "gr",function() require("telescope.builtin").lsp_references({ include_declaration = false }) end, desc = "[󰭎][lsp] refs" },
+    -- { "gr",function() require("telescope.builtin").lsp_references({ include_declaration = false }) end, desc = "[󰭎][lsp] refs" },
     { "gT",function() require("telescope.builtin").lsp_type_definitions() end,desc = "[󰭎][lsp] type defs" },
     { "gi",function() require("telescope.builtin").lsp_implementations({ show_line = false, fname_width = 80, layout_strategy = "vertical", layout_config   = { width = 0.9, height = 0.95, preview_height = 0.55, prompt_position = "top" }, }) end, desc = "[󰭎][lsp] implementations" },
     { "<leader>ci", function() require("telescope.builtin").lsp_incoming_calls() end,desc = "[󰭎][lsp] incoming calls" },
@@ -148,7 +148,15 @@ return {
       pickers = {
         -- speed wins
         find_files = { hidden = true, follow = true, previewer = false, find_command = find_command },
-        buffers    = { sort_mru = true, ignore_current_buffer = true, previewer = false },
+        buffers    = { sort_mru = true, ignore_current_buffer = true, previewer = false, path_display = function(_, path)
+      local parts = vim.split(path, "/")
+      local n = #parts
+      if n > 2 then
+        return table.concat({ parts[n - 1], parts[n] }, "/")
+      else
+        return path
+      end
+    end, },
 
         -- LSP QoL
         lsp_references        = { include_declaration = false, show_line = false, fname_width = 80 },
