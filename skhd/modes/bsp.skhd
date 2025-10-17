@@ -38,8 +38,8 @@ lalt - l : yabai -m window --focus east
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      BST VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 hyper - j : yabai -m window --swap south
 hyper - k : yabai -m window --swap north
-# hyper - h : yabai -m window --swap west 
-# hyper - l : yabai -m window --swap east 
+hyper - h : yabai -m window --swap west 
+hyper - l : yabai -m window --swap east 
 
 # hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
 # hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
