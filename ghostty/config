@@ -18,7 +18,7 @@ right-click-action = copy-or-paste
 
 # ---- Background & Effects (macOS) ----
 background-opacity = 0.70
-background-blur = false
+background-blur = true
 window-vsync = true
 
 # ---- Window & Titlebar (macOS) ----
@@ -108,9 +108,15 @@ keybind = cmd+h=ignore
 keybind = cmd+m=ignore
 
 
-# ---- HYPER = cmd+opt+ctrl+shift ----
-keybind = cmd+opt+ctrl+shift+h=text:\x02p
-keybind = cmd+opt+ctrl+shift+l=text:\x02n
+
+
 keybind = cmd+z=text:\x02
 keybind = opt+j=esc:j
 keybind = opt+k=esc:k
+
+
+
+# ---- HYPER = cmd+opt+ctrl+shift ----
+# keybind = cmd+opt+ctrl+shift+h=text:\x02p
+# keybind = cmd+opt+ctrl+shift+l=text:\x02n
+
