@@ -11,6 +11,8 @@ require("core.keymaps")
 require("core.paths")
 require("core.files").setup()
 require("core.tools-binaries")
+require("core.internal_functions")
+require("core.generate_fences").setup()
 
 -- lazy
 require("config.lazy")

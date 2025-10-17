@@ -218,6 +218,7 @@ return {
 							modified = " ●",
 							alternate_file = "#",
 							directory = "",
+                            readonly="",
 						},
 						component_separators = { left = "", right = "" },
 						section_separators = { left = "", right = "" },
