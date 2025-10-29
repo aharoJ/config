@@ -1,0 +1,12 @@
+---@diagnostic disable: undefined-global
+
+vim.api.nvim_create_autocmd("BufEnter", {
+    callback = function()
+        vim.lsp.start({
+            name = "clangd",
+            -- cmd = { "/Users/aharoj/.local/share/nvim/internal-lsp-service/clangd_20.1.8/bin/clangd" },
+            cmd = { vim.fn.stdpath("data") .. "/internal-lsp-service/clangd_20.1.8/bin/clangd" },
+            root_dir = vim.fn.getcwd(),
+        })
+    end,
+})
