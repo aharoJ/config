@@ -28,7 +28,7 @@ vim.diagnostic.config({
 		border = "rounded",
 		header = "",
 		source = "if_many",
-		focusable = false,
+		focusable = true,
 		severity_sort = false,
     },
     jump = {}, -- not sure what this does?
@@ -40,8 +40,8 @@ vim.diagnostic.config({
 -- ──────────────────────────────────────────────────────────────
 -- MY BIDS
 -- ──────────────────────────────────────────────────────────────
-vim.keymap.set("n", "<leader>zl", function() vim.diagnostic.setloclist({ open = true, title = "Buffer Diagnostics" }) end, { desc = "[diag] → loclist" })
-vim.keymap.set("n", "<leader>zL", function() vim.diagnostic.setqflist({ open = true, title = "Project Diagnostics" }) end, { desc = "[diag] → quickfix" })
-vim.keymap.set("n", "<leader>co", vim.diagnostic.open_float, { desc = "[diag] → open float" })
-vim.keymap.set("n", "<leader>td", function() if vim.diagnostic.is_enabled() then vim.diagnostic.enable(false, nil) vim.notify("[diag] → OFF") else vim.diagnostic.enable(true, nil) vim.notify("[diag] → ON") end end, { desc = "[diag] → ON | OFF" })
+vim.keymap.set("n", "<leader>zl", function() vim.diagnostic.setloclist({ open = true, title = "Buffer Diagnostics" }) end, { desc = "[core][diag] → loclist" })
+vim.keymap.set("n", "<leader>zL", function() vim.diagnostic.setqflist({ open = true, title = "Project Diagnostics" }) end, { desc = "[core][diag] → quickfix" })
+vim.keymap.set("n", "<leader>co", vim.diagnostic.open_float, { desc = "[core.diag] → open float" })
+vim.keymap.set("n", "<leader>td", function() if vim.diagnostic.is_enabled() then vim.diagnostic.enable(false, nil) vim.notify("[core][diag] → OFF") else vim.diagnostic.enable(true, nil) vim.notify("[diag] → ON") end end, { desc = "[diag] → ON | OFF" })
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
