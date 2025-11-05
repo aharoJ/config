@@ -1,3 +1,4 @@
+# NO LONGER USING
 function trash-pick --description 'Pick item(s) from Trash with fzf to restore/delete'
     if not type -q fzf; or not type -q trash-list; or not type -q trash-restore
         echo "Needs fzf + trash-cli"; return 1
