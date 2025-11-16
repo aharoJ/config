@@ -131,7 +131,7 @@ return {
 				},
 				ignore_focus = { "neo-tree", "NvimTree" },
 				always_divide_middle = true,
-				always_show_tabline = true,
+				always_show_tabline = false, -- toggle off 
 			},
 
 			sections = {
@@ -195,34 +195,34 @@ return {
 
 			tabline = {
 				lualine_a = {
-					{
-						"buffers",
-						show_filename_only = true,
-						hide_filename_extension = true,
-						show_modified_status = false,
-						use_mode_colors = true,
-						buffers_color = {
-							active = { fg = "#e3ded7", bg = "#535586" },
-							inactive = { fg = "#1d1d2f", bg = "#3a3b5e" },
-						},
-						mode = 0,
-						max_length = vim.o.columns * 2 / 3,
-						filetype_names = {
-							TelescopePrompt = "Telescope",
-							dashboard = "Dashboard",
-							packer = "Packer",
-							fzf = "FZF",
-							alpha = "Alpha",
-						},
-						symbols = {
-							modified = " ●",
-							alternate_file = "#",
-							directory = "",
-                            readonly="",
-						},
-						component_separators = { left = "", right = "" },
-						section_separators = { left = "", right = "" },
-					},
+					-- {
+					-- 	"buffers",
+					-- 	show_filename_only = true,
+					-- 	hide_filename_extension = true,
+					-- 	show_modified_status = false,
+					-- 	use_mode_colors = true,
+					-- 	buffers_color = {
+					-- 		active = { fg = "#e3ded7", bg = "#535586" },
+					-- 		inactive = { fg = "#1d1d2f", bg = "#3a3b5e" },
+					-- 	},
+					-- 	mode = 0,
+					-- 	max_length = vim.o.columns * 2 / 3,
+					-- 	filetype_names = {
+					-- 		TelescopePrompt = "Telescope",
+					-- 		dashboard = "Dashboard",
+					-- 		packer = "Packer",
+					-- 		fzf = "FZF",
+					-- 		alpha = "Alpha",
+					-- 	},
+					-- 	symbols = {
+					-- 		modified = " ●",
+					-- 		alternate_file = "#",
+					-- 		directory = "",
+     --                        readonly="",
+					-- 	},
+					-- 	component_separators = { left = "", right = "" },
+					-- 	section_separators = { left = "", right = "" },
+					-- },
 				},
 				lualine_b = {},
 				lualine_c = {},
