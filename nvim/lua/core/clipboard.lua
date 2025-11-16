@@ -1,34 +1,5 @@
 -- path: nvim/lua/core/clipboard.lua
-
--- ── Clipboard (minimal, dot-repeat friendly) ────────────────────────────────
--- vim.keymap.set({ "n", "v" }, "<leader>y", '"+y', { desc = "[clip] yank"})
--- vim.keymap.set({ "n", "v" }, "<leader>p", '"+p', { desc = "[clip] paste after"})
--- vim.keymap.set({ "n", "v" }, "<leader>P", '"+P', { desc = "[clip] paste"})
--- vim.keymap.set("v", "<leader>d", '"+d', { desc = "[clip] delete into clip" })
--- vim.keymap.set({ "n", "v" }, "<leader>D", '"_d', { desc = "[clip] delete _" })
-
-
--- -- ── Clipboard (inverted logic: yy → system, <leader>y → internal) ─────────────
---
--- -- 1️⃣ Make all *normal yanks/deletes* go to system clipboard
--- vim.opt.clipboard = "unnamedplus"
---
--- -- 2️⃣ <leader>y, <leader>p, <leader>d = internal only (don’t touch system clip)
--- -- Using the blackhole register ("_") or default unnamed ("") depending on action.
---
--- -- Yank inside nvim only
--- vim.keymap.set({ "n", "v" }, "<leader>y", '"0y', { desc = "[local] yank only" })
---
--- -- Paste from internal (last yank)
--- vim.keymap.set({ "n", "v" }, "<leader>p", '"0p', { desc = "[local] paste only" })
--- vim.keymap.set({ "n", "v" }, "<leader>P", '"0P', { desc = "[local] paste before" })
---
--- -- Delete without touching system clipboard
--- vim.keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "[local] delete only" })
--- vim.keymap.set({ "n", "v" }, "<leader>D", '"_D', { desc = "[local] delete line only" })
---
-
--- ── Clipboard (inverted logic: yy → system, <leader>y → internal) ─────────────
+-- ───────────── (inverted logic: yy → system, <leader>y → internal) ─────────────
 
 -- 1️⃣ Default yanks go to system clipboard
 vim.opt.clipboard = "unnamedplus"
@@ -51,3 +22,6 @@ vim.keymap.set({ "n", "v" }, "<leader>y", '"0y', { desc = "[local] yank only" })
 vim.keymap.set({ "n", "v" }, "<leader>p", '"0p', { desc = "[local] paste only" })
 vim.keymap.set({ "n", "v" }, "<leader>P", '"0P', { desc = "[local] paste before" })
 
+-- 5️⃣ Paste in visual mode *without* yanking the selectio
+vim.keymap.set("x", "p", '"_dP', { noremap = true, desc = "paste without overwriting register" })
+vim.keymap.set("x", "P", '"_dP', { noremap = true, desc = "paste without overwriting register" })
