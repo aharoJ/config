@@ -28,7 +28,7 @@ TERM = "xterm-256color" # Macos | Linux
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~  WINDOW    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 [window]
-blur = false                                               # true | false 
+blur = true                                               # true | false 
 dimensions = { columns = 0, lines = 0 }
 position = "None"                                         # None | { x = <integer>, y = <integer> }
 padding = { x = 15, y = 5 }
