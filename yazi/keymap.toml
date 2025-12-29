@@ -285,6 +285,9 @@ keymap = [
   { on = "{", run = "tab_swap -1", desc = "Swap tab left" },
   { on = "}", run = "tab_swap 1", desc = "Swap tab right" },
 
+  # ——— COPY TO CLIPBOARD ——————————————————————————————————————————————————
+  { on = "Y", run  = [ "shell -- cat \"$@\" | pbcopy", "noop" ], desc = "Copy file contents to clipboard" },
+
   # Direct 1–9
   { on = "1", run = "tab_switch 0", desc = "Tab 1" },
   { on = "2", run = "tab_switch 1", desc = "Tab 2" },

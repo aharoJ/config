@@ -75,7 +75,8 @@ hyper - j : yabai -m window --focus stack.next || yabai -m window --focus stack.
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ACTIVE TERMINAL         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-rshift - a : /Applications/Alacritty.app/Contents/MacOS/alacritty
+# rshift - a : /Applications/Alacritty.app/Contents/MacOS/alacritty
+# rshift - a : /Applications/Ghostty.app/Contents/MacOS/ghostty
 rshift - v: /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
 rshift - g: open -na "Google Chrome" --args --new-window "https://www.google.com/" 
 rshift - f: open -a 'Finder.app' 
