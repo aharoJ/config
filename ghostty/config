@@ -18,7 +18,7 @@ right-click-action = copy-or-paste
 
 # ---- Background & Effects (macOS) ----
 background-opacity = 0.70
-background-blur = true
+background-blur = false
 window-vsync = true
 
 # ---- Window & Titlebar (macOS) ----
