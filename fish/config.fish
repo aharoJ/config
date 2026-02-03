@@ -73,4 +73,11 @@ if status is-interactive
 
     abbr .. "cd .."
     abbr ... "cd ../.."
+
+
+    alias nvr="NVIM_APPNAME=nvim-rebuild nvim"
+
+
+
+
 end
