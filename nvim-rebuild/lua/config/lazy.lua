@@ -1,27 +1,29 @@
--- config/lazy.lua
--- Bootstrap lazy.nvim and point it at the plugins directory.
--- This file handles installation only. Plugin specs live in lua/plugins/*.lua
+-- path: nvim/lua/config/lazy.lua
+-- Description: lazy.nvim bootstrap and setup. No plugin specs here — those live in plugins/.
+-- CHANGELOG: 2026-02-03 | Full rewrite: added defaults.lazy, disabled_plugins, ui border | ROLLBACK: Replace with previous lazy.lua
+
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-  local out = vim.fn.system({
+
+  local result = vim.system({
     "git",
     "clone",
     "--filter=blob:none",
     "--branch=stable",
     lazyrepo,
     lazypath,
-  })
-  if vim.v.shell_error ~= 0 then
+  }, { text = true }):wait()
+
+  if result.code ~= 0 then
     vim.api.nvim_echo({
       { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-      { out, "WarningMsg" },
-      { "\nPress any key to exit..." },
+      { (result.stderr or ""), "WarningMsg" },
+      { (result.stdout or ""), "None" },
     }, true, {})
-    vim.fn.getchar()
-    os.exit(1)
+    return
   end
 end
 
@@ -29,15 +31,36 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   spec = {
-    { import = "plugins" },
+      { import = "plugins" },         -- Loads plugins/init.lua which imports subdirectories
+  },
+  defaults = {
+    lazy = true,                    -- All plugins lazy-loaded by default
   },
   install = {
-    colorscheme = { "catppuccin" },
+    colorscheme = { "catppuccin", "habamax" },
   },
   checker = {
-    enabled = false,
+    enabled = true,                 -- Auto-check for plugin updates
+    notify = false,                 -- Don't spam notifications
   },
   change_detection = {
-    notify = false,
+    notify = false,                 -- Don't notify on config file changes
+  },
+  performance = {
+    rtp = {
+      disabled_plugins = {
+        -- "gzip",
+        -- "matchit",
+        -- "matchparen",
+        -- "netrwPlugin",
+        -- "tarPlugin",
+        -- "tohtml",
+        -- "tutor",
+        -- "zipPlugin",
+      },
+    },
+  },
+  ui = {
+    border = "rounded",             -- Consistent border style (matches vim.o.winborder)
   },
 })
