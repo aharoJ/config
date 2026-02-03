@@ -1,0 +1,54 @@
+-- path: nvim/lua/plugins/core/treesitter.lua
+-- Description: Syntax highlighting, indentation, incremental selection.
+--              Uses nvim-treesitter main branch (2025 rewrite):
+--                - nvim-treesitter.configs module no longer exists
+--                - Parser install via require('nvim-treesitter').install({...})
+--                - Highlighting via Neovim's built-in vim.treesitter.start()
+-- CHANGELOG: 2026-02-03 | Moved from plugins/ to plugins/core/ | ROLLBACK: Move back to plugins/treesitter.lua
+return {
+  -- "nvim-treesitter/nvim-treesitter",
+  -- build = ":TSUpdate",
+  -- lazy = false,                     -- Load at startup so parsers are available immediately
+  -- config = function()
+  --   local ts = require("nvim-treesitter")
+  --   -- Minimal setup (only install_dir is accepted in the 2025 rewrite)
+  --   ts.setup({})
+  --   -- Install parsers (async, non-blocking — M4 Max makes this instant)
+  --   ts.install({
+  --     "lua",
+  --     "java",
+  --     "typescript",
+  --     "tsx",
+  --     "javascript",
+  --     "python",
+  --     "rust",
+  --     "go",
+  --     "sql",
+  --     "html",
+  --     "css",
+  --     "json",
+  --     "yaml",
+  --     "toml",
+  --     "bash",
+  --     "fish",
+  --     "markdown",
+  --     "markdown_inline",
+  --     "vim",
+  --     "vimdoc",
+  --     "query",
+  --     "regex",
+  --   })
+  --   -- Enable treesitter highlighting + indentation for all filetypes
+  --   -- WHY: FileType autocmd ensures highlighting starts when a buffer opens,
+  --   -- not just when the plugin loads. pcall handles filetypes without parsers gracefully.
+  --   vim.api.nvim_create_autocmd("FileType", {
+  --     group = vim.api.nvim_create_augroup("TreesitterStart", { clear = true }),
+  --     callback = function(args)
+  --       pcall(vim.treesitter.start, args.buf)
+  --       vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+  --     end,
+  --     desc = "Start treesitter highlighting and indentation per buffer",
+  --   })
+  -- end,
+}
+
