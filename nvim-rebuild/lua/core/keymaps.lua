@@ -101,7 +101,7 @@ keymap("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 keymap("n", "<leader>a", "ggVG", { desc = "Select all" })
 
 -- Quit
-keymap("n", "<leader>q", "<cmd>q!<CR>", { desc = "Quit" })
+keymap("n", "<leader>qq", "<cmd>q!<CR>", { desc = "Quit" })
 
 
 -- Clear search highlight on Escape

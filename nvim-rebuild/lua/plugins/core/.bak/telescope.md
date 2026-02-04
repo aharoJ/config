@@ -1,0 +1,835 @@
+# Telescope Layout Variations — Reference Guide
+
+> A living document for cataloging every telescope.nvim layout configuration worth keeping.
+> Swap any of these into your `find_files_opts` body and restart nvim.
+
+---
+
+## How This Works
+
+Telescope has **3 layers** you can mix and match to create layouts:
+
+| Layer               | What It Controls                      | Options                                                                          |
+| ------------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| **Layout Strategy** | Window arrangement                    | `horizontal`, `vertical`, `center`, `cursor`, `flex`, `bottom_pane`              |
+| **Layout Config**   | Sizing, positioning, behavior         | `width`, `height`, `anchor`, `mirror`, `prompt_position`, `preview_width/height` |
+| **Themes**          | Presets that bundle strategy + config | `get_dropdown()`, `get_ivy()`, `get_cursor()`                                    |
+
+On top of that, you can tweak **cosmetics** independently: `borderchars`, `winblend`, `prompt_prefix`, `selection_caret`, `path_display`, `border`, titles, etc.
+
+The total combination space is massive — what follows are 30 distinct layout variations, plus cosmetic modifiers that multiply the possibilities even further.
+
+---
+
+## Favorites (Starred)
+
+#### new finds 
+9 ->is pretty dope for debugging potentially
+10 ^^ same as above but pretty cleaner?!? 
+12 ^^ super minimal but just go big 
+
+16 -> super fucking clean
+16 -> best for like knowing the exact file ff​ super clean looking
+19 -> best for debugging 
+26 -> has potential
+27 -> looks fancy af
+28 -> pontetial
+30 -> central potential 
+
+### ⭐ #8 — Vertical Mirrored
+
+```
+┌────────────────────────────┐
+│          Prompt            │
+├────────────────────────────┤
+│          Results           │
+│                            │
+├────────────────────────────┤
+│          Preview           │
+│                            │
+└────────────────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.6,
+    height = 0.9,
+    preview_height = 0.45,
+    prompt_position = "top",
+    mirror = true,
+  },
+}
+```
+
+### ⭐ #14 — Ivy Minimal
+
+```
+════════════════════════════════════════════
+│ Prompt                                   │
+├──────────────────────────────────────────┤
+│ Results                                  │
+════════════════════════════════════════════
+```
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_ivy({
+    previewer = false,
+    layout_config = {
+      height = 0.3,
+    },
+  })
+end
+```
+
+### ⭐ #18 — Ultra Minimal (No Preview, No Borders)
+
+```
+        ┌──────────────────────┐
+        │       Prompt         │
+        ├──────────────────────┤
+        │       Results        │
+        └──────────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  previewer = false,
+  layout_strategy = "center",
+  border = false,
+  layout_config = {
+    width = 0.4,
+    height = 0.35,
+  },
+}
+```
+
+---
+
+## All Variations
+
+### Horizontal Family (#1–#6)
+
+#### 1 — Horizontal Classic
+
+```
+┌─────────────────┐┌─────────────────┐
+│     Results      ││     Preview     │
+│                  ││                 │
+└─────────────────┘│                 │
+┌─────────────────┐│                 │
+│     Prompt       ││                 │
+└─────────────────┘└─────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.8,
+    height = 0.8,
+    preview_width = 0.55,
+    prompt_position = "bottom",
+  },
+}
+```
+
+#### 2 — Horizontal Mirrored (Preview Left, Prompt Top)
+
+```
+┌─────────────────┐┌─────────────────┐
+│                  ││     Prompt      │
+│     Preview      │├─────────────────┤
+│                  ││     Results     │
+│                  ││                 │
+└─────────────────┘└─────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.85,
+    height = 0.85,
+    preview_width = 0.5,
+    prompt_position = "top",
+    mirror = true,
+  },
+}
+```
+
+#### 3 — Horizontal Wide (Thin Results, Huge Preview)
+
+```
+┌────────┐┌───────────────────────────────┐
+│Results ││          Preview              │
+│        ││                               │
+├────────┤│                               │
+│Prompt  ││                               │
+└────────┘└───────────────────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.95,
+    height = 0.85,
+    preview_width = 0.7,
+    prompt_position = "bottom",
+  },
+}
+```
+
+#### 4 — Horizontal No Preview (File List Only)
+
+```lua
+local find_files_opts = {
+  previewer = false,
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.5,
+    height = 0.6,
+    prompt_position = "top",
+  },
+}
+```
+
+#### 5 — Full-Screen Horizontal (IDE Mode)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.99,
+    height = 0.99,
+    preview_width = 0.6,
+    prompt_position = "top",
+  },
+}
+```
+
+#### 6 — Padding-Based Sizing (Edge-to-Edge With Margin)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = { padding = 3 },
+    height = { padding = 2 },
+    preview_width = 0.55,
+    prompt_position = "top",
+  },
+}
+```
+
+---
+
+### Vertical Family (#7–#11)
+
+#### 7 — Vertical Stacked (Preview Top)
+
+```
+┌────────────────────────────┐
+│          Preview           │
+│                            │
+├────────────────────────────┤
+│          Results           │
+│                            │
+├────────────────────────────┤
+│          Prompt            │
+└────────────────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.6,
+    height = 0.9,
+    preview_height = 0.5,
+    prompt_position = "bottom",
+    mirror = false,
+  },
+}
+```
+
+#### ⭐ 8 — Vertical Mirrored (Prompt Top, Preview Bottom)
+
+_See Favorites above._
+
+#### 9 — Full-Screen Vertical
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.99,
+    height = 0.99,
+    preview_height = 0.6,
+    prompt_position = "top",
+    mirror = true,
+  },
+}
+```
+
+#### 10 — Vertical Compact (Small Preview)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.5,
+    height = 0.7,
+    preview_height = 0.25,
+    prompt_position = "top",
+    mirror = true,
+  },
+}
+```
+
+#### 11 — Vertical No Preview (Tall List)
+
+```lua
+local find_files_opts = {
+  previewer = false,
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.4,
+    height = 0.8,
+    prompt_position = "top",
+  },
+}
+```
+
+---
+
+### Ivy / Bottom Pane Family (#12–#16)
+
+#### 12 — Ivy With Preview
+
+```
+════════════════════════════════════════════
+│ Prompt                                   │
+├────────────────────┬─────────────────────┤
+│ Results            │ Preview             │
+│                    │                     │
+════════════════════════════════════════════
+```
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_ivy({
+    layout_config = {
+      height = 0.4,
+    },
+  })
+end
+```
+
+#### 13 — Ivy Tall (Half Screen)
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_ivy({
+    layout_config = {
+      height = 0.55,
+    },
+  })
+end
+```
+
+#### ⭐ 14 — Ivy Minimal (No Preview)
+
+_See Favorites above._
+
+#### 15 — Bottom Pane
+
+```
+┌──────────────────────────────────────────┐
+│                 (editor)                 │
+├──────────┬───────────────────────────────┤
+│ Prompt   │ Preview                       │
+├──────────┤                               │
+│ Results  │                               │
+└──────────┴───────────────────────────────┘
+```
+
+```lua
+local find_files_opts = {
+  layout_strategy = "bottom_pane",
+  layout_config = {
+    height = 25,
+    prompt_position = "top",
+  },
+}
+```
+
+#### 16 — Bottom Pane No Preview
+
+```lua
+local find_files_opts = {
+  previewer = false,
+  layout_strategy = "bottom_pane",
+  layout_config = {
+    height = 15,
+    prompt_position = "top",
+  },
+}
+```
+
+---
+
+### Dropdown / Center Family (#17–#20)
+
+#### 17 — Dropdown (No Preview)
+
+```
+        ┌──────────────────────┐
+        │       Prompt         │
+        ├──────────────────────┤
+        │       Results        │
+        │       Results        │
+        │       Results        │
+        └──────────────────────┘
+```
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_dropdown({
+    previewer = false,
+    layout_config = {
+      width = 0.5,
+      height = 0.4,
+    },
+  })
+end
+```
+
+#### ⭐ 18 — Ultra Minimal Center (No Preview, No Borders)
+
+_See Favorites above._
+
+#### 19 — Dropdown With Preview
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_dropdown({
+    previewer = true,
+    layout_config = {
+      width = 0.6,
+      height = 0.6,
+    },
+  })
+end
+```
+
+#### 20 — Tiny Centered Dropdown (Command Palette Style)
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_dropdown({
+    previewer = false,
+    layout_config = {
+      width = 0.35,
+      height = 0.25,
+      anchor = "N",
+    },
+  })
+end
+```
+
+---
+
+### Cursor Family (#21–#22)
+
+#### 21 — Cursor With Preview
+
+```
+  █ (cursor)
+  ┌──────────────┐┌─────────────────┐
+  │   Prompt     ││    Preview      │
+  ├──────────────┤│                 │
+  │   Results    ││                 │
+  └──────────────┘└─────────────────┘
+```
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_cursor({
+    layout_config = {
+      width = 0.7,
+      height = 0.4,
+    },
+  })
+end
+```
+
+#### 22 — Cursor Minimal
+
+```lua
+local find_files_opts = function()
+  return require("telescope.themes").get_cursor({
+    previewer = false,
+    layout_config = {
+      width = 0.4,
+      height = 0.3,
+    },
+  })
+end
+```
+
+---
+
+### Adaptive (#23)
+
+#### 23 — Flex (Auto Horizontal ↔ Vertical)
+
+Switches based on window width.
+
+```lua
+local find_files_opts = {
+  layout_strategy = "flex",
+  layout_config = {
+    width = 0.8,
+    height = 0.85,
+    flip_columns = 130,
+    horizontal = { preview_width = 0.55 },
+    vertical = { preview_height = 0.45 },
+  },
+}
+```
+
+---
+
+### Anchored Positions (#24–#30)
+
+#### 24 — Anchored Top-Right Corner
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.6,
+    height = 0.5,
+    anchor = "NE",
+    prompt_position = "top",
+    preview_width = 0.5,
+  },
+}
+```
+
+#### 25 — Anchored Bottom-Left
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.5,
+    height = 0.4,
+    anchor = "SW",
+    prompt_position = "top",
+    preview_width = 0.5,
+  },
+}
+```
+
+#### 26 — Anchored Top-Center (Notification Style)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.7,
+    height = 0.35,
+    anchor = "N",
+    prompt_position = "top",
+    preview_width = 0.5,
+  },
+}
+```
+
+#### 27 — Anchored Bottom-Center
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 0.7,
+    height = 0.35,
+    anchor = "S",
+    prompt_position = "top",
+    preview_width = 0.5,
+  },
+}
+```
+
+#### 28 — Tall Narrow Sidebar (Anchored East)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.35,
+    height = 0.9,
+    anchor = "E",
+    prompt_position = "top",
+    mirror = true,
+    preview_height = 0.4,
+  },
+}
+```
+
+#### 29 — Tall Narrow Sidebar (Anchored West)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "vertical",
+  layout_config = {
+    width = 0.35,
+    height = 0.9,
+    anchor = "W",
+    prompt_position = "top",
+    mirror = true,
+    preview_height = 0.4,
+  },
+}
+```
+
+#### 30 — Fixed Pixel Sizes (Exact Control)
+
+```lua
+local find_files_opts = {
+  layout_strategy = "horizontal",
+  layout_config = {
+    width = 120,
+    height = 30,
+    preview_width = 60,
+    prompt_position = "top",
+  },
+}
+```
+
+---
+
+## Cosmetic Modifiers
+
+These can be added to **any** variation above to change the look further.
+
+### Transparency
+
+```lua
+winblend = 15,  -- 0 = opaque, 100 = fully transparent
+```
+
+### Custom Border Characters
+
+```lua
+-- rounded (default-ish)
+borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+
+-- sharp corners
+borderchars = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+
+-- double line
+borderchars = { "═", "║", "═", "║", "╔", "╗", "╝", "╚" },
+
+-- thick
+borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+
+-- minimal dots
+borderchars = { "·", "│", "·", "│", "·", "·", "·", "·" },
+
+-- empty (border spacing without visible lines)
+borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+
+-- dashes
+borderchars = { "╌", "╎", "╌", "╎", "┌", "┐", "┘", "└" },
+```
+
+### Prompt Icons
+
+```lua
+prompt_prefix = "  ",     -- magnifying glass
+prompt_prefix = "  ",     -- arrow
+prompt_prefix = " > ",      -- classic
+prompt_prefix = "  ",     -- lambda
+prompt_prefix = " ❯ ",      -- chevron
+prompt_prefix = "  ",     -- telescope
+prompt_prefix = " 🔎 ",     -- emoji search
+```
+
+### Selection Carets
+
+```lua
+selection_caret = "  ",    -- arrow
+selection_caret = " ▸ ",     -- triangle
+selection_caret = " ● ",     -- dot
+selection_caret = " ┃ ",     -- bar
+selection_caret = " ❯ ",     -- chevron
+selection_caret = " → ",     -- arrow
+```
+
+### Path Display
+
+```lua
+-- just the filename
+path_display = { "tail" },
+
+-- shortened directories
+path_display = { shorten = { len = 1, exclude = { -1 } } },
+
+-- filename first, then path
+path_display = { "filename_first" },
+
+-- filename first, reversed directory order
+path_display = {
+  filename_first = {
+    reverse_directories = true,
+  },
+},
+
+-- truncate long paths
+path_display = { "truncate" },
+path_display = { truncate = 3 },
+
+-- completely hidden
+path_display = { "hidden" },
+
+-- smart (removes common prefix)
+path_display = { "smart" },
+```
+
+### Titles
+
+```lua
+-- custom titles
+prompt_title = "Find File",
+results_title = "Matches",
+
+-- hide titles entirely
+prompt_title = false,
+results_title = false,
+```
+
+### Preview Hidden on Start
+
+```lua
+preview = {
+  hide_on_startup = true,  -- toggle with actions.layout.toggle_preview
+},
+```
+
+---
+
+## Anchor Reference
+
+All 9 anchor positions for pinning the picker to screen edges:
+
+```
+ NW ──── N ──── NE
+ │                │
+ W    CENTER     E
+ │                │
+ SW ──── S ──── SE
+```
+
+```lua
+anchor = "NW"     -- top-left corner
+anchor = "N"      -- top-center
+anchor = "NE"     -- top-right corner
+anchor = "W"      -- left-center
+anchor = ""       -- center (default)
+anchor = "E"      -- right-center
+anchor = "SW"     -- bottom-left corner
+anchor = "S"      -- bottom-center
+anchor = "SE"     -- bottom-right corner
+```
+
+---
+
+## Sizing Reference
+
+Width and height accept multiple formats:
+
+```lua
+-- percentage of screen (0 < n < 1)
+width = 0.8         -- 80% of screen
+
+-- fixed character count (n >= 1)
+width = 120         -- exactly 120 columns
+
+-- padding from edges
+width = { padding = 5 }   -- screen width minus 10 (5 each side)
+
+-- percentage with min/max constraints
+width = { 0.8, min = 80 }
+height = { 0.6, max = 40 }
+
+-- function (maximum flexibility)
+width = function(_, max_columns, _)
+  return math.min(max_columns - 10, 140)
+end
+```
+
+---
+
+## Layout Strategy Quick Reference
+
+| Strategy      | Best For                      | Key Options                  |
+| ------------- | ----------------------------- | ---------------------------- |
+| `horizontal`  | Wide screens, side-by-side    | `preview_width`, `mirror`    |
+| `vertical`    | Narrow screens, stacked       | `preview_height`, `mirror`   |
+| `center`      | Dropdown menus, compact lists | `preview_cutoff` (lines)     |
+| `cursor`      | Context-aware popups          | appears at cursor position   |
+| `flex`        | Responsive layouts            | `flip_columns`, `flip_lines` |
+| `bottom_pane` | IDE-style panels              | docked to bottom edge        |
+
+---
+
+## Composing Your Own
+
+Take any strategy + config + cosmetics and combine:
+
+```lua
+local find_files_opts = {
+  -- STRATEGY
+  layout_strategy = "vertical",
+
+  -- CONFIG
+  layout_config = {
+    width = 0.5,
+    height = 0.8,
+    preview_height = 0.4,
+    prompt_position = "top",
+    mirror = true,
+    anchor = "E",
+  },
+
+  -- COSMETICS
+  previewer = true,
+  border = true,
+  borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+  winblend = 10,
+  prompt_prefix = "  ",
+  selection_caret = " ▸ ",
+  prompt_title = "Find File",
+  results_title = false,
+  path_display = { "filename_first" },
+  sorting_strategy = "ascending",
+}
+```
+
+---
+
+## Notes
+
+- **Theme functions** (`get_dropdown`, `get_ivy`, `get_cursor`) are convenience wrappers — they set strategy + config + some cosmetics in one call. Anything a theme does, you can do manually with raw config.
+- **`preview_cutoff`** controls when the preview auto-hides on small screens (measured in columns for horizontal, lines for vertical/center).
+- **`mirror`** flips the position of results/prompt relative to preview.
+- **`prompt_position`** only accepts `"top"` or `"bottom"`.
+- Anchor + small size = floating palette anywhere on screen.
+- You can combine `winblend` with any layout for a translucent look.
+- The `create_layout` API exists for fully custom window arrangements (raw nvim window API) but is overkill for most use cases.
