@@ -56,8 +56,8 @@ return {
     -- need explicit labels. These define the <leader> namespace hierarchy.
     spec = {
       -- Active groups (keymaps exist in core/keymaps.lua)
-      { "<leader>b", group = "Buffer" },
-      { "<leader>q", group = "Quickfix" },
+      -- { "<leader>b", group = "Buffer" },
+      -- { "<leader>q", group = "Quickfix" },
 
       -- Reserved groups (keymaps added in Phase 2/3)
       -- { "<leader>f", group = "Find" },
