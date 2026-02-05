@@ -43,23 +43,17 @@ keymap("n", "<C-u>", "<C-u>zz", { desc = "Half-page up (centered)" })
 keymap("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 keymap("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
--- ── CLIPBOARD MASTERY ───────────────────────────────────────
-
+-- ── CLIPBOARD (pragmatic: y just works, deletes don't pollute) ───
 -- Paste over selection without losing register
--- WHY: Default paste-over replaces your yank register with what you just deleted.
-keymap("x", "<leader>p", '"_dP', { desc = "Paste over without register loss" })
+-- WHY: Default visual p/P replaces your yank with deleted text. P is redundant in visual mode (same as p), so repurpose it for no-clobber paste.
+keymap("x", "P", '"_dP', { desc = "Paste over without register loss" })
 
--- Yank to system clipboard explicitly
--- WHY: Even with unnamedplus, explicit clipboard yanks are intentional and self-documenting.
-keymap({ "n", "v" }, "<leader>y", '"+y', { desc = "Yank to system clipboard" })
-keymap("n", "<leader>Y", '"+Y', { desc = "Yank line to system clipboard" })
-
--- Delete to void register (don't pollute yank)
--- WHY: Protect your yank register when deleting code you don't want to paste.
+-- Delete to void register (opt-in for throwaway deletes)
+-- WHY: With unnamedplus, d pollutes clipboard. Use this when removing junk.
 keymap({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to void register" })
 
--- Don't yank with x
--- WHY: Single char delete should not overwrite your carefully yanked text.
+-- Single char delete to void
+-- WHY: x on a typo should never overwrite your carefully yanked code.
 keymap("n", "x", '"_x', { desc = "Delete char without yank" })
 
 -- ── WINDOW NAVIGATION ───────────────────────────────────────
