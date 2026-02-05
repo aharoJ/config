@@ -5,6 +5,7 @@
 
 return {
   { import = "plugins.core" },
+  { import = "plugins.core.colorscheme" },
   { import = "plugins.tools" },
   { import = "plugins.editor" },    -- Phase 3: LSP, completion, diagnostics, formatting
   -- { import = "plugins.ui" },        -- Phase 2: statusline, bufferline, explorer
