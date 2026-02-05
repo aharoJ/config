@@ -8,7 +8,7 @@
                 },
                 "rules": [
                     {
-                        "description": "HYPER+[ → Previous Desktop, HYPER+] → Next Desktop",
+                        "description": "HYPER + [  ] → Switch Desktop (needs macOS ⌃← ⌃→ in Mission Control shortcuts)",
                         "manipulators": [
                             {
                                 "from": {
