@@ -5,7 +5,6 @@
 
 -- ── 1. Leader Key ───────────────────────────────────────────
 -- MUST be set before ANY plugin or keymap loads.
--- Space as leader: thumb-accessible on HHKB, universal standard.
 vim.g.mapleader = " "
 vim.g.maplocalleader = ","
 

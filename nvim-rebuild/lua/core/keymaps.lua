@@ -64,17 +64,14 @@ keymap("n", "<C-k>", "<C-w>k", { desc = "Move to above split" })
 keymap("n", "<C-l>", "<C-w>l", { desc = "Move to right split" })
 
 -- ── WINDOW RESIZING (HHKB: Meta is thumb, NO arrow keys) ────
--- WHY: HHKB has no dedicated arrows. <C-Arrow> requires double Fn layer (BANNED).
--- Meta/Alt is thumb-accessible on HHKB. <M-hjkl> is Tier 2 comfort.
-keymap("n", "<M-l>", "<cmd>vertical resize -2<CR>", { desc = "Decrease window width" })
-keymap("n", "<M-h>", "<cmd>vertical resize +2<CR>", { desc = "Increase window width" })
+-- WHY: HHKB - Meta/Alt is thumb-accessible on HHKB. <M-hjkl> is Tier 2 comfort.
+keymap("n", "<M-h>", "<cmd>vertical resize -2<CR>", { desc = "Decrease window width" })
+keymap("n", "<M-l>", "<cmd>vertical resize +2<CR>", { desc = "Increase window width" })
 keymap("n", "<M-j>", "<cmd>resize -2<CR>", { desc = "Decrease window height" })
 keymap("n", "<M-k>", "<cmd>resize +2<CR>", { desc = "Increase window height" })
 
 -- ── BUFFER MANAGEMENT ───────────────────────────────────────
--- NOTE: [b / ]b already work via 0.11 built-in defaults.
-keymap("n", "<leader>bn", "<cmd>bnext<CR>", { desc = "Next buffer" })
-keymap("n", "<leader>bp", "<cmd>bprevious<CR>", { desc = "Previous buffer" })
+-- NOTE: [b / ]b handle next/prev via 0.11 built-in defaults. No duplication needed.
 keymap("n", "<leader>bd", "<cmd>bdelete<CR>", { desc = "Delete buffer" })
 keymap("n", "<leader><leader>", "<C-^>", { desc = "Alternate buffer (last file)" })
 
@@ -99,8 +96,7 @@ keymap("n", "<leader>qq", "<cmd>q!<CR>", { desc = "Quit" })
 
 
 -- Clear search highlight on Escape
--- NOTE: With hlsearch=false this is less critical, but harmless to keep.
-keymap("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlights" })
+-- NOTE: No <Esc> → nohlsearch needed. hlsearch=false means highlights never persist.
 
 -- Word replace under cursor (fastest refactor motion in vanilla vim)
 -- WHY: Positions cursor in the replacement field, ready to type. ThePrimeagen classic.
