@@ -1,0 +1,122 @@
+# =======================
+# Ghostty macOS — minimal, no tabs/splits
+# =======================
+
+# ---- Fonts ----
+font-family = "Menlo"
+font-size = 18.5
+font-synthetic-style = true
+# To disable programming ligatures entirely:
+# font-feature = -calt,-liga,-dlig
+
+# ---- Theme & Colors ----
+theme = light:Rose Pine Dawn,dark:Rose Pine
+minimum-contrast = 1.1
+cursor-style = bar
+cursor-style-blink = true
+right-click-action = copy-or-paste
+
+# ---- Background & Effects (macOS) ----
+background-opacity = 0.70
+background-blur = false
+window-vsync = true
+
+# ---- Window & Titlebar (macOS) ----
+title = " "
+macos-titlebar-style = transparent
+macos-window-buttons = visible
+macos-titlebar-proxy-icon = hidden
+window-decoration = auto
+window-inherit-working-directory = true
+window-inherit-font-size = true
+window-step-resize = true
+window-width = 120
+window-height = 36
+
+quit-after-last-window-closed = true
+window-save-state = default
+
+window-padding-x = 8,8
+window-padding-y = 2,4
+
+
+
+
+# ---- Shell integration ----
+shell-integration = detect
+shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
+
+# ---- Clipboard & Safety ----
+clipboard-paste-protection = true
+clipboard-read = ask
+clipboard-write = allow
+selection-clear-on-typing = true
+
+# ---- Cursor & Mouse ----
+cursor-click-to-move = true
+mouse-hide-while-typing = true
+mouse-scroll-multiplier = 3
+
+# ---- macOS niceties ----
+macos-option-as-alt = left
+macos-auto-secure-input = true
+macos-secure-input-indication = true
+auto-update = download
+
+# ---- Quick Terminal (optional) ----
+quick-terminal-position = top
+quick-terminal-size = 40%
+quick-terminal-animation-duration = 0.18
+quick-terminal-autohide = true
+quick-terminal-space-behavior = move
+
+# ---- Misc ----
+unfocused-split-opacity = 0.85
+scrollback-limit = 10000000
+
+
+# =======================
+# Keybinds — no tabs, no splits
+# =======================
+
+keybind = clear
+
+# Windows
+keybind = cmd+n=new_window
+keybind = cmd+q=close_window
+keybind = cmd+opt+q=quit
+
+# Clipboard & basic edit
+keybind = cmd+c=copy_to_clipboard
+keybind = cmd+shift+c=copy_to_clipboard
+keybind = cmd+v=paste_from_clipboard
+keybind = cmd+shift+v=paste_from_clipboard
+keybind = cmd+a=select_all
+keybind = cmd+k=clear_screen
+
+# Font size (optional but handy)
+keybind = cmd+equal=increase_font_size:1
+keybind = cmd+minus=decrease_font_size:1
+keybind = cmd+0=reset_font_size
+
+# Config QoL
+keybind = cmd+comma=open_config
+keybind = cmd+shift+r=reload_config
+
+# Stop macOS Hide/Minimize from firing while typing
+keybind = cmd+h=ignore
+keybind = cmd+m=ignore
+
+
+
+
+keybind = cmd+z=text:\x02
+keybind = opt+j=esc:j
+keybind = opt+k=esc:k
+
+
+
+# ---- HYPER = cmd+opt+ctrl+shift ----
+# keybind = cmd+opt+ctrl+shift+h=text:\x02p
+# keybind = cmd+opt+ctrl+shift+l=text:\x02n
+
