@@ -188,6 +188,9 @@ macos-non-native-fullscreen = false
 # Set to true if you want Option+key to send escape sequences to Neovim
 macos-option-as-alt = true
 
+# Hide the folder proxy icon in titlebar (cleaner look)
+macos-titlebar-proxy-icon = hidden
+
 # Window shadow (disable for cleaner look with transparency)
 macos-window-shadow = true
 
