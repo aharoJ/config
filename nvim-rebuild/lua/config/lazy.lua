@@ -47,13 +47,16 @@ require("lazy").setup({
     notify = false,                 -- Don't notify on config file changes
   },
   performance = {
-    rtp = {
-      disabled_plugins = {
-        -- "gzip", "matchit", "matchparen", "netrwPlugin", "tarPlugin", "tohtml", "tutor", "zipPlugin",
+      rtp = {
+          disabled_plugins = {
+              "gzip", "tarPlugin", "tohtml", "tutor", "zipPlugin",
+              -- "matchit",      -- ← needed for extended % matching
+              -- "matchparen",   -- ← needed for bracket highlight pairing  
+              -- "netrwPlugin",  -- ← needed for gx, file explorer hijacking
+          },
       },
-    },
   },
   ui = {
-    border = "rounded",             -- Consistent border style (matches vim.o.winborder)
+      border = "rounded",             -- Consistent border style (matches vim.o.winborder)
   },
 })
