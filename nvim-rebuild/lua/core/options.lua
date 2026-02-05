@@ -63,6 +63,8 @@ vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.foldlevel = 99                   -- Start with all folds open
 vim.opt.foldlevelstart = 99              -- New buffers also start fully unfolded
+vim.opt.foldtext = ""                    -- Show first line of fold cleanly (0.11+, no cruft)
+
 
 -- ── Performance (M4 Max has headroom to spare) ──────────────
 vim.opt.redrawtime = 100                  -- Aggressive redraw timeout (CPU is free on Apple Silicon)
@@ -75,6 +77,19 @@ vim.opt.shellcmdflag = "-c"
 
 -- ── Mouse ───────────────────────────────────────────────────
 vim.opt.mouse = "a"                       -- Enable mouse in all modes (useful for resizing splits)
+
+-- ── Scrolling ───────────────────────────────────────────────
+vim.opt.smoothscroll = true               -- Smooth visual scrolling (0.10+, free on M4 Max + Ghostty)
+
+-- ── Visual Block ────────────────────────────────────────────
+vim.opt.virtualedit = "block"             -- Allow cursor past line end in visual block mode
+
+-- ── Visual Chrome ───────────────────────────────────────────
+vim.opt.fillchars = {
+  fold = " ",                             -- Clean fold markers
+  eob = " ",                              -- Hide ~ on empty lines past EOF
+  diff = "╱",                             -- Diagonal for deleted diff lines
+}
 
 -- ── Title ───────────────────────────────────────────────────
 vim.opt.title = true                      -- Set terminal title to current file
