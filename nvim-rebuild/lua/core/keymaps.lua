@@ -66,8 +66,8 @@ keymap("n", "<C-l>", "<C-w>l", { desc = "Move to right split" })
 -- ── WINDOW RESIZING (HHKB: Meta is thumb, NO arrow keys) ────
 -- WHY: HHKB has no dedicated arrows. <C-Arrow> requires double Fn layer (BANNED).
 -- Meta/Alt is thumb-accessible on HHKB. <M-hjkl> is Tier 2 comfort.
-keymap("n", "<M-h>", "<cmd>vertical resize -2<CR>", { desc = "Decrease window width" })
-keymap("n", "<M-l>", "<cmd>vertical resize +2<CR>", { desc = "Increase window width" })
+keymap("n", "<M-l>", "<cmd>vertical resize -2<CR>", { desc = "Decrease window width" })
+keymap("n", "<M-h>", "<cmd>vertical resize +2<CR>", { desc = "Increase window width" })
 keymap("n", "<M-j>", "<cmd>resize -2<CR>", { desc = "Decrease window height" })
 keymap("n", "<M-k>", "<cmd>resize +2<CR>", { desc = "Increase window height" })
 
