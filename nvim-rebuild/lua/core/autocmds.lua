@@ -65,14 +65,14 @@ autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
 -- Without this, you'd get E212 "Can't open file for writing" if dirs don't exist.
 augroup("UserAutoMkdir", { clear = true })
 autocmd("BufWritePre", {
-  group = "UserAutoMkdir",
-  callback = function(args)
-    local dir = vim.fn.fnamemodify(args.match, ":p:h")
-    if vim.fn.isdirectory(dir) == 0 then
-      vim.fn.mkdir(dir, "p")
-    end
+  group = "UserTrimWhitespace",
+  pattern = "*",
+  callback = function()
+    local view = vim.fn.winsaveview()
+    vim.cmd([[%s/\s\+$//e]])
+    vim.fn.winrestview(view)
   end,
-  desc = "Create parent directories automatically on save",
+  desc = "Remove trailing whitespace on save (preserves cursor + scroll state)",
 })
 
 -- ── Auto-Resize Splits on Terminal Resize ───────────────────
