@@ -198,7 +198,9 @@ focus-follows-mouse = false
 mouse-scroll-multiplier = 3
 
 # Bell behavior: visual attention, no audio
-bell-features = attention,title
+# bell-features = attention,title | ANNOYING BEHAVIOR
+bell-features = no-attention, no-title
+
 
 # Link handling
 link-url = true
