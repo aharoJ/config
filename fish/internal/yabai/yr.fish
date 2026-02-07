@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+# path: ~/.config/fish/internal/yabai/yr.fish
 # Restart Yabai cleanly and re-apply the selected mode (stack | bsp)
 # Usage:
 #   yr                 # infer mode from SKHD symlink
