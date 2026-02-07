@@ -1,155 +1,142 @@
 #!/usr/bin/env sh
-#YABAI STUFF
-# Base configuration – NEUTRAL mode, profile-independent
-# Manual modes handled by: ~/.config/fish/internal/yabai/yp.fish
-
-# for this to work you must configure sudo such that it will be able to run the command without password
-yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-
-## Change how yabai looks
-# NOTE: Do NOT enforce a layout here (neutral base). Profiles set layout explicitly.
-# yabai -m config layout stack # bsp | float | stack
-
-# ~~~~~~~~~~~~~~~~~~~~~~   MACBOOK   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# yabai -m config top_padding 00
-# yabai -m config bottom_padding 20
-# yabai -m config left_padding 20
-# yabai -m config right_padding 20
-# yabai -m config window_gap 00
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# path: ~/.config/yabai/yabairc
+# description: Neutral base configuration — global behavior ONLY.
+#              Layout, padding, gaps, and balance are set by profiles.
+#              This file is the equivalent of Spring Boot's application.properties:
+#              sensible defaults, zero opinion on layout.
 #
-# ~~~~~~~~~~~~~~~~~~~~~~   ULTRAWIDE MONITOR   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# yabai -m config top_padding 0
-# yabai -m config bottom_padding 40
-# yabai -m config left_padding 250
-# yabai -m config right_padding 300
-# yabai -m config window_gap 40
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# version: yabai v7.1.x | macOS 26.2 Tahoe (M4 Max)
+# SIP: Fully enabled — NO scripting addition, NO space manipulation commands.
+# date: 2026-02-07
+# CHANGELOG: 2026-02-07 | Merged Gemini's v7 options, refocus signals, float rules,
+#              explicit defaults into Claude's neutral-base architecture.
+#            ROLLBACK: Revert to pre-merge yabairc (see git history)
 
-# ~~~~~~~~~~~~~~~~~~~~~~   ARCH LINUX   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# (Neutral base: do not set paddings here; profiles control this)
-# yabai -m config top_padding 20
-# yabai -m config bottom_padding 30
-# yabai -m config right_padding 40
-# yabai -m config left_padding 40
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ── Global Behavior ──────────────────────────────────────────────
 
+# WHY second_child: New windows appear right/below, matching natural reading flow.
+yabai -m config window_placement             second_child
 
-#### float system preferences. Most of these just STOP yabai form resizing them.
-# yabai -m rule --add app="^System Preferences$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Karabiner-Elements$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Karabiner-EventViewer$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Finder$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Preview$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Keka$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Disk Utility$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^System Information$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Activity Monitor$" sticky=on layer=above manage=off
-# yabai -m rule --add app="^Path Finder$" manage=off
-# yabai -m rule --add app="^Spotify$" manage=off
-# yabai -m rule --add app="^Windows App$" manage=off -- its quite annoying
-# yabai -m rule --add app="^console$" manage=off
-# yabai -m rule --add app="^sketchybar$" sticky=on layer=above manage=off
+# WHY auto: yabai picks vertical or horizontal split based on window dimensions.
+# Wide windows split vertically, tall windows split horizontally. v7 feature.
+yabai -m config split_type                   auto
 
-# ~~~~~~~~~~~~~~~~~~~~~~   EXPIRIMENTING   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-yabai -m rule --add app="^System Settings$" manage=off
-yabai -m rule --add app="^FaceTime$" manage=off
-# yabai -m rule --add app="^Finder$" manage=off
-yabai -m rule --add app="^Activity Monitor$" manage=off
-yabai -m rule --add app="^Disk Utility$" manage=off
-yabai -m rule --add app="^Calculator$" manage=off
-yabai -m rule --add app="^Console$" manage=off
-yabai -m rule --add app="^System Information$" manage=off
-yabai -m rule --add app="^Font Book$" manage=off
-yabai -m rule --add app="^Keychain Access$" manage=off
-yabai -m rule --add app="^Screenshot$" manage=off
-yabai -m rule --add app="^Migration Assistant$" manage=off
-yabai -m rule --add app="^Audio MIDI Setup$" manage=off
-yabai -m rule --add app="^ColorSync Utility$" manage=off
-yabai -m rule --add app="^VoiceOver Utility$" manage=off
-yabai -m rule --add app="^Bluetooth File Exchange$" manage=off
-yabai -m rule --add app="^QuickTime Player$" manage=off
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# WHY focused: New windows split at the focused window, not the tree root.
+# More intuitive — the split happens where your eyes already are.
+yabai -m config window_insertion_point        focused
 
-# ~~~~~~~~~~~~~~~~~~~~~~   Iphone Developing with MAUI   ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# WHY on: Zoom state (zoom-fullscreen / zoom-parent) survives focus changes.
+# Without this, switching focus unzooms your window. v7 feature.
+yabai -m config window_zoom_persist          on
+
+# WHY off: Focus changes only on explicit action (click or keybind), not mouse hover.
+# Prevents accidental focus shifts when moving mouse to dock/menubar.
+yabai -m config mouse_follows_focus          off
+yabai -m config focus_follows_mouse          off
+
+# WHY float: Shadows only on floating windows — tiled windows don't need depth cues.
+yabai -m config window_shadow                float
+
+# WHY 0.0: Disable animations entirely for snappy response.
+# NOTE: window_animation_duration requires Screen Recording permission if > 0.
+yabai -m config window_animation_duration    0.0
+# WHY preset: If you ever enable animations, ease_out_circ gives smooth deceleration.
+yabai -m config window_animation_easing      ease_out_circ
+
+# WHY explicit: Visual hint showing where a new window will land in BSP tree.
+# Warm red — visible without being distracting. Only appears during insertion.
+yabai -m config insert_feedback_color        0xffd75f5f
+
+# ── Explicit Defaults (future-proof against yabai changing these) ─
+
+# WHY explicit: These ARE the current defaults, but stating them protects against
+# future yabai releases changing defaults silently. Same principle as Spring Boot
+# explicitly declaring server.port=8080.
+yabai -m config window_opacity               off
+yabai -m config external_bar                 off:0:0
+yabai -m config menubar_opacity              1.0
+
+# ── Mouse Interaction ────────────────────────────────────────────
+
+# WHY ctrl: On HHKB, Ctrl is home-row left — comfortable for modifier+click.
+# Hold modifier + left-click to move, + right-click to resize.
+yabai -m config mouse_modifier               ctrl
+yabai -m config mouse_action1                move
+yabai -m config mouse_action2                resize
+
+# WHY swap: Dragging a window onto another swaps positions (not stack).
+# Stack behavior is managed by profile/keybinds, not mouse.
+yabai -m config mouse_drop_action            swap
+
+# ── Display Handling ─────────────────────────────────────────────
+
+# WHY default: Respect macOS display arrangement from System Settings.
+yabai -m config window_origin_display        default
+yabai -m config display_arrangement_order    default
+
+# ── Signals ──────────────────────────────────────────────────────
+
+# WHY: When external displays connect/disconnect, yabai needs to re-read geometry.
+# Restart service to cleanly re-tile all windows for the new display config.
+yabai -m signal --add event=display_added   action="yabai --restart-service"
+yabai -m signal --add event=display_removed action="yabai --restart-service"
+
+# WHY refocus: When a window is destroyed/minimized/hidden, focus the most recent
+# window so you're never left staring at nothing. Critical for stack mode where
+# closing the top window would leave the entire screen blank without this.
+yabai -m signal --add event=window_destroyed  active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus recent"
+yabai -m signal --add event=window_minimized  active=yes action="yabai -m window --focus recent"
+yabai -m signal --add event=application_hidden active=yes action="yabai -m window --focus recent"
+
+# ── Float Rules ──────────────────────────────────────────────────
+# WHY: System apps and dialogs should never be tiled. They break layouts
+# and confuse the BSP tree. Manage=off tells yabai to leave them alone.
+#
+# Pattern: Combine related apps into single regex where possible (rafi pattern).
+# Use anchored regex (^ and $) for exact matching — avoids false positives.
+
+# macOS System Apps — never tile
+yabai -m rule --add app="^(System Settings|System Information|System Preferences)$" manage=off
+yabai -m rule --add app="^(Activity Monitor|Disk Utility|Console|Migration Assistant)$" manage=off
+yabai -m rule --add app="^(Calculator|Font Book|Keychain Access|Screenshot)$" manage=off
+yabai -m rule --add app="^(Audio MIDI Setup|ColorSync Utility|VoiceOver Utility)$" manage=off
+yabai -m rule --add app="^(Bluetooth File Exchange|Digital Color Meter|Grapher)$" manage=off
+
+# Media & Communication — float by default
+yabai -m rule --add app="^(FaceTime|Photo Booth|QuickTime Player|Preview)$" manage=off
+
+# Karabiner — prefix match catches both Elements and EventViewer
+yabai -m rule --add app="^Karabiner-" manage=off
+
+# Ghostty — float popup/quick terminal windows (subrole identifies overlay panels)
+yabai -m rule --add app="^Ghostty$" subrole="AXFloatingWindow" manage=off
+
+# Docker Desktop — float (dashboard UI, not a coding window)
+yabai -m rule --add app="^Docker Desktop$" manage=off
+
+# macOS Installer — transient
+yabai -m rule --add app="^Installer$" manage=off
+
+# Development Tools — float dialogs/simulators
 yabai -m rule --add app="^Simulator$" manage=off
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-# Window -> Stay on top
+# Finder — only float info/preferences windows, tile normal Finder windows
+yabai -m rule --add app="^Finder$" title="(Co(py|nnect)|Move|Info|Pref)" manage=off
 
-## Some random global settings
-# yabai -m config focus_follows_mouse          autoraise
-# yabai -m config focus_follows_mouse          on
+# App Store & Software Update — float (modal-heavy, tiling breaks them)
+yabai -m rule --add app="^(App Store|Software Update)$" manage=off
 
-# New window spawns to the right if vertical split, or bottom if horizontal split
-# (Neutral base: do not enforce)
-# yabai -m config window_placement second_child
-# yabai -m config window_topmost off
+# Archive utilities — transient windows
+yabai -m rule --add app="^(Archive Utility|Keka)$" manage=off
 
-# yabai -m config window_shadow float
-# yabai -m config window_opacity off
-# yabai -m config window_opacity_duration 0.00
-# yabai -m config active_window_opacity 1.0
-# yabai -m config normal_window_opacity 0.97
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ── Apply Rules Retroactively ────────────────────────────────────
+# WHY: Since yabai v7, rules only apply to NEW windows by default.
+# This restores the old behavior: apply rules to already-open windows too.
+yabai -m rule --apply
 
-## some other settings
-# (Neutral base: let profiles decide)
-# yabai -m config auto_balance off
-# yabai -m config split_ratio 0.50
-## set mouse interaction modifier key (default: fn)
-# yabai -m config mouse_modifier ctrl
-## set modifier + right-click drag to resize window (default: resize)
-# yabai -m config mouse_action2 resize
-## set modifier + left-click drag to resize window (default: move)
-# yabai -m config mouse_action1 move
+# ── Debug ────────────────────────────────────────────────────────
+# Uncomment to enable debug logging (check: tail -f /tmp/yabai_$USER.err.log)
+# yabai -m config debug_output on
 
-# # 1. Turn the feature on and choose a sensible width
-# yabai -m config window_border          on
-#
-# # Border highlighting for focused window
-# yabai -m config border_width                3
-# yabai -m config active_window_border_color  0xff7755ff  # Bright orange-red
-# yabai -m config normal_window_border_color  0x555555ff  # Dark gray
-#
-#
-# yabai -m signal --add event=application_front_switched action="/scripts/active_pane.sh"
+echo "yabai: neutral base loaded (no layout — apply a profile)"
 
-### DEFAULTS ####
-# (Neutral base: reference only)
-# yabai -m config layout bsp
-# yabai -m config top_padding 0 # 33 for monitor  #2 for mac
-# yabai -m config bottom_padding 4
-# yabai -m config left_padding 2
-# yabai -m config right_padding 2
-# yabai -m config window_gap 6
-
-# #Ubersicht widget bar stuff
-#yabai -m signal --add event=space_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
-#yabai -m signal --add event=display_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-primary-jsx\"'"
-
-#yabai -m signal --add event=space_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
-#yabai -m signal --add event=display_changed \
-#action="osascript -e 'tell application \"Übersicht\" to refresh widget id \"nibar-spaces-secondary-jsx\"'"
-
-# signals
-# yabai -m signal --add event=window_destroyed action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
-#yabai -m signal --add event=space_changed action="yabai -m window --focus $(yabai -m query --windows --window | jq ".id")"
-# yabai -m signal --add event=application_terminated action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
-
-#testing signals
-# yabai -m signal --add event=window_destroyed action="terminal-notifier -message 'window_destroyed'"
-# yabai -m signal --add event=application_terminated action="terminal-notifier -message 'application_terminated'"
-
-## If I close the active window, focus on any other visible window.
-# yabai -m signal --add event=window_destroyed action="bash /Users/aharo/.config/yabai/scripts/switchspaces/window-focus-on-destroy.sh"
-# yabai -m signal --add event=space_changed action="export CUR_ACTIVE_APP=\"iTerm2\""
-
-echo "yabai configuration loaded.."
-
-# borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 &
-
-#END
