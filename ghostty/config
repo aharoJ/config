@@ -1,122 +1,205 @@
-# =======================
-# Ghostty macOS — minimal, no tabs/splits
-# =======================
+# ─────────────────────────────────────────────────────────────────────────────
+# GHOSTTY CONFIGURATION
+# Machine: Apple Silicon M4 Max | macOS Tahoe 26.2
+# Keyboard: HHKB Professional Hybrid Type-S
+# Shell: Fish (Homebrew)
+# Philosophy: Minimal, intentional, Neovim-optimized
+# ─────────────────────────────────────────────────────────────────────────────
 
-# ---- Fonts ----
+# ── Theme ────────────────────────────────────────────────────────────────────
+# Using light/dark auto-switching. Ghostty ships with hundreds of themes.
+# Run `ghostty +list-themes` to see all options.
+theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+
+# ── Font ─────────────────────────────────────────────────────────────────────
+# Ghostty has built-in Nerd Font support, so you don't need a patched font.
+# JetBrains Mono is bundled and used by default - uncomment to change.
 font-family = "Menlo"
-font-size = 18.5
-font-synthetic-style = true
-# To disable programming ligatures entirely:
-# font-feature = -calt,-liga,-dlig
+font-size = 14
 
-# ---- Theme & Colors ----
-theme = light:Rose Pine Dawn,dark:Rose Pine
-minimum-contrast = 1.1
-cursor-style = bar
-cursor-style-blink = true
-right-click-action = copy-or-paste
+# Thicken strokes slightly on macOS for better readability at smaller sizes
+font-thicken = true
 
-# ---- Background & Effects (macOS) ----
+# Disable ligatures if you prefer (uncomment)
+# font-feature = -calt
+# font-feature = -liga
+# font-feature = -dlig
+
+# ── Transparency ─────────────────────────────────────────────────────────────
+# 70% opacity - see your desktop through the terminal
 background-opacity = 0.70
+
+# No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
 background-blur = true
-window-vsync = true
 
-# ---- Window & Titlebar (macOS) ----
-title = " "
+# Apply opacity to cells with explicit background colors too (e.g., Neovim themes)
+# Set to true if you want full transparency even in TUI apps
+background-opacity-cells = false
+
+# ── Window ───────────────────────────────────────────────────────────────────
+# Transparent titlebar that matches terminal background - seamless look
 macos-titlebar-style = transparent
-macos-window-buttons = visible
-macos-titlebar-proxy-icon = hidden
-window-decoration = auto
-window-inherit-working-directory = true
-window-inherit-font-size = true
-window-step-resize = true
+
+# Blank title = ultra-clean titlebar
+title = " "
+
+# Window theme follows terminal background luminosity
+window-theme = auto
+
+# Slight padding for breathing room (points, scaled for DPI)
+window-padding-x = 4
+window-padding-y = 4
+window-padding-balance = true
+
+# Start with a reasonable size (cells, not pixels)
 window-width = 120
-window-height = 36
+window-height = 35
 
-quit-after-last-window-closed = true
-window-save-state = default
+# New windows/tabs inherit working directory (shell integration required)
+window-inherit-working-directory = true
 
-window-padding-x = 8,8
-window-padding-y = 2,4
+# Confirm before closing if process is running
+confirm-close-surface = true
 
+# ── Cursor ───────────────────────────────────────────────────────────────────
+# Bar cursor at prompts (shell integration), block in apps
+cursor-style = block
+cursor-style-blink = false
 
+# ── Mouse ────────────────────────────────────────────────────────────────────
+# Hide cursor while typing (reappears on mouse movement)
+mouse-hide-while-typing = true
 
+# Option+click to move cursor at prompts (requires shell integration)
+cursor-click-to-move = true
 
-# ---- Shell integration ----
+# Copy on select (middle-click paste always works)
+copy-on-select = true
+
+# ── Clipboard ────────────────────────────────────────────────────────────────
+# Allow programs to read/write clipboard (OSC 52)
+clipboard-read = allow
+clipboard-write = allow
+
+# Trim trailing whitespace when copying
+clipboard-trim-trailing-spaces = true
+
+# ── Shell Integration ────────────────────────────────────────────────────────
+# Auto-detect shell and inject integration (Fish, Zsh, Bash supported)
 shell-integration = detect
+
+# All shell integration features enabled
+# - cursor: blinking bar at prompt
+# - sudo: preserve terminfo through sudo
+# - title: set window title from shell
+# - ssh-env: TERM compatibility for SSH
+# - ssh-terminfo: auto-install terminfo on remote hosts
 shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 
-# ---- Clipboard & Safety ----
-clipboard-paste-protection = true
-clipboard-read = ask
-clipboard-write = allow
-selection-clear-on-typing = true
-
-# ---- Cursor & Mouse ----
-cursor-click-to-move = true
-mouse-hide-while-typing = true
-mouse-scroll-multiplier = 3
-
-# ---- macOS niceties ----
-macos-option-as-alt = left
-macos-auto-secure-input = true
-macos-secure-input-indication = true
-auto-update = download
-
-# ---- Quick Terminal (optional) ----
+# ── Quick Terminal ───────────────────────────────────────────────────────────
+# Quake-style dropdown terminal (bind toggle_quick_terminal to use)
 quick-terminal-position = top
 quick-terminal-size = 40%
-quick-terminal-animation-duration = 0.18
+quick-terminal-animation-duration = 0.15
 quick-terminal-autohide = true
-quick-terminal-space-behavior = move
 
-# ---- Misc ----
-unfocused-split-opacity = 0.85
+# ── Performance (M4 Max) ─────────────────────────────────────────────────────
+# VSync on for stability (macOS 14.4+ can kernel panic without it)
+window-vsync = true
+
+# Large scrollback - M4 Max has plenty of RAM
 scrollback-limit = 10000000
 
+# ── Keybindings ──────────────────────────────────────────────────────────────
+# Philosophy: Ghostty is a window. Tmux handles splits/sessions. Yabai handles tiling. |  No tabs. No splits. Just windows.
 
-# =======================
-# Keybinds — no tabs, no splits
-# =======================
-
+# Nuke all defaults — only OUR bindings exist
 keybind = clear
 
-# Windows
+# ── Windows ──
 keybind = cmd+n=new_window
 keybind = cmd+q=close_window
 keybind = cmd+opt+q=quit
 
-# Clipboard & basic edit
+# ── Clipboard ──
 keybind = cmd+c=copy_to_clipboard
-keybind = cmd+shift+c=copy_to_clipboard
 keybind = cmd+v=paste_from_clipboard
-keybind = cmd+shift+v=paste_from_clipboard
 keybind = cmd+a=select_all
-keybind = cmd+k=clear_screen
 
-# Font size (optional but handy)
+
+# ── Screen ──
+keybind = cmd+k=text:clear\n
+
+# ── Font Size ──
 keybind = cmd+equal=increase_font_size:1
 keybind = cmd+minus=decrease_font_size:1
 keybind = cmd+0=reset_font_size
 
-# Config QoL
-keybind = cmd+comma=open_config
-keybind = cmd+shift+r=reload_config
+# ── Quick Terminal (global — works even when Ghostty is unfocused) ──
+keybind = global:cmd+grave_accent=toggle_quick_terminal
 
-# Stop macOS Hide/Minimize from firing while typing
+# ── Config ──
+# keybind = cmd+comma=open_config
+keybind = cmd+shift+r=reload_config
+keybind = cmd+shift+p=toggle_command_palette
+keybind = cmd+enter=toggle_fullscreen
+
+# ── Safety ──
+# Block accidental macOS Hide/Minimize while typing fast in Neovim
 keybind = cmd+h=ignore
 keybind = cmd+m=ignore
 
 
-
-
+# ── tmux ──
 keybind = cmd+z=text:\x02
-keybind = opt+j=esc:j
-keybind = opt+k=esc:k
 
+# ── Pass-through to Neovim ──
+# Ensure Ctrl sequences reach Neovim unmolested
+# (Ghostty is good about this by default, but being explicit)
 
+# ── HHKB-Optimized: Don't bind F-keys or arrow-dependent combos ──
+# All navigation uses Cmd+Option+hjkl (above) instead of arrows
 
-# ---- HYPER = cmd+opt+ctrl+shift ----
-# keybind = cmd+opt+ctrl+shift+h=text:\x02p
-# keybind = cmd+opt+ctrl+shift+l=text:\x02n
+# ── macOS Specific ───────────────────────────────────────────────────────────
+# Use non-native fullscreen for speed (no animation)
+# WARNING: Tabs don't work in non-native fullscreen
+macos-non-native-fullscreen = false
 
+# Option as Alt for terminal programs (true = send as Alt, not Unicode) | neovim important
+macos-option-as-alt = true
+
+# Hide the folder proxy icon in titlebar (cleaner look)
+macos-titlebar-proxy-icon = hidden
+
+# Window shadow (disable for cleaner look with transparency)
+macos-window-shadow = true
+
+# Auto secure input when password prompts detected
+macos-auto-secure-input = true
+
+# Show indicator when secure input is active
+macos-secure-input-indication = true
+
+# ── Notifications ────────────────────────────────────────────────────────────
+# Show notification when copying to clipboard
+app-notifications = clipboard-copy,config-reload
+
+# Desktop notifications from terminal programs (OSC 9, OSC 777)
+desktop-notifications = true
+
+# ── Behavior ─────────────────────────────────────────────────────────────────
+# Don't quit when last window closes (macOS standard behavior)
+quit-after-last-window-closed = true
+
+# Focus follows mouse in splits
+focus-follows-mouse = false
+
+# Scroll speed
+mouse-scroll-multiplier = 3
+
+# Bell behavior: visual attention, no audio
+bell-features = attention,title
+
+# Link handling
+link-url = true
+link-previews = true
