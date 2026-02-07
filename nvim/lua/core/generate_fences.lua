@@ -60,14 +60,24 @@ function M.generate(lang, count, opts)
 end
 
 function M.prompt(opts)
-  local default_lang = (opts and opts.default_lang) or vim.bo.filetype or ""
-  local default_count = tostring((opts and opts.default_count) or 10)
+  local detected_lang = vim.bo.filetype or ""
+  local default_count = tostring((opts and opts.default_count) or 5)
 
-  vim.ui.input({ prompt = "Language tag: ", default = default_lang }, function(lang)
-    if lang == nil then return end
-    vim.ui.input({ prompt = "How many code fences? ", default = default_count }, function(n)
+    -- language input
+  vim.ui.input({
+    prompt = string.format("Language tag (detected: %s): ", detected_lang),
+    default = "", -- force empty so typing overwrites immediately
+  }, function(lang)
+    -- if user pressed enter without typing, use detected_lang
+    lang = (lang and #lang > 0) and lang or detected_lang
+
+    -- count input
+    vim.ui.input({
+      prompt = string.format("How many code fences? (default: %s): ", default_count),
+      default = "", -- empty so user typing replaces instantly
+    }, function(n)
       if n == nil then return end
-      local num = tonumber(n)
+      local num = tonumber((n ~= "" and n) or default_count)
       if not num then
         vim.notify("Not a number: " .. n, vim.log.levels.ERROR)
         return

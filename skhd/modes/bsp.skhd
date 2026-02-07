@@ -11,10 +11,10 @@
 # hyper - l : yabai -m window --swap east 
 
 # Navigation Panes
-lalt - h : yabai -m window --focus west
-lalt - j : yabai -m window --focus south
-lalt - k : yabai -m window --focus north
-lalt - l : yabai -m window --focus east
+# lalt - h : yabai -m window --focus west
+# lalt - j : yabai -m window --focus south
+# lalt - k : yabai -m window --focus north
+# lalt - l : yabai -m window --focus east
 
 # Set insertion point for focused container  ~ like it highlights were the new pane will spawn ~ 
 # shift + alt - h : yabai -m window --insert west      # h <-
@@ -38,8 +38,8 @@ lalt - l : yabai -m window --focus east
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      BST VIEW       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 hyper - j : yabai -m window --swap south
 hyper - k : yabai -m window --swap north
-# hyper - h : yabai -m window --swap west 
-# hyper - l : yabai -m window --swap east 
+hyper - h : yabai -m window --swap west 
+hyper - l : yabai -m window --swap east 
 
 # hyper - 0x21 : yabai -m window --swap west ## 0x21 is the "[" key
 # hyper - 0x1E : yabai -m window --swap east ## 0x1E is the "]" key
