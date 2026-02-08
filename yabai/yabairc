@@ -8,9 +8,10 @@
 # version: yabai v7.1.x | macOS 26.2 Tahoe (M4 Max)
 # SIP: Fully enabled — NO scripting addition, NO space manipulation commands.
 # date: 2026-02-07
-# CHANGELOG: 2026-02-07 | Merged Gemini's v7 options, refocus signals, float rules,
+# CHANGELOG: 2026-02-07 | Added explicit opacity defaults for future-proofing.
+#            2026-02-07 | Merged Gemini's v7 options, refocus signals, float rules,
 #              explicit defaults into Claude's neutral-base architecture.
-#            ROLLBACK: Revert to pre-merge yabairc (see git history)
+#            ROLLBACK: Remove lines 68-73 to revert opacity additions
 
 # ── Global Behavior ──────────────────────────────────────────────
 
@@ -53,6 +54,11 @@ yabai -m config insert_feedback_color        0xffd75f5f
 # future yabai releases changing defaults silently. Same principle as Spring Boot
 # explicitly declaring server.port=8080.
 yabai -m config window_opacity               off
+# WHY explicit: No-ops while opacity is off, but ready when you flip it on.
+# Prevents surprise behavior if a future yabai version changes these defaults.
+yabai -m config window_opacity_duration      0.0
+yabai -m config active_window_opacity        1.0
+yabai -m config normal_window_opacity        0.90
 yabai -m config external_bar                 off:0:0
 yabai -m config menubar_opacity              1.0
 
