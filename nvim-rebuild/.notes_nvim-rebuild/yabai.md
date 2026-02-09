@@ -54,8 +54,10 @@ Each tool does ONE job. No overlap. No redundancy.
 ### Sources Consulted
 
 - Official yabai wiki (Configuration page, Commands page)
+- yabai.asciidoc (canonical reference for all config options)
 - CHANGELOG.md (complete v5 → v6 → v7 migration path)
-- GitHub issues (#2203 scratchpads, #2128 sub-layer rename, #2634 Tahoe compatibility)
+- GitHub issues (#1863 SIP feature matrix, #2203 scratchpads, #2128 sub-layer rename, #2510 window_insertion_point, #2479 split_type reclassification)
+- Official example yabairc (koekeishiya/yabai/master/examples/yabairc)
 - Community configs (rafi, Josh Medeski, linkarzu)
 
 ### What Was Removed in v6/v7 (Dead Code in Old Config)
@@ -71,35 +73,49 @@ Each tool does ONE job. No overlap. No redundancy.
 
 ### SIP Status: Enabled (No Scripting Addition)
 
-SIP is fully enabled on the M4 Max. This is a deliberate choice — the scripting addition had compatibility issues on macOS Tahoe (issue #2634), and the features it unlocks aren't worth the maintenance burden for this workflow.
+SIP is fully enabled on the M4 Max. This is a deliberate choice — the scripting addition had compatibility issues on macOS Tahoe, and the features it unlocks aren't worth the maintenance burden for this workflow.
 
 **Available without SA (everything we need):**
 
 - Layout modes: `bsp`, `stack`, `float`
 - Window operations: `focus`, `swap`, `warp`, `resize`, `zoom`, `float toggle`
 - Padding, gaps, auto-balance, split ratio
-- Mouse management (autofocus, modifier + drag)
+- BSP tree behavior: `split_type`, `window_placement`, `window_insertion_point`, `insert_feedback_color`
+- Mouse management (modifier + drag, `mouse_drop_action`)
 - Window rules (float rules, manage=off, sub-layer, grid)
 - Signals (event-driven automation)
 - Scratchpads (named floating windows)
-- `window_zoom_persist`, `mouse_drop_action`, `split_type`
-- `menubar_opacity`, `display_arrangement_order`, `window_origin_display`
+- `window_zoom_persist`, `display_arrangement_order`, `window_origin_display`
 - `windowed-fullscreen` toggle
-- `window_animation_duration 0.0` (disabling animations only)
-- `window_opacity`, `window_shadow`
+- `menubar_opacity`, `external_bar`
 
-**Unavailable (requires SA / partially disabled SIP):**
+**SIP-gated (silently ignored with SIP enabled):**
 
+- `window_shadow` — shadow control requires scripting addition
+- `window_opacity`, `active_window_opacity`, `normal_window_opacity` — transparency requires scripting addition
+- `window_animation_duration > 0.0` — also requires Screen Recording permission
+- `window_animation_easing` — no-op while animations are disabled/SIP-gated
 - `yabai -m space --focus` (focusing a different space)
 - `yabai -m window --space` (moving windows across spaces)
-- `window_animation_duration > 0.0` (requires Screen Recording permission)
 - Creating/destroying spaces beyond macOS's 16-space limit
+
+These SIP-gated settings are kept in yabairc with honest comments acknowledging they're no-ops. They serve as future-proofing documentation — if SIP is ever partially disabled, the values are ready. Same principle as Spring Boot explicitly declaring `server.port=8080`.
 
 **Space switching workaround:** Karabiner-Elements Hyper+1-9 fires Ctrl+N for native macOS space switching. More reliable than the scripting addition on Tahoe anyway.
 
-### v7 Features That Were Never Used (Discovered During Rebuild)
+### v7 Features Discovered During Rebuild
 
 These are features that existed in yabai 7.x but the old config never utilized:
+
+**split_type auto** (reclassified to space setting in v7.1.6) — yabai decides vertical vs horizontal split based on available space dimensions. Smarter than always splitting one direction. Now lives in BSP profile.
+
+**window_insertion_point focused** (new in v7.1.6, #2510) — New windows split at the focused window, not the tree root. More intuitive — the split happens where your eyes already are. BSP-only concept, lives in BSP profile.
+
+**insert_feedback_color** — Visual color hint showing where a new window will be inserted in BSP mode. Subtle but helpful spatial feedback. BSP profile.
+
+**window_zoom_persist** — When you zoom a window and focus another, the zoom state persists when you come back. Without this, zoom resets on focus change. Layout-agnostic, lives in neutral base.
+
+**mouse_drop_action** — Controls what happens when you drag a window onto another: `swap` (exchange positions) or `stack` (create a stack from two windows).
 
 **Scratchpads** — Named floating windows toggled with one key. Like i3's scratchpad.
 
@@ -108,17 +124,7 @@ yabai -m rule --add app="Ghostty" title="dropdown" scratchpad="term" grid="6:6:1
 yabai -m window --toggle term  # brings it to active space or hides it
 ```
 
-Game-changer for quick terminal popups without touching tmux sessions.
-
-**windowed-fullscreen** — Fullscreen that ignores ALL padding. Different from `zoom-fullscreen` which respects gaps. One toggle for "I want this window to take EVERYTHING."
-
-**mouse_drop_action** — Controls what happens when you drag a window onto another: `swap` (exchange positions) or `stack` (create a stack from two windows). Never configured before.
-
-**window_zoom_persist** — When you zoom a window and focus another, the zoom state persists when you come back. Without this, zoom resets on focus change.
-
-**split_type auto** — yabai decides vertical vs horizontal split based on available space dimensions. Smarter than always splitting one direction.
-
-**insert_feedback_color** — Visual color hint showing where a new window will be inserted in BSP mode. Subtle but helpful spatial feedback.
+**windowed-fullscreen** — Fullscreen that ignores ALL padding. Different from `zoom-fullscreen` which respects gaps.
 
 **Stack numeric indices** — `yabai -m window --focus stack.3` to jump to the 3rd window in a stack directly, not just cycling prev/next.
 
@@ -126,11 +132,11 @@ Game-changer for quick terminal popups without touching tmux sessions.
 
 **--ratio** — Resize windows to exact ratios: `yabai -m window --ratio abs:0.66` for a 2/3 split.
 
-**Signals** — Event-driven automation hooks. The old config had dead signal code. Properly used signals enable auto-refocus when windows close, auto-balance in BSP mode, and profile reapplication on display changes.
+**Signals** — Event-driven automation hooks. The old config had dead signal code. Properly used signals enable auto-refocus when windows close and auto-restart on display changes.
 
 **rule --apply** — v7 requirement. Without this at the end of yabairc, float rules only apply to windows opened AFTER yabai starts. With `--apply`, rules retroactively hit windows that already exist.
 
-**Ghostty subrole rule** — Ghostty's quick terminal feature spawns windows with `subrole="AXFloatingWindow"`. Adding `yabai -m rule --add app="Ghostty" subrole="AXFloatingWindow" manage=off` prevents yabai from tiling it.
+**Ghostty subrole rule** — Ghostty's quick terminal feature spawns windows with `subrole="AXFloatingWindow"`. Adding a rule prevents yabai from tiling it.
 
 ---
 
@@ -147,15 +153,15 @@ The yabai architecture follows an Inversion of Control pattern, inspired by Spri
 ```
 yabairc (the "container"):
   → sets ONLY global behavior (rules, signals, mouse)
-  → does NOT decide layout, padding, or gaps
+  → does NOT decide layout, padding, gaps, or tree behavior
   → hands off layout decisions to whatever profile is injected
 
 profiles/ (the "beans" / "components"):
-  → yabai-stack.sh declares: "I am stack. 0 gaps. 0 padding."
-  → yabai-bsp.sh declares: "I am BSP. 8px gaps. Auto-balance."
+  → yabai-stack.sh declares: "I am stack. 20px inset. 0 gaps."
+  → yabai-bsp.sh declares: "I am BSP. 8px gaps. Auto-balance. Tree behavior."
   → yabai-float.sh declares: "I am float. No tiling."
 
-switch-profile.sh (the "container runtime"):
+yabai-restart.sh (the "container runtime"):
   → starts yabai (runs yabairc → neutral base)
   → INJECTS the selected profile on top
 ```
@@ -167,27 +173,52 @@ switch-profile.sh (the "container runtime"):
 | `ApplicationContext` (container)       | `yabairc` (neutral base)                           |
 | `@Bean` / `@Component`                 | `yabai-stack.sh`, `yabai-bsp.sh`, `yabai-float.sh` |
 | `@Profile("dev")` / `@Profile("prod")` | `yr -P stack` / `yr -P bsp`                        |
-| Container calls your beans at runtime  | `switch-profile.sh` sources the selected profile   |
+| Container calls your beans at runtime  | `yabai-restart.sh` sources the selected profile    |
 
 The key insight: yabairc doesn't KNOW or CARE whether it's running stack or BSP. It provides the infrastructure (signals, rules, mouse settings). The profile injects the specific behavior at runtime. That's why you can hot-swap with `yp bsp` without touching yabairc — the container stays stable, only the injected component changes.
 
-### Why Not Just Bake a Default Into yabairc?
+### Neutral Base — True Layout Agnosticism
 
-This came up during the build. yabai's actual built-in default is `float` (no tiling, no management — raw macOS). If yabairc doesn't set a layout, you get float mode on boot.
+yabairc sets NO layout. If you boot yabai without running a profile, you get yabai's built-in default: `float` (no tiling, raw macOS). You always explicitly kick off your day with `yr -P stack`, so the neutral base is the cleaner pattern. If the profile script ever breaks, you fix it — you don't silently fall back to a layout that might not be what you want.
 
-There are two valid philosophies:
+### What Lives Where (The Separation of Concerns)
 
-1. **Neutral base** — yabairc sets NO layout. Profiles own everything. Boot requires `yr -P stack` to be usable. Purest IoC, but a fresh start without running a profile gives you float mode (useless).
+```
+SETTING                      WHERE              WHY
+─────────────────────────────────────────────────────────────────
+window_zoom_persist          yabairc            Layout-agnostic behavior
+mouse_follows_focus          yabairc            Layout-agnostic behavior
+focus_follows_mouse          yabairc            Layout-agnostic behavior
+mouse_modifier/action1/2     yabairc            Layout-agnostic input
+mouse_drop_action            yabairc            Layout-agnostic input
+window_origin_display        yabairc            Layout-agnostic display
+display_arrangement_order    yabairc            Layout-agnostic display
+external_bar                 yabairc            Layout-agnostic bar
+menubar_opacity              yabairc            Layout-agnostic bar
+window_shadow                yabairc            SIP-gated, layout-agnostic
+window_opacity/*             yabairc            SIP-gated, layout-agnostic
+window_animation_*           yabairc            SIP-gated, layout-agnostic
+All float rules              yabairc            Apply regardless of layout
+All signals                  yabairc            Apply regardless of layout
+rule --apply                 yabairc            v7 retroactive application
 
-2. **Safe default** — yabairc sets stack as the default layout. If you boot and forget to run a profile, yabai still works. Profiles still override everything when they run.
-
-We went back and forth on this. The final decision: option 2 in the initial builds (safe default), then refined to option 1 (true neutral base) in the merged version. The reasoning: you always explicitly kick off your day with `yr -P stack`, so the neutral base is the cleaner pattern. If the profile script ever breaks, you fix it — you don't silently fall back to a layout that might not be what you want.
+layout                       profiles/*         THE layout decision
+top/bottom/left/right_padding profiles/*        Layout-specific spacing
+window_gap                   profiles/*         Layout-specific spacing
+auto_balance                 profiles/*         Layout-specific behavior
+split_ratio                  profiles/*         Layout-specific behavior
+window_placement             yabai-bsp.sh       BSP tree concept only
+split_type                   yabai-bsp.sh       BSP tree concept only (v7.1.6 space setting)
+window_insertion_point       yabai-bsp.sh       BSP tree concept only (v7.1.6)
+insert_feedback_color        yabai-bsp.sh       BSP tree concept only
+yabai -m space --balance     yabai-bsp.sh       BSP rebalance on profile switch
+```
 
 ### Why Each Profile Declares Its COMPLETE State
 
-`yabai-stack.sh` sets layout, padding, gaps, balance, and split_ratio. `yabai-bsp.sh` does the same with different values. Even though some values overlap with yabairc defaults, each profile is self-contained.
+`yabai-stack.sh` sets layout, padding, gaps, auto_balance, and split_ratio. `yabai-bsp.sh` does the same plus BSP-specific tree settings. Even though some values overlap, each profile is self-contained.
 
-Why: if you switch from BSP back to stack, `yabai-stack.sh` must reset EVERYTHING BSP changed. If it only set the values that differ from yabairc defaults, switching profiles would leave orphaned BSP settings (like `auto_balance on`) bleeding into stack mode.
+Why: if you switch from BSP back to stack, `yabai-stack.sh` must reset EVERYTHING BSP changed. If it only set the values that differ from defaults, switching profiles would leave orphaned BSP settings (like `auto_balance on`) bleeding into stack mode.
 
 Each profile is idempotent — run it from any state and you get exactly that mode. No ordering dependencies, no assumptions about what was set before.
 
@@ -201,22 +232,22 @@ The signature yabai mode. Windows tile by recursively splitting the screen into 
 
 Best for: side-by-side coding, comparing files, reference material next to editor.
 
-Profile settings: `layout bsp`, generous gaps (8-30px), `auto_balance on`, `split_ratio 0.50`.
+Profile settings: `layout bsp`, 8px gaps, `auto_balance on`, `split_ratio 0.50`, plus BSP tree behavior (`window_placement second_child`, `split_type auto`, `window_insertion_point focused`, `insert_feedback_color`).
 
 ### Stack
 
 All windows in a space occupy the same full area, layered like a deck of cards. Only one is visible at a time. Cycle through them with `yabai -m window --focus stack.next/prev`.
 
-Best for: single-monitor deep focus, presentations, full-screen workflow where you Alt-Tab between apps without overlap.
+Best for: single-monitor deep focus, presentations, full-screen workflow where you cycle between apps without overlap.
 
-Profile settings: `layout stack`, 0 gaps (one window visible, gaps waste space), `auto_balance off`.
+Profile settings: `layout stack`, 20px padding for visual breathing room, 0 gaps (one window visible), `auto_balance off`, `split_ratio 0.50`.
 
-Important: stack mode needs refocus signals. If you close the top card, yabai must auto-focus the next one or you're staring at your desktop. This is handled by signals in yabairc:
+Important: stack mode needs refocus signals. If you close the top card, yabai must auto-focus the next one or you're staring at your desktop. This is handled by signals in yabairc (layout-agnostic, but critical for stack):
 
 ```sh
-yabai -m signal --add event=window_destroyed action="yabai -m window --focus recent || yabai -m window --focus first" ...
-yabai -m signal --add event=window_minimized action="yabai -m window --focus recent || yabai -m window --focus first" ...
-yabai -m signal --add event=application_hidden action="yabai -m window --focus recent || yabai -m window --focus first" ...
+yabai -m signal --add event=window_destroyed  active=yes action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus recent"
+yabai -m signal --add event=window_minimized  active=yes action="yabai -m window --focus recent"
+yabai -m signal --add event=application_hidden active=yes action="yabai -m window --focus recent"
 ```
 
 ### Float
@@ -225,7 +256,7 @@ yabai hands off completely. No automatic tiling. Windows behave like vanilla mac
 
 Best for: video calls, design tools, situations where tiling fights you.
 
-Profile settings: `layout float`, everything else zeroed out.
+Profile settings: `layout float`, 0 padding, 0 gaps, `auto_balance off`, `split_ratio 0.50`.
 
 ---
 
@@ -235,8 +266,8 @@ Profile settings: `layout float`, everything else zeroed out.
 ~/.config/yabai/
 ├── yabairc                          # Neutral base — globals, rules, signals, mouse (NO layout)
 ├── profiles/
-│   ├── yabai-stack.sh               # Stack: one window at a time, 0 gaps
-│   ├── yabai-bsp.sh                 # BSP: tiled windows, gaps, auto-balance
+│   ├── yabai-stack.sh               # Stack: one window, 20px inset, 0 gaps
+│   ├── yabai-bsp.sh                 # BSP: tiled, 8px gaps, auto-balance, tree behavior
 │   └── yabai-float.sh               # Float: native macOS windowing
 └── scripts/
     └── yabai-restart.sh             # Clean restart + profile injection
@@ -252,14 +283,15 @@ Profile settings: `layout float`, everything else zeroed out.
 
 Contains ONLY:
 
-- Global config options (mouse behavior, split_type, window_zoom_persist, etc.)
-- Float rules (apps that should never be tiled: System Preferences, Calculator, etc.)
+- Global behavior (mouse, zoom persist, focus follows mouse)
+- SIP-gated settings with honest no-op comments (shadow, opacity, animation)
+- Explicit non-SIP defaults (external_bar, menubar_opacity)
+- Float rules (apps that should never be tiled: System Settings, Calculator, etc.)
 - Ghostty-specific rules (AXFloatingWindow subrole for quick terminal)
 - Signals (refocus on window destroy, display change auto-restart)
-- Scratchpad templates (if configured)
 - `yabai -m rule --apply` at the end (v7 retroactive rule application)
 
-Does NOT contain: layout, padding, gaps, auto_balance, split_ratio. Those are profile territory.
+Does NOT contain: layout, padding, gaps, auto_balance, split_ratio, or any BSP tree settings (window_placement, split_type, window_insertion_point, insert_feedback_color). Those are profile territory.
 
 ### Profiles — The Injected Components
 
@@ -269,10 +301,10 @@ Each profile is a standalone shell script that sets layout-specific values. Comp
 
 ```sh
 yabai -m config layout         stack
-yabai -m config top_padding    0
-yabai -m config bottom_padding 0
-yabai -m config left_padding   0
-yabai -m config right_padding  0
+yabai -m config top_padding    20
+yabai -m config bottom_padding 20
+yabai -m config left_padding   20
+yabai -m config right_padding  20
 yabai -m config window_gap     0
 yabai -m config auto_balance   off
 yabai -m config split_ratio    0.50
@@ -281,14 +313,23 @@ yabai -m config split_ratio    0.50
 **yabai-bsp.sh:**
 
 ```sh
-yabai -m config layout         bsp
-yabai -m config top_padding    20
-yabai -m config bottom_padding 20
-yabai -m config left_padding   20
-yabai -m config right_padding  20
-yabai -m config window_gap     30
-yabai -m config auto_balance   on
-yabai -m config split_ratio    0.50
+yabai -m config layout                   bsp
+# BSP tree behavior
+yabai -m config window_placement         second_child
+yabai -m config split_type               auto
+yabai -m config window_insertion_point   focused
+yabai -m config insert_feedback_color    0xffd75f5f
+# Padding & gaps
+yabai -m config top_padding              8
+yabai -m config bottom_padding           8
+yabai -m config left_padding             8
+yabai -m config right_padding            8
+yabai -m config window_gap               8
+# Balance
+yabai -m config auto_balance             on
+yabai -m config split_ratio              0.50
+# Post-apply rebalance
+yabai -m space --balance 2>/dev/null || true
 ```
 
 **yabai-float.sh:**
@@ -301,18 +342,18 @@ yabai -m config left_padding   0
 yabai -m config right_padding  0
 yabai -m config window_gap     0
 yabai -m config auto_balance   off
+yabai -m config split_ratio    0.50
 ```
 
 ### yabai-restart.sh — The Container Runtime
 
 Orchestrates the full restart + profile injection sequence:
 
-1. Validates the requested mode exists
+1. Validates the requested profile exists (defaults to `stack`)
 2. Restarts yabai service (`--restart-service`, atomic — not stop+sleep+start)
-3. Waits for yabai socket to be ready (100 × 50ms polling loop)
+3. Waits for yabai socket to be ready (60 × 50ms polling, 3-second timeout)
 4. Sources the selected profile script
 5. Applies the Ghostty float-toggle workaround (double-toggle forces Ghostty to respect new padding)
-6. Rebalances BSP if switching to BSP mode
 
 The wait-for-ready loop is critical — without it, profile commands fire before yabai's IPC socket is listening, and every `yabai -m config` silently fails.
 
@@ -325,7 +366,7 @@ yabai -m window "$id" --toggle float  # float it
 yabai -m window "$id" --toggle float  # un-float it (now respects new padding)
 ```
 
-This forces yabai to recalculate Ghostty's position within the new padding constraints.
+This forces yabai to recalculate Ghostty's position within the new padding constraints. Safe to remove if Ghostty fixes this upstream.
 
 ---
 
@@ -341,7 +382,7 @@ yr -P bsp      # restart + apply BSP profile
 yr             # restart with default profile (stack)
 ```
 
-Calls `~/.config/yabai/scripts/yabai-restart.sh` under the hood. Shows a status summary after completion: current layout, window gap, active profile.
+Calls `~/.config/yabai/scripts/yabai-restart.sh` under the hood.
 
 ### yp (yabai profile — hot-swap)
 
@@ -378,7 +419,7 @@ The daily workflow:
    → yabai service restarts
    → yabairc loads (neutral base: rules, signals, mouse)
    → wait for socket ready
-   → yabai-stack.sh sources (layout=stack, 0 padding, 0 gaps)
+   → yabai-stack.sh sources (layout=stack, 20px inset, 0 gaps)
    → Ghostty float-toggle workaround
    → Status output confirms stack mode
 5. You're in stack mode. One app fills the screen.
@@ -391,22 +432,37 @@ The daily workflow:
 
 ## What Was Nuked From the Old Config
 
-| Old Code                                                 | Why It Was Removed                                           |
-| -------------------------------------------------------- | ------------------------------------------------------------ |
-| `sudo yabai --load-sa` + dock restart signal             | SIP fully enabled, scripting addition is dead code           |
-| All `window_border` / `--toggle border` references       | Removed from yabai v6+ (macOS Ventura compositor changes)    |
-| `window_opacity`, `window_shadow`, `window_topmost`      | Required SA in old versions (now available without SA in v7) |
-| `ctrl + alt - left/right` space travel                   | Requires SA, replaced by Karabiner Hyper+1-9                 |
-| All Alacritty, kitty references                          | Different terminal, no longer in the stack                   |
-| All Übersicht, sketchybar references                     | Not in the toolchain                                         |
-| All blur toggle scripts                                  | Required SA features that don't exist                        |
-| ~400 lines of commented-out graveyard code               | Cargo-culted settings nobody understood                      |
-| Multi-monitor/multi-display logic                        | Single monitor workflow                                      |
-| skhd symlink swapping (modes/stack.skhd, modes/bsp.skhd) | Single unified skhdrc works for all layouts                  |
+| Old Code                                                 | Why It Was Removed                                        |
+| -------------------------------------------------------- | --------------------------------------------------------- |
+| `sudo yabai --load-sa` + dock restart signal             | SIP fully enabled, scripting addition is dead code        |
+| All `window_border` / `--toggle border` references       | Removed from yabai v6+ (macOS Ventura compositor changes) |
+| `window_topmost`                                         | Removed from yabai v6+                                    |
+| `ctrl + alt - left/right` space travel                   | Requires SA, replaced by Karabiner Hyper+1-9              |
+| All Alacritty, kitty references                          | Different terminal, no longer in the stack                |
+| All Übersicht, sketchybar references                     | Not in the toolchain                                      |
+| All blur toggle scripts                                  | Required SA features that don't exist                     |
+| ~400 lines of commented-out graveyard code               | Cargo-culted settings nobody understood                   |
+| Multi-monitor/multi-display logic                        | Single monitor workflow                                   |
+| skhd symlink swapping (modes/stack.skhd, modes/bsp.skhd) | Single unified skhdrc works for all layouts               |
 
 ---
 
 ## Key Architectural Decisions
+
+### BSP Settings in BSP Profile (Not Neutral Base)
+
+The February 8 refactor moved four BSP-specific settings out of yabairc into `yabai-bsp.sh`:
+
+- `window_placement second_child` — BSP tree insertion direction
+- `split_type auto` — BSP split orientation (reclassified to space setting in v7.1.6)
+- `window_insertion_point focused` — BSP insertion target (new in v7.1.6, #2510)
+- `insert_feedback_color 0xffd75f5f` — BSP insertion visual hint
+
+These are all BSP tree concepts. In stack and float modes they're no-ops — they don't break anything, but housing them in the neutral base violated the IoC principle. The neutral base should have zero opinion on layout, including tree behavior.
+
+### SIP-Gated Settings Kept With Honest Comments
+
+Settings that require the scripting addition (shadow, opacity, animation) are kept in yabairc but grouped under a clearly labeled section acknowledging they're no-ops with SIP enabled. This serves two purposes: future-proofing if SIP is ever partially disabled, and documenting what yabai's default values are so a future version changing them won't cause surprises.
 
 ### Single skhdrc vs. Symlink Swapping
 
@@ -431,15 +487,11 @@ Why: when you're grepping through configs at 3 AM, `yabai-stack.sh` is immediate
 ### Display Change Signals
 
 ```sh
-yabai -m signal --add event=display_added   action="yabai --restart-service" ...
-yabai -m signal --add event=display_removed action="yabai --restart-service" ...
+yabai -m signal --add event=display_added   action="yabai --restart-service"
+yabai -m signal --add event=display_removed action="yabai --restart-service"
 ```
 
 Auto-restarts yabai when monitors connect/disconnect. Without this, plugging in an external display requires manual intervention.
-
-### Stack Mode: 0 Padding vs. Generous Padding
-
-One conversation version used generous padding (20/30/40/40) in stack mode "for breathing room." The final decision: 0 padding. Reasoning: stack mode shows ONE window at a time. Adding 40px side padding wastes screen real estate for zero functional benefit. If you want breathing room, BSP with gaps is the right tool for that — each tool optimized for its purpose.
 
 ---
 
@@ -455,7 +507,6 @@ During the rebuild, the same yabai config was independently generated by Gemini 
 - Scratchpad templates
 - Inline WHY comments matching constitution style
 - Docker Desktop / Karabiner float rules
-- `window_opacity` and `window_shadow` correctly listed as available without SA
 
 **Claude's wins (kept in final):**
 
@@ -467,6 +518,7 @@ During the rebuild, the same yabai config was independently generated by Gemini 
 - Display change signals for auto-restart
 - Atomic `--restart-service` instead of stop+sleep+start
 - `yp.fish` hot-swap function (instant profile change without restart)
+- BSP-specific settings correctly isolated in BSP profile
 
 **Merged result:** Gemini's yabairc technical depth + Claude's architecture, naming, fish functions, and complete deliverable set.
 
@@ -493,3 +545,5 @@ Things to explore in future iterations:
 ---
 
 _This guide covers the complete yabai rebuild from research through architecture through implementation. The IoC pattern, three-layout system, and fish function interface are the foundation — everything else builds on top._
+
+_Last updated: February 2026 · Post BSP-extraction refactor + SIP-honesty pass_
