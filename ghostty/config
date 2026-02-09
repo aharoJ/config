@@ -53,7 +53,7 @@ window-padding-balance = true
 # Start with a reasonable size (cells, not pixels)
 window-width = 120
 window-height = 46
-window-position-x = 160
+window-position-x = 230
 window-position-y = 60
 
 # New windows/tabs inherit working directory (shell integration required)
