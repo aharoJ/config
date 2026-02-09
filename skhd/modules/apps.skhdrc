@@ -16,25 +16,13 @@
 
 
 # ── Browsers ─────────────────────────────────────────────────────────────────
-
-# rshift+G: Google Chrome — opens a new window (even if Chrome is already running)
 rshift - g : open -na "Google Chrome" --args --new-window "https://www.google.com/"
-
-# rshift+V: Vivaldi
-rshift - v: /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
-
-
+rshift - v : /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
 
 # ── Utilities ────────────────────────────────────────────────────────────────
-
-# rshift+F: Finder — brings to front or opens new window
 rshift - f : open -a "Finder"
-
-# rshift+D: Discord
 rshift - d : open -a "Discord"
 
-
 # ── Terminal ─────────────────────────────────────────────────────────────────
-
-# rshift+A: Ghostty — new instance (replaces old Alacritty binding, same key)
-rshift - a : open -na "Ghostty"
+# rshift - a : open -na "Ghostty"
+rshift - a : /Applications/Ghostty.app/Contents/MacOS/ghostty

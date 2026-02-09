@@ -38,4 +38,4 @@ hyper - y : yabai -m space --mirror y-axis
 hyper - e : yabai -m window --toggle split
 
 # Hyper+B: balance tree — equalize all window sizes
-hyper - b : yabai -m space --balance
+# hyper - b : yabai -m space --balance # -- ISSUE WITH BLUR BIND

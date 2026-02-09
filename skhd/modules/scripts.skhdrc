@@ -1,15 +1,8 @@
-
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║  scripts.skhdrc — Script Bindings                                          ║
 # ║  path: ~/.config/skhd/modules/scripts.skhdrc                               ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
-#
-# Bindings that call standalone scripts. Each script is a self-contained tool
-# that skhd triggers but doesn't own. Scripts live in ~/.scripts/ or
-# ~/.config/skhd/scripts/ — wherever makes sense for the tool.
 
-
-# ── Ghostty Blur Toggle ─────────────────────────────────────────────────────
-# Hyper+G: toggle Ghostty background blur on/off
-# Script path may need updating after the dotfiles rebuild.
+# ── Toggle Blur Toggle ─────────────────────────────────────────────────────
 hyper - g : python3 "$HOME/.scripts/ghostty_toggle_blur.py"
+# hyper - b : python3 "$HOME/.scripts/alacritty_toggle_blur.py" # -- ISSUE WITH BLUR BIND -> layout uses same bind 
