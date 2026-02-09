@@ -1,0 +1,289 @@
+# path: ~/.config/starship/starship.toml
+# Description: Starship prompt configuration — kanagawa-themed, single-line, minimal
+# Starship: v1.24.2 | Shell: Fish 4.x | Terminal: Ghostty | macOS Tahoe (M4 Max)
+#
+# ARCHITECTURE: Single file, organized by domain. Colors are semantic via palette.
+#   1. Global settings + palette selection
+#   2. Palette definition (kanagawa colors)
+#   3. Prompt structure (format, right_format, character, line_break)
+#   4. Directory
+#   5. Git (branch, commit, state, status)
+#   6. Languages & toolchains
+#   7. Runtime (cmd_duration)
+#   8. Disabled modules (ready to enable)
+#
+# CHANGELOG: 2026-02-09 | Ground-up rebuild from v1.17-era config
+#   - Added $schema for editor completions
+#   - Added kanagawa palette (replaces all hardcoded hex colors)
+#   - Added command_timeout (global, not per-module)
+#   - Added continuation_prompt
+#   - Added follow_symlinks = true
+#   - Removed dead dotnet heuristic option
+#   - Removed scripts/ directory (Starship doesn't support multi-file config)
+#   - Cleaned git_commit (was hash_length=1, now disabled — use git_branch)
+#   - All module styles now use palette semantic names
+#   ROLLBACK: Restore previous starship.toml from git
+
+# ==============================================================================
+# 1. GLOBAL SETTINGS
+# ==============================================================================
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# WHY kanagawa: PDE-wide standard. Neovim, Ghostty, tmux — all kanagawa.
+palette = "kanagawa"
+
+# Prompt layout: $all renders every enabled module in default order
+format = " $all"
+right_format = "$cmd_duration"
+
+# WHY 1000: Large git repos (Spring Boot monorepo) can be slow. 1s is generous
+# without risking perceptible lag. Increase to 1500 if you see timeout warnings.
+command_timeout = 1000
+
+# WHY 30: Default. How long Starship scans for context files (package.json, etc.)
+scan_timeout = 30
+
+# No blank line between prompts — single-line prompt is dense by design
+add_newline = false
+
+# Follow symlinks when checking directories (default, explicit for clarity)
+follow_symlinks = true
+
+# Continuation prompt for multi-line commands
+continuation_prompt = '[  ∙](fg:muted) '
+
+
+# ==============================================================================
+# 2. PALETTE — KANAGAWA COLOR DEFINITIONS
+# ==============================================================================
+# Source: rebelot/kanagawa.nvim (wave variant)
+# WHY palette: One table to rule all colors. Swap themes by changing one line above.
+# Every module references these semantic names, never raw hex.
+
+[palettes.kanagawa]
+# — Backgrounds (sumiInk family) —
+bg_dark    = "#1F1F28"    # sumiInk0 — deepest background
+bg         = "#2A2A37"    # sumiInk2 — standard background
+bg_light   = "#363646"    # sumiInk3 — elevated surfaces
+
+# — Foreground / text —
+fg         = "#DCD7BA"    # fujiWhite — primary text
+fg_dim     = "#C8C093"    # oldWhite — secondary/muted text
+muted      = "#727169"    # fujiGray — comments, deemphasized
+
+# — Accent colors —
+red        = "#E46876"    # waveRed — errors, warnings
+orange     = "#FFA066"    # surimiOrange — highlights
+yellow     = "#E6C384"    # carpYellow — warnings, git modified
+green      = "#98BB6C"    # springGreen — success, git added
+teal       = "#7AA89F"    # waveAqua2 — info, paths
+blue       = "#7E9CD8"    # crystalBlue — keywords, git branch
+violet     = "#957FB8"    # oniViolet — special, language icons
+pink       = "#D27E99"    # sakuraPink — decorative
+spring     = "#7FB4CA"    # springBlue — secondary blue
+
+
+# ==============================================================================
+# 3. PROMPT STRUCTURE
+# ==============================================================================
+
+# Single-line prompt: no line break between modules and input
+[line_break]
+disabled = true
+
+# Prompt character — the final symbol before your cursor
+[character]
+success_symbol = "[󰁔](fg:fg_dim)"
+error_symbol   = "[󰁔](fg:red)"
+# WHY simple error: Previous config had 3-symbol error indicator. One symbol
+# changing color is enough signal — less visual noise, faster pattern recognition.
+format = "$symbol "
+
+
+# ==============================================================================
+# 4. DIRECTORY
+# ==============================================================================
+
+[directory]
+style = "fg:teal"
+truncation_length = 4
+truncate_to_repo = true
+# WHY fish_style: Shows abbreviated parent dirs (e.g., ~/D/p/myproject)
+# Gives context without consuming horizontal space on a single-line prompt.
+fish_style_pwd_dir_length = 3
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[directory.substitutions]
+"Documents"  = "󰧮 "
+"Music"      = " "
+"Movies"     = "󰿏 "
+"Pictures"   = " "
+"Sources"    = " "
+"Downloads"  = " "
+"~"          = ""
+"/"          = " "
+
+
+# ==============================================================================
+# 5. GIT
+# ==============================================================================
+
+[git_branch]
+symbol = " "
+style = "fg:blue"
+truncation_length = 20
+# WHY 20: Previous was 5 — that's too short for feature branches like
+# feat/user-auth-flow. 20 covers most branch names without truncation.
+format = '[$symbol$branch(:$remote_branch)]($style) '
+
+[git_commit]
+# WHY disabled: Branch name is the primary identifier in day-to-day work.
+# Commit hash adds noise on a single-line prompt. Enable when in detached HEAD.
+disabled = true
+commit_hash_length = 7
+format = '[\($hash$tag\)]($style) '
+style = "fg:muted"
+
+[git_state]
+disabled = false
+style = "fg:orange"
+rebase       = "REBASING"
+merge        = "MERGING"
+revert       = "REVERTING"
+cherry_pick  = "CHERRY-PICKING"
+bisect       = "BISECTING"
+am           = "AM"
+am_or_rebase = "AM/REBASE"
+
+[git_status]
+disabled = false
+style = "fg:green"
+stashed    = " ${count} "
+ahead      = "󰞙 ${count} "
+behind     = "󰞒 ${count} "
+diverged   = "󰵉 ${ahead_count} ${behind_count} "
+conflicted = " ${count} "
+deleted    = " ${count} "
+renamed    = " ${count} "
+modified   = " ${count} "
+staged     = " ${count} "
+untracked  = "󱅘 ${count} "
+format     = '[$all_status$ahead_behind]($style)'
+
+
+# ==============================================================================
+# 6. LANGUAGES & TOOLCHAINS
+# ==============================================================================
+# PHILOSOPHY: Show icon only (no version) to confirm toolchain detection.
+# Version info is noise on a single-line prompt — use `java --version` if needed.
+# All use "• <icon>" prefix for uniform low-contrast signal.
+
+[java]
+symbol = "•  "
+style = "fg:violet"
+format = '[$symbol]($style)'
+
+[python]
+symbol = "• 󱔎 "
+style = "fg:violet"
+pyenv_version_name = false
+python_binary = "python3"
+format = '[${symbol}(\($virtualenv\))]($style)'
+
+[lua]
+symbol = "•  "
+style = "fg:violet"
+format = '[$symbol]($style)'
+
+[nodejs]
+symbol = "• 󰎙 "
+style = "fg:violet"
+format = '[$symbol]($style)'
+
+[rust]
+symbol = "• 󰰠 "
+style = "fg:violet"
+format = '[$symbol]($style)'
+
+[package]
+symbol = "•  "
+style = "fg:violet"
+display_private = false
+format = '[$symbol]($style)'
+
+[docker_context]
+symbol = "•  "
+style = "fg:violet"
+only_with_files = true
+format = '[$symbol]($style)'
+
+# DOTNET: Removed `heuristic = true` (deprecated in recent versions)
+[dotnet]
+symbol = "•  "
+style = "fg:violet"
+format = '[$symbol]($style)'
+
+
+# ==============================================================================
+# 7. RUNTIME
+# ==============================================================================
+
+[cmd_duration]
+min_time = 2_000
+show_milliseconds = false
+style = "fg:yellow"
+format = '[ $duration]($style)'
+# WHY right_format: Duration is context, not identity. It belongs on the right
+# so the left prompt stays stable width. Only shows when a command takes >2s.
+
+# TIME: Disabled by default. Uncomment to show clock on right prompt.
+# To enable, also add $time to right_format above.
+# [time]
+# disabled = false
+# time_format = "%H:%M"
+# style = "fg:muted"
+# format = '[$time]($style)'
+
+
+# ==============================================================================
+# 8. DISABLED MODULES — UNCOMMENT WHEN NEEDED
+# ==============================================================================
+
+# — Battery (useful for laptop mode) —
+# To enable, add $battery to right_format
+# [battery]
+# disabled = false
+# full_symbol = "󰁹 "
+# charging_symbol = "󰂄 "
+# discharging_symbol = "󰂃 "
+#
+# [[battery.display]]
+# threshold = 20
+# style = "fg:red bold"
+#
+# [[battery.display]]
+# threshold = 50
+# style = "fg:yellow"
+
+# — AWS —
+# [aws]
+# disabled = false
+# symbol = " "
+# style = "fg:orange"
+# format = '[$symbol($profile)(@$region)]($style) '
+
+# — Google Cloud —
+# [gcloud]
+# disabled = false
+# symbol = "󱇶 "
+# style = "fg:blue"
+# format = '[$symbol($project)]($style) '
+
+# — Kubernetes —
+# [kubernetes]
+# disabled = false
+# symbol = "󱃾 "
+# style = "fg:spring"
+# detect_files = ["k8s", "kubernetes", "kustomization.yaml", "Chart.yaml"]
+# format = '[$symbol$context( \($namespace\))]($style) '
