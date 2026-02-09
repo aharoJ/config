@@ -1,1 +1,60 @@
-/Users/aharoj/.config/skhd/modes/stack.skhd
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  skhdrc — Root Configuration                                               ║
+# ║  path: ~/.config/skhd/skhdrc                                               ║
+# ║  runtime: skhd.zig (brew install jackielii/tap/skhd-zig)                   ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# ARCHITECTURE
+# ────────────
+# This file is the entry point. It declares the shell, modes, and loads
+# domain-specific modules. No hotkey bindings live here — they live in
+# modules/ organized by responsibility.
+#
+# skhd processes .load directives in order. Later definitions of the same
+# hotkey override earlier ones (last-write-wins). Each module is independent.
+#
+# KEYBINDING SOVEREIGNTY
+# ──────────────────────
+# Hyper (Cmd+Shift+Alt+Ctrl) → skhd (yabai window commands)
+# rshift + key               → skhd (app launchers)
+# Shift + Alt + key          → skhd (secondary yabai actions)
+# Ctrl + h/j/k/l             → RESERVED for Neovim ↔ tmux (DO NOT BIND)
+# Alt + h/j/k/l              → RESERVED for Neovim resize (DO NOT BIND)
+# Ctrl + Space               → RESERVED for tmux prefix (DO NOT BIND)
+# Hyper + 1-9, [, ]          → CLAIMED by Karabiner (DO NOT BIND)
+# Hyper + F1, F2              → CLAIMED by Karabiner (DO NOT BIND)
+# Hyper + , . /               → BLOCKED by Karabiner sysdiagnose prevention
+#
+# HYPER KEY SOURCES (Karabiner-Elements)
+# ──────────────────────────────────────
+# CapsLock (held)  → Hyper    | CapsLock (alone) → nothing
+# Escape (held)    → Hyper    | Escape (alone)   → Escape
+# Both defined in Karabiner — skhd receives the resulting modifier combo.
+
+
+# ── Shell ────────────────────────────────────────────────────────────────────
+# Force bash execution regardless of login shell (Fish).
+# All yabai commands are POSIX — bash is the natural executor.
+# This is an skhd.zig feature. Original skhd ignores this directive.
+.shell "/bin/bash"
+
+
+# ── Mode Declarations ────────────────────────────────────────────────────────
+# The @ flag captures ALL keypresses in the mode, preventing leaks to the
+# focused app. Without @, unbound keys pass through — dangerous while resizing.
+
+:: default : # default mode — always exists, declared here for clarity
+:: resize @ : # resize mode — hjkl to resize windows, Escape to exit
+
+
+# ── Module Loads ─────────────────────────────────────────────────────────────
+# Each module is a self-contained domain of bindings.
+# Order matters only if two modules bind the same key (they shouldn't).
+
+.load "modules/navigation.skhdrc"
+.load "modules/manipulation.skhdrc"
+.load "modules/layout.skhdrc"
+.load "modules/resize.skhdrc"
+.load "modules/services.skhdrc"
+.load "modules/apps.skhdrc"
+.load "modules/scripts.skhdrc"
