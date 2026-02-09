@@ -13,14 +13,14 @@ yabai -m config layout                       stack
 # WHY 0: Stack mode = one window at a time. Padding wastes screen real estate.
 yabai -m config top_padding                  20
 yabai -m config bottom_padding               20
-yabai -m config left_padding                 40
-yabai -m config right_padding                40
+yabai -m config left_padding                 20
+yabai -m config right_padding                20
 yabai -m config window_gap                   0
 
 
 # ── Balance ─────────────────────────────────────────────────────
 # WHY off: Balance is meaningless in stack mode (no splits to balance).
-# yabai -m config auto_balance                 off
-# yabai -m config split_ratio                  0.50
+yabai -m config auto_balance                 off
+yabai -m config split_ratio                  0.50
 
 echo "yabai profile: stack (0 gaps, maximized)"
