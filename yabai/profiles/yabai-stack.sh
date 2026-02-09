@@ -10,7 +10,6 @@
 yabai -m config layout                       stack
 
 # ── Padding & Gaps ──────────────────────────────────────────────
-# WHY 0: Stack mode = one window at a time. Padding wastes screen real estate.
 yabai -m config top_padding                  20
 yabai -m config bottom_padding               20
 yabai -m config left_padding                 20
