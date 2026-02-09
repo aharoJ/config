@@ -8,7 +8,10 @@
 # version: yabai v7.1.x | macOS 26.2 Tahoe (M4 Max)
 # SIP: Fully enabled — NO scripting addition, NO space manipulation commands.
 # date: 2026-02-08
-# CHANGELOG: 2026-02-08 | Moved BSP-specific settings (split_type, window_placement,
+# CHANGELOG: 2026-02-08 | Consolidated SIP-gated settings into honest section —
+#              window_shadow, opacity, and animation controls are no-ops with SIP
+#              enabled but kept for future-proofing and documentation completeness.
+#            2026-02-08 | Moved BSP-specific settings (split_type, window_placement,
 #              window_insertion_point, insert_feedback_color) to yabai-bsp.sh profile.
 #              Neutral base is now truly layout-agnostic across stack/bsp/float.
 #            2026-02-07 | Added explicit opacity defaults for future-proofing.
@@ -27,26 +30,28 @@ yabai -m config window_zoom_persist          on
 yabai -m config mouse_follows_focus          off
 yabai -m config focus_follows_mouse          off
 
-# WHY float: Shadows only on floating windows — tiled windows don't need depth cues.
+# ── SIP-Gated Settings (no-ops while SIP is fully enabled) ───────
+# WHY kept: Future-proofing if SIP is ever partially disabled.
+# These require the scripting addition to take effect.
+# With SIP enabled, yabai silently ignores them — no errors, no effect.
+# Stating them explicitly protects against future yabai releases changing
+# defaults silently. Same principle as Spring Boot's server.port=8080.
+
+# Shadow control — requires scripting addition.
 yabai -m config window_shadow                float
 
-# WHY 0.0: Disable animations entirely for snappy response.
-# NOTE: window_animation_duration requires Screen Recording permission if > 0.
+# Animation control — requires Screen Recording permission AND scripting addition.
 yabai -m config window_animation_duration    0.0
-# WHY preset: If you ever enable animations, ease_out_circ gives smooth deceleration.
 yabai -m config window_animation_easing      ease_out_circ
 
-# ── Explicit Defaults (future-proof against yabai changing these) ─
-
-# WHY explicit: These ARE the current defaults, but stating them protects against
-# future yabai releases changing defaults silently. Same principle as Spring Boot
-# explicitly declaring server.port=8080.
+# Opacity control — requires scripting addition.
 yabai -m config window_opacity               off
-# WHY explicit: No-ops while opacity is off, but ready when you flip it on.
-# Prevents surprise behavior if a future yabai version changes these defaults.
 yabai -m config window_opacity_duration      0.0
 yabai -m config active_window_opacity        1.0
 yabai -m config normal_window_opacity        0.90
+
+# ── Explicit Defaults (non-SIP-gated) ────────────────────────────
+
 yabai -m config external_bar                 off:0:0
 yabai -m config menubar_opacity              1.0
 
