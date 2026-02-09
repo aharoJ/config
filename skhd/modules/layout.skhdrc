@@ -1,0 +1,41 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  layout.skhdrc — Layout Manipulation                                       ║
+# ║  path: ~/.config/skhd/modules/layout.skhdrc                                ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# Layout commands that change the spatial arrangement of windows.
+# Some are BSP-only (rotate, mirror, split) — they silently no-op in stack.
+# Others work in any layout (zoom, float, balance).
+
+
+# ── Zoom & Float ─────────────────────────────────────────────────────────────
+# These work in ALL layout modes.
+
+# Hyper+Z: toggle zoom-fullscreen (window fills entire screen, over all others)
+hyper - z : yabai -m window --toggle zoom-fullscreen
+
+# Hyper+W: toggle windowed-fullscreen (fills parent container, ignores padding)
+hyper - w : yabai -m window --toggle zoom-parent
+
+# Hyper+F: toggle float + center window in a 50% grid
+# The grid 4:4:1:1:2:2 = 4 rows, 4 cols, start at row 1 col 1, span 2x2 = centered 50%
+hyper - f : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+
+
+# ── BSP Tree Operations ──────────────────────────────────────────────────────
+# These only affect BSP layout. Silent no-op in stack/float.
+
+# Hyper+R: rotate tree 90° (cycles window positions)
+hyper - r : yabai -m space --rotate 90
+
+# Hyper+X: mirror tree across x-axis (flip top/bottom)
+hyper - x : yabai -m space --mirror x-axis
+
+# Hyper+Y: mirror tree across y-axis (flip left/right)
+hyper - y : yabai -m space --mirror y-axis
+
+# Hyper+E: toggle split direction of focused window (horizontal ↔ vertical)
+hyper - e : yabai -m window --toggle split
+
+# Hyper+B: balance tree — equalize all window sizes
+hyper - b : yabai -m space --balance

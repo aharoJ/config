@@ -1,0 +1,26 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  services.skhdrc — Service Management & Profile Switching                  ║
+# ║  path: ~/.config/skhd/modules/services.skhdrc                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# These bindings call fish shell functions defined in ~/.config/fish/functions/.
+# Since .shell is set to /bin/bash in the root skhdrc, we invoke fish explicitly.
+#
+# Fish functions referenced:
+#   yr  → restart yabai + skhd services
+#   yp  → switch yabai profile (stack, bsp, float)
+
+
+# ── Service Restart ──────────────────────────────────────────────────────────
+# Hyper+Q: restart yabai + skhd (calls yr fish function)
+# Nuclear option — use when things feel off after a display change or wake.
+hyper - q : fish -c "yr"
+
+
+# ── Profile Switching ────────────────────────────────────────────────────────
+# Hyper+T: switch to stack layout (T for "Tower" — stacked windows)
+hyper - t : fish -c "yp stack"
+
+# Hyper+P: switch to BSP layout (P for "Pane" — tiled panes)
+hyper - p : fish -c "yp bsp"
+
