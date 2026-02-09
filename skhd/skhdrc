@@ -51,7 +51,7 @@
 # Each module is a self-contained domain of bindings.
 # Order matters only if two modules bind the same key (they shouldn't).
 
-.load "modules/navigation.skhdrc"
+##.load "modules/navigation.skhdrc"
 .load "modules/manipulation.skhdrc"
 .load "modules/layout.skhdrc"
 .load "modules/resize.skhdrc"
