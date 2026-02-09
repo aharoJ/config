@@ -15,7 +15,7 @@
 | 4   | **tmux**               | The multiplexer — sessions, panes, persistence | Micro spatial layer inside the terminal                        | ✅                   |
 | 5   | **yabai **             | The spatial layer — OS-level window tiling     | Macro spatial layer, harmonizes with Neovim's `<M->` namespace | ✅                   |
 | 5   | **skhd**               | The spatial layer — OS-level window tiling     | Macro spatial layer, harmonizes with Neovim's `<M->` namespace | ✅                   |
-| 6   | **Fish + Starship**    | The shell — commands, prompt, environment      | Fast, no config debt, stays out of Neovim's way                | ⬜                   |
+| 6   | **Fish + Starship**    | The shell — commands, prompt, environment      | Fast, no config debt, stays out of Neovim's way                | ✅                   |
 | 7   | **yazi**               | The navigator — terminal file manager          | Complements, not replaces, Neovim's explorer                   | ⬜                   |
 | 8   | **eza**                | The eyes — modern ls with git integration      | Tiny utility, zero config surface                              | ⬜                   |
 | 9   | **Neovim plugins**     | Surgical additions                             | Only after core is rock-solid                                  | ⬜Queued (Phase 2/3) |
