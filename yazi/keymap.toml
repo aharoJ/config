@@ -54,48 +54,24 @@ prepend_keymap = [
   { on = "<C-[>", run = "escape --all", desc = "Escape (clear all)" },
   { on = "<C-c>", run = "escape --all", desc = "Escape (clear all)" },
 
-  # ── Navigation: no wraparound ──────────────────────────────────
-  # WHY: arrow -1/1 stops at boundaries. Default prev/next wraps around.
-  # Personal preference: wrapping is disorienting in large directories.
-  { on = "k", run = "arrow -1", desc = "Up (no wrap)" },
-  { on = "j", run = "arrow 1",  desc = "Down (no wrap)" },
-
-  # ── Selection: no auto-advance ─────────────────────────────────
-  # WHY: Default toggles AND moves cursor down. This toggles only.
-  # Lets you inspect what you selected before moving. More vim-like.
-  { on = "<Space>", run = "toggle", desc = "Toggle select (no advance)" },
-
   # ── Open: hovered only ─────────────────────────────────────────
   # WHY: Default `open` acts on selection if present, which can accidentally
   # open 50 files. --hovered ensures Enter always opens just the one under cursor.
   { on = "<Enter>", run = "open --hovered", desc = "Open hovered file" },
 
-  # ── Disable single-key `o` (claimed as prefix) ────────────────
-  # WHY: Default o=open. We use `o` as prefix for open/with namespace.
-  # <Enter> already handles opening. This frees o,* for multi-key sequences.
-  { on = "o", run = "noop", desc = "Reserved: open/* prefix" },
+  # ── Disable                                     ────────────────
+  { on = "o",    run = "noop", desc = "Reserved: open/* prefix" },
+  { on = ["g", "c"], run = "noop", desc = "Disabled: use g,t,c" },
+  { on = ["g", "d"], run = "noop", desc = "Disabled: use g,t,d" },
 
-  # ── Links: force by default ────────────────────────────────────
-  # WHY: Default link/hardlink fails if target exists. --force overwrites.
-  # You're making a symlink on purpose — you want it to work.
-  { on = "-",     run = "link --force",              desc = "Symlink (absolute, force)" },
-  { on = "_",     run = "link --relative --force",   desc = "Symlink (relative, force)" },
-  { on = "<C-->", run = "hardlink --force",          desc = "Hardlink (force)" },
 
-  # ── Clipboard: copy file contents ──────────────────────────────
-  # WHY: Default Y=unyank. We override to copy file contents to clipboard.
-  # unyank remains on X (default). One key = copy content, not path.
+  # ── Clipboard: contents to clipboard ──────────────────────────────
   { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "Copy file contents to clipboard" },
+  { on = ["c", "y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | while IFS= read -r f; do printf "=== %s ===\n" "${f#$PWD/}"; cat "$f"; printf "\n"; done | pbcopy'""", desc = "Copy CWD file contents (recursive, headers)" },
+  { on = ["c", "Y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | xargs cat | pbcopy'""", desc = "Copy CWD file contents (recursive, raw)" },
 
-  # ── Sort overrides (no auto-linemode) ──────────────────────────
-  # WHY: Default ,m/,M/,s/,S auto-switch linemode. We want sort-only.
-  # Linemode is a separate concern — change it explicitly via m,* or g,* prefix.
-  { on = [",", "m"], run = "sort mtime",            desc = "Sort: mtime" },
-  { on = [",", "M"], run = "sort mtime --reverse",  desc = "Sort: mtime (rev)" },
-  { on = [",", "s"], run = "sort size",             desc = "Sort: size" },
-  { on = [",", "S"], run = "sort size --reverse",   desc = "Sort: size (rev)" },
-  { on = [",", "b"], run = "sort btime",            desc = "Sort: btime" },
-  { on = [",", "B"], run = "sort btime --reverse",  desc = "Sort: btime (rev)" },
+  # ── Selection: no auto-advance ─────────────────────────────────
+  { on = "<Space>", run = "toggle", desc = "Toggle select (no advance)" },
 ]
 
 # ── ADDITIONS (new bindings) ─────────────────────────────────────
@@ -107,6 +83,8 @@ append_keymap = [
   { on = ["o", "w", "m"], run = 'shell --orphan -- open -a "Modern CSV" "$@"', desc = "edit/with/modern-csv" },
   { on = ["o", "w", "f"], run = 'shell --orphan -- open -R "$@"', desc = "open/with/finder (reveal)" },
   { on = ["o", "t", "t"], run = """shell --orphan -- sh -lc 'tmux new-window -c "$PWD"'""", desc = "open/tmux/tab" },
+  { on = ["o", "w", "v", ], run = 'shell --block -- nvim "$@"', desc = "open/with/vim" },
+
 
   # ── goto/to bookmarks ─────────────────────────────────────────
   # WHY: Frecency (zoxide) handles most navigation. These are for fixed directories
@@ -119,10 +97,6 @@ append_keymap = [
   # ── macOS integrations ─────────────────────────────────────────
   # { on = "R", run = 'shell --orphan -- open -R "$@"', desc = "Reveal selected in Finder" },
   # { on = "F", run = 'shell --orphan -- open .',        desc = "Open CWD in Finder" },
-
-  # ── Shell here ─────────────────────────────────────────────────
-  # WHY: Vim convention (:! = shell). Drop into $SHELL at CWD without leaving yazi.
-  { on = "!", run = 'shell "$SHELL" --block', desc = "Open $SHELL here" },
 ]
 
 # ═══════════════════════════════════════════════════════════════════
@@ -134,11 +108,6 @@ append_keymap = [
 [input]
 
 prepend_keymap = [
-  # WHY: Override <C-b>/<C-f> from char movement (default) to WORD movement.
-  # Emacs convention: C-b/C-f = backward/forward word in readline.
-  # Default h/l still handles char movement in normal mode.
-  { on = "<C-b>", run = "backward",              desc = "Back one word" },
-  { on = "<C-f>", run = "forward --end-of-word", desc = "Forward to end of word" },
 ]
 
 # ═══════════════════════════════════════════════════════════════════

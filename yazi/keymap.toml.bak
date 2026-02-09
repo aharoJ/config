@@ -46,11 +46,7 @@ keymap = [
     "c",
 ], run = 'shell --orphan -- sh -lc "command -v code >/dev/null 2>&1 && code -- \"$@\" || open -a \"Visual Studio Code\" \"$@\" "', desc = "edit/with/vscode" },
 
-{ on = [
-    "e",
-    "w",
-    "v",
-], run = 'shell --block -- nvim "$@"', desc = "edit/with/vim" },
+{ on = [ "e", "w", "v", ], run = 'shell --block -- nvim "$@"', desc = "edit/with/vim" },
 
 { on = [
     "e",
