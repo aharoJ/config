@@ -9,7 +9,7 @@ Fish is **the shell** — the command-line interface to everything. It sits betw
 **Quality Bar:** Top 0.1% craftsmanship. Every function earns its place. Every line in `config.fish` has a reason. Zero junk-drawer energy.
 
 **Fish's Philosophy — And Why We Chose It:**
-Fish is opinionated by design. It works out of the box. Syntax highlighting, autosuggestions, and tab completion require zero configuration. We chose Fish *because* it requires minimal config — the constitution's job is to keep it that way.
+Fish is opinionated by design. It works out of the box. Syntax highlighting, autosuggestions, and tab completion require zero configuration. We chose Fish _because_ it requires minimal config — the constitution's job is to keep it that way.
 
 ---
 
@@ -35,21 +35,22 @@ Fish runs inside tmux panes inside Ghostty. It is the **interactive command laye
 
 ### Hardware & Toolchain (Inherited from PDE)
 
-| Component         | Detail                                              |
-| ----------------- | --------------------------------------------------- |
-| **Machine**       | Apple Silicon M4 Max, macOS Tahoe 26.2              |
-| **Keyboard**      | HHKB Professional Hybrid Type-S                     |
-| **Terminal**      | Ghostty (GPU-accelerated, Zig-based)                |
-| **Multiplexer**   | tmux (`<C-Space>` prefix)                           |
-| **Shell**         | Fish 4.x (via Homebrew, Rust-based since 4.0)       |
-| **Prompt**        | Starship (cross-shell, minimal config)              |
-| **Plugin Manager**| Fisher (jorgebucaran/fisher)                        |
-| **File Manager**  | yazi (terminal file manager)                        |
-| **ls Replacement**| eza (modern ls with git + icons)                    |
+| Component          | Detail                                        |
+| ------------------ | --------------------------------------------- |
+| **Machine**        | Apple Silicon M4 Max, macOS Tahoe 26.2        |
+| **Keyboard**       | HHKB Professional Hybrid Type-S               |
+| **Terminal**       | Ghostty (GPU-accelerated, Zig-based)          |
+| **Multiplexer**    | tmux (`<C-Space>` prefix)                     |
+| **Shell**          | Fish 4.x (via Homebrew, Rust-based since 4.0) |
+| **Prompt**         | Starship (cross-shell, minimal config)        |
+| **Plugin Manager** | Fisher (jorgebucaran/fisher)                  |
+| **File Manager**   | yazi (terminal file manager)                  |
+| **ls Replacement** | eza (modern ls with git + icons)              |
 
 ### Fish Version Awareness (4.x)
 
 Fish 4.0 (Feb 2025) rewrote the core in Rust. Key changes relevant to config:
+
 - New `bind` key notation (`bind ctrl-right` instead of `bind \e\[1\;5C`)
 - `fish_should_add_to_history` function for history filtering
 - `qmark-noglob` enabled by default (`?` is no longer a glob character)
@@ -143,6 +144,7 @@ end
 ```
 
 **Rules for `internal/`:**
+
 1. One function per file, filename = function name (Fish autoload requirement)
 2. Each file contains ONLY the function definition — no side effects, no global state
 3. Domain directories are created when the first function in that domain is written
@@ -187,6 +189,7 @@ end
 ### Principle 3: conf.d/ Is Fisher's Territory
 
 The `conf.d/` directory is primarily managed by Fisher for plugin initialization. Do NOT put custom config snippets there unless:
+
 - They are event handlers (which can't be autoloaded)
 - They need to run BEFORE config.fish (conf.d loads first)
 
@@ -195,6 +198,7 @@ For everything else, use `config.fish` or `internal/` functions.
 ### Principle 4: functions/ Is Fisher's Territory
 
 The canonical `functions/` directory is where Fisher installs plugin functions. User functions go in `internal/`. The only user files in `functions/` should be:
+
 - Overrides of Fish built-in functions (e.g., custom `fish_greeting`)
 - Wrappers that must live in the default function path (rare)
 
@@ -202,13 +206,14 @@ The canonical `functions/` directory is where Fisher installs plugin functions. 
 
 Fish has three mechanisms. Use the right one:
 
-| Mechanism | Use When | Example |
-| --------- | -------- | ------- |
-| **`abbr`** | Simple command shortcuts you want to SEE expanded before execution | `abbr .. "cd .."` |
-| **`alias`** | Command wrappers that should be invisible (no expansion) | `alias ls="eza --icons"` |
-| **`function`** | Anything with logic, arguments, or flags | `sbr`, `yr`, `freeport` |
+| Mechanism      | Use When                                                           | Example                  |
+| -------------- | ------------------------------------------------------------------ | ------------------------ |
+| **`abbr`**     | Simple command shortcuts you want to SEE expanded before execution | `abbr .. "cd .."`        |
+| **`alias`**    | Command wrappers that should be invisible (no expansion)           | `alias ls="eza --icons"` |
+| **`function`** | Anything with logic, arguments, or flags                           | `sbr`, `yr`, `freeport`  |
 
 **Rule of thumb:**
+
 - If it's one command with no logic → `alias` or `abbr`
 - If it takes arguments or has conditionals → `function` in `internal/`
 - Prefer `abbr` over `alias` for navigation shortcuts (you see what you're about to run)
@@ -218,6 +223,7 @@ Fish has three mechanisms. Use the right one:
 Universal variables (`set -U`) persist across all sessions and restarts. They are stored in `fish_variables`. **Never set universal variables in config.fish** — they'll grow longer with each shell instance.
 
 Set them once at the command line:
+
 ```fish
 # Run ONCE interactively, not in config.fish:
 set -U fish_greeting ""
@@ -340,14 +346,14 @@ end
 
 ### Function Naming Conventions
 
-| Domain | Prefix Pattern | Examples |
-| ------ | -------------- | -------- |
-| yabai  | `y*`           | `yr`, `yp`, `ys`, `yk` |
-| skhd   | `sk*`          | `sk`, `skr` |
-| tmux   | `t*`           | `t`, `tn`, `tK` |
-| nvim   | (bare)         | `v`, `vim` |
+| Domain | Prefix Pattern | Examples                 |
+| ------ | -------------- | ------------------------ |
+| yabai  | `y*`           | `yr`, `yp`, `ys`, `yk`   |
+| skhd   | `sk*`          | `sk`, `skr`              |
+| tmux   | `t*`           | `t`, `tn`, `tK`          |
+| nvim   | (bare)         | `v`, `vim`               |
 | spring | `sb*` / `sr`   | `sbr`, `sbt`, `sr`, `st` |
-| brew   | `bu`           | `bu` |
+| brew   | `bu`           | `bu`                     |
 
 Function names are short — these are typed hundreds of times a day. The domain directory provides context; the name provides speed.
 
@@ -381,6 +387,7 @@ complete -c v -w nvim
 Fisher is the plugin manager. It's minimal, pure-Fish, and uses a simple `fish_plugins` file.
 
 **Rules:**
+
 1. `fish_plugins` is committed to git (it's the lockfile equivalent)
 2. `fish_variables` is NOT committed (contains machine-specific state)
 3. Fisher-managed files in `functions/`, `completions/`, `conf.d/` are NOT manually edited
@@ -398,6 +405,7 @@ patrickf1/fzf.fish           # fzf integration (Ctrl+R history, Ctrl+F files, et
 ### Plugin Evaluation Criteria
 
 Before adding a plugin, ask:
+
 1. Can Fish do this natively? (Fish's built-in features are extensive)
 2. Can a simple function in `internal/` handle this?
 3. Is it actively maintained? (< 12 months since last commit)
@@ -506,7 +514,7 @@ fnm env --use-on-cd | source  # Crashes if fnm not installed
 
 Write idiomatic Fish. No `&&` chains (use `; and`), no `$(...)` (use `(...)`), no `export` (use `set -gx`). Fish is not bash — don't pretend it is.
 
-**Note:** Fish 3.4+ does support `&&` and `||` as syntactic sugar. Using them is acceptable for simple chains like `brew update && brew upgrade`. The principle is: don't import bash *patterns* — use Fish idioms where Fish has a better way.
+**Note:** Fish 3.4+ does support `&&` and `||` as syntactic sugar. Using them is acceptable for simple chains like `brew update && brew upgrade`. The principle is: don't import bash _patterns_ — use Fish idioms where Fish has a better way.
 
 ### Rule 8: USE fish_add_path, NOT set PATH
 
@@ -524,25 +532,25 @@ set -gx PATH /opt/homebrew/bin $PATH
 
 ### What Exists (Post-Nuke, Rebuilt)
 
-| Domain       | Functions | Status |
-| ------------ | --------- | ------ |
-| yabai        | `yr`, `yp`, `ys`, `yk` | ✅ Rebuilt |
-| skhd         | `sk`, `skr` | ✅ Rebuilt |
+| Domain | Functions              | Status     |
+| ------ | ---------------------- | ---------- |
+| yabai  | `yr`, `yp`, `ys`, `yk` | ✅ Rebuilt |
+| skhd   | `sk`, `skr`            | ✅ Rebuilt |
 
 ### What Needs Rebuilding
 
-| Domain       | Functions | Priority |
-| ------------ | --------- | -------- |
-| config.fish  | (the file itself) | 🔴 Now |
-| nvim         | `v`, `vim` | 🔴 Now |
-| tmux         | `t`, `tn`, `tK` | 🔴 Now |
-| brew         | `bu` | 🟡 Soon |
-| eza          | `set-eza-theme` | 🟡 Soon |
+| Domain       | Functions                            | Priority            |
+| ------------ | ------------------------------------ | ------------------- |
+| config.fish  | (the file itself)                    | 🔴 Now              |
+| nvim         | `v`, `vim`                           | 🔴 Now              |
+| tmux         | `t`, `tn`, `tK`                      | 🔴 Now              |
+| brew         | `bu`                                 | 🟡 Soon             |
+| eza          | `set-eza-theme`                      | 🟡 Soon             |
 | spring-boot  | `sbr`, `sbt`, `sr`, `st`, `freeport` | 🟡 When dev resumes |
-| yazi         | `lf` | 🟡 Soon |
-| themes       | kanagawa.fish | 🟡 Soon |
-| completions  | (for flagged functions) | 🔵 Later |
-| fish_plugins | (audit current list) | 🟡 Soon |
+| yazi         | `lf`                                 | 🟡 Soon             |
+| themes       | kanagawa.fish                        | 🟡 Soon             |
+| completions  | (for flagged functions)              | 🔵 Later            |
+| fish_plugins | (audit current list)                 | 🟡 Soon             |
 
 ---
 
@@ -571,6 +579,7 @@ When starting a NEW conversation about Fish config:
 ### Function Consultation
 
 Before writing or modifying a function:
+
 - Does Fish do this natively? (many things are built-in)
 - Would an alias or abbreviation be simpler?
 - Does it conflict with an existing function name?
@@ -609,6 +618,7 @@ Before writing or modifying a function:
 ### Transition Protocol
 
 When renaming or removing a function:
+
 1. Keep the old function as a wrapper that calls the new one + warns
 2. After 7 days, remove the old function
 3. Every CHANGELOG includes ROLLBACK instructions
