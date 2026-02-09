@@ -27,11 +27,10 @@ font-thicken = true
 
 # ── Transparency ─────────────────────────────────────────────────────────────
 # 70% opacity - see your desktop through the terminal
-background-opacity = 0.70
+background-opacity = 0.50
 
 # No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
-background-blur = true
-
+background-blur = false
 # Apply opacity to cells with explicit background colors too (e.g., Neovim themes)
 # Set to true if you want full transparency even in TUI apps
 background-opacity-cells = false
@@ -53,7 +52,9 @@ window-padding-balance = true
 
 # Start with a reasonable size (cells, not pixels)
 window-width = 120
-window-height = 35
+window-height = 46
+window-position-x = 160
+window-position-y = 60
 
 # New windows/tabs inherit working directory (shell integration required)
 window-inherit-working-directory = true
