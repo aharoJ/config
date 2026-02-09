@@ -1,30 +1,22 @@
 #!/usr/bin/env sh
 # path: ~/.config/yabai/yabairc
 # description: Neutral base configuration — global behavior ONLY.
-#              Layout, padding, gaps, and balance are set by profiles.
+#              Layout, padding, gaps, balance, and tree behavior are set by profiles.
 #              This file is the equivalent of Spring Boot's application.properties:
 #              sensible defaults, zero opinion on layout.
 #
 # version: yabai v7.1.x | macOS 26.2 Tahoe (M4 Max)
 # SIP: Fully enabled — NO scripting addition, NO space manipulation commands.
-# date: 2026-02-07
-# CHANGELOG: 2026-02-07 | Added explicit opacity defaults for future-proofing.
-#            2026-02-07 | Merged Gemini's v7 options, refocus signals, float rules,
+# date: 2026-02-08
+# CHANGELOG: 2026-02-08 | Moved BSP-specific settings (split_type, window_placement,
+#              window_insertion_point, insert_feedback_color) to yabai-bsp.sh profile.
+#              Neutral base is now truly layout-agnostic across stack/bsp/float.
+#            2026-02-07 | Added explicit opacity defaults for future-proofing.
+#            2026-02-04 | Merged Gemini's v7 options, refocus signals, float rules,
 #              explicit defaults into Claude's neutral-base architecture.
-#            ROLLBACK: Remove lines 68-73 to revert opacity additions
+#            ROLLBACK: Restore 4 BSP lines from yabai-bsp.sh back here if needed.
 
 # ── Global Behavior ──────────────────────────────────────────────
-
-# WHY second_child: New windows appear right/below, matching natural reading flow.
-yabai -m config window_placement             second_child
-
-# WHY auto: yabai picks vertical or horizontal split based on window dimensions.
-# Wide windows split vertically, tall windows split horizontally. v7 feature.
-yabai -m config split_type                   auto
-
-# WHY focused: New windows split at the focused window, not the tree root.
-# More intuitive — the split happens where your eyes already are.
-yabai -m config window_insertion_point        focused
 
 # WHY on: Zoom state (zoom-fullscreen / zoom-parent) survives focus changes.
 # Without this, switching focus unzooms your window. v7 feature.
@@ -43,10 +35,6 @@ yabai -m config window_shadow                float
 yabai -m config window_animation_duration    0.0
 # WHY preset: If you ever enable animations, ease_out_circ gives smooth deceleration.
 yabai -m config window_animation_easing      ease_out_circ
-
-# WHY explicit: Visual hint showing where a new window will land in BSP tree.
-# Warm red — visible without being distracting. Only appears during insertion.
-yabai -m config insert_feedback_color        0xffd75f5f
 
 # ── Explicit Defaults (future-proof against yabai changing these) ─
 
