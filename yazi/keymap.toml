@@ -67,8 +67,26 @@ prepend_keymap = [
 
   # ── Clipboard: contents to clipboard ──────────────────────────────
   { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "Copy file contents to clipboard" },
-  { on = ["c", "y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | while IFS= read -r f; do printf "=== %s ===\n" "${f#$PWD/}"; cat "$f"; printf "\n"; done | pbcopy'""", desc = "Copy CWD file contents (recursive, headers)" },
-  { on = ["c", "Y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | xargs cat | pbcopy'""", desc = "Copy CWD file contents (recursive, raw)" },
+  # { on = ["c", "y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | while IFS= read -r f; do printf "=== %s ===\n" "${f#$PWD/}"; cat "$f"; printf "\n"; done | pbcopy'""", desc = "Copy CWD file contents (recursive, headers)" },
+  # { on = ["c", "Y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | xargs cat | pbcopy'""", desc = "Copy CWD file contents (recursive, raw)" },
+
+  # ── EXPIRIMENT ──────────────────────────────
+  # ── Clipboard: selected contents / tree to clipboard ────────────────
+{ on = ["c", "y"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" $@'", desc = "Copy selected contents to clipboard" },
+{ on = ["c", "Y"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" $@'", desc = "Copy selected file tree to clipboard" },
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   # ── Selection: no auto-advance ─────────────────────────────────
   { on = "<Space>", run = "toggle", desc = "Toggle select (no advance)" },
