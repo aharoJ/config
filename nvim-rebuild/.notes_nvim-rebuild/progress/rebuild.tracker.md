@@ -42,8 +42,8 @@
 
 | #   | File                         | Purpose                   | Status |
 | --- | ---------------------------- | ------------------------- | ------ |
-| 10  | `plugins/core/telescope.lua` | Fuzzy finder              | ⬜     |
-| 11  | `plugins/ui/explorer.lua`    | File explorer             | ⬜     |
+| 10  | `plugins/core/telescope.lua` | Fuzzy finder              | ✅     |
+| 11  | `plugins/ui/explorer.lua`    | File explorer             | ✅     |
 | 12  | `plugins/ui/statusline.lua`  | Statusline                | ⬜     |
 | 13  | `plugins/tools/git.lua`      | Git integration           | ⬜     |
 | 14  | `lsp/*.lua`                  | Native LSP server configs | ⬜     |
