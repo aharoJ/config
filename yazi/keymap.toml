@@ -55,16 +55,16 @@ append_keymap = [
 
 
   # ── goto/to bookmarks ─────────────────────────────────────────
-  # WHY: Frecency (zoxide) handles most navigation. These are for fixed directories
-  # you always want at exactly 3 keystrokes. g,c (2 keys) also reaches config — this is for consistency.
   { on = ["g", "t", "r"], run = "cd ~/.repository", desc = "go/to/repository" },
-  { on = ["g", "t", "w"], run = "cd ~/.westernu",   desc = "go/to/westernu" },
   { on = ["g", "t", "c"], run = "cd ~/.config",     desc = "go/to/config" },
   { on = ["g", "t", "d"], run = "cd ~/Downloads",     desc = "go/to/downloads" },
 
-  # ── macOS integrations ─────────────────────────────────────────
-  # { on = "R", run = 'shell --orphan -- open -R "$@"', desc = "Reveal selected in Finder" },
-  # { on = "F", run = 'shell --orphan -- open .',        desc = "Open CWD in Finder" },
+  # ── goto/to western ─────────────────────────────────────────
+  { on = ["g", "t", "w", "w"], run = "cd ~/desk/work/westernu",   desc = "go/to/westernu" },
+  { on = ["g", "t", "w", "n"], run = "cd ~/desk/work/westernu/notes",   desc = "go/to/westernu/notes" },
+  { on = ["g", "t", "w", "p"], run = "cd ~/desk/work/westernu/pipeline",   desc = "go/to/westernu/pipeline" },
+  { on = ["g", "t", "w", "c"], run = "cd ~/desk/work/westernu/pipeline/cvmapp",   desc = "go/to/westernu/cvmapp" },
+  { on = ["g", "t", "w", "f"], run = "cd ~/desk/work/westernu/pipeline/frank",   desc = "go/to/westernu/frank" },
 ]
 
 # ═══════════════════════════════════════════════════════════════════
