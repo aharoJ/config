@@ -100,8 +100,23 @@ keymap("n", "<leader>qq", "<cmd>q!<CR>", { desc = "Quit" })
 
 -- Word replace under cursor (fastest refactor motion in vanilla vim)
 -- WHY: Positions cursor in the replacement field, ready to type. ThePrimeagen classic.
-keymap("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
-  { desc = "Replace word under cursor globally" })
+keymap("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = "Replace word under cursor globally" })
+
+
+
+keymap("v", "<leader>cr", function()
+  vim.cmd('noau normal! "zy')
+  local text = vim.fn.getreg("z")
+  local escaped = vim.fn.escape(text, [[/\]])
+  local cmd = ":%s/\\V\\C" .. escaped .. "/" .. escaped .. "/g"
+  vim.api.nvim_feedkeys(
+    vim.api.nvim_replace_termcodes(cmd .. string.rep("<Left>", 2), true, false, true),
+    "n", false
+  )
+end, { desc = "[code] replace" })
+
+
+
 
 -- Make current file executable
 keymap("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make file executable" })
