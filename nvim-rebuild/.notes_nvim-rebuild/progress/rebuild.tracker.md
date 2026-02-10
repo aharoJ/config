@@ -16,8 +16,8 @@
 | 5   | **yabai **             | The spatial layer — OS-level window tiling     | Macro spatial layer, harmonizes with Neovim's `<M->` namespace | ✅                   |
 | 5   | **skhd**               | The spatial layer — OS-level window tiling     | Macro spatial layer, harmonizes with Neovim's `<M->` namespace | ✅                   |
 | 6   | **Fish + Starship**    | The shell — commands, prompt, environment      | Fast, no config debt, stays out of Neovim's way                | ✅                   |
-| 7   | **yazi**               | The navigator — terminal file manager          | Complements, not replaces, Neovim's explorer                   | ⬜                   |
-| 8   | **eza**                | The eyes — modern ls with git integration      | Tiny utility, zero config surface                              | ⬜                   |
+| 7   | **yazi**               | The navigator — terminal file manager          | Complements, not replaces, Neovim's explorer                   | ✅                   |
+| 8   | **eza**                | The eyes — modern ls with git integration      | Tiny utility, zero config surface                              | ✅                   |
 | 9   | **Neovim plugins**     | Surgical additions                             | Only after core is rock-solid                                  | ⬜Queued (Phase 2/3) |
 
 ---
@@ -47,7 +47,7 @@
 | 12  | `plugins/ui/statusline.lua`  | Statusline                | ⬜     |
 | 13  | `plugins/tools/git.lua`      | Git integration           | ⬜     |
 | 14  | `lsp/*.lua`                  | Native LSP server configs | ⬜     |
-| 15  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation    | ⬜     |
+| 15  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation    | ✅     |
 
 ### Phase 3 — Editor Intelligence
 
