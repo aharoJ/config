@@ -20,22 +20,11 @@ local find_files_opts = {
     sorting_strategy = "ascending",
 }
 
-
-
--- ┌──────────────────────────────────────────────────────────────────┐
--- │                                                                  │
--- │   SKELETON — don't touch below this line                         │
--- │                                                                  │
--- └──────────────────────────────────────────────────────────────────┘
-
 return {
     "nvim-telescope/telescope.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-        { "<leader>gf", function()
-            -- resolves both plain tables AND function-wrapped theme variations
-            local opts = type(find_files_opts) == "function" and find_files_opts() or find_files_opts require("telescope.builtin").find_files(opts) end, desc = "Find Files",
-        },
+        { "<leader>gf", function() local opts = type(find_files_opts) == "function" and find_files_opts() or find_files_opts require("telescope.builtin").find_files(opts) end, desc = "[get] file", },
     },
     config = function()
         require("telescope").setup({
@@ -49,3 +38,4 @@ return {
         })
     end,
 }
+
