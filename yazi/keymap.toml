@@ -1,31 +1,4 @@
 # path: ~/.config/yazi/keymap.toml
-# description: Delta-only keymap — inherits ALL Yazi defaults, overrides only what's intentional.
-#              Same IoC philosophy as yabairc: neutral base (Yazi defaults) + surgical profile (this file).
-#
-# architecture: prepend = overrides (shadows defaults, higher priority)
-#               append  = additions (new bindings defaults don't have)
-#
-# defaults you get FOR FREE by not redeclaring them:
-#   navigation:   hjkl, gg/G, <C-u/d/b/f>, H/L (back/forward), arrows
-#   operations:   y (yank), x (cut), p/P (paste), d/D (remove), a (create), r (rename)
-#   search:       s/S (fd/rg), <C-s> (cancel), f (filter), / (find), ?/n/N
-#   sort:         ,a/,A (alpha), ,n/,N (natural), ,e/,E (ext), ,b/,B (btime)
-#                 ,m/,M (mtime + auto linemode), ,s/,S (size + auto linemode), ,r (random)
-#   linemode:     m,s/m,p/m,b/m,m/m,o/m,n (size/perms/btime/mtime/owner/none)
-#   copy:         c,c (path), c,d (dirname), c,f (filename), c,n (stem)
-#   goto:         g,h (home), g,c (config), g,d (downloads), g,<Space> (interactive), g,f (follow)
-#   tabs:         t (create), 1-9 (switch), [/] (prev/next), {/} (swap)
-#   visual:       v/V, <Space> (toggle+advance), <C-a> (select all), <C-r> (invert)
-#   preview:      K/J (seek up/down)
-#   spot:         <Tab> (spotter — file info popup)
-#   jump:         z (fzf), Z (zoxide)
-#   task mgr:     w (tasks:show)
-#   help:         ~/F1
-#   misc:         . (hidden toggle), ;/: (shell), <C-z> (suspend), gx-style open
-#
-# input layer:    FULL vi-mode (h/l/w/b/e/0/$, d/c/s/x/y/p, u/U/<C-r>, i/I/a/A/v/V/r)
-# all sub-layers: [tasks], [spot], [pick], [input], [confirm], [cmp], [help] — complete defaults
-#
 # version: yazi v26.1.22 | macOS Tahoe (M4 Max) | HHKB Type-S
 # date: 2026-02-09
 # CHANGELOG: 2026-02-09 | Ground-up rewrite: delta-only architecture | ROLLBACK: Restore full keymap.toml from git
@@ -42,51 +15,28 @@
 prepend_keymap = [
 
   # ── Quit swap ──────────────────────────────────────────────────
-  # WHY: cd-on-quit is the common exit (Q). Plain quit (q) is the safe/fast bail.
-  # Default: q=quit, Q=quit --no-cwd-file. We swap them.
   { on = "q", run = "quit --no-cwd-file", desc = "Quit (no cd)" },
   { on = "Q", run = "quit",               desc = "Quit + cd to CWD" },
 
   # ── Escape: nuclear cancel ─────────────────────────────────────
-  # WHY: Default escape only cancels the most recent mode. --all clears everything:
-  # visual, selection, filter, search, find — one key resets all state.
   { on = "<Esc>", run = "escape --all", desc = "Escape (clear all)" },
   { on = "<C-[>", run = "escape --all", desc = "Escape (clear all)" },
   { on = "<C-c>", run = "escape --all", desc = "Escape (clear all)" },
 
   # ── Open: hovered only ─────────────────────────────────────────
-  # WHY: Default `open` acts on selection if present, which can accidentally
-  # open 50 files. --hovered ensures Enter always opens just the one under cursor.
   { on = "<Enter>", run = "open --hovered", desc = "Open hovered file" },
 
   # ── Disable                                     ────────────────
   { on = "o",    run = "noop", desc = "Reserved: open/* prefix" },
   { on = ["g", "c"], run = "noop", desc = "Disabled: use g,t,c" },
   { on = ["g", "d"], run = "noop", desc = "Disabled: use g,t,d" },
+  { on = ["c", "d"], run = "noop", desc = "Disabled: use cp" },
 
-
-  # ── Clipboard: contents to clipboard ──────────────────────────────
-  { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "Copy file contents to clipboard" },
-  # { on = ["c", "y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | while IFS= read -r f; do printf "=== %s ===\n" "${f#$PWD/}"; cat "$f"; printf "\n"; done | pbcopy'""", desc = "Copy CWD file contents (recursive, headers)" },
-  # { on = ["c", "Y"], run = """shell -- sh -c 'find "$PWD" -type f -not -path "*/.*" | sort | xargs cat | pbcopy'""", desc = "Copy CWD file contents (recursive, raw)" },
-
-  # ── EXPIRIMENT ──────────────────────────────
-  # ── Clipboard: selected contents / tree to clipboard ────────────────
-{ on = ["c", "y"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" $@'", desc = "Copy selected contents to clipboard" },
-{ on = ["c", "Y"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" $@'", desc = "Copy selected file tree to clipboard" },
-
-
-
-
-
-
-
-
-
-
-
-
-
+  # ── Clipboard namespace ────────────────────────────────────────
+  { on = ["c", "c"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" $@'", desc = "[copy] content(s)" },
+  { on = ["c", "t"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" $@'", desc = "[copy] tree(s)" },
+  { on = ["c", "p"], run = "copy path", desc = "[copy] path"},
+  { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "[copy] raw" },
 
   # ── Selection: no auto-advance ─────────────────────────────────
   { on = "<Space>", run = "toggle", desc = "Toggle select (no advance)" },
@@ -101,16 +51,16 @@ append_keymap = [
   { on = ["o", "w", "m"], run = 'shell --orphan -- open -a "Modern CSV" "$@"', desc = "edit/with/modern-csv" },
   { on = ["o", "w", "f"], run = 'shell --orphan -- open -R "$@"', desc = "open/with/finder (reveal)" },
   { on = ["o", "t", "t"], run = """shell --orphan -- sh -lc 'tmux new-window -c "$PWD"'""", desc = "open/tmux/tab" },
-  { on = ["o", "w", "v", ], run = 'shell --block -- nvim "$@"', desc = "open/with/vim" },
+  { on = ["o", "w", "v"], run = 'shell --block -- nvim "$@"', desc = "open/with/vim" },
 
 
   # ── goto/to bookmarks ─────────────────────────────────────────
   # WHY: Frecency (zoxide) handles most navigation. These are for fixed directories
   # you always want at exactly 3 keystrokes. g,c (2 keys) also reaches config — this is for consistency.
-  { on = ["g", "t", "r"], run = "cd ~/.repository", desc = "goto/to/repository" },
-  { on = ["g", "t", "w"], run = "cd ~/.westernu",   desc = "goto/to/westernu" },
-  { on = ["g", "t", "c"], run = "cd ~/.config",     desc = "goto/to/config" },
-  { on = ["g", "t", "d"], run = "cd ~/Downloads",     desc = "goto/to/downloads" },
+  { on = ["g", "t", "r"], run = "cd ~/.repository", desc = "go/to/repository" },
+  { on = ["g", "t", "w"], run = "cd ~/.westernu",   desc = "go/to/westernu" },
+  { on = ["g", "t", "c"], run = "cd ~/.config",     desc = "go/to/config" },
+  { on = ["g", "t", "d"], run = "cd ~/Downloads",     desc = "go/to/downloads" },
 
   # ── macOS integrations ─────────────────────────────────────────
   # { on = "R", run = 'shell --orphan -- open -R "$@"', desc = "Reveal selected in Finder" },
@@ -128,12 +78,3 @@ append_keymap = [
 prepend_keymap = [
 ]
 
-# ═══════════════════════════════════════════════════════════════════
-# All other layers inherit complete defaults:
-#   [tasks]   — close, navigate, inspect, cancel, help
-#   [spot]    — close, navigate, swipe, copy cell, help
-#   [pick]    — close, submit, navigate, help
-#   [confirm] — close, submit, y/n, navigate, help
-#   [cmp]     — close, submit, navigate (<A-j/k>, <C-p/n>), help
-#   [help]    — escape, navigate, filter
-# ═══════════════════════════════════════════════════════════════════
