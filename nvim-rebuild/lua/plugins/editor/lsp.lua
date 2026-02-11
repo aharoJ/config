@@ -84,8 +84,10 @@ return {
       -- These are complementary — no duplication, no autocmd needed.
       -- Both use the native 0.11+ `current_line` option.
       vim.diagnostic.config({
-        virtual_text = { current_line = false },  -- Hide inline text on cursor line
-        virtual_lines = { current_line = true },  -- Show detailed lines on cursor line only
+        -- virtual_text = { current_line = false },  -- Hide inline text on cursor line
+        -- virtual_lines = { current_line = true },  -- Show detailed lines on cursor line only
+        virtual_text = true,                      -- Inline diagnostic on every line, always
+        virtual_lines = false,                    -- No multi-line expansion (noisy, redundant)
         signs = {
           text = {
             [vim.diagnostic.severity.ERROR] = " ",
