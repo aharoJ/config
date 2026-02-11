@@ -1,14 +1,18 @@
 -- path: nvim/lua/plugins/editor/formatting.lua
 -- Description: conform.nvim — formatting engine. Manual-only via <leader>cf.
 --              NO format-on-save. NO LSP formatting (killed in Phase A LspAttach).
---              Formatters: stylua for Lua, prettierd for TypeScript/JavaScript/web.
+--              Formatters: stylua for Lua, prettierd for TypeScript/JavaScript/web,
+--              google-java-format for Java.
 -- CHANGELOG: 2026-02-11 | Phase C build. Manual trigger only. stylua for Lua.
 --            | ROLLBACK: Delete file
---            2026-02-11 | Phase F. Added prettierd (with prettier fallback) for
---            TypeScript, JavaScript, TSX, JSX, JSON, HTML, CSS, SCSS, YAML,
---            Markdown, MDX, GraphQL. | ROLLBACK: Remove all non-lua entries from formatters_by_ft
+--            2026-02-11 | Phase F1. Added prettierd (with prettier fallback) for
+--            TypeScript, JavaScript, TSX, JSX, JSON, HTML, CSS, SCSS, YAML, Markdown.
+--            | ROLLBACK: Remove all non-lua entries from formatters_by_ft
+--            2026-02-11 | Phase F2. Added google-java-format for Java with --aosp
+--            flag (4-space indent, matches Java convention in core/autocmds.lua).
+--            | ROLLBACK: Remove java entry from formatters_by_ft, remove formatters block
 
--- WHY a local: Used across 13 filetypes. Avoids typos in the fallback chain.
+-- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
 -- prettierd is the daemon wrapper (stays warm between invocations, ~10x faster cold start).
 -- prettier is the fallback if prettierd isn't installed. stop_after_first = true means
 -- conform uses the FIRST available formatter, not both.
@@ -16,7 +20,6 @@ local prettier = { "prettierd", "prettier", stop_after_first = true }
 
 return {
   "stevearc/conform.nvim",
-
   -- WHY these load triggers: cmd for :ConformInfo diagnostics.
   -- keys for lazy-loading only when you actually format.
   -- No event trigger — conform doesn't need to load until you press the keymap.
@@ -36,23 +39,21 @@ return {
       desc = "Format buffer (conform)",
     },
   },
-
   opts = {
     -- ── Formatters by Filetype ──────────────────────────────────────────
     -- WHY: Each filetype maps to exactly ONE formatter (or fallback chain).
-    -- stylua for Lua (Phase C). prettierd for everything web (Phase F).
-    -- One tool per job — no LSP formatting, no overlap.
+    -- stylua for Lua (Phase C). prettierd for everything web (Phase F1).
+    -- google-java-format for Java (Phase F2). One tool per job — no LSP
+    -- formatting, no overlap.
     formatters_by_ft = {
       -- Phase C (Lua)
       lua = { "stylua" },
-
-      -- Phase F (TypeScript/JavaScript ecosystem)
+      -- Phase F1 (TypeScript/JavaScript ecosystem)
       typescript = prettier,
       javascript = prettier,
       typescriptreact = prettier,
       javascriptreact = prettier,
-
-      -- Phase F (Web formats prettier handles natively)
+      -- Phase F1 (Web formats prettier handles natively)
       json = prettier,
       jsonc = prettier,
       html = prettier,
@@ -60,10 +61,9 @@ return {
       scss = prettier,
       yaml = prettier,
       markdown = prettier,
-      mdx = prettier,
       graphql = prettier,
-
-      -- java = { "google-java-format" },   -- future phase
+      -- Phase F2 (Java)
+      java = { "google-java-format" },
       -- python = { "black" },              -- future phase
     },
 
