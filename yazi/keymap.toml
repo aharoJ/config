@@ -1,445 +1,80 @@
-# pat: yazi/keymap.toml
-############################
-# [mgr] – file list pane  #
-############################
+# path: ~/.config/yazi/keymap.toml
+# version: yazi v26.1.22 | macOS Tahoe (M4 Max) | HHKB Type-S
+# date: 2026-02-09
+# CHANGELOG: 2026-02-09 | Ground-up rewrite: delta-only architecture | ROLLBACK: Restore full keymap.toml from git
+
+"$schema" = "https://yazi-rs.github.io/schemas/keymap.json"
+
+# ═══════════════════════════════════════════════════════════════════
+# [mgr] — file list pane
+# ═══════════════════════════════════════════════════════════════════
+
 [mgr]
-keymap = [
-  # ——— App/session ——————————————————————————————————————————————
-  { on = "q", run = "quit --no-cwd-file", desc = "Quit (don't write CWD file)" },
-  { on = "Q", run = "quit", desc = "Quit Yazi && CD ." },
-  { on = "<C-z>", run = "suspend", desc = "Suspend (bg to shell)" },
 
-  # ——— Help ————————————————————————————————————————————————————
-  { on = "~", run = "help", desc = "Open help / keymap view" },
-  { on = "<F1>", run = "help", desc = "Open help / keymap view" },
+# ── OVERRIDES (shadow defaults) ──────────────────────────────────
+prepend_keymap = [
 
-  # ——— Escape / cancel stack ——————————————————————————————————
-  # Cancels find, exits visual mode, clears selection, cancels filter/search
-  { on = "<Esc>", run = "escape --all", desc = "Escape (clear search/visual/selection/filter)" },
-  { on = "<C-[>", run = "escape --all", desc = "Escape (Alt form)" },
-  { on = "<C-c>", run = "escape --all", desc = "Escape (Ctrl-C)" },
+  # ── Quit swap ──────────────────────────────────────────────────
+  { on = "q", run = "quit --no-cwd-file", desc = "Quit (no cd)" },
+  { on = "Q", run = "quit",               desc = "Quit + cd to CWD" },
 
-  # ——— Navigation (vim-style + arrows) ——————————————————————
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "<Down>", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "<Up>", run = "arrow -1", desc = "Up" },
-  { on = "gg", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "<PageDown>", run = "arrow 100%", desc = "Page down" },
-  { on = "<PageUp>", run = "arrow -100%", desc = "Page up" },
-  { on = "<C-d>", run = "arrow 50%", desc = "Half page down" },
-  { on = "<C-u>", run = "arrow -50%", desc = "Half page up" },
+  # ── Escape: nuclear cancel ─────────────────────────────────────
+  { on = "<Esc>", run = "escape --all", desc = "Escape (clear all)" },
+  { on = "<C-[>", run = "escape --all", desc = "Escape (clear all)" },
+  { on = "<C-c>", run = "escape --all", desc = "Escape (clear all)" },
 
-  # ——— Enter/leave dirs, history ————————————————————————————
-  { on = "l", run = "enter", desc = "Enter directory / open file" },
-  { on = "<Right>", run = "enter", desc = "Enter directory / open file" },
-  { on = "h", run = "leave", desc = "Parent directory" },
-  { on = "<Left>", run = "leave", desc = "Parent directory" },
-  { on = "H", run = "back", desc = "Back" },
-  { on = "L", run = "forward", desc = "Forward" },
+  # ── Open: hovered only ─────────────────────────────────────────
+  { on = "<Enter>", run = "open --hovered", desc = "Open hovered file" },
 
-  # ——— edit with ————————————————————————————————————————————————
-  { on = [
-    "e",
-    "w",
-    "c",
-  ], run = 'shell --orphan -- sh -lc "command -v code >/dev/null 2>&1 && code -- \"$@\" || open -a \"Visual Studio Code\" \"$@\" "', desc = "edit/with/vscode" },
+  # ── Disable                                     ────────────────
+  { on = "o",    run = "noop", desc = "Reserved: open/* prefix" },
+  { on = ["g", "c"], run = "noop", desc = "Disabled: use g,t,c" },
+  { on = ["g", "d"], run = "noop", desc = "Disabled: use g,t,d" },
+  { on = ["c", "d"], run = "noop", desc = "Disabled: use cp" },
 
-  { on = [
-    "e",
-    "w",
-    "v",
-  ], run = 'shell --block -- nvim "$@"', desc = "edit/with/vim" },
+  # ── Clipboard namespace ────────────────────────────────────────
+  { on = ["c", "c"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" $@'", desc = "[copy] content(s)" },
+  { on = ["c", "t"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" $@'", desc = "[copy] tree(s)" },
+  { on = ["c", "p"], run = "copy path", desc = "[copy] path"},
+  { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "[copy] raw" },
 
-  { on = [
-    "e",
-    "w",
-    "d",
-  ], run = """shell --block -- sh -lc '[ -n "$EDITOR" ] && "$EDITOR" "$@" || nvim "$@"'""", desc = "edit/with/default" },
-
-  { on = [
-    "e",
-    "w",
-    "o",
-  ], run = "open --interactive", desc = "edit/with/options" },
-
-  { on = [
-    "e",
-    "w",
-    "m",
-  ], run = 'shell --orphan -- open -a "Modern CSV" "$@"', desc = "edit/with/modern-csv" },
-
-  # ——— open with ————————————————————————————————————————————————
-  { on = "<Enter>", run = "open --hovered", desc = "[open]" },
-
-  { on = [
-    "o",
-    "w",
-    "f",
-  ], run = 'shell --orphan -- open -R "$@"', desc = "open/with/finder" },
-
-  # ——— tmux stuff ————————————————————————————————————————————————
-  { on = [
-    "o",
-    "t",
-    "t",
-  ], run = """shell --orphan -- sh -lc 'tmux new-window -c "$PWD" || ${TERMINAL:-alacritty} --working-directory "$PWD"'""", desc = "open/tmux/tab" },
-
-  # ——— z/to/~ ————————————————————————————————————————————————
-  { on = [
-    "z",
-    "t",
-    "r",
-  ], run = 'cd ~/.repository', desc = "z/to/repository" },
-
-  { on = [
-    "z",
-    "t",
-    "w",
-  ], run = 'cd ~/.westernu', desc = "z/to/westernu" },
-
-  { on = [
-    "z",
-    "t",
-    "c",
-  ], run = 'cd ~/.config', desc = "z/to/config" },
-
-
-  # ——— Selection / visual ————————————————————————————————————
-  { on = "v", run = "visual_mode", desc = "Enter visual (select) mode" },
-  { on = "V", run = "visual_mode --unset", desc = "Exit visual/unset" },
-  { on = "<Space>", run = "toggle", desc = "Toggle selection" },
-  { on = "<C-a>", run = "toggle_all --state=on", desc = "Select all" },
-  { on = "<C-r>", run = "toggle_all", desc = "Invert selection" },
-
-  # ——— Show / hide hidden files ——————————————————————————————
-  { on = ".", run = "hidden toggle", desc = "Toggle hidden files" },
-
-  # ——— Find / filter / search ——————————————————————————————
-  { on = "/", run = "find", desc = "Find (incremental)" },
-  { on = "?", run = "find --previous", desc = "Find (previous occurrence)" },
-  { on = "n", run = "find_arrow", desc = "Next match" },
-  { on = "N", run = "find_arrow --previous", desc = "Prev match" },
-
-  { on = "f", run = "filter --smart", desc = "Filter (smart-case)" },
-
-  { on = "s", run = "search --via=fd", desc = "Search by name (fd)" },
-  { on = "S", run = "search --via=rg", desc = "Search by content (ripgrep)" },
-  # Tip: bind flat view (fd -d N) if you like:
-  # { on = [ "g", "f" ], run = 'search_do --via=fd --args="-d 3"', desc = "Flat view depth=3" },
-
-  # ——— Sorting ———————————————————————————————————————————————
-  { on = [
-    ",",
-    "A",
-  ], run = "sort alphabetical", desc = "Sort: alphabetical" },
-  { on = [
-    ",",
-    "n",
-  ], run = "sort natural", desc = "Sort: natural" },
-  { on = [
-    ",",
-    "N",
-  ], run = "sort natural --reverse", desc = "Sort: natural (rev)" },
-  { on = [
-    ",",
-    "e",
-  ], run = "sort extension", desc = "Sort: extension" },
-  { on = [
-    ",",
-    "E",
-  ], run = "sort extension --reverse", desc = "Sort: extension (rev)" },
-  { on = [
-    ",",
-    "m",
-  ], run = "sort mtime", desc = "Sort: modified time" },
-  { on = [
-    ",",
-    "M",
-  ], run = "sort mtime --reverse", desc = "Sort: modified time (rev)" },
-  { on = [
-    ",",
-    "c",
-  ], run = "sort btime", desc = "Sort: creation time" },
-  { on = [
-    ",",
-    "C",
-  ], run = "sort btime --reverse", desc = "Sort: creation time (rev)" },
-  { on = [
-    ",",
-    "s",
-  ], run = "sort size", desc = "Sort: size" },
-  { on = [
-    ",",
-    "S",
-  ], run = "sort size --reverse", desc = "Sort: size (rev)" },
-  { on = [
-    ",",
-    "r",
-  ], run = "sort random", desc = "Sort: random" },
-  { on = [
-    ",",
-    "d",
-  ], run = "sort --dir-first", desc = "Toggle: directories first" },
-  { on = [
-    ",",
-    "t",
-  ], run = "sort --translit", desc = "Toggle: transliteration" },
-
-  # ——— Line mode column ——————————————————————————————————————
-  { on = "g", run = "noop", desc = "Leader g (prefix)" }, # reserve prefix group
-  { on = [
-    "g",
-    "l",
-  ], run = "linemode none", desc = "Linemode: none" },
-  { on = [
-    "g",
-    "m",
-  ], run = "linemode mtime", desc = "Linemode: mtime" },
-  { on = [
-    "g",
-    "b",
-  ], run = "linemode btime", desc = "Linemode: btime" },
-  { on = [
-    "g",
-    "s",
-  ], run = "linemode size", desc = "Linemode: size" },
-  { on = [
-    "g",
-    "p",
-  ], run = "linemode permissions", desc = "Linemode: perms" },
-  { on = [
-    "g",
-    "o",
-  ], run = "linemode owner", desc = "Linemode: owner" },
-
-  # ——— Quick cd ("go to") examples (bookmarks) —————————————————
-  { on = [
-    "g",
-    "h",
-  ], run = "cd ~", desc = "Go: $HOME" },
-  { on = [
-    "g",
-    "d",
-  ], run = "cd ~/Downloads", desc = "Go: ~/Downloads" },
-  { on = [
-    "g",
-    "c",
-  ], run = "cd ~/.config", desc = "Go: ~/.config" },
-  { on = [
-    "g",
-    " ",
-  ], run = "cd --interactive", desc = "Go: interactive" },
-
-  # ——— Copy / cut / paste / links ————————————————————————————
-  { on = "y", run = "yank", desc = "Copy selected" },
-  { on = "x", run = "yank --cut", desc = "Cut selected" },
-  { on = "X", run = "unyank", desc = "Cancel yank" },
-
-  { on = "p", run = "paste", desc = "Paste" },
-  { on = "P", run = "paste --force", desc = "Paste (overwrite)" },
-
-  { on = "-", run = "link --force", desc = "Symlink (absolute)" },
-  { on = "<C-->", run = "hardlink --force", desc = "Hardlink (force)" },
-  { on = "_", run = "link --relative --force", desc = "Symlink (relative)" },
-
-  # ——— Remove / trash ————————————————————————————————————————
-  { on = "d", run = "remove", desc = "Trash selected" },
-  { on = "D", run = "remove --permanently", desc = "Delete permanently" },
-
-  # ——— Create / rename ——————————————————————————————————————————
-  { on = "a", run = "create", desc = "Create file/dir (end with / for dir)" },
-  { on = "r", run = "rename", desc = "Rename / bulk rename" },
-
-  # ——— Copy paths to clipboard ——————————————————————————————
-  { on = [
-    "c",
-    "c",
-  ], run = 'copy path', desc = "Copy absolute path(s)" },
-  { on = [
-    "c",
-    "d",
-  ], run = 'copy dirname', desc = "Copy parent dir path" },
-  { on = [
-    "c",
-    "f",
-  ], run = 'copy filename', desc = "Copy filename" },
-  { on = [
-    "c",
-    "n",
-  ], run = 'copy name_without_ext', desc = "Copy filename (no ext)" },
-
-  # ——— Shell ————————————————————————————————————————————————
-  { on = ";", run = "shell --interactive", desc = "Shell (interactive)" },
-  { on = ":", run = "shell --block --interactive", desc = "Shell (block until done)" },
-
-  # ——— Preview pane scroll (seek) ————————————————————————————
-  { on = "J", run = "seek 5", desc = "Preview: scroll down" },
-  { on = "K", run = "seek -5", desc = "Preview: scroll up" },
-
-  # ——— Tabs ——————————————————————————————————————————————————
-  { on = "t", run = "tab_create --current", desc = "New tab (from CWD)" },
-  { on = "[", run = "tab_switch --relative -1", desc = "Prev tab" },
-  { on = "]", run = "tab_switch --relative 1", desc = "Next tab" },
-  { on = "{", run = "tab_swap -1", desc = "Swap tab left" },
-  { on = "}", run = "tab_swap 1", desc = "Swap tab right" },
-
-  # ——— COPY TO CLIPBOARD ——————————————————————————————————————————————————
-  { on = "Y", run  = [ "shell -- cat \"$@\" | pbcopy", "noop" ], desc = "Copy file contents to clipboard" },
-
-  # Direct 1–9
-  { on = "1", run = "tab_switch 0", desc = "Tab 1" },
-  { on = "2", run = "tab_switch 1", desc = "Tab 2" },
-  { on = "3", run = "tab_switch 2", desc = "Tab 3" },
-  { on = "4", run = "tab_switch 3", desc = "Tab 4" },
-  { on = "5", run = "tab_switch 4", desc = "Tab 5" },
-  { on = "6", run = "tab_switch 5", desc = "Tab 6" },
-  { on = "7", run = "tab_switch 6", desc = "Tab 7" },
-  { on = "8", run = "tab_switch 7", desc = "Tab 8" },
-  { on = "9", run = "tab_switch 8", desc = "Tab 9" },
-
-  # ——— Task manager ——————————————————————————————————————————
-  { on = "w", run = "tasks_show", desc = "Show/hide tasks" },
-
-  # ——— MINE ——————————————————————————————————————————
-  # { on = "R", run = 'shell --orphan -- open -R "$0"', desc = "[R] open (hovered)" },
-  { on = "R", run = 'shell --orphan -- open -R "$@"', desc = "[R] reveal selected" },
-  { on = "F", run = 'shell --orphan -- open .', desc = "[R] open pwd ." },
-
+  # ── Selection: no auto-advance ─────────────────────────────────
+  { on = "<Space>", run = "toggle", desc = "Toggle select (no advance)" },
 ]
 
-############################
-# [tasks] – task manager   #
-############################
-[tasks]
-keymap = [
-  { on = "w", run = "close", desc = "Close task manager" },
-  { on = "<Esc>", run = "close", desc = "Close" },
-  { on = "<C-[>", run = "close", desc = "Close" },
-  { on = "<C-c>", run = "close", desc = "Close" },
+# ── ADDITIONS (new bindings) ─────────────────────────────────────
+append_keymap = [
 
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "<Down>", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "<Up>", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
+  # ── open/with namespace ────────────────────────────────────────
+  { on = ["o", "w", "p"], run = "open --interactive",desc = "open/with/picker" },
+  { on = ["o", "w", "c"], run = 'shell --orphan -- sh -lc "command -v code >/dev/null 2>&1 && code -- \"$@\" || open -a \"Visual Studio Code\" \"$@\" "', desc = "open/with/vscode" },
+  { on = ["o", "w", "m"], run = 'shell --orphan -- open -a "Modern CSV" "$@"', desc = "edit/with/modern-csv" },
+  { on = ["o", "w", "f"], run = 'shell --orphan -- open -R "$@"', desc = "open/with/finder (reveal)" },
+  { on = ["o", "t", "t"], run = """shell --orphan -- sh -lc 'tmux new-window -c "$PWD"'""", desc = "open/tmux/tab" },
+  { on = ["o", "w", "v"], run = 'shell --block -- nvim "$@"', desc = "open/with/vim" },
 
-  { on = "<Enter>", run = "inspect", desc = "Inspect selected task" },
-  { on = "x", run = "cancel", desc = "Cancel task" },
 
-  { on = "<F1>", run = "help", desc = "Help" },
+  # ── goto/to bookmarks ─────────────────────────────────────────
+  { on = ["g", "t", "r"], run = "cd ~/.repository", desc = "go/to/repository" },
+  { on = ["g", "t", "c"], run = "cd ~/.config",     desc = "go/to/config" },
+  { on = ["g", "t", "d"], run = "cd ~/Downloads",     desc = "go/to/downloads" },
+
+  # ── goto/to western ─────────────────────────────────────────
+  { on = ["g", "t", "w", "w"], run = "cd ~/desk/work/westernu",   desc = "go/to/westernu" },
+  { on = ["g", "t", "w", "n"], run = "cd ~/desk/work/westernu/notes",   desc = "go/to/westernu/notes" },
+  { on = ["g", "t", "w", "p"], run = "cd ~/desk/work/westernu/pipeline",   desc = "go/to/westernu/pipeline" },
+  { on = ["g", "t", "w", "c"], run = "cd ~/desk/work/westernu/pipeline/cvmapp",   desc = "go/to/westernu/cvmapp" },
+  { on = ["g", "t", "w", "f"], run = "cd ~/desk/work/westernu/pipeline/frank",   desc = "go/to/westernu/frank" },
 ]
 
-############################
-# [spot] – info spotter    #
-############################
-[spot]
-keymap = [
-  { on = "<Esc>", run = "close", desc = "Close" },
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "J", run = "swipe 5", desc = "Swipe next files (down)" },
-  { on = "K", run = "swipe -5", desc = "Swipe prev files (up)" },
-  { on = "y", run = "copy cell", desc = "Copy selected cell" },
-  { on = "<F1>", run = "help", desc = "Help" },
-]
+# ═══════════════════════════════════════════════════════════════════
+# [input] — rename/create/cd text input
+# ═══════════════════════════════════════════════════════════════════
+# INHERITS: Full vi-mode (h/l/w/b/e/0/$, i/I/a/A, d/c/s/x/y/p, u/U/<C-r>, v/V/r)
+# Only override what you actually want different from defaults.
 
-############################
-# [pick] – picker dialogs  #
-############################
-[pick]
-keymap = [
-  { on = "<Esc>", run = "close", desc = "Cancel" },
-  { on = "<Enter>", run = "close --submit", desc = "Submit" },
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "<F1>", run = "help", desc = "Help" },
-]
-
-############################
-# [input] – text inputs    #
-############################
 [input]
-keymap = [
-  { on = "<Esc>", run = "escape", desc = "Back to normal / cancel" },
-  { on = "<C-c>", run = "close", desc = "Cancel" },
-  { on = "<Enter>", run = "close --submit", desc = "Submit" },
 
-  { on = "<Left>", run = "move -1", desc = "Move left" },
-  { on = "<Right>", run = "move 1", desc = "Move right" },
-
-  { on = "<C-a>", run = "move -9999", desc = "Home (line start)" },
-  { on = "<C-e>", run = "move 9999", desc = "End (line end)" },
-
-  { on = "<C-b>", run = "backward", desc = "Back one word" },
-  { on = "<C-f>", run = "forward", desc = "Forward one word" },
-  { on = "<A-f>", run = "forward --end-of-word", desc = "Forward end of word" },
-
-  { on = "i", run = "insert", desc = "Insert mode (before)" },
-  { on = "a", run = "insert --append", desc = "Insert mode (after)" },
-  { on = "v", run = "visual", desc = "Visual mode" },
-
-  { on = "d", run = "delete", desc = "Delete selection" },
-  { on = "D", run = "delete --insert", desc = "Delete + insert mode" },
-  { on = "x", run = "delete --cut", desc = "Cut selection" },
-  { on = "y", run = "yank", desc = "Copy selection" },
-
-  { on = "p", run = "paste", desc = "Paste after" },
-  { on = "P", run = "paste --before", desc = "Paste before" },
-
-  { on = "u", run = "undo", desc = "Undo" },
-  { on = "<C-r>", run = "redo", desc = "Redo" },
-
-  { on = "<Backspace>", run = "backspace", desc = "Backspace" },
-  { on = "<Delete>", run = "backspace --under", desc = "Delete under cursor" },
-
-  { on = "<C-u>", run = 'kill "bol"', desc = "Kill to BOL" },
-  { on = "<C-k>", run = 'kill "eol"', desc = "Kill to EOL" },
+prepend_keymap = [
 ]
 
-############################
-# [confirm] – dialogs      #
-############################
-[confirm]
-keymap = [
-  { on = "<Esc>", run = "close", desc = "Cancel" },
-  { on = "<Enter>", run = "close --submit", desc = "Submit" },
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "<F1>", run = "help", desc = "Help" },
-]
-
-############################
-# [cmp] – completion menu  #
-############################
-[cmp]
-keymap = [
-  { on = "<Esc>", run = "close", desc = "Hide completion" },
-  { on = "<Enter>", run = "close --submit", desc = "Accept completion" },
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "<F1>", run = "help", desc = "Help" },
-]
-
-############################
-# [help] – help/keymap UI  #
-############################
-[help]
-keymap = [
-  { on = "<Esc>", run = "escape --all", desc = "Clear filter / close" },
-  { on = "j", run = "arrow 1", desc = "Down" },
-  { on = "k", run = "arrow -1", desc = "Up" },
-  { on = "g", run = "arrow top", desc = "Top" },
-  { on = "G", run = "arrow bot", desc = "Bottom" },
-  { on = "f", run = "filter --smart", desc = "Filter items" },
-]

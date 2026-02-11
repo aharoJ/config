@@ -1,0 +1,76 @@
+# path: ~/.config/fish/config.fish
+# description: Fish shell entry point. Thin by design.
+# changelog: 2026-02-09 | Ground-up rebuild per Fish constitution v1.0 | ROLLBACK: Restore from git
+
+# ── Global Environment (all shells — interactive and non-interactive) ────────
+
+# Homebrew (must be first so tool paths resolve correctly)
+if test -d /opt/homebrew
+    eval (/opt/homebrew/bin/brew shellenv)
+end
+
+# Editors — Neovim is the PDE's brain
+set -gx EDITOR nvim
+set -gx VISUAL nvim
+
+# Tool config paths
+set -gx STARSHIP_CONFIG $HOME/.config/starship/starship.toml
+set -gx EZA_CONFIG_DIR $HOME/.config/eza
+
+# ── Internal Function Paths (domain-organized autoloading) ──────────────────
+# Fish only autoloads from flat directories in fish_function_path.
+# We register each internal/ subdirectory explicitly for domain grouping.
+for dir in $HOME/.config/fish/internal/*/
+    if not contains -- $dir $fish_function_path
+        set -g fish_function_path $dir $fish_function_path
+    end
+end
+
+# ── Interactive Only ────────────────────────────────────────────────────────
+if status is-interactive
+
+    # ── Prompt & Theme ──────────────────────────────────────
+    starship init fish | source
+    source $HOME/.config/fish/themes/kanagawa.fish
+
+    # ── Version Managers ────────────────────────────────────
+
+    # jenv (Java)
+    if test -d $HOME/.jenv
+        fish_add_path $HOME/.jenv/bin
+        jenv init - | source
+    end
+
+    # fnm (Node)
+    if type -q fnm
+        fnm env --use-on-cd | source
+    end
+
+    # pyenv (Python)
+    if type -q pyenv
+        set -gx PYENV_ROOT $HOME/.pyenv
+        fish_add_path $PYENV_ROOT/bin
+        pyenv init - | source
+    end
+
+    # direnv (per-directory env)
+    if type -q direnv
+        direnv hook fish | source
+    end
+
+    # ── eza Aliases (ls replacement) ────────────────────────
+    alias ls="eza --group-directories-first --color=always --icons"
+    alias la="eza -a --group-directories-first --color=always --icons"
+    alias ll="eza -l -a -h --no-filesize --group-directories-first --color=always --icons"
+    alias ld="eza -a -l --header --created --accessed --changed --no-user --no-filesize --time-style=relative --icons"
+    alias lr="eza -R -a -h --group-directories-first --color=always --icons"
+    alias lt="eza -T --color=always --icons"
+
+    # ── Navigation Abbreviations ────────────────────────────
+    abbr .. "cd .."
+    abbr ... "cd ../.."
+
+    
+    # ── Neovim Rebuild (TMP) ────────────────────────────
+    alias nvr="NVIM_APPNAME=nvim-rebuild nvim"
+end
