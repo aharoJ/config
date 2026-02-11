@@ -1,7 +1,7 @@
 -- path: nvim-rebuild/lua/plugins/core/telescope.lua
 
+-- STRATEGY
 local find_files_opts = {
-    -- STRATEGY
     layout_strategy = "center",
 
     -- CONFIG
@@ -20,22 +20,108 @@ local find_files_opts = {
     sorting_strategy = "ascending",
 }
 
+local buffers_opts = {
+    -- STRATEGY
+    layout_strategy = "vertical",
 
+    -- CONFIG
+    layout_config = {
+        width = 0.6,
+        height = 0.9,
+        preview_height = 0.45,
+        preview_cutoff = 1,  -- forces preview to ALWAYS show
+        prompt_position = "top",
+        mirror = true,
+    },
 
--- ┌──────────────────────────────────────────────────────────────────┐
--- │                                                                  │
--- │   SKELETON — don't touch below this line                         │
--- │                                                                  │
--- └──────────────────────────────────────────────────────────────────┘
+    -- COSMETICS
+    previewer = true,
+    border = true,
+    borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+    winblend = 10,
+    prompt_prefix = "  ",
+    selection_caret = " ▸ ",
+    prompt_title = "Get Buffers",
+    results_title = false,
+    path_display = { "filename_first" },
+    sorting_strategy = "ascending",
+}
+
+local current_buffer_fuzzy_find_opts = {
+    layout_strategy = "vertical",
+    layout_config = {
+        width = 0.8,
+        height = 0.8,
+        preview_height = 0.5,
+        preview_cutoff = 1,  -- forces preview to ALWAYS show
+        prompt_position = "top",
+        mirror = true,
+    },
+    border = true,
+    borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+    winblend = 10,
+    prompt_prefix = "  ",
+    selection_caret = " ▸ ",
+    sorting_strategy = "ascending",
+}
+
+local grep_string_opts = {
+    layout_strategy = "vertical",
+    layout_config = {
+        width = 0.6,
+        height = 0.6,
+        preview_height = 0.4,
+        preview_cutoff = 1,  -- forces preview to ALWAYS show
+        prompt_position = "top",
+        mirror = true,
+    },
+    border = true,
+    borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+    winblend = 10,
+    prompt_prefix = "  ",
+    selection_caret = " ▸ ",
+    path_display = { "filename_first" },
+    sorting_strategy = "ascending",
+}
+
+local live_grep_opts = {
+    layout_strategy = "vertical",
+    layout_config = {
+        width = 0.8,
+        height = 0.9,
+        preview_height = 0.4,
+        preview_cutoff = 1,  -- forces preview to ALWAYS show
+        prompt_position = "top",
+        mirror = true,
+    },
+    border = true,
+    borderchars = { "━", "┃", "━", "┃", "┏", "┓", "┛", "┗" },
+    winblend = 10,
+    prompt_prefix = "  ",
+    selection_caret = " ▸ ",
+    path_display = { "filename_first" },
+    sorting_strategy = "ascending",
+}
+
+-- preview_cutoff = 1,  -- forces preview to ALWAYS show
+-- Screen
+--  └─ height (total picker size)
+--      ├─ prompt (fixed ~1 line)
+--      ├─ results (whatever's left)
+--      └─ preview_height (share of the picker height)
 
 return {
     "nvim-telescope/telescope.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+        { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+    },
     keys = {
-        { "<leader>gf", function()
-            -- resolves both plain tables AND function-wrapped theme variations
-            local opts = type(find_files_opts) == "function" and find_files_opts() or find_files_opts require("telescope.builtin").find_files(opts) end, desc = "Find Files",
-        },
+        { "<leader>gf", function() require("telescope.builtin").find_files(find_files_opts) end, desc = "[get] file", },
+        { "<leader>gb", function() require("telescope.builtin").buffers(buffers_opts) end, desc = "[get] buffer", },
+        { "<leader>g,", function() require("telescope.builtin").current_buffer_fuzzy_find(current_buffer_fuzzy_find_opts) end, desc = "[get] ," },
+        { "<leader>gw", function() require("telescope.builtin").grep_string(grep_string_opts) end, desc = "[get] word" },
+        { "<leader>g.", function() require("telescope.builtin").live_grep(live_grep_opts) end, desc = "[get] grep" },
     },
     config = function()
         require("telescope").setup({

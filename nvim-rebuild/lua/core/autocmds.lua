@@ -2,6 +2,7 @@
 -- Description: All autocommands and augroups. No plugin config. No keymaps.
 -- CHANGELOG: 2026-02-03 | Full rewrite: added terminal, close-with-q, desc on all | ROLLBACK: Replace with previous autocmds.lua
 -- CHANGELOG: 2026-02-03 | Added checktime on focus, auto-mkdir on save | ROLLBACK: Remove UserExternalCheck and UserAutoMkdir augroups
+-- CHANGELOG: 2026-02-09 | Fixed UserAutoMkdir (was duplicate whitespace trim with wrong group), upgraded trim to winsaveview | ROLLBACK: Revert to previous autocmds.lua
 
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
@@ -19,16 +20,17 @@ autocmd("TextYankPost", {
 
 -- ── Remove Trailing Whitespace on Save ──────────────────────
 -- WHY: Clean diffs. No noise in git blame. Professional habit.
+-- NOTE: winsaveview/winrestview preserves cursor, scroll position, AND fold state.
 augroup("UserTrimWhitespace", { clear = true })
 autocmd("BufWritePre", {
   group = "UserTrimWhitespace",
   pattern = "*",
   callback = function()
-    local pos = vim.api.nvim_win_get_cursor(0)
+    local view = vim.fn.winsaveview()
     vim.cmd([[%s/\s\+$//e]])
-    vim.api.nvim_win_set_cursor(0, pos)
+    vim.fn.winrestview(view)
   end,
-  desc = "Remove trailing whitespace on save (preserves cursor position)",
+  desc = "Remove trailing whitespace on save (preserves cursor + scroll state)",
 })
 
 -- ── Return to Last Edit Position ────────────────────────────
@@ -47,7 +49,7 @@ autocmd("BufReadPost", {
 })
 
 -- ── Detect External File Changes ────────────────────────────
--- WHY: If you switch branches in another terminal, or another tool edits a file,
+-- WHY: If you switch branches in another tmux pane, or another tool edits a file,
 -- Neovim should notice and reload. Without this you'd be editing a stale buffer.
 augroup("UserExternalCheck", { clear = true })
 autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
@@ -65,14 +67,14 @@ autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
 -- Without this, you'd get E212 "Can't open file for writing" if dirs don't exist.
 augroup("UserAutoMkdir", { clear = true })
 autocmd("BufWritePre", {
-  group = "UserTrimWhitespace",
-  pattern = "*",
-  callback = function()
-    local view = vim.fn.winsaveview()
-    vim.cmd([[%s/\s\+$//e]])
-    vim.fn.winrestview(view)
+  group = "UserAutoMkdir",
+  callback = function(args)
+    local dir = vim.fn.fnamemodify(args.match, ":p:h")
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir, "p")
+    end
   end,
-  desc = "Remove trailing whitespace on save (preserves cursor + scroll state)",
+  desc = "Create parent directories automatically on save",
 })
 
 -- ── Auto-Resize Splits on Terminal Resize ───────────────────
@@ -86,6 +88,7 @@ autocmd("VimResized", {
 
 -- ── Terminal Buffer Configuration ───────────────────────────
 -- WHY: Terminal buffers shouldn't have line numbers or signcolumn.
+-- NOTE: For persistent terminals, prefer tmux panes. This is for :terminal one-offs.
 augroup("UserTermConfig", { clear = true })
 autocmd("TermOpen", {
   group = "UserTermConfig",
@@ -100,10 +103,10 @@ autocmd("TermOpen", {
 })
 
 -- ── Filetype-Specific Indentation ───────────────────────────
--- WHY: Default is 2-space. These languages conventionally use 4-space.
+-- WHY: Default is 2-space (covers JS/TS/Java/Lua/YAML/HTML/CSS).
+-- Only override for languages where 4-space is the established convention.
 augroup("UserIndentOverrides", { clear = true })
 
--- 4-space for languages where it's the established convention
 autocmd("FileType", {
   group = "UserIndentOverrides",
   pattern = { "python", "rust", "c", "cpp", "cs" },

@@ -110,9 +110,11 @@ keybind = cmd+m=ignore
 
 
 
+# ---- tmux ----
 keybind = cmd+z=text:\x02
-keybind = opt+j=esc:j
-keybind = opt+k=esc:k
+
+# keybind = opt+j=esc:j
+# keybind = opt+k=esc:k
 
 
 

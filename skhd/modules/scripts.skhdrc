@@ -1,0 +1,8 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  scripts.skhdrc — Script Bindings                                          ║
+# ║  path: ~/.config/skhd/modules/scripts.skhdrc                               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+# ── Toggle Blur Toggle ─────────────────────────────────────────────────────
+hyper - g : python3 "$HOME/.scripts/ghostty_toggle_blur.py"
+# hyper - b : python3 "$HOME/.scripts/alacritty_toggle_blur.py" # -- ISSUE WITH BLUR BIND -> layout uses same bind 
