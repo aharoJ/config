@@ -5,6 +5,9 @@
 -- CHANGELOG: 2026-02-10 | IDEI Phase A build. Clean slate from tracker. Mason v2 +
 --            mason-lspconfig v2 + native LSP + capability-gated keymaps + diagnostics.
 --            NO completion wiring (Phase B). NO formatting (Phase C). | ROLLBACK: Delete file
+--            2026-02-11 | IDEI Phase F. Added ts_ls + eslint to ensure_installed.
+--            blink.cmp dependency already present from Phase B.
+--            | ROLLBACK: Remove "ts_ls" and "eslint" from ensure_installed
 
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
@@ -25,24 +28,24 @@ return {
   -- files (native 0.11+ auto-discovery) merged with nvim-lspconfig bundled configs.
   --
   -- WHAT CHANGED FROM LAST TIME:
-  -- - Removed blink.cmp capability wiring (that's Phase B — completion)
-  -- - ensure_installed is Lua-only until Phase E sign-off
-  -- - No stylua in ensure_installed (it's a formatter, not an LSP server)
+  -- - ensure_installed expanded for Phase F (TypeScript language expansion)
+  -- - No stylua/prettierd here (formatters are NOT LSP servers — use :MasonInstall)
   {
     "mason-org/mason-lspconfig.nvim",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
       "mason-org/mason.nvim",
       "neovim/nvim-lspconfig",        -- Provides lsp/ config data for server discovery
-      "saghen/blink.cmp",              -- Phase B: ensures capabilities wired before servers start
-
+      "saghen/blink.cmp",             -- Phase B: ensures capabilities wired before servers start
     },
     opts = {
-      -- Servers to auto-install. Lua-only until Phase E validation passes.
+      -- Servers to auto-install. Each has a matching lsp/<name>.lua config file.
       ensure_installed = {
-        "lua_ls",                     -- Lua (Neovim config) — Phase A validation target
-        -- "ts_ls",                   -- TypeScript/JavaScript — Phase F
-        -- "jdtls",                   -- Java (Spring Boot) — Phase F, may need nvim-jdtls
+        "lua_ls",                     -- Lua (Neovim config) — Phase A
+        "ts_ls",                      -- TypeScript/JavaScript/React/Next.js — Phase F
+        "eslint",                     -- ESLint as LSP (diagnostics + code actions) — Phase F
+        "tailwindcss",                -- Tailwind CSS (class intellisense) — Phase F
+        -- "jdtls",                   -- Java (Spring Boot) — future phase, may need nvim-jdtls
       },
       -- WHY: v2 default. Auto-calls vim.lsp.enable() for every installed server.
       -- Server configs come from lsp/<server>.lua files. No handlers needed.
@@ -75,17 +78,8 @@ return {
     config = function()
       -- ── Diagnostics Configuration ───────────────────────────────────
       -- WHY: Native 0.11+ diagnostic display. No plugin needed.
-      -- virtual_text: short message at end of line (always visible)
-      -- virtual_lines: full multi-line diagnostic below cursor line only
-      -- This gives clean lines everywhere with detail on demand.
-      -- ── Smart Diagnostic Display ────────────────────────────────
-      -- virtual_text: short inline message on every line EXCEPT cursor line
-      -- virtual_lines: detailed multi-line display ONLY on cursor line
-      -- These are complementary — no duplication, no autocmd needed.
-      -- Both use the native 0.11+ `current_line` option.
+      -- virtual_text on every line, always visible. No virtual_lines (noisy).
       vim.diagnostic.config({
-        -- virtual_text = { current_line = false },  -- Hide inline text on cursor line
-        -- virtual_lines = { current_line = true },  -- Show detailed lines on cursor line only
         virtual_text = true,                      -- Inline diagnostic on every line, always
         virtual_lines = false,                    -- No multi-line expansion (noisy, redundant)
         signs = {
