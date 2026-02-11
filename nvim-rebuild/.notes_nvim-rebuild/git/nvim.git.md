@@ -22,7 +22,6 @@ This is where it gets interesting, and where your tmux philosophy matters most. 
 
 **Option A: lazygit in a tmux pane** — This is the most aligned with your constitution. lazygit is a standalone TUI (Go-based, ~50k stars), and since you already have tmux as your persistent terminal layer, you just pop it open in a tmux pane or window. No Neovim plugin needed at all. `<C-Space>` → new pane → `lazygit` → done. This is what ThePrimeagen and many tmux-native workflows use. There IS a `lazygit.nvim` plugin (kdheepak, 2.1k stars) but it essentially just opens a floating terminal inside Neovim — which violates your Rule 7 ("Neovim Is Not A Terminal Multiplexer"). If you're running tmux, the plugin is redundant.
 
-
 **My recommendation for your philosophy: lazygit in tmux (no Neovim plugin). Skip fugitive, skip neogit.** You already declared tmux as the session/terminal layer. lazygit is a first-class terminal app — it doesn't need to be embedded in Neovim. This keeps your Neovim plugin count down and respects the spatial architecture.
 
 ### Layer 3: Diff viewing (multi-file diffs, file history, merge conflict resolution)
@@ -43,4 +42,3 @@ The question is whether you _need_ this. If your merge conflict workflow is alre
 | `octo.nvim`         | GitHub PR reviews in Neovim | Very specialized, use GitHub web or `gh` CLI      |
 
 ---
-
