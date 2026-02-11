@@ -168,15 +168,79 @@ These won't touch `.lua` files but should be uninstalled before Phase F to start
 
 ## Phase C — Formatting (Lua-only)
 
-**Started:** —
-**Status:** ⬜ NOT STARTED
+**Started:** 2026-02-11
+**Completed:** 2026-02-11
+**Status:** ✅ PASSED (Checkpoint C1-C7 verified)
 
-### Pre-Build Notes
+### What We Built
 
-- conform.nvim, NO `format_on_save` key at all
-- Manual format: `<leader>cf`
-- stylua for Lua (conform only, NOT LSP — lua_ls formatting already disabled)
-- LSP formatting caps already killed globally in Phase A LspAttach
+| Task | File                            | What It Does                                                      |
+| ---- | ------------------------------- | ----------------------------------------------------------------- |
+| C1   | `plugins/editor/formatting.lua` | conform.nvim — manual-only formatting engine                      |
+| C2   | `plugins/editor/formatting.lua` | `<leader>cf` keymap — the ONLY path to formatting                 |
+| C3   | `plugins/editor/formatting.lua` | `lsp_format = "never"` — triple kill on LSP formatting            |
+| C4   | Mason (manual install)          | `:MasonInstall stylua` — formatter binary, NOT via mason-lspconfig |
+
+### Research Findings (R8)
+
+| Item                             | Finding                                                                                                                                                                                                                | Impact                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| R8 — conform lazy-loading        | `keys` + `cmd` loading is sufficient. No `event` trigger needed since there's no format-on-save. 3 out of 4 feedback LLMs used `event = { "BufReadPre", "BufNewFile" }` which loads conform on every file open — wasteful. | Zero startup cost. Conform loads only on `<leader>cf` or `:ConformInfo`.  |
+
+### Bugs Found & Fixed
+
+No bugs in Phase C. Clean deployment.
+
+### Decisions Made
+
+| Decision                                        | Rationale                                                                                                                                                         |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No `format_on_save` key at all                  | Explicit omission is clearer than setting to `false` or `nil`. Conform never hooks into BufWritePre. User's strongest preference.                                 |
+| `lsp_format = "never"` in `default_format_opts` | Belt-and-suspenders with Phase A's capability kill. Even if a server mistakenly had caps left, conform won't use it.                                              |
+| `<leader>cf` keymap (code format)               | Formatting is a code action. Lives in `<leader>c` namespace. Manual-only — the ONLY path to formatting.                                                          |
+| Lazy-load on `keys` + `cmd` only                | No `event` trigger. Conform doesn't load until `<leader>cf` pressed or `:ConformInfo` run. Zero startup cost.                                                    |
+| `async = true` in format call                   | Non-blocking format. stylua is fast enough on M4 Max that it feels synchronous anyway.                                                                           |
+| stylua via `:MasonInstall`, NOT mason-lspconfig  | Formatters are NOT LSP servers. mason-lspconfig is for LSP servers only. This was the root cause of the stylua-as-LSP bug from the old config. (R2 reinforced)    |
+| No `prepend_args` for stylua                    | stylua reads `.stylua.toml` from project root automatically. CLI args would override project configs — bad for multi-project workflows.                            |
+| No `ConformLspSafetyCheck` autocmd              | Duplicates Phase A's LspAttach formatting kill. If Phase A breaks, fix it there — don't patch from a second location. One tool per job applies to safety checks too. |
+| No `vim.notify` callback on format              | Visual noise. You see the buffer change when formatting works. Conform already has built-in error reporting.                                                      |
+
+### Feedback Audit (GPT / Grok / DeepSeek / Kimi / Claude / Gemini)
+
+| Source   | Stole   | Dismissed                                                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| GPT      | Nothing | `log_level` is unnecessary clutter                                                                             |
+| Grok     | N/A     | Presented our build                                                                                            |
+| DeepSeek | Nothing | Fake `ensure_installed` on mason.nvim (doesn't exist); eager-loading via `event`; rewrote lsp.lua dangerously |
+| Kimi     | Nothing | Duplicate LspAttach safety check; noisy notifications; deprecated `lsp_fallback` param; eager-loading          |
+| Claude   | Nothing | Eager-loading; overwrote built-in `:ConformInfo`; `prepend_args` fights project configs                        |
+| Gemini   | Nothing | `vim.notify` callback noise; `async = true` identical to ours; commented-out `prepend_args` (correct call)     |
+
+### Checkpoint C1-C7 Results
+
+| Check                           | Expected                                             | Actual |
+| ------------------------------- | ---------------------------------------------------- | ------ |
+| C1: `:ConformInfo`              | Shows `Formatters for this buffer: stylua`           | ✅     |
+| C2: Manual format works         | `<leader>cf` formats buffer                          | ✅     |
+| C3: No format on save           | `:w` saves with bad formatting intact                | ✅     |
+| C4: Visual range formatting     | `V` select + `<leader>cf` formats selection only     | ✅     |
+| C5: LSP formatting still dead   | `documentFormattingProvider = false`                 | ✅     |
+| C6: One tool per job            | `:ConformInfo` shows ONLY stylua, no LSP             | ✅     |
+| C7: Startup time                | < 50ms, conform lazy-loaded                          | ✅     |
+
+### One-Tool-Per-Job Matrix (Lua) — Phase A+B+C Complete
+
+| Concern        | Tool               | Count | Source          | Phase |
+| -------------- | ------------------ | ----- | --------------- | ----- |
+| Diagnostics    | lua_ls             | 1     | LSP             | A     |
+| Completion     | blink.cmp ← lua_ls | 1     | plugin + LSP    | B     |
+| Formatting     | stylua via conform | 1     | external binary | C     |
+| Hover/Goto/Ref | lua_ls             | 1     | LSP             | A     |
+| Rename         | lua_ls (grn)       | 1     | LSP             | A     |
+| Linting        | lua_ls (built-in)  | 1     | LSP             | A     |
+| Snippets       | OFF                | 0     | —               | B     |
+
+✅ **Zero overlap.** No tool does another tool's job.
 
 ---
 
