@@ -32,7 +32,7 @@ vim.opt.sidescrolloff = 8                 -- Keep 8 columns left/right of cursor
 vim.opt.splitbelow = true                 -- Horizontal splits open below
 vim.opt.splitright = true                 -- Vertical splits open right
 vim.opt.updatetime = 250                  -- Faster CursorHold events (default 4000ms is sluggish)
-vim.opt.timeoutlen = 300                  -- Faster keymap sequence timeout
+vim.opt.timeoutlen = 150                  -- Faster keymap sequence timeout
 
 -- ── Recovery & Persistence ──────────────────────────────────
 -- WHY: Git only protects committed work. These protect EVERYTHING —
