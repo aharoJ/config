@@ -1,5 +1,5 @@
-# 🔥 PDE Rebuild Tracker
 
+# 🔥 PDE Rebuild Tracker
 > Nuking everything. Rebuilding from scratch. Top 0.1% craftsmanship.
 > Every tool earns its place. Every config is intentional.
 
@@ -45,7 +45,7 @@
 | 10  | `plugins/core/telescope.lua` | Fuzzy finder              | ✅     |
 | 11  | `plugins/ui/explorer.lua`    | File explorer             | ✅     |
 | 12  | `plugins/ui/statusline.lua`  | Statusline                | ✅     |
-| 13  | `plugins/tools/git.lua`      | Git integration           | ⬜     |
+| 13  | `plugins/tools/git.lua`      | Git integration           | ✅     |
 | 14  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation    | ✅     |
 | 15  | `lsp/*.lua`                  | Native LSP server configs | ⬜     |
 
