@@ -5,10 +5,13 @@
 -- CHANGELOG: 2026-02-10 | IDEI Phase A build. Clean slate from tracker. Mason v2 +
 --            mason-lspconfig v2 + native LSP + capability-gated keymaps + diagnostics.
 --            NO completion wiring (Phase B). NO formatting (Phase C). | ROLLBACK: Delete file
---            2026-02-11 | IDEI Phase F. Added ts_ls + eslint to ensure_installed.
+--            2026-02-11 | IDEI Phase F1. Added ts_ls + eslint to ensure_installed.
 --            blink.cmp dependency already present from Phase B.
 --            | ROLLBACK: Remove "ts_ls" and "eslint" from ensure_installed
-
+--            2026-02-11 | IDEI Phase F2. Added jdtls to ensure_installed + exclude.
+--            jdtls is Mason-installed but NOT auto-enabled — nvim-jdtls handles
+--            startup via ftplugin/java.lua to avoid duplicate LSP instances.
+--            | ROLLBACK: Remove "jdtls" from ensure_installed and exclude list
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -28,8 +31,9 @@ return {
   -- files (native 0.11+ auto-discovery) merged with nvim-lspconfig bundled configs.
   --
   -- WHAT CHANGED FROM LAST TIME:
-  -- - ensure_installed expanded for Phase F (TypeScript language expansion)
-  -- - No stylua/prettierd here (formatters are NOT LSP servers — use :MasonInstall)
+  -- - ensure_installed expanded for Phase F2 (Java language expansion)
+  -- - jdtls added to automatic_enable.exclude (nvim-jdtls owns startup)
+  -- - No stylua/prettierd/google-java-format here (formatters are NOT LSP servers)
   {
     "mason-org/mason-lspconfig.nvim",
     event = { "BufReadPre", "BufNewFile" },
@@ -39,49 +43,57 @@ return {
       "saghen/blink.cmp",             -- Phase B: ensures capabilities wired before servers start
     },
     opts = {
-      -- Servers to auto-install. Each has a matching lsp/<name>.lua config file.
+      -- Servers to auto-install. Each has a matching lsp/<n>.lua config file
+      -- EXCEPT jdtls which uses ftplugin/java.lua via nvim-jdtls instead.
       ensure_installed = {
         "lua_ls",                     -- Lua (Neovim config) — Phase A
-        "ts_ls",                      -- TypeScript/JavaScript/React/Next.js — Phase F
-        "eslint",                     -- ESLint as LSP (diagnostics + code actions) — Phase F
-        "tailwindcss",                -- Tailwind CSS (class intellisense) — Phase F
-        -- "jdtls",                   -- Java (Spring Boot) — future phase, may need nvim-jdtls
+        "ts_ls",                      -- TypeScript/JavaScript/React/Next.js — Phase F1
+        "eslint",                     -- ESLint as LSP (diagnostics + code actions) — Phase F1
+        "jdtls",                      -- Java (Spring Boot) — Phase F2, started by nvim-jdtls
       },
-      -- WHY: v2 default. Auto-calls vim.lsp.enable() for every installed server.
-      -- Server configs come from lsp/<server>.lua files. No handlers needed.
-      automatic_enable = true,
+      -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
+      -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
+      -- they use the standard lsp/<server>.lua + vim.lsp.config pattern.
+      --
+      -- jdtls is EXCLUDED because nvim-jdtls handles startup via
+      -- require("jdtls").start_or_attach() in ftplugin/java.lua. If we let
+      -- mason-lspconfig also enable jdtls, TWO instances would start:
+      -- 1. A basic one from vim.lsp.enable("jdtls") with default config
+      -- 2. Our full one from ftplugin with bundles, workspace dirs, handlers
+      -- This causes duplicate diagnostics, doubled completions, and confusion.
+      -- The nvim-jdtls README explicitly warns about this conflict.
+      automatic_enable = {
+        exclude = { "jdtls" },
+      },
     },
   },
 
-  -- ── nvim-lspconfig: Server Config Data ────────────────────────────────
-  -- WHY: In 0.11+, nvim-lspconfig's role is reduced to providing lsp/<server>.lua
-  -- config files (cmd, filetypes, root_markers, settings). We don't call
-  -- require('lspconfig').server.setup() anymore — that pattern is deprecated.
-  -- Having it in runtimepath gives us sensible defaults that our own lsp/<server>.lua
-  -- files override via vim.lsp.config deep-merge.
+  -- ── nvim-lspconfig: Server Configuration Data ─────────────────────────
+  -- WHY: Even in 0.11+, nvim-lspconfig provides bundled server configs in its
+  -- lsp/ directory. Our lsp/<server>.lua files EXTEND these defaults via
+  -- vim.lsp.config() merge order: nvim-lspconfig defaults → our overrides.
+  -- Without nvim-lspconfig, we'd have to define cmd, filetypes, root_markers
+  -- for every server from scratch.
+  --
+  -- ARCHITECTURE: This spec has NO opts — all server configuration is either:
+  -- 1. In lsp/<server>.lua files (auto-discovered by vim.lsp.config)
+  -- 2. In ftplugin/<filetype>.lua for servers that need custom startup (jdtls)
+  -- The only code here is the LspAttach autocmd for keymaps + diagnostics.
   {
     "neovim/nvim-lspconfig",
-    lazy = true,                      -- Loaded as dependency of mason-lspconfig
-  },
-
-  -- ── LspAttach: Keymaps & Per-Buffer Setup ─────────────────────────────
-  -- WHY: This is a "virtual" plugin entry that sets up the LspAttach autocmd.
-  -- Keymaps are capability-gated: if the server doesn't support rename, the
-  -- rename keymap won't be created. This prevents phantom bindings.
-  --
-  -- NOTE: 0.11+ provides default LSP keymaps (grn, gra, grr, gri, gO, K).
-  -- We add our own <leader>l* namespace for discoverability via which-key,
-  -- and override some defaults for consistency.
-  {
-    "neovim/nvim-lspconfig",          -- Same plugin, second spec merges via lazy.nvim
     event = { "BufReadPre", "BufNewFile" },
     config = function()
-      -- ── Diagnostics Configuration ───────────────────────────────────
-      -- WHY: Native 0.11+ diagnostic display. No plugin needed.
-      -- virtual_text on every line, always visible. No virtual_lines (noisy).
+      -- ── Diagnostics Configuration ─────────────────────────────────
+      -- WHY here (not in a separate diagnostics.lua): Diagnostics are the
+      -- native display layer for LSP errors/warnings. They're configured once,
+      -- globally, and apply to every attached LSP client. No plugin needed.
       vim.diagnostic.config({
-        virtual_text = true,                      -- Inline diagnostic on every line, always
-        virtual_lines = false,                    -- No multi-line expansion (noisy, redundant)
+        -- ── Virtual Text (inline, after the line) ─────────────────
+        virtual_text = true, -- LEAVE AS THIS
+        -- ── Virtual Lines (multi-line diagnostic below the code) ──
+        virtual_lines = false, -- HATED THIS!
+
+        -- ── Signs (gutter icons) ─────────────────────────────────
         signs = {
           text = {
             [vim.diagnostic.severity.ERROR] = " ",
@@ -90,61 +102,84 @@ return {
             [vim.diagnostic.severity.HINT]  = " ",
           },
         },
-        underline = true,                       -- Underline diagnostic spans
-        update_in_insert = false,               -- Don't distract while typing
-        severity_sort = true,                   -- Errors first, then warnings, etc.
+
+        -- ── General ──────────────────────────────────────────────
+        underline = true,               -- Underline the affected code span
+        update_in_insert = false,       -- Don't update diagnostics while typing (noisy)
+        severity_sort = true,           -- Errors first, then warnings, then info/hints
         float = {
-          border = "rounded",                   -- Consistent with vim.o.winborder
-          source = true,                        -- Show which LSP/tool produced the diagnostic
+          border = "rounded",           -- Consistent with vim.o.winborder
+          source = true,                -- Show which LSP/linter produced the diagnostic
         },
       })
 
-      -- ── LspAttach Autocmd ───────────────────────────────────────────
-      -- WHY: Keymaps only exist on buffers with an attached LSP client.
-      -- Capability-gated: the binding is only created if the server supports it.
+      -- ── LspAttach Autocmd ─────────────────────────────────────────
+      -- WHY: Capability-gated keymaps. Only create bindings when the attached
+      -- server actually supports the feature. No "method not supported" errors.
+      -- These are BUFFER-LOCAL — they only exist in buffers with an active LSP.
       vim.api.nvim_create_autocmd("LspAttach", {
-        group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
+        group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true }),
         callback = function(event)
           local client = vim.lsp.get_client_by_id(event.data.client_id)
           if not client then return end
 
-          -- HARD RULE: LSP never formats. Conform owns formatting (Phase C).
-          -- Belt-and-suspenders: even if a server config forgets to disable
-          -- formatting, this kills it at attach time for ALL servers.
-          client.server_capabilities.documentFormattingProvider = false
-          client.server_capabilities.documentRangeFormattingProvider = false
-
           local map = function(mode, lhs, rhs, desc)
-            vim.keymap.set(mode, lhs, rhs, { buffer = event.buf, desc = "LSP: " .. desc })
+            vim.keymap.set(mode, lhs, rhs, { buffer = event.buf, silent = true, desc = desc })
           end
 
           -- ── Navigation ────────────────────────────────────────────
-          -- WHY: gd is muscle memory for "go to definition" across every vim config.
-          -- 0.11+ default K (hover) is already set, no need to override.
-          map("n", "gd", vim.lsp.buf.definition, "Go to definition")
-          map("n", "gD", vim.lsp.buf.declaration, "Go to declaration")
-          map("n", "gi", vim.lsp.buf.implementation, "Go to implementation")
-          map("n", "gt", vim.lsp.buf.type_definition, "Go to type definition")
+          -- WHY: These are the core LSP navigation keymaps. 0.11+ provides
+          -- defaults (grn, gra, grr, gri, gO) but we add explicit <leader>l
+          -- namespace bindings for discoverability via which-key.
+          if client:supports_method("textDocument/definition") then
+            map("n", "gd", vim.lsp.buf.definition, "LSP: Go to definition")
+          end
+          if client:supports_method("textDocument/declaration") then
+            map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to declaration")
+          end
+          if client:supports_method("textDocument/typeDefinition") then
+            map("n", "<leader>lt", vim.lsp.buf.type_definition, "LSP: Type definition")
+          end
+          if client:supports_method("textDocument/implementation") then
+            map("n", "<leader>li", vim.lsp.buf.implementation, "LSP: Implementation")
+          end
+          if client:supports_method("textDocument/references") then
+            map("n", "<leader>lr", vim.lsp.buf.references, "LSP: References")
+          end
 
-          -- ── Leader LSP Namespace ──────────────────────────────────
-          -- WHY: <leader>l* namespace for LSP actions. Discoverable via which-key.
-          -- These complement the 0.11+ defaults (grn, gra, grr, gri, gO).
-          map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
-          map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "Code action")
-          map("n", "<leader>lf", vim.lsp.buf.references, "Find references")
-          map("n", "<leader>ls", vim.lsp.buf.signature_help, "Signature help")
-          map("n", "<leader>li", "<cmd>LspInfo<CR>", "LSP info")
+          -- ── Information ───────────────────────────────────────────
+          if client:supports_method("textDocument/hover") then
+            map("n", "K", vim.lsp.buf.hover, "LSP: Hover documentation")
+          end
+          if client:supports_method("textDocument/signatureHelp") then
+            map("i", "<C-k>", vim.lsp.buf.signature_help, "LSP: Signature help")
+          end
 
-          -- ── Diagnostics (buffer-scoped) ───────────────────────────
-          -- WHY: <leader>d* namespace for diagnostic navigation and display.
-          map("n", "<leader>dd", vim.diagnostic.open_float, "Line diagnostics")
-          map("n", "<leader>dn", function() vim.diagnostic.jump({ count = 1 }) end, "Next diagnostic")
-          map("n", "<leader>dp", function() vim.diagnostic.jump({ count = -1 }) end, "Prev diagnostic")
-          map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics to loclist")
+          -- ── Refactoring ───────────────────────────────────────────
+          if client:supports_method("textDocument/rename") then
+            map("n", "<leader>ln", vim.lsp.buf.rename, "LSP: Rename symbol")
+          end
+          if client:supports_method("textDocument/codeAction") then
+            map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "LSP: Code action")
+          end
 
-          -- ── Inlay Hints Toggle ────────────────────────────────────
-          -- WHY: Inlay hints are useful for type-heavy code but noisy otherwise.
-          -- Toggle on demand rather than always-on.
+          -- ── Diagnostics ───────────────────────────────────────────
+          map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
+          map("n", "[d", function() vim.diagnostic.jump({ count = -1 }) end, "Diagnostics: Previous")
+          map("n", "]d", function() vim.diagnostic.jump({ count = 1 }) end, "Diagnostics: Next")
+          map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
+
+          -- ── Formatting Kill (belt-and-suspenders) ─────────────────
+          -- WHY: Even though each lsp/<server>.lua and ftplugin/java.lua kills
+          -- formatting individually, this is the GLOBAL safety net. If any
+          -- future server forgets to disable formatting, this catches it.
+          -- conform.nvim is the SOLE formatting authority (Phase C architecture).
+          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentRangeFormattingProvider = false
+
+          -- ── Inlay Hints ───────────────────────────────────────────
+          -- WHY toggle: Inlay hints are useful for unfamiliar code but noisy for
+          -- code you know well. Toggle on demand rather than always-on.
           if client:supports_method("textDocument/inlayHint") then
             map("n", "<leader>lh", function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }), { bufnr = event.buf })
