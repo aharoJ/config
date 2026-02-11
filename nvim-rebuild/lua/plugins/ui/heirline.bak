@@ -1,0 +1,604 @@
+-- path: nvim/lua/plugins/ui/statusline.lua
+-- Description: Heirline statusline — faithful recreation of the hand-tuned lualine aesthetic.
+--              Same powerline bubbles, same mode icons, same color palette, same section layout.
+--              Engine change only: lualine → heirline for full control and zero abstraction.
+--
+--              STATUSLINE LAYOUT (matches lualine exactly):
+--              ┌──────────────────────────────────────────────────────────────────────┐
+--              │ MODE+ICO│ DIAGS │ filename.lua (rel)         LSP │ LOCATION│
+--              │ mode_bg  │accent │ section_bg    line_bg    accent│ mode_bg │
+--              └──────────────────────────────────────────────────────────────────────┘
+--
+--              TABLINE LAYOUT (matches lualine tabline_z):
+--              ┌──────────────────────────────────────────────────────────────────────┐
+--              │                                               +3 ~1 -2│  main│
+--              │ transparent                                    accent  │section│
+--              └──────────────────────────────────────────────────────────────────────┘
+--
+-- Dependencies: nvim-web-devicons (file icons), gitsigns (git info — already installed)
+-- CHANGELOG: 2026-02-10 | Initial build: lualine → heirline migration, exact visual match.
+--              Powerline round bubbles on inner sections, triangle on mode/location chips.
+--              Conditional statuslines for special buftype/filetype windows.
+--              Dynamic mode-dependent coloring on section_a and section_z.
+--              Tabline with git diff + branch on the right.
+--              | ROLLBACK: Delete file, restore plugins/ui/lualine.lua
+
+return {
+  "rebelot/heirline.nvim",
+  dependencies = {
+    "nvim-tree/nvim-web-devicons",
+  },
+  lazy = false, -- Statusline must load immediately (visible on every screen)
+
+  init = function()
+    vim.opt.laststatus = 3    -- Global statusline (single bar across all splits)
+    vim.opt.showmode = false  -- Mode shown in statusline, not cmdline
+    -- WHY showtabline=2: lualine dynamically showed tabline when diff/branch had content.
+    -- Heirline doesn't do that, so we always show it. Set to 1 for 2+-tabs-only behavior.
+    vim.o.showtabline = 2
+  end,
+
+  config = function()
+    local conditions = require("heirline.conditions")
+    local utils = require("heirline.utils")
+    local icons = require("lib.icons")
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- COLOR PALETTE — Your hand-tuned hex values, preserved exactly
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY hardcoded: These are YOUR aesthetic choices from 13 days of lualine tuning.
+    -- Diagnostic colors derive from highlights for LSP theme compatibility.
+    local function setup_colors()
+      return {
+        -- ── Structural backgrounds (from lualine_theme) ──
+        line_bg     = "#1c1e2b",  -- lualine_c bg — base statusline fill
+        section_bg  = "#292a43",  -- lualine_a fg / filename bg / branch bg
+        accent_bg   = "#454770",  -- Diagnostics bg, LSP bg, diff bg
+
+        -- ── Text ──
+        fg          = "#e3ded7",  -- Primary text (warm white, from lualine_c fg)
+        fg_dark     = "#292a43",  -- Dark text on bright mode chips (from lualine_a fg)
+        fg_replace  = "#FFFFFF",  -- Replace mode text (white on dark)
+
+        -- ── Mode chip backgrounds (from lualine_theme per-mode a.bg) ──
+        mode_normal  = "#7c7fca", -- Muted purple
+        mode_insert  = "#6b806b", -- Muted green
+        mode_visual  = "#d5c28f", -- Muted gold
+        mode_command = "#b48284", -- Muted rose
+        mode_replace = "#161616", -- Dark (replace_theme a.bg)
+
+        -- ── Git colors (from lualine tabline diff_color) ──
+        git_add     = "#a6e3a1",
+        git_mod     = "#f9e2af",
+        git_del     = "#f38ba8",
+        git_branch  = "#7c7fca",  -- Matches normal mode purple
+
+        -- ── Diagnostics (derived from highlights for theme compatibility) ──
+        diag_error  = utils.get_highlight("DiagnosticError").fg,
+        diag_warn   = utils.get_highlight("DiagnosticWarn").fg,
+        diag_info   = utils.get_highlight("DiagnosticInfo").fg,
+        diag_hint   = utils.get_highlight("DiagnosticHint").fg,
+
+        -- ── Tabline (transparent — blends with editor background) ──
+        -- WHY not get_highlight("Normal").bg: kanagawa doesn't set explicit bg on Normal
+        -- (terminal provides it), so it returns nil and heirline errors on invalid color.
+        tabline_bg  = utils.get_highlight("Normal").bg or "#1F1F28",
+      }
+    end
+
+    -- ── Utility components ─────────────────────────────────────────────
+    local Align = { provider = "%=" }
+    local Space = { provider = " " }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- VI MODE — Icon + text in mode-colored chip
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY custom icons: Your exact Nerd Font icons per mode from lualine's add_icon_to_mode.
+    -- WHY triangle separators: Matches lualine's default section_separators on section_a.
+    local ViMode = {
+      init = function(self)
+        self.mode = vim.fn.mode(1)
+      end,
+      static = {
+        mode_names = {
+          n = "NORMAL",   no = "OP",       nov = "OP",      noV = "OP",   ["no\22"] = "OP",
+          niI = "NORMAL", niR = "NORMAL",  niV = "NORMAL",  nt = "NORMAL",
+          v = "VISUAL",   vs = "VISUAL",   V = "V-LINE",    Vs = "V-LINE",
+          ["\22"] = "V-BLOCK", ["\22s"] = "V-BLOCK",
+          s = "SELECT",   S = "S-LINE",    ["\19"] = "S-BLOCK",
+          i = "INSERT",   ic = "INSERT",   ix = "INSERT",
+          R = "REPLACE",  Rc = "REPLACE",  Rx = "REPLACE",
+          Rv = "V-REPLACE", Rvc = "V-REPLACE", Rvx = "V-REPLACE",
+          c = "COMMAND",  cv = "COMMAND",
+          r = "PROMPT",   rm = "MORE",     ["r?"] = "CONFIRM",
+          ["!"] = "SHELL", t = "TERMINAL",
+        },
+        mode_icons = {
+          NORMAL      = "",
+          INSERT      = "",
+          VISUAL      = "",
+          ["V-LINE"]  = "",
+          ["V-BLOCK"] = "▧",
+          SELECT      = "",
+          ["S-LINE"]  = "",
+          ["S-BLOCK"] = "",
+          REPLACE     = "",
+          ["V-REPLACE"] = "",
+          COMMAND     = "",
+          TERMINAL    = "",
+          OP          = "",
+          SHELL       = "",
+          PROMPT      = "",
+          MORE        = "",
+          CONFIRM     = "",
+        },
+      },
+      provider = function(self)
+        local name = self.mode_names[self.mode] or "???"
+        local icon = self.mode_icons[name] or ""
+        return " " .. icon .. " " .. name .. " "
+      end,
+      hl = function(self)
+        -- WHY: Replace mode uses white text on dark bg, all others use dark text on bright bg
+        local mode_char = self.mode:sub(1, 1)
+        if mode_char == "R" or mode_char == "r" then
+          return { fg = "fg_replace", bold = true }
+        end
+        return { fg = "fg_dark", bold = true }
+      end,
+      update = {
+        "ModeChanged",
+        pattern = "*:*",
+        callback = vim.schedule_wrap(function()
+          vim.cmd("redrawstatus")
+        end),
+      },
+    }
+
+    -- ── Macro Recording ────────────────────────────────────────────────
+    -- WHY: Your lualine had macro_recording_status in section_a alongside mode.
+    local MacroRec = {
+      condition = function()
+        return vim.fn.reg_recording() ~= ""
+      end,
+      provider = function()
+        return " @" .. vim.fn.reg_recording()
+      end,
+      hl = { bold = true },
+      update = { "RecordingEnter", "RecordingLeave" },
+    }
+
+    -- ── Mode Section (triangle powerline chip — matches lualine section_a) ──
+    -- WHY triangle: lualine's default section_separators are  on section_a/z.
+    -- Inner sections (b, c, y) use round bubbles via per-component overrides.
+    local ModeSection = utils.surround(
+      { "", "" },
+      function(self)
+        return self:mode_color()
+      end,
+      { ViMode, MacroRec }
+    )
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- DIAGNOSTICS — Round bubble, accent_bg (#454770)
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY round separators: Matches your lualine_b diagnostics `separator = { left = "", right = "" }`.
+    -- Icons from lib/icons.lua. Only shows non-zero counts.
+    local Diagnostics = {
+      condition = conditions.has_diagnostics,
+      init = function(self)
+        self.errors   = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
+        self.warnings = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })
+        self.info     = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
+        self.hints    = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
+      end,
+      update = { "DiagnosticChanged", "BufEnter" },
+      -- WHY no hl override per icon: Your lualine diagnostics had `colored = true`, using
+      -- default diagnostic highlight colors. We match that with per-child hl.
+      {
+        provider = function(self)
+          return self.errors > 0 and (icons.diagnostics.error .. self.errors .. " ")
+        end,
+        hl = { fg = "diag_error" },
+      },
+      {
+        provider = function(self)
+          return self.warnings > 0 and (icons.diagnostics.warn .. self.warnings .. " ")
+        end,
+        hl = { fg = "diag_warn" },
+      },
+      {
+        provider = function(self)
+          return self.info > 0 and (icons.diagnostics.info .. self.info .. " ")
+        end,
+        hl = { fg = "diag_info" },
+      },
+      {
+        provider = function(self)
+          return self.hints > 0 and (icons.diagnostics.hint .. self.hints)
+        end,
+        hl = { fg = "diag_hint" },
+      },
+    }
+
+    -- WHY condition wrapper: Surround should only render when diagnostics exist.
+    -- Without this, empty round bubble artifacts appear on clean files.
+    local DiagnosticsSection = {
+      condition = conditions.has_diagnostics,
+      utils.surround(
+        { "", "" },
+        "accent_bg",
+        { { provider = " " }, Diagnostics, { provider = " " } }
+      ),
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- FILENAME — Round bubble, section_bg (#292a43), relative path
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY path=1 equivalent: Your lualine filename used `path = 1` (relative to cwd).
+    -- fnamemodify(name, ":.") produces the same relative path.
+    local FileIcon = {
+      init = function(self)
+        local filename = self.filename
+        local extension = vim.fn.fnamemodify(filename, ":e")
+        self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(
+          filename, extension, { default = true }
+        )
+      end,
+      provider = function(self)
+        return self.icon and (self.icon .. " ")
+      end,
+      hl = function(self)
+        return { fg = self.icon_color }
+      end,
+    }
+
+    local FileName = {
+      -- WHY flexible: Full relative path when wide, shortened when narrow splits/tmux panes.
+      flexible = 2,
+      {
+        provider = function(self)
+          return self.lfilename
+        end,
+      },
+      {
+        provider = function(self)
+          return vim.fn.pathshorten(self.lfilename)
+        end,
+      },
+    }
+
+    local FileFlags = {
+      {
+        condition = function()
+          return vim.bo.modified
+        end,
+        provider = " [+]",
+        hl = { fg = "git_mod" },
+      },
+      {
+        condition = function()
+          return not vim.bo.modifiable or vim.bo.readonly
+        end,
+        provider = " " .. icons.ui.lock,
+      },
+    }
+
+    local FileNameBlock = {
+      init = function(self)
+        self.filename = vim.api.nvim_buf_get_name(0)
+        self.lfilename = vim.fn.fnamemodify(self.filename, ":.")
+        if self.lfilename == "" then
+          self.lfilename = "[No Name]"
+        end
+      end,
+      hl = { fg = "fg" },
+    }
+    FileNameBlock = utils.insert(
+      FileNameBlock,
+      { provider = " " },
+      FileIcon,
+      FileName,
+      FileFlags,
+      { provider = " %<" } -- Truncation point when statusline overflows
+    )
+
+    local FileNameSection = utils.surround(
+      { "", "" },
+      "section_bg",
+      FileNameBlock
+    )
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- LSP ACTIVE — Round bubble, accent_bg (#454770)
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY filter null-ls/copilot: Your lualine's get_lsp_client_names skipped these.
+    -- WHY " | " separator: Matches your original table.concat(names, " | ").
+    local LSPActive = {
+      condition = conditions.lsp_attached,
+      update = { "LspAttach", "LspDetach" },
+      provider = function()
+        local names, seen = {}, {}
+        for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+          local name = client.name
+          if name ~= "null-ls" and name ~= "copilot" and not seen[name] then
+            table.insert(names, name)
+            seen[name] = true
+          end
+        end
+        if #names == 0 then
+          return ""
+        end
+        return "  " .. table.concat(names, " | ") .. " "
+      end,
+      hl = { fg = "fg" },
+    }
+
+    local LSPSection = {
+      condition = conditions.lsp_attached,
+      utils.surround(
+        { "", "" },
+        "accent_bg",
+        { LSPActive }
+      ),
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- LOCATION — Triangle chip, mode-dependent color (matches lualine section_z)
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY mode-dependent: In lualine, section_z inherits the mode color from section_a.
+    -- Triangle separators match lualine's default section_separators.
+    local Location = {
+      provider = " %l:%c %P ",
+      hl = function(self)
+        local mode_char = conditions.is_active() and vim.fn.mode():sub(1, 1) or "n"
+        if mode_char == "R" or mode_char == "r" then
+          return { fg = "fg_replace", bold = true }
+        end
+        return { fg = "fg_dark", bold = true }
+      end,
+    }
+
+    local LocationSection = utils.surround(
+      { "", "" },
+      function(self)
+        return self:mode_color()
+      end,
+      Location
+    )
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- EXTRAS — Conditional, only render when non-default (matches lualine_y)
+    -- ════════════════════════════════════════════════════════════════════
+
+    -- ── Encoding (only if non-utf-8) ───────────────────────────────────
+    -- WHY: Your lualine's encoding_if_non_default — invisible unless abnormal.
+    local Encoding = {
+      condition = function()
+        local enc = (vim.bo.fenc ~= "" and vim.bo.fenc) or vim.o.enc
+        return enc ~= "utf-8"
+      end,
+      provider = function()
+        local enc = (vim.bo.fenc ~= "" and vim.bo.fenc) or vim.o.enc
+        return " " .. enc:upper() .. " "
+      end,
+      hl = { fg = "fg" },
+    }
+
+    -- ── File Format (only if non-unix) ─────────────────────────────────
+    -- WHY: Your lualine's fileformat_if_non_default — invisible unless Windows/Mac line endings.
+    local FileFormat = {
+      condition = function()
+        return vim.bo.fileformat ~= "unix"
+      end,
+      provider = function()
+        return " " .. vim.bo.fileformat:upper() .. " "
+      end,
+      hl = { fg = "fg" },
+    }
+
+    -- ── Search Count (bonus over lualine — free with heirline) ─────────
+    -- WHY: Shows [3/17] during search. Eliminates counting n-presses.
+    local SearchCount = {
+      condition = function()
+        return vim.v.hlsearch ~= 0
+      end,
+      init = function(self)
+        local ok, search = pcall(vim.fn.searchcount)
+        if ok and search.total then
+          self.search = search
+        end
+      end,
+      provider = function(self)
+        if self.search then
+          return string.format(
+            " [%d/%d] ",
+            self.search.current,
+            math.min(self.search.total, self.search.maxcount)
+          )
+        end
+      end,
+      hl = { fg = "mode_visual", bold = true },
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- TABLINE — Git diff + branch on the right
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY in tabline: Your lualine placed diff in tabline_z[1] and branch in tabline_z[2].
+    -- Diff uses accent_bg (#454770) with colored symbols.
+    -- Branch uses section_bg (#292a43) with git_branch purple (#7c7fca).
+
+    -- ── Git Diff (round bubble, accent_bg) ─────────────────────────────
+    local TabGitDiff = {
+      condition = conditions.is_git_repo,
+      init = function(self)
+        self.status_dict = vim.b.gitsigns_status_dict or {}
+      end,
+      hl = { fg = "fg" },
+      {
+        provider = function(self)
+          local count = self.status_dict.added or 0
+          return count > 0 and (icons.git.added .. count .. " ")
+        end,
+        hl = { fg = "git_add" },
+      },
+      {
+        provider = function(self)
+          local count = self.status_dict.changed or 0
+          return count > 0 and (icons.git.modified .. count .. " ")
+        end,
+        hl = { fg = "git_mod" },
+      },
+      {
+        provider = function(self)
+          local count = self.status_dict.removed or 0
+          return count > 0 and (icons.git.removed .. count)
+        end,
+        hl = { fg = "git_del" },
+      },
+    }
+
+    local TabGitDiffSection = {
+      condition = conditions.is_git_repo,
+      utils.surround(
+        { "", "" },
+        "accent_bg",
+        { { provider = " " }, TabGitDiff, { provider = " " } }
+      ),
+    }
+
+    -- ── Git Branch (round bubble, section_bg) ──────────────────────────
+    local TabGitBranch = {
+      condition = conditions.is_git_repo,
+      init = function(self)
+        self.status_dict = vim.b.gitsigns_status_dict or {}
+      end,
+      provider = function(self)
+        return " " .. icons.git.branch .. (self.status_dict.head or "") .. " "
+      end,
+      hl = { fg = "git_branch" },
+    }
+
+    local TabGitBranchSection = {
+      condition = conditions.is_git_repo,
+      utils.surround(
+        { "", "" },
+        "section_bg",
+        TabGitBranch
+      ),
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- SPECIAL STATUSLINE — Minimal display for plugin windows
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY: Matches your lualine disabled_filetypes + extensions behavior.
+    -- These filetypes get a clean minimal bar instead of the full layout.
+    local SpecialStatusline = {
+      condition = function()
+        return conditions.buffer_matches({
+          buftype = { "nofile", "prompt", "help", "quickfix", "terminal" },
+          filetype = {
+            "^git.*", "fugitive",
+            "alpha", "starter", "dashboard",
+            "neo%-tree", "NvimTree", "Outline", "minifiles",
+            "Trouble", "trouble",
+            "lazy", "mason",
+            "oil", "man", "qf",
+            "lspinfo", "checkhealth",
+            "dapui_scopes", "dapui_breakpoints", "dapui_stacks",
+            "dapui_watches", "dap%-repl",
+          },
+        })
+      end,
+      {
+        provider = function()
+          local ft = vim.bo.filetype
+          if ft == "" then
+            ft = vim.bo.buftype
+          end
+          return "  " .. ft:upper() .. " "
+        end,
+        hl = { fg = "fg", bg = "section_bg", bold = true },
+      },
+      Align,
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- DEFAULT STATUSLINE — The main event (matches your lualine exactly)
+    -- ════════════════════════════════════════════════════════════════════
+    --
+    -- LEFT:   [Mode+Macro] [Diagnostics] [Filename]
+    --         section_a      section_b       section_c
+    --
+    -- RIGHT:                     [LSP] extras [Location]
+    --                          section_y        section_z
+    local DefaultStatusline = {
+      -- ── Left side ──
+      ModeSection, Space, DiagnosticsSection, Space, FileNameSection,
+
+      -- ── Center push (everything after this goes right) ──
+      Align,
+
+      -- ── Right side ──
+      SearchCount, Encoding, FileFormat, LSPSection, Space, LocationSection,
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- MASTER STATUSLINE — Conditional routing
+    -- ════════════════════════════════════════════════════════════════════
+    -- WHY fallthrough=false: First matching condition wins, strict → loose.
+    -- mode_color in static is inherited by ALL descendants (used by ModeSection + LocationSection).
+    local StatusLines = {
+      hl = { bg = "line_bg", fg = "fg" },
+
+      static = {
+        mode_colors_map = {
+          n = "mode_normal",  i = "mode_insert",  v = "mode_visual",
+          V = "mode_visual",  ["\22"] = "mode_visual",
+          c = "mode_command", s = "mode_visual",  S = "mode_visual",
+          ["\19"] = "mode_visual",
+          R = "mode_replace", r = "mode_replace",
+          ["!"] = "mode_normal", t = "mode_insert",
+        },
+        mode_color = function(self)
+          local mode = conditions.is_active() and vim.fn.mode():sub(1, 1) or "n"
+          return self.mode_colors_map[mode] or "mode_normal"
+        end,
+      },
+
+      fallthrough = false,
+      SpecialStatusline,
+      DefaultStatusline,
+    }
+
+    -- ════════════════════════════════════════════════════════════════════
+    -- TABLINE — Git info on the right, transparent background
+    -- ════════════════════════════════════════════════════════════════════
+    local TabLine = {
+      hl = { bg = "tabline_bg" },
+      Align,
+      TabGitDiffSection, Space, TabGitBranchSection,
+    }
+
+    -- ── Theming: auto-update on colorscheme change ─────────────────────
+    -- WHY: Diagnostic colors and tabline_bg derive from highlights and need refreshing.
+    -- Your hand-tuned structural hex colors survive theme changes (they're static).
+    vim.api.nvim_create_augroup("HeirlineColors", { clear = true })
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = "HeirlineColors",
+      callback = function()
+        utils.on_colorscheme(setup_colors)
+      end,
+      desc = "Heirline: re-derive diagnostic/tabline colors on colorscheme change",
+    })
+
+    -- ── Setup ──────────────────────────────────────────────────────────
+    require("heirline").setup({
+      statusline = StatusLines,
+      tabline = TabLine,
+      opts = {
+        colors = setup_colors,
+      },
+    })
+  end,
+}

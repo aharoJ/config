@@ -1,0 +1,32 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  navigation.skhdrc — Window Focus                                          ║
+# ║  path: ~/.config/skhd/modules/navigation.skhdrc                            ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# THE || FALLBACK PATTERN
+# ───────────────────────
+# Each binding tries the BSP directional command first. If it fails (because
+# we're in stack mode, or there's no window in that direction), the fallback
+# fires with the stack-aware equivalent.
+#
+# BSP:   --focus south succeeds → done
+# Stack: --focus south fails   → fallback to stack.next
+# Float: --focus south fails   → fallback to stack.next (also fails, no-op)
+#
+# This means ONE config works for ALL layout profiles. No config swapping.
+
+
+# ── Window Focus ─────────────────────────────────────────────────────────────
+# Hyper + hjkl: move focus to window in direction (BSP) or cycle stack (stack)
+# HHKB: Hyper is CapsLock or Escape-hold via Karabiner. Thumb/pinky accessible.
+#
+# Three-stage fallback:
+#   1. BSP directional focus (succeeds in BSP)
+#   2. Stack sequential focus (succeeds in stack if not at boundary)
+#   3. Stack wrap-around (succeeds at stack boundary — cycles to other end)
+
+hyper - h : yabai -m window --focus west  || yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+hyper - j : yabai -m window --focus south || yabai -m window --focus stack.next || yabai -m window --focus stack.first
+hyper - k : yabai -m window --focus north || yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+hyper - l : yabai -m window --focus east  || yabai -m window --focus stack.next || yabai -m window --focus stack.first
+

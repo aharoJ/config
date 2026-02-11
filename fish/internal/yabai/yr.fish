@@ -1,67 +1,62 @@
-#!/usr/bin/env fish
-# Restart Yabai cleanly and re-apply the selected mode (stack | bsp)
-# Usage:
-#   yr                 # infer mode from SKHD symlink
-#   yr -P stack        # force stack (auto hard-fix Hammerspoon)
-#   yr -P bsp          # force bsp (re-balance, no HS reload)
-#   yr --status        # print current mode/layout/links (no changes)
-
-function yr --description "yabai: restart service (mode-aware, single command)"
+# path: ~/.config/fish/internal/yabai/yr.fish
+# description: Restart yabai + skhd and apply a layout profile.
+# usage:
+#   yr                  → restart with stack profile (default)
+#   yr -P bsp           → restart with BSP profile
+#   yr -P float         → restart with float profile
+#   yr --status         → show current yabai + skhd state (no restart)
+# date: 2026-02-08
+# changelog: 2026-02-08 | Added skhd restart (services are coupled) | ROLLBACK: Remove skhd lines
+function yr --description "yabai + skhd: restart + apply profile"
     argparse 'P/profile=' S/status -- $argv
     or return
 
+    # ── Status Mode ─────────────────────────────────────────────
     if set -q _flag_status
         set_color yellow
-        echo "=== Yabai/SKHD Mode Status ==="
+        echo "═══ yabai status ═══"
         set_color normal
-        set layout (yabai -m query --spaces --space | jq -r '.type' 2>/dev/null)
-        set gap (yabai -m config window_gap 2>/dev/null)
-        set skhdrc_target (readlink ~/.config/skhd/skhdrc 2>/dev/null)
-        if test -z "$skhdrc_target"
-            set skhdrc_target "(not a symlink or missing)"
+        set -l layout (yabai -m query --spaces --space 2>/dev/null | jq -r '.type' 2>/dev/null)
+        set -l gap (yabai -m config window_gap 2>/dev/null)
+        set -l balance (yabai -m config auto_balance 2>/dev/null)
+        set -l padding_top (yabai -m config top_padding 2>/dev/null)
+        echo "layout      : $layout"
+        echo "gap         : $gap"
+        echo "padding     : $padding_top"
+        echo "auto_balance: $balance"
+
+        set_color yellow
+        echo ""
+        echo "═══ skhd status ═══"
+        set_color normal
+        # skhd.zig supports --status; original skhd does not (harmless if missing)
+        if skhd --status 2>/dev/null
+            echo "skhd        : running"
+        else
+            echo "skhd        : unknown (--status requires skhd.zig)"
         end
-        echo "Yabai layout : $layout"
-        echo "Window gap   : $gap"
-        echo "skhdrc →     : $skhdrc_target"
-        echo "Current mode : "(string replace -r '^.*/(.*)\.skhd$' '$1' -- $skhdrc_target)
         return
     end
 
-    # 1️⃣ Decide mode (either user-specified or inferred from SKHD symlink)
-    set -l mode ""
+    # ── Determine Profile ───────────────────────────────────────
+    set -l profile "stack"
     if set -q _flag_profile
-        set mode $_flag_profile
-    else
-        set -l target (readlink ~/.config/skhd/skhdrc 2>/dev/null)
-        if test -n "$target"
-            if string match -rq 'bsp\.skhd$' -- $target
-                set mode bsp
-            else if string match -rq 'stack\.skhd$' -- $target
-                set mode stack
-            end
-        end
-    end
-    if test -z "$mode"
-        set mode stack
+        set profile $_flag_profile
     end
 
-    # 2️⃣ Always perform the stack hard-fix automatically when mode=stack
-    set -l reload_flag ""
-    if test "$mode" = stack
-        set reload_flag --reload-hs
-    end
+    # ── Restart yabai + Apply Profile ───────────────────────────
+    bash ~/.config/yabai/scripts/yabai-restart.sh "$profile"
 
-    # 3️⃣ Run restart+reapply+sync
-    ~/.scripts/yabai-restart-clean.sh "$mode" $reload_flag
+    # ── Restart skhd (coupled — keybindings must match active layout) ──
+    skhd --restart-service 2>/dev/null
 
-    # 4️⃣ Friendly status after
+    # ── Confirm ─────────────────────────────────────────────────
     set_color yellow
     echo ""
-    echo "✅ Restart complete (mode: $mode)"
-    set layout (yabai -m query --spaces --space | jq -r '.type' 2>/dev/null)
-    set gap (yabai -m config window_gap 2>/dev/null)
-    echo "   Yabai layout : $layout"
-    echo "   Window gap   : $gap"
-    echo "   skhdrc →     : "(readlink ~/.config/skhd/skhdrc 2>/dev/null)
+    echo "✅ yabai + skhd restarted (profile: $profile)"
+    set -l layout (yabai -m query --spaces --space 2>/dev/null | jq -r '.type' 2>/dev/null)
+    set -l gap (yabai -m config window_gap 2>/dev/null)
+    echo "   layout : $layout"
+    echo "   gap    : $gap"
     set_color normal
 end

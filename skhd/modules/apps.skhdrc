@@ -1,0 +1,28 @@
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  apps.skhdrc — App Launchers                                               ║
+# ║  path: ~/.config/skhd/modules/apps.skhdrc                                  ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# NAMESPACE: rshift (Right Shift) + letter
+#
+# rshift is the app-launch modifier. It's intercepted at the system level
+# before any app sees it, so it never conflicts with in-app shortcuts.
+# This is muscle memory — the binding-to-key mapping is stable across rebuilds.
+#
+# Using `open -a` for apps that handle single-instance gracefully (Finder, Discord).
+# Using `open -na` with --args for apps that support new-window launching (Chrome).
+# Using direct binary path for apps that need a fresh process (Ghostty).
+
+
+# ── Browsers ─────────────────────────────────────────────────────────────────
+rshift - g : open -na "Google Chrome" --args --new-window "https://www.google.com/"
+rshift - v : /Applications/Vivaldi.app/Contents/MacOS/Vivaldi 
+
+# ── Utilities ────────────────────────────────────────────────────────────────
+rshift - f : open -a "Finder"
+rshift - d : open -a "Discord"
+
+# ── Terminal ─────────────────────────────────────────────────────────────────
+# rshift - a : open -na "Ghostty"
+rshift - a : /Applications/Ghostty.app/Contents/MacOS/ghostty

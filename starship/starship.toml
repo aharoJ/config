@@ -21,7 +21,7 @@ right_format = """$time """
 # DIRECTORY
 # ==============================================================================
 [directory]
-style = "fg:#9b9578"
+style = "fg:#87a1ee"
 truncation_length = 4
 truncate_to_repo = true
 fish_style_pwd_dir_length = 3
@@ -35,7 +35,7 @@ fish_style_pwd_dir_length = 3
 "Downloads" = "  "
 # "~" = "  "
 "~" = ""
-"/" = "  "
+"/" = "  "
 
 
 # Single-line prompt (no blank line between modules and input)
