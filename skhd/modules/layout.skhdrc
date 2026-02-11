@@ -17,9 +17,8 @@ hyper - z : yabai -m window --toggle zoom-fullscreen
 # Hyper+W: toggle windowed-fullscreen (fills parent container, ignores padding)
 hyper - w : yabai -m window --toggle zoom-parent
 
-# Hyper+F: toggle float + center window in a 50% grid
-# The grid 4:4:1:1:2:2 = 4 rows, 4 cols, start at row 1 col 1, span 2x2 = centered 50%
-hyper - f : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+# Hyper+d: toggle float + center window in a 50% grid
+hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
 
 
 # ── BSP Tree Operations ──────────────────────────────────────────────────────
