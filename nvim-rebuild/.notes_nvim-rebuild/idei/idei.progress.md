@@ -67,67 +67,48 @@
 
 ## Build Phases — Incremental, Testable
 
-### Phase A — LSP Foundation (Lua-only validation)
+### Phase A — LSP Foundation (Lua-only validation) ✅
 
 | #   | Task                                                                            | File                     | Status | Validated |
 | --- | ------------------------------------------------------------------------------- | ------------------------ | ------ | --------- |
-| A1  | mason.nvim install + config                                                     | `plugins/editor/lsp.lua` | ⬜     | ⬜        |
-| A2  | mason-lspconfig bridge                                                          | `plugins/editor/lsp.lua` | ⬜     | ⬜        |
-| A3  | nvim-lspconfig (server data only)                                               | `plugins/editor/lsp.lua` | ⬜     | ⬜        |
-| A4  | LspAttach autocmd (keymaps, capability-gated)                                   | `plugins/editor/lsp.lua` | ⬜     | ⬜        |
-| A5  | vim.diagnostic.config()                                                         | `plugins/editor/lsp.lua` | ⬜     | ⬜        |
-| A6  | lsp/lua_ls.lua native config                                                    | `lsp/lua_ls.lua`         | ⬜     | ⬜        |
-| A7  | **CHECKPOINT**: lua_ls attaches, diagnostics render, hover works, no duplicates |                          | ⬜     | ⬜        |
+| A1  | mason.nvim install + config                                                     | `plugins/editor/lsp.lua` | ✅     | ✅        |
+| A2  | mason-lspconfig bridge                                                          | `plugins/editor/lsp.lua` | ✅     | ✅        |
+| A3  | nvim-lspconfig (server data only)                                               | `plugins/editor/lsp.lua` | ✅     | ✅        |
+| A4  | LspAttach autocmd (keymaps, capability-gated)                                   | `plugins/editor/lsp.lua` | ✅     | ✅        |
+| A5  | vim.diagnostic.config()                                                         | `plugins/editor/lsp.lua` | ✅     | ✅        |
+| A6  | lsp/lua_ls.lua native config                                                    | `lsp/lua_ls.lua`         | ✅     | ✅        |
+| A7  | **CHECKPOINT**: lua_ls attaches, diagnostics render, hover works, no duplicates |                          | ✅     | ✅        |
 
-**Validation A7:**
-
-```
-:checkhealth lsp                    → lua_ls active, YOUR settings loaded
-:LspInfo (or :checkhealth lsp)      → exactly 1 client on .lua files
-Open .lua, type bad code            → exactly 1 diagnostic per error
-K on function                       → hover popup works
-grn on variable                     → rename works
-```
-
-### Phase B — Completion (Lua-only validation)
+### Phase B — Completion (Lua-only validation) ✅
 
 | #   | Task                                                                                          | File                            | Status | Validated |
 | --- | --------------------------------------------------------------------------------------------- | ------------------------------- | ------ | --------- |
-| B1  | blink.cmp install + config                                                                    | `plugins/editor/completion.lua` | ⬜     | ⬜        |
-| B2  | Manual trigger (NOT auto)                                                                     | `plugins/editor/completion.lua` | ⬜     | ⬜        |
-| B3  | Sources: lsp + path + buffer                                                                  | `plugins/editor/completion.lua` | ⬜     | ⬜        |
-| B4  | Snippets: OFF initially                                                                       | `plugins/editor/completion.lua` | ⬜     | ⬜        |
-| B5  | Wire capabilities to LSP                                                                      | `plugins/editor/lsp.lua`        | ⬜     | ⬜        |
-| B6  | **CHECKPOINT**: completion menu appears ONLY when summoned, correct items, no phantom entries |                                 | ⬜     | ⬜        |
+| B1  | blink.cmp install + config                                                                    | `plugins/editor/completion.lua` | ✅     | ✅        |
+| B2  | Manual trigger (NOT auto)                                                                     | `plugins/editor/completion.lua` | ✅     | ✅        |
+| B3  | Sources: lsp + path + buffer                                                                  | `plugins/editor/completion.lua` | ✅     | ✅        |
+| B4  | Snippets: OFF initially                                                                       | `plugins/editor/completion.lua` | ✅     | ✅        |
+| B5  | Wire capabilities to LSP                                                                      | `plugins/editor/lsp.lua`        | ✅     | ✅        |
+| B6  | **CHECKPOINT**: completion menu appears ONLY when summoned, correct items, no phantom entries |                                 | ✅     | ✅        |
 
-**Validation B6:**
-
-```
-Type normally                       → NO menu appears (manual trigger only)
-Press trigger key (C-Space or C-n)  → menu appears with LSP + buffer + path items
-Select item                         → inserts correctly, no duplicates
-:blink.cmp status (or equivalent)   → sources list matches config
-```
-
-### Phase C — Formatting (Lua-only validation)
+### Phase C — Formatting (Lua-only validation) ✅
 
 | #   | Task                                                                                            | File                            | Status | Validated |
 | --- | ----------------------------------------------------------------------------------------------- | ------------------------------- | ------ | --------- |
-| C1  | conform.nvim install + config                                                                   | `plugins/editor/formatting.lua` | ⬜     | ⬜        |
-| C2  | NO format-on-save (belt+suspenders)                                                             | `plugins/editor/formatting.lua` | ⬜     | ⬜        |
-| C3  | Manual format: `<leader>cf`                                                                     | `plugins/editor/formatting.lua` | ⬜     | ⬜        |
-| C4  | Disable LSP formatting caps                                                                     | `lsp/lua_ls.lua` or lsp.lua     | ⬜     | ⬜        |
-| C5  | stylua for Lua (conform only, NOT LSP)                                                          | `plugins/editor/formatting.lua` | ⬜     | ⬜        |
-| C6  | **CHECKPOINT**: save file → NO formatting happens. <leader>cf → stylua runs. No LSP formatting. |                                 | ⬜     | ⬜        |
+| C1  | conform.nvim install + config                                                                   | `plugins/editor/formatting.lua` | ✅     | ✅        |
+| C2  | NO format-on-save (belt+suspenders)                                                             | `plugins/editor/formatting.lua` | ✅     | ✅        |
+| C3  | Manual format: `<leader>cf`                                                                     | `plugins/editor/formatting.lua` | ✅     | ✅        |
+| C4  | Disable LSP formatting caps                                                                     | `plugins/editor/lsp.lua`        | ✅     | ✅        |
+| C5  | stylua for Lua (conform only, NOT LSP)                                                          | `plugins/editor/formatting.lua` | ✅     | ✅        |
+| C6  | **CHECKPOINT**: save file → NO formatting happens. <leader>cf → stylua runs. No LSP formatting. |                                 | ✅     | ✅        |
 
 **Validation C6:**
 
 ```
-Mess up indentation, :w             → file saves AS-IS (no auto-format)
-<leader>cf                          → stylua formats the buffer
-:ConformInfo                        → shows stylua, NOT lsp_format
-:LspInfo                            → lua_ls has NO formatting capability
-stylua NOT in active LSP clients    → confirm no stylua LSP attachment
+Mess up indentation, :w             → file saves AS-IS (no auto-format)     ✅
+<leader>cf                          → stylua formats the buffer             ✅
+:ConformInfo                        → shows stylua, NOT lsp_format          ✅
+:LspInfo                            → lua_ls has NO formatting capability   ✅
+stylua NOT in active LSP clients    → confirm no stylua LSP attachment      ✅
 ```
 
 ### Phase D — Linting (Lua-only validation)
@@ -201,6 +182,8 @@ Each language gets its own one-tool-per-job matrix validation before sign-off.
 | 8   | Phantom servers from old Mason installs         | Audit `:Mason` after setup, uninstall unused                                                  |
 | 9   | Duplicate diagnostics                           | Test: one error → exactly one diagnostic. If two appear, find the second source.              |
 | 10  | Snippets interfering with completion            | Snippets OFF until explicitly enabled and validated                                           |
+| 11  | Formatters installed via mason-lspconfig        | Formatters use `:MasonInstall` directly. mason-lspconfig is for LSP servers ONLY.             |
+| 12  | Eager-loading formatting plugin                 | No `event` trigger on conform. Load only on `keys` + `cmd`.                                   |
 
 ---
 
@@ -208,11 +191,11 @@ Each language gets its own one-tool-per-job matrix validation before sign-off.
 
 | #   | Topic                                                                                    | Priority | Status |
 | --- | ---------------------------------------------------------------------------------------- | -------- | ------ |
-| R1  | blink.cmp 2025/2026 state — manual trigger API, source config, snippet control           | 🔴       | ⬜     |
-| R2  | mason.nvim + mason-lspconfig v2 current API — automatic_enable, exclude patterns         | 🔴       | ⬜     |
-| R3  | nvim-lspconfig role in 0.11+ — what it provides vs native vim.lsp.config                 | 🔴       | ⬜     |
-| R4  | conform.nvim — disable format-on-save completely, LSP formatting cap disabling           | 🔴       | ⬜     |
-| R5  | vim.diagnostic.config() 0.11+ — virtual_lines, virtual_text, severity_sort               | 🟡       | ⬜     |
+| R1  | blink.cmp 2025/2026 state — manual trigger API, source config, snippet control           | 🔴       | ✅     |
+| R2  | mason.nvim + mason-lspconfig v2 current API — automatic_enable, exclude patterns         | 🔴       | ✅     |
+| R3  | nvim-lspconfig role in 0.11+ — what it provides vs native vim.lsp.config                 | 🔴       | ✅     |
+| R4  | conform.nvim — disable format-on-save completely, LSP formatting cap disabling           | 🔴       | ✅     |
+| R5  | vim.diagnostic.config() 0.11+ — virtual_lines, virtual_text, severity_sort               | 🟡       | ✅     |
 | R6  | nvim-lint current state — async behavior, diagnostic source attribution                  | 🟡       | ⬜     |
 | R7  | ts_ls vs vtsls — current recommendation for TypeScript in 2026                           | 🟡       | ⬜     |
 | R8  | basedpyright vs pyright vs ruff — Python LSP landscape 2026                              | 🟡       | ⬜     |
@@ -225,14 +208,20 @@ Each language gets its own one-tool-per-job matrix validation before sign-off.
 
 ## Decisions Log
 
-| Date       | Decision                                 | Rationale                                                   |
-| ---------- | ---------------------------------------- | ----------------------------------------------------------- |
-| 2026-02-10 | Lua-first validation before any language | Isolate issues at the simplest level                        |
-| 2026-02-10 | Manual-trigger completion only           | Minimalist aesthetic, user preference                       |
-| 2026-02-10 | NEVER auto-format                        | User's strongest preference. Previous config violated this. |
-| 2026-02-10 | No snippets initially                    | Add control before adding complexity                        |
-| 2026-02-10 | No AI completion (Copilot deferred)      | Clean foundation first, inject later                        |
-| 2026-02-10 | One-tool-per-job matrix per language     | Prevents duplicate diagnostics and formatting wars          |
+| Date       | Decision                                      | Rationale                                                                           |
+| ---------- | --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 2026-02-10 | Lua-first validation before any language      | Isolate issues at the simplest level                                                |
+| 2026-02-10 | Manual-trigger completion only                | Minimalist aesthetic, user preference                                               |
+| 2026-02-10 | NEVER auto-format                             | User's strongest preference. Previous config violated this.                         |
+| 2026-02-10 | No snippets initially                         | Add control before adding complexity                                                |
+| 2026-02-10 | No AI completion (Copilot deferred)           | Clean foundation first, inject later                                                |
+| 2026-02-10 | One-tool-per-job matrix per language          | Prevents duplicate diagnostics and formatting wars                                  |
+| 2026-02-11 | blink.cmp auto-wires capabilities on 0.11+    | No manual `get_lsp_capabilities()`. Saghen confirmed in Discussion #1802.           |
+| 2026-02-11 | `workspace.library = { vim.env.VIMRUNTIME }`  | Manual alternative to lazydev.nvim. One line, no plugin dependency.                 |
+| 2026-02-11 | Formatters via `:MasonInstall`, not lspconfig | Formatters are NOT LSP servers. Root cause of old stylua-as-LSP bug.                |
+| 2026-02-11 | No `format_on_save` key — absent, not `false` | Explicit omission. Conform never hooks BufWritePre.                                 |
+| 2026-02-11 | No `prepend_args` for stylua                  | Let stylua read `.stylua.toml` from project root. CLI args override project config. |
+| 2026-02-11 | Lazy-load conform on `keys` + `cmd` only      | No `event` trigger. Zero startup cost. 3/4 feedback LLMs got this wrong.            |
 
 ---
 
