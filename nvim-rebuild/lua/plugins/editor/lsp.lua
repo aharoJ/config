@@ -40,6 +40,13 @@
 --            TOC code action. Style linting via markdownlint-cli2 in nvim-lint (separate).
 --            Formatting via prettierd (already Phase F1). Zero diagnostic overlap.
 --            | ROLLBACK: Remove "marksman" from ensure_installed, delete lsp/marksman.lua
+--            2026-02-12 | IDEI Phase F4. Added rust_analyzer to automatic_enable.exclude.
+--            rustaceanvim manages rust-analyzer lifecycle (same pattern as nvim-jdtls).
+--            rust-analyzer binary from rustup, NOT Mason — version must match toolchain.
+--            DO NOT add rust_analyzer to ensure_installed (rustup manages the binary).
+--            Formatting via rustfmt in conform. Clippy via rust-analyzer check.command.
+--            | ROLLBACK: Remove "rust_analyzer" from automatic_enable.exclude,
+--            delete plugins/lang/rust.lua, remove rust entry from formatting.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -59,8 +66,9 @@ return {
   -- files (native 0.11+ auto-discovery) merged with nvim-lspconfig bundled configs.
   --
   -- WHAT CHANGED FROM LAST TIME:
-  -- - ensure_installed expanded for Phase F6 (Markdown language expansion)
-  -- - marksman added: standard auto-enable (no exclude needed)
+  -- - Phase F4: rust_analyzer added to automatic_enable.exclude
+  -- - rustaceanvim manages rust-analyzer (same as nvim-jdtls for Java)
+  -- - rust_analyzer NOT in ensure_installed (rustup manages the binary)
   -- - No stylua/prettierd/google-java-format here (formatters are NOT LSP servers)
   {
     "mason-org/mason-lspconfig.nvim",
@@ -97,8 +105,15 @@ return {
       -- 2. Our full one from ftplugin with bundles, workspace dirs, handlers
       -- This causes duplicate diagnostics, doubled completions, and confusion.
       -- The nvim-jdtls README explicitly warns about this conflict.
+      --
+      -- rust_analyzer is EXCLUDED because rustaceanvim manages the rust-analyzer
+      -- lifecycle (same pattern as jdtls). rustaceanvim starts its own LSP client
+      -- with Rust-specific extensions (grouped code actions, runnables, macro
+      -- expansion). If mason-lspconfig also enables rust_analyzer, TWO instances
+      -- start. Additionally, rust_analyzer is NOT in ensure_installed — the binary
+      -- comes from rustup, not Mason, to prevent version mismatches.
       automatic_enable = {
-        exclude = { "jdtls" },
+        exclude = { "jdtls", "rust_analyzer" },
       },
     },
   },

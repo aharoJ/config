@@ -25,6 +25,10 @@
 --            Formatter-specific config via formatters = {} section.
 --            | ROLLBACK: Remove sh/bash entries from formatters_by_ft,
 --            remove formatters.shfmt section
+--            2026-02-12 | IDEI Phase F4. Added rustfmt for Rust formatting.
+--            rustfmt ships with rustup (not Mason). conform reads Cargo.toml
+--            edition automatically. No formatter config block needed.
+--            | ROLLBACK: Remove rust entry from formatters_by_ft
 
 -- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
 -- prettierd is the daemon wrapper (stays warm between invocations, ~10x faster cold start).
@@ -104,6 +108,7 @@ return {
             sh = { "shfmt" },                     -- ← NEW (Phase F11)
             bash = { "shfmt" },                   -- ← NEW (Phase F11)
             sql = { "sql_formatter" },
+            rust = { "rustfmt" },           -- Phase F4 (Rust — rustfmt via rustup, NOT Mason)
         },
         -- ── Formatter-Specific Configuration ────────────────────────────────
         formatters = {
