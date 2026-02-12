@@ -15,6 +15,9 @@
 --            2026-02-12 | IDEI Phase F7. Added lemminx to ensure_installed.
 --            Formatting capability KEPT (lemminx is ONLY XML formatter).
 --            | ROLLBACK: Remove "lemminx" from ensure_installed, delete lsp/lemminx.lua
+--            --            2026-02-12 | IDEI Phase F9. Added taplo to ensure_installed.
+--            Formatting via conform (taplo CLI), LSP formatting killed.
+--            | ROLLBACK: Remove "taplo" from ensure_installed, delete lsp/taplo.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -54,6 +57,7 @@ return {
         "eslint",                     -- ESLint as LSP (diagnostics + code actions) — Phase F1
         "jdtls",                      -- Java (Spring Boot) — Phase F2, started by nvim-jdtls
         "lemminx",                    -- XML (Maven POM, Spring config) — Phase F7
+        "taplo",                      -- TOML (Cargo.toml, pyproject.toml) — Phase F9
       },
 
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()

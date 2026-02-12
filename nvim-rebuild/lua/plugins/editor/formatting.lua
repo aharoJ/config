@@ -15,8 +15,8 @@
 --            without a conform formatter (XML/lemminx). No behavior change for existing
 --            languages — conform still runs with lsp_format = "never" when a formatter exists.
 --            | ROLLBACK: Revert <leader>cf to Phase F2 version (always lsp_format = "never")
-
-
+--            2026-02-12 | IDEI Phase F9. Added taplo for TOML formatting.
+--            | ROLLBACK: Remove toml entry from formatters_by_ft
 
 
 -- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
@@ -93,6 +93,8 @@ return {
       -- Phase F2 (Java)
       java = { "google-java-format" },
       -- python = { "black" },              -- future phase
+      -- Phase F9 (TOML)
+      toml = { "taplo" },
     },
     -- ── Default Format Options ──────────────────────────────────────────
     -- WHY lsp_format = "never": LSP formatting is dead. Phase A killed the
