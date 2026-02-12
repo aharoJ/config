@@ -18,6 +18,9 @@
 --            --            2026-02-12 | IDEI Phase F9. Added taplo to ensure_installed.
 --            Formatting via conform (taplo CLI), LSP formatting killed.
 --            | ROLLBACK: Remove "taplo" from ensure_installed, delete lsp/taplo.lua
+--            2026-02-12 | IDEI Phase F10. Added fish_lsp to ensure_installed.
+--            Formatting via conform (fish_indent CLI, ships with fish shell).
+--            | ROLLBACK: Remove "fish_lsp" from ensure_installed, delete lsp/fish_lsp.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -58,8 +61,8 @@ return {
         "jdtls",                      -- Java (Spring Boot) — Phase F2, started by nvim-jdtls
         "lemminx",                    -- XML (Maven POM, Spring config) — Phase F7
         "taplo",                      -- TOML (Cargo.toml, pyproject.toml) — Phase F9
+        "fish_lsp",                   -- Fish shell (config scripts) — Phase F10
       },
-
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
       -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
       -- they use the standard lsp/<server>.lua + vim.lsp.config pattern.

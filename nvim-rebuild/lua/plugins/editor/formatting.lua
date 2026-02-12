@@ -17,6 +17,10 @@
 --            | ROLLBACK: Revert <leader>cf to Phase F2 version (always lsp_format = "never")
 --            2026-02-12 | IDEI Phase F9. Added taplo for TOML formatting.
 --            | ROLLBACK: Remove toml entry from formatters_by_ft
+--            2026-02-12 | IDEI Phase F10. Added fish_indent for Fish shell formatting.
+--            fish_indent ships with fish shell (not a Mason package).
+--            | ROLLBACK: Remove fish entry from formatters_by_ft
+
 
 
 -- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
@@ -90,12 +94,11 @@ return {
       yaml = prettier,
       markdown = prettier,
       graphql = prettier,
-      -- Phase F2 (Java)
-      java = { "google-java-format" },
+      java = { "google-java-format" },      -- Phase F2 (Java)
       -- python = { "black" },              -- future phase
-      -- Phase F9 (TOML)
-      toml = { "taplo" },
-    },
+      toml = { "taplo" },                   -- Phase F9 (TOML)
+      fish = { "fish_indent" },             -- Phase F10 (Fish shell)
+  },
     -- ── Default Format Options ──────────────────────────────────────────
     -- WHY lsp_format = "never": LSP formatting is dead. Phase A killed the
     -- capability in LspAttach, server configs have format.enable = false, and
