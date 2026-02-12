@@ -25,6 +25,10 @@
 --            bashls auto-integrates shellcheck (500ms debounce).
 --            Formatting via conform (shfmt CLI). DO NOT add shellcheck to nvim-lint.
 --            | ROLLBACK: Remove "bashls" from ensure_installed, delete lsp/bashls.lua
+--            2026-02-12 | IDEI Phase F12. Added jsonls to ensure_installed.
+--            Formatting via conform (prettierd, already configured in Phase F1).
+--            Schema validation via SchemaStore.nvim (new plugin dependency).
+--            | ROLLBACK: Remove "jsonls" from ensure_installed, delete lsp/jsonls.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -67,6 +71,7 @@ return {
         "taplo",                      -- TOML (Cargo.toml, pyproject.toml) — Phase F9
         "fish_lsp",                   -- Fish shell (config scripts) — Phase F10
         "bashls",                     -- Bash/sh (shellcheck auto-integrated) — Phase F11
+        "jsonls",                     -- JSON/JSONC (SchemaStore.nvim for schema intelligence) — Phase F12
       },
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
       -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
