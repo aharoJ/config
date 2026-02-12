@@ -1,5 +1,5 @@
-
 # 🔥 PDE Rebuild Tracker
+
 > Nuking everything. Rebuilding from scratch. Top 0.1% craftsmanship.
 > Every tool earns its place. Every config is intentional.
 
@@ -46,20 +46,20 @@
 | 11  | `plugins/ui/explorer.lua`    | File explorer             | ✅     |
 | 12  | `plugins/ui/statusline.lua`  | Statusline                | ✅     |
 | 13  | `plugins/tools/git.lua`      | Git integration           | ✅     |
-| 14  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation    | ✅     |
-| 15  | `lsp/*.lua`                  | Native LSP server configs | ⬜     |
+| 14  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation   | ✅     |
+| 15  | `lsp/*.lua`                  | Native LSP server configs | ✅     |
 
 ### Phase 3 — Editor Intelligence
 
 | #   | File                             | Purpose                   | Status |
 | --- | -------------------------------- | ------------------------- | ------ |
-| 16  | `plugins/editor/lsp.lua`         | LSP plugin config         | ⬜     |
-| 17  | `plugins/editor/completion.lua`  | Completion engine         | ⬜     |
-| 18  | `plugins/editor/diagnostics.lua` | Diagnostic display        | ⬜     |
-| 19  | `plugins/editor/formatting.lua`  | Formatting (conform.nvim) | ⬜     |
-| 20  | `plugins/editor/lint.lua`        | Linting (nvim-lint)       | ⬜     |
-| 21  | `plugins/lang/*.lua`             | Language-specific configs | ⬜     |
-| 22  | DAP/Debugging                    | Debug adapter protocol    | ⬜     |
+| 16  | `plugins/editor/lsp.lua`         | LSP plugin config         | ✅     |
+| 17  | `plugins/editor/completion.lua`  | Completion engine         | ✅     |
+| 18  | `plugins/editor/diagnostics.lua` | Diagnostic display        | ✅     |
+| 19  | `plugins/editor/formatting.lua`  | Formatting (conform.nvim) | ✅     |
+| 20  | `plugins/editor/lint.lua`        | Linting (nvim-lint)       | ✅     |
+| 21  | `plugins/lang/*.lua`             | Language-specific configs | ✅     |
+| 22  | DAP/Debugging                    | Debug adapter protocol    | ✅     |
 
 ---
 
