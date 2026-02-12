@@ -40,6 +40,7 @@
 - **Root Cause:** `virtual_text = true` and `virtual_lines = { current_line = true }` both render on the cursor line simultaneously. Two renderers, one diagnostic.
 - **First Fix (buggy):** CursorMoved autocmd that toggled `virtual_text = false` globally when cursor was on a diagnostic line. **Problem:** this killed virtual_text on ALL lines, not just cursor line.
 - **Final Fix:** Native 0.11+ `current_line` option on virtual_text: `virtual_text = { current_line = false }` hides inline text on cursor line, `virtual_lines = { current_line = true }` shows detail. No autocmd needed. Two config lines.
+- **Post-F2 Update:** User settled on `virtual_text = true` (always visible) + `virtual_lines = false` (never show). Simpler, cleaner. Signs + underlines + inline text is the right balance without layout shift.
 - **Lesson:** Check if Neovim has a native solution before writing autocmds. The 0.11+ API is deeper than it looks.
 
 ### Decisions Made
@@ -228,20 +229,6 @@ No bugs in Phase C. Clean deployment.
 | C6: One tool per job          | `:ConformInfo` shows ONLY stylua, no LSP         | ✅     |
 | C7: Startup time              | < 50ms, conform lazy-loaded                      | ✅     |
 
-### One-Tool-Per-Job Matrix (Lua) — Phase A+B+C Complete
-
-| Concern        | Tool               | Count | Source          | Phase |
-| -------------- | ------------------ | ----- | --------------- | ----- |
-| Diagnostics    | lua_ls             | 1     | LSP             | A     |
-| Completion     | blink.cmp ← lua_ls | 1     | plugin + LSP    | B     |
-| Formatting     | stylua via conform | 1     | external binary | C     |
-| Hover/Goto/Ref | lua_ls             | 1     | LSP             | A     |
-| Rename         | lua_ls (grn)       | 1     | LSP             | A     |
-| Linting        | lua_ls (built-in)  | 1     | LSP             | A     |
-| Snippets       | OFF                | 0     | —               | B     |
-
-✅ **Zero overlap.** No tool does another tool's job.
-
 ---
 
 ## Phase D — Linting (Lua-only)
@@ -267,16 +254,7 @@ No bugs in Phase C. Clean deployment.
 
 ### Bugs Found & Fixed
 
-No bugs in Phase D. The file is infrastructure — empty `linters_by_ft` means nvim-lint loads but does nothing on Lua files. lua_ls remains the sole diagnostic source.
-
-### Decisions Made
-
-| Decision                                | Rationale                                                                                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Empty linters_by_ft for Lua             | lua_ls provides complete Lua diagnostics. Adding an external linter would create duplicates with no benefit.                                     |
-| BufReadPost + BufWritePost auto-trigger | Matches the passive LSP diagnostic model. Linting fires automatically like LSP diagnostics, not manually triggered.                              |
-| No event = BufReadPre                   | Lint AFTER the buffer is loaded, not during. BufReadPost is the correct timing.                                                                  |
-| nvim-lint reserved for non-LSP tools    | Tools without an LSP option (ruff, markdownlint) go through nvim-lint. Tools WITH an LSP option (eslint) use the LSP path for clean diagnostics. |
+No bugs in Phase D.
 
 ### Checkpoint D3 Results
 
@@ -305,23 +283,9 @@ No bugs in Phase D. The file is infrastructure — empty `linters_by_ft` means n
 | E4: Zero duplicate diagnostics | One source per diagnostic per line     | ✅     |
 | E5: Zero auto-format events    | `:w` saves as-is, no BufWritePre hooks | ✅     |
 
-### Final Lua One-Tool-Per-Job Matrix (Signed Off)
-
-| Concern        | Tool               | Count | Source          | Phase |
-| -------------- | ------------------ | ----- | --------------- | ----- |
-| Diagnostics    | lua_ls             | 1     | LSP             | A     |
-| Completion     | blink.cmp ← lua_ls | 1     | plugin + LSP    | B     |
-| Formatting     | stylua via conform | 1     | external binary | C     |
-| Hover/Goto/Ref | lua_ls             | 1     | LSP             | A     |
-| Rename         | lua_ls (grn)       | 1     | LSP             | A     |
-| Linting        | lua_ls (built-in)  | 1     | LSP             | A     |
-| Snippets       | OFF                | 0     | —               | B     |
-
-✅ **Lua toolchain complete.** Green light for Phase F language expansion.
-
 ---
 
-## Phase F — TypeScript + Tailwind CSS Language Expansion
+## Phase F1 — TypeScript + Tailwind CSS Language Expansion
 
 **Started:** 2026-02-11
 **Completed:** 2026-02-11
@@ -341,47 +305,9 @@ No bugs in Phase D. The file is infrastructure — empty `linters_by_ft` means n
 
 ### Research Methodology — Multi-LLM Competitive Analysis
 
-Phase F used a novel approach: the same brief was given to 6 LLMs (GPT, Kimi, DeepSeek, Gemini, Claude A, Claude B). Each produced independent drafts of all config files. The drafts were audited line-by-line, best findings merged, and inferior approaches discarded. This caught several critical issues no single LLM found alone.
+Phase F used a novel approach: the same brief was given to 6 LLMs (GPT, Kimi, DeepSeek, Gemini, Claude A, Claude B). Each produced independent drafts of all config files. The drafts were audited line-by-line, best findings merged, and inferior approaches discarded.
 
-### Research Findings (R9-R15)
-
-| Item                                       | Finding                                                                                                                                                                                                                                                                         | Impact                                                                         |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| R9 — Duplicate diagnostics prevention      | TypeScript codes 6133 ("declared but never read") and 6196 ("declared but never used") overlap with eslint's `@typescript-eslint/no-unused-vars`. Suppressing in ts_ls via `diagnostics.ignoredCodes = { 6133, 6196 }` prevents duplicate unused-var warnings on the same line. | Zero duplicate diagnostics between ts_ls and eslint. Claude A's best finding.  |
-| R10 — Root detection for monorepos         | Explicit `root_markers` critical for monorepo support. ts*ls needs tsconfig.json/jsconfig.json/package.json/.git. eslint needs flat config (eslint.config.*) AND legacy (.eslintrc.\_) variants. tailwindcss needs tailwind.config.js/ts/mjs/cjs and postcss.config variants.   | Servers attach at correct project root, not repo root.                         |
-| R11 — Monorepo safety (workingDirectories) | eslint-lsp `workingDirectories.mode = "auto"` auto-detects working directory from config location. Prevents silent failures in workspace subdirectories (4.8.0→4.10.0 bug).                                                                                                     | eslint works correctly in monorepo subdirectories.                             |
-| R12 — ESLint as LSP vs nvim-lint           | nvim-lint uses SEPARATE diagnostic namespace from LSP (mfussenegger/nvim-lint#826). Diagnostics don't merge on the same line — creates visual clutter. eslint-lsp merges into vim.diagnostic AND provides code actions (EslintFixAll, disable-rule) that nvim-lint can't.       | eslint runs as LSP. nvim-lint reserved for tools without LSP option (ruff).    |
-| R13 — Import preferences                   | `preferTypeOnlyAutoImports = true` for cleaner tree-shaking. `importModuleSpecifierPreference` intentionally omitted — default ("shortest") respects tsconfig paths aliases (@/components). Setting "relative" fights Next.js aliases.                                          | Clean imports, respects project aliases.                                       |
-| R14 — Tailwind classRegex                  | `experimental.classRegex` enables Tailwind intellisense inside utility functions (clsx, cn, cva) and tagged templates (tw``). Without this, completions only work in `className=""`attributes, not in shadcn/ui's`cn()` pattern.                                                | Tailwind completions work everywhere you write classes, not just in JSX props. |
-| R15 — format.enable belt-and-suspenders    | ts_ls settings block has `format.enable = false` for BOTH typescript AND javascript sections, in addition to on_attach capability kill AND global LspAttach kill. Three-layer formatting kill per server, same pattern as lua_ls.                                               | Four-layer formatting prevention. Borderline paranoid, exactly right.          |
-
-### Bugs Found & Fixed
-
-No bugs in Phase F. Clean deployment — all three LSP servers attached correctly on first try. "Flawless... beautiful and fast AF."
-
-### Decisions Made
-
-| Decision                                    | Rationale                                                                                                                                                            |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ts_ls (not vtsls, not denols)               | Standard TypeScript LSP. vtsls is experimental. denols is for Deno, not Node/React/Next.js.                                                                          |
-| ESLint as LSP (not nvim-lint)               | nvim-lint#826: separate diagnostic namespace = visual clutter. LSP gives clean vim.diagnostic merge + code actions (fix, disable rule, EslintFixAll, show docs).     |
-| tailwindcss as third LSP client             | Zero overlap: ts_ls=types, eslint=lint, tailwindcss=class intelligence. Three servers, three distinct concerns.                                                      |
-| ignoredCodes {6133, 6196} in ts_ls          | Prevents duplicate unused-var diagnostics. eslint's `@typescript-eslint/no-unused-vars` is more configurable (underscore patterns, args: "after-used").              |
-| Explicit root_markers on all three servers  | Monorepo safety. Default root detection can attach at the wrong project level.                                                                                       |
-| workingDirectories.mode = "auto" for eslint | Auto-detects CWD from eslint config location. Avoids 4.8.0→4.10.0 workingDirectories silent failure bug.                                                             |
-| codeActionOnSave = false for eslint         | Manual control only. Use `gra` for individual fixes, `:EslintFixAll` for bulk. No auto-fix surprises.                                                                |
-| classRegex for clsx/cn/cva/tw``             | Without this, Tailwind completions only work in `className=""`. Misses shadcn/ui's `cn()` pattern and other utility function patterns.                               |
-| preferTypeOnlyAutoImports = true            | Cleaner tree-shaking. Explicit type vs value imports. Standard for modern React/Next.js.                                                                             |
-| Omit importModuleSpecifierPreference        | Default "shortest" respects tsconfig paths aliases (@/components). Setting "relative" would fight Next.js path aliases.                                              |
-| prettierd with prettier fallback            | Daemon wrapper stays warm between invocations (~10x faster cold start). `stop_after_first = true` uses first available.                                              |
-| `local prettier` variable in formatting.lua | Used across 13 filetypes. Avoids typos in the fallback chain. Not DRY worship — it's a genuinely shared, genuinely stable constant.                                  |
-| No dedicated jsonls/yamlls/html/cssls       | prettierd handles formatting. ts_ls handles JSON type checking on imports. Tailwind handles CSS class intelligence. Separate LSPs deferred unless explicit need.     |
-| F0 Mason cleanup before Phase F             | GPT's operational catch. Orphaned servers from old config would auto-attach via `automatic_enable = true`. Clean slate prevents phantom attachments.                 |
-| Multi-LLM competitive research              | 6 LLMs produce independent drafts → audit → merge best findings. Catches issues no single source finds alone. Claude A won research, Claude B won constitution form. |
-
-### Feedback Audit (GPT / Kimi / DeepSeek / Gemini / Claude A / Claude B)
-
-**Rankings (Phase F TypeScript + Tailwind):**
+### Feedback Audit (Phase F1 — TypeScript + Tailwind)
 
 | Rank | LLM      | Stole                                                                                                                    | Dismissed                                                                                            |
 | ---- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -392,7 +318,7 @@ No bugs in Phase F. Clean deployment — all three LSP servers attached correctl
 | 5    | Gemini   | Nothing                                                                                                                  | `hostInfo = "neovim"` (does nothing), circular EslintFixAll, no root_markers, added unrequested LSPs |
 | 6    | DeepSeek | Nothing                                                                                                                  | No response provided                                                                                 |
 
-### Checkpoint F Results (User-Verified)
+### Checkpoint F1 Results (User-Verified)
 
 | Check                          | Expected                                            | Actual |
 | ------------------------------ | --------------------------------------------------- | ------ |
@@ -402,41 +328,93 @@ No bugs in Phase F. Clean deployment — all three LSP servers attached correctl
 | `<C-Space>` in `className=""`  | Tailwind class completions                          | ✅     |
 | `<C-Space>` inside `cn("...")` | Tailwind completions (classRegex working)           | ✅     |
 | Hover over Tailwind class      | Shows generated CSS preview                         | ✅     |
-| Invalid class like "flex-coll" | Tailwind diagnostic warning                         | ✅     |
 | `gra` on eslint diagnostic     | Code actions (fix, disable rule, show docs)         | ✅     |
 | `<leader>cf` format            | prettierd formats via conform                       | ✅     |
 | `:w` saves without formatting  | No auto-format on save                              | ✅     |
 | `documentFormattingProvider`   | `false` for all three servers                       | ✅     |
 | Startup time                   | < 50ms                                              | ✅     |
 
-### One-Tool-Per-Job Matrix (TypeScript + Tailwind) — Phase F Complete
+---
 
-| Concern                 | Tool                    | Count | Source          | Phase |
-| ----------------------- | ----------------------- | ----- | --------------- | ----- |
-| Diagnostics (types)     | ts_ls                   | 1     | LSP             | F     |
-| Diagnostics (lint)      | eslint                  | 1     | LSP             | F     |
-| Diagnostics (classes)   | tailwindcss             | 1     | LSP             | F     |
-| Completion (TS/JS)      | blink.cmp ← ts_ls       | 1     | plugin + LSP    | B+F   |
-| Completion (Tailwind)   | blink.cmp ← tailwindcss | 1     | plugin + LSP    | B+F   |
-| Formatting              | prettierd via conform   | 1     | external binary | F     |
-| Hover/Goto/Ref          | ts_ls                   | 1     | LSP             | F     |
-| Hover (Tailwind CSS)    | tailwindcss             | 1     | LSP             | F     |
-| Rename                  | ts_ls                   | 1     | LSP             | F     |
-| Code Actions (refactor) | ts_ls                   | 1     | LSP             | F     |
-| Code Actions (lint fix) | eslint                  | 1     | LSP             | F     |
-| Snippets                | OFF                     | 0     | —               | B     |
+## Phase F2 — Java Language Expansion
 
-✅ **Three LSP servers, zero overlap.** ts_ls owns type system, eslint owns lint rules, tailwindcss owns utility class intelligence.
+**Started:** 2026-02-11
+**Completed:** 2026-02-11
+**Status:** ✅ PASSED (user-verified: `:checkhealth vim.lsp` + `:ConformInfo` clean)
 
-### Post-Phase-F Cleanup Notes
+### What We Built
 
-Two minor documentation gaps identified in final audit (non-blocking):
+| Task | File                            | What It Does                                                        |
+| ---- | ------------------------------- | ------------------------------------------------------------------- |
+| F2-1 | `ftplugin/java.lua`             | jdtls launch config via nvim-jdtls start_or_attach (the heart)      |
+| F2-2 | `plugins/lang/java.lua`         | nvim-jdtls lazy.nvim spec — ft = java, no config (ftplugin owns it) |
+| F2-3 | `plugins/editor/lsp.lua`        | Added jdtls to ensure_installed + automatic_enable.exclude          |
+| F2-4 | `plugins/editor/formatting.lua` | Added java = google-java-format (2-space, default Google style)     |
+| F2-5 | Mason (manual install)          | `:MasonInstall jdtls google-java-format`                            |
 
-1. **lint.lua description stale:** Header still mentions "infrastructure for Phase F when eslint arrives" — but eslint went the LSP route. Commented-out `typescript = { "eslint" }` lines are dead code. Should update comments to reflect eslint-as-LSP decision and remove dead TS/JS comments. File remains correct infrastructure for future Python (`ruff`) and Markdown (`markdownlint`).
+### Research Methodology — Multi-LLM Competitive Analysis (Java)
 
-2. **lsp.lua CHANGELOG missing tailwindcss:** Phase F CHANGELOG mentions adding ts_ls + eslint but not tailwindcss to `ensure_installed`. Minor paper trail gap.
+Same process as Phase F1: GPT, DeepSeek, and Kimi independently produced Java LSP plans. All three converged on nvim-jdtls over nvim-java. Findings merged, errors caught.
 
-Neither affects functionality. Addressable in next cleanup pass.
+### Research Findings (R16-R18)
+
+| Item                                   | Finding                                                                                                                                                                                                                                                                                                        | Impact                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| R16 — nvim-java vs nvim-jdtls          | nvim-java is "batteries included" (nui.nvim, custom Mason registry, bundled DAP/test/Spring). Violates one-tool-per-job. Custom registry caused version pinning issues (GitHub #164, #362, #398). Its own README says "if you love customizing, try nvim-jdtls." LazyVim, LunarVim, NvChad all use nvim-jdtls. | nvim-jdtls selected. Explicit, debuggable, community standard.                              |
+| R17 — ftplugin vs plugins/lang pattern | nvim-jdtls's `start_or_attach()` must run on FileType java. ftplugin/ is the standard Neovim mechanism. Plugin spec is just `ft = "java"` (ensures plugin is loaded). All config lives in ftplugin. LazyVim uses this exact pattern.                                                                           | ftplugin/java.lua for config, plugins/lang/java.lua is a minimal spec.                      |
+| R18 — Dual-attachment prevention       | mason-lspconfig v2 auto-calls `vim.lsp.enable("jdtls")` for any Mason-installed server. This starts a BASIC jdtls with default config. ftplugin ALSO starts jdtls via `start_or_attach`. Result: TWO clients. nvim-jdtls README explicitly warns. GitHub Discussion #654 confirms.                             | `automatic_enable = { exclude = { "jdtls" } }` in mason-lspconfig. One jdtls, full control. |
+
+### Bugs Found & Fixed
+
+No bugs in Phase F2. Clean deployment — jdtls attached correctly on first try with per-project workspace, Lombok agent, all settings verified via `:checkhealth vim.lsp`.
+
+### Decisions Made
+
+| Decision                                   | Rationale                                                                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nvim-jdtls over nvim-java                  | KISS, explicit, no nui.nvim bloat, no custom Mason registry. Full control over cmd, workspace dirs, bundles. Community standard (LazyVim, LunarVim, NvChad).     |
+| ftplugin/java.lua for jdtls config         | jdtls needs per-project workspace dirs, root detection, Lombok agent. ftplugin is the standard Neovim mechanism. Plugin spec is minimal loader.                  |
+| jdtls excluded from automatic_enable       | Prevents dual-attachment. Mason installs the binary, nvim-jdtls handles startup. One jdtls, full control.                                                        |
+| google-java-format default style (2-space) | User preference: 2-space everywhere except Python. Removed --aosp flag. Default Google style = 2-space.                                                          |
+| `<leader>J` namespace for Java extras      | nvim-jdtls provides organize imports, extract variable/constant/method. Keymaps are buffer-local, Java-only.                                                     |
+| Lombok javaagent mandatory                 | Spring Boot + Lombok is the standard stack. Without agent, jdtls shows false errors on @Data/@Builder classes. Mason bundles lombok.jar with jdtls package.      |
+| Per-project workspace dirs                 | `~/.cache/nvim/jdtls/<project>/workspace`. Prevents cross-project state corruption (phantom errors, stale classpath, corrupted indexes).                         |
+| java.format.enabled = false                | Triple kill: 1) server-side format disabled, 2) on_attach capability kill, 3) conform `lsp_format = "never"`. Same pattern as ts_ls and eslint.                  |
+| starThreshold = 9999                       | Never use wildcard imports. Explicit imports > `import java.util.*`. Professional habit, clean code.                                                             |
+| Debugging/testing deferred                 | ftplugin bundles architecture supports adding java-debug-adapter + vscode-java-test later without restructuring. Commented-out bundle code ready for activation. |
+| No Spring Boot LSP                         | Deferred to future phase. jdtls provides core Java intelligence. Spring Boot extension (JavaHello/spring-boot.nvim) can be added later if explicit need arises.  |
+
+### Feedback Audit (Phase F2 — Java)
+
+| Rank | LLM      | Stole   | Dismissed                                                                                                                                                                                                       |
+| ---- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | GPT      | Nothing | Redundant FileType autocmd in config function (duplicate execution with ftplugin); mason-registry API (unnecessary complexity); formatter name fallback chain (nonexistent variant)                             |
+| 2    | Kimi     | Nothing | Already aligned on every decision — nvim-jdtls, ftplugin pattern, google-java-format, bundle architecture. Best analysis, no steals needed.                                                                     |
+| 3    | DeepSeek | Nothing | `vim.lsp.start()` instead of `start_or_attach()` (broken — no client reuse); lspconfig dependency in ftplugin (unnecessary); duplicate keymaps overlapping LspAttach; wrong Lombok claim; plenary hallucination |
+
+### Checkpoint F2 Results (User-Verified)
+
+| Check                               | Expected                                                    | Actual |
+| ----------------------------------- | ----------------------------------------------------------- | ------ |
+| `:checkhealth vim.lsp` — Active     | Exactly 1 jdtls client                                      | ✅     |
+| jdtls NOT in Enabled Configurations | ftplugin started it, not mason-lspconfig                    | ✅     |
+| Root directory                      | `~/.repository/StudyWithMe`                                 | ✅     |
+| Lombok javaagent in cmd             | `--jvm-arg=-javaagent:.../lombok.jar`                       | ✅     |
+| Per-project workspace               | `~/.cache/nvim-rebuild/jdtls/StudyWithMe/workspace`         | ✅     |
+| `java.format.enabled`               | `false`                                                     | ✅     |
+| All settings present                | favoriteStaticMembers, filteredTypes, importOrder, codeLens | ✅     |
+| `:ConformInfo`                      | `google-java-format ready (java)`                           | ✅     |
+| No auto-format on save              | `:w` saves as-is                                            | ✅     |
+| Diagnostics working                 | "local variable lala is not used" warning on cursor line    | ✅     |
+| Error detection                     | "right cannot be resolved to a variable" with underlines    | ✅     |
+
+### Post-Phase-F2 Preference Changes
+
+Two user preferences finalized during Java validation:
+
+1. **Diagnostic display:** Settled on `virtual_text = true` + `virtual_lines = false`. virtual_lines was too intrusive (pushes buffer down when cursor lands on diagnostic lines). Signs + underlines + inline virtual_text is the right balance.
+
+2. **Indent preference:** 2-space everywhere. Removed C/C++/C#/Rust from the 4-space autocmds.lua override. Only Python stays at 4-space (PEP 8). google-java-format runs with default Google style (2-space), no --aosp flag.
 
 ---
 
@@ -445,30 +423,34 @@ Neither affects functionality. Addressable in next cleanup pass.
 ```
 ~/.config/nvim/
 ├── init.lua                              ← require("core") — one-liner
+├── ftplugin/
+│   └── java.lua                          ← Phase F2 (jdtls launch via nvim-jdtls)
 ├── lsp/
 │   ├── lua_ls.lua                        ← Phase A + B (diagnostics, completion, snippet kill)
-│   ├── ts_ls.lua                         ← Phase F (types, formatting kill, ignoredCodes, inlay hints)
-│   ├── eslint.lua                        ← Phase F (lint diagnostics, code actions, workingDirectories)
-│   └── tailwindcss.lua                   ← Phase F (class completion, hover, validation, classRegex)
+│   ├── ts_ls.lua                         ← Phase F1 (types, formatting kill, ignoredCodes, inlay hints)
+│   ├── eslint.lua                        ← Phase F1 (lint diagnostics, code actions, workingDirectories)
+│   └── tailwindcss.lua                   ← Phase F1 (class completion, hover, validation, classRegex)
 └── lua/
     ├── core/                             ← Phase 1 (core PDE rebuild)
     ├── config/
     │   └── lazy.lua                      ← lazy.nvim bootstrap
     └── plugins/
-        └── editor/
-            ├── lsp.lua                   ← Phase A (Mason, mason-lspconfig, LspAttach, diagnostics)
-            ├── completion.lua            ← Phase B (blink.cmp, manual trigger, snippet kill)
-            ├── formatting.lua            ← Phase C + F (conform, stylua + prettierd)
-            └── lint.lua                  ← Phase D (nvim-lint, infrastructure, idle for Lua)
+        ├── editor/
+        │   ├── lsp.lua                   ← Phase A + F1 + F2 (Mason, mason-lspconfig, LspAttach, diagnostics)
+        │   ├── completion.lua            ← Phase B (blink.cmp, manual trigger, snippet kill)
+        │   ├── formatting.lua            ← Phase C + F1 + F2 (conform: stylua + prettierd + google-java-format)
+        │   └── lint.lua                  ← Phase D (nvim-lint, infrastructure, idle for Lua)
+        └── lang/
+            └── java.lua                  ← Phase F2 (nvim-jdtls plugin spec, ft = java)
 ```
 
 **Mason-installed tools:**
 
-- LSP servers (via `ensure_installed`): lua_ls, ts_ls, eslint, tailwindcss
-- Formatters (via `:MasonInstall`): stylua, prettierd
+- LSP servers (via `ensure_installed`): lua_ls, ts_ls, eslint, tailwindcss, jdtls
+- Formatters (via `:MasonInstall`): stylua, prettierd, google-java-format
 
 ---
 
 _IDEI Field Journal — February 2026 | Neovim 0.11.x | M4 Max · HHKB Type-S_
 _Constitution v2.4 compliant | Lua-first validation methodology_
-_Phases A-F complete | TypeScript + Tailwind CSS verified_
+_Phases A-F2 complete | Lua + TypeScript + Tailwind + Java verified_
