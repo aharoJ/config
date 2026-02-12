@@ -15,12 +15,16 @@
 --            2026-02-12 | IDEI Phase F7. Added lemminx to ensure_installed.
 --            Formatting capability KEPT (lemminx is ONLY XML formatter).
 --            | ROLLBACK: Remove "lemminx" from ensure_installed, delete lsp/lemminx.lua
---            --            2026-02-12 | IDEI Phase F9. Added taplo to ensure_installed.
+--            2026-02-12 | IDEI Phase F9. Added taplo to ensure_installed.
 --            Formatting via conform (taplo CLI), LSP formatting killed.
 --            | ROLLBACK: Remove "taplo" from ensure_installed, delete lsp/taplo.lua
 --            2026-02-12 | IDEI Phase F10. Added fish_lsp to ensure_installed.
 --            Formatting via conform (fish_indent CLI, ships with fish shell).
 --            | ROLLBACK: Remove "fish_lsp" from ensure_installed, delete lsp/fish_lsp.lua
+--            2026-02-12 | IDEI Phase F11. Added bashls to ensure_installed.
+--            bashls auto-integrates shellcheck (500ms debounce).
+--            Formatting via conform (shfmt CLI). DO NOT add shellcheck to nvim-lint.
+--            | ROLLBACK: Remove "bashls" from ensure_installed, delete lsp/bashls.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -62,6 +66,7 @@ return {
         "lemminx",                    -- XML (Maven POM, Spring config) — Phase F7
         "taplo",                      -- TOML (Cargo.toml, pyproject.toml) — Phase F9
         "fish_lsp",                   -- Fish shell (config scripts) — Phase F10
+        "bashls",                     -- Bash/sh (shellcheck auto-integrated) — Phase F11
       },
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
       -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
