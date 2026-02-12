@@ -12,6 +12,9 @@
 --            jdtls is Mason-installed but NOT auto-enabled — nvim-jdtls handles
 --            startup via ftplugin/java.lua to avoid duplicate LSP instances.
 --            | ROLLBACK: Remove "jdtls" from ensure_installed and exclude list
+--            2026-02-12 | IDEI Phase F7. Added lemminx to ensure_installed.
+--            Formatting capability KEPT (lemminx is ONLY XML formatter).
+--            | ROLLBACK: Remove "lemminx" from ensure_installed, delete lsp/lemminx.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -50,7 +53,9 @@ return {
         "ts_ls",                      -- TypeScript/JavaScript/React/Next.js — Phase F1
         "eslint",                     -- ESLint as LSP (diagnostics + code actions) — Phase F1
         "jdtls",                      -- Java (Spring Boot) — Phase F2, started by nvim-jdtls
+        "lemminx",                    -- XML (Maven POM, Spring config) — Phase F7
       },
+
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
       -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
       -- they use the standard lsp/<server>.lua + vim.lsp.config pattern.

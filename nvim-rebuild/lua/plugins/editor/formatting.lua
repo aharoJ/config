@@ -11,6 +11,13 @@
 --            2026-02-11 | Phase F2. Added google-java-format for Java with --aosp
 --            flag (4-space indent, matches Java convention in core/autocmds.lua).
 --            | ROLLBACK: Remove java entry from formatters_by_ft, remove formatters block
+--            2026-02-12 | IDEI Phase F7. Smart LSP fallback in <leader>cf for filetypes
+--            without a conform formatter (XML/lemminx). No behavior change for existing
+--            languages — conform still runs with lsp_format = "never" when a formatter exists.
+--            | ROLLBACK: Revert <leader>cf to Phase F2 version (always lsp_format = "never")
+
+
+
 
 -- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
 -- prettierd is the daemon wrapper (stays warm between invocations, ~10x faster cold start).
@@ -28,15 +35,36 @@ return {
     {
       "<leader>cf",
       function()
-        require("conform").format({
-          bufnr = 0,
-          lsp_format = "never",       -- NEVER use LSP formatting (conform owns this)
-          async = false,              -- Synchronous: see the result immediately
-          timeout_ms = 3000,          -- 3s timeout (prettierd is fast, but safety net)
-        })
+	local conform = require("conform")
+	-- WHY: Check if conform has a formatter for this buffer's filetype.
+	-- Most filetypes (Lua, TS, Java, Python) have explicit conform formatters.
+	-- XML is the exception — lemminx is the ONLY formatter, and it's an LSP.
+	-- This detects "no conform formatter" and falls back to vim.lsp.buf.format().
+	--
+	-- ARCHITECTURAL NOTE: This does NOT change behavior for ANY existing language.
+	-- If a conform formatter exists → conform runs with lsp_format = "never" (unchanged).
+	-- If no conform formatter exists → LSP formatting (currently only lemminx/XML).
+	-- If neither exists → conform.format() with lsp_format = "never" is a no-op
+	-- and vim.lsp.buf.format() only runs if there's an LSP with formatting capability.
+	local formatters = conform.list_formatters(0)
+	if #formatters > 0 then
+		-- Conform has a formatter — use it, never LSP (standard path)
+		conform.format({
+			bufnr = 0,
+			lsp_format = "never",
+			async = false,
+			timeout_ms = 3000,
+		})
+	else
+		-- No conform formatter — fall back to LSP (XML/lemminx exception)
+		vim.lsp.buf.format({
+			async = false,
+			timeout_ms = 3000,
+		})
+	end
       end,
-      mode = { "n", "v" },           -- Works in normal mode (whole file) and visual (range)
-      desc = "Format buffer (conform)",
+      mode = { "n", "v" },
+      desc = "Format buffer (conform → LSP fallback)",
     },
   },
   opts = {
@@ -66,7 +94,6 @@ return {
       java = { "google-java-format" },
       -- python = { "black" },              -- future phase
     },
-
     -- ── Default Format Options ──────────────────────────────────────────
     -- WHY lsp_format = "never": LSP formatting is dead. Phase A killed the
     -- capability in LspAttach, server configs have format.enable = false, and
