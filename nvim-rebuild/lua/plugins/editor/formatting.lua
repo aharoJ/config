@@ -103,6 +103,7 @@ return {
             fish = { "fish_indent" },             -- Phase F10 (Fish shell)
             sh = { "shfmt" },                     -- ← NEW (Phase F11)
             bash = { "shfmt" },                   -- ← NEW (Phase F11)
+            sql = { "sql_formatter" },
         },
         -- ── Formatter-Specific Configuration ────────────────────────────────
         formatters = {
