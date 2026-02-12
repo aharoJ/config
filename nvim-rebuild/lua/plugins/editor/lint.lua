@@ -1,11 +1,16 @@
 -- path: nvim/lua/plugins/editor/lint.lua
 -- Description: nvim-lint — async linting engine. Auto-triggers on save and file open.
 --              Linters run ALONGSIDE LSP diagnostics, not instead of them. For Lua,
---              lua_ls covers all diagnostics — no external linter needed. This file
---              is infrastructure for Phase F when eslint, ruff, markdownlint arrive.
+--              lua_ls covers all diagnostics — no external linter needed.
 -- CHANGELOG: 2026-02-11 | IDEI Phase D build. Empty linters_by_ft for Lua-only phase.
 --            Auto-trigger on BufWritePost + BufReadPost (matches LSP diagnostic model).
 --            | ROLLBACK: Delete file
+--            2026-02-12 | IDEI Phase F6. Added markdownlint-cli2 for Markdown.
+--            First real nvim-lint entry. markdownlint-cli2 checks style/convention rules
+--            (heading hierarchy, line length, whitespace, etc.). marksman LSP handles
+--            structural diagnostics (broken links, ambiguous references) — zero overlap.
+--            Config via .markdownlint-cli2.yaml (searched up from file location).
+--            | ROLLBACK: Remove markdown entry from linters_by_ft
 
 return {
   "mfussenegger/nvim-lint",
@@ -18,19 +23,18 @@ return {
 
   opts = {
     -- ── Linters by Filetype ───────────────────────────────────────────────
-    -- WHY EMPTY: Lua diagnostics come from lua_ls exclusively. No external
-    -- linter needed. Phase F populates this for other languages:
-    --   typescript/javascript → eslint      (catches what ts_ls misses)
-    --   python                → ruff        (fast, replaces flake8+isort)
-    --   markdown              → markdownlint
     -- Each entry = exactly ONE linter per filetype. One tool per job.
+    --
+    -- Lua: lua_ls covers all diagnostics. No external linter.
+    -- TypeScript/JavaScript: eslint runs as LSP (Phase F1), NOT here.
+    -- Python: basedpyright covers diagnostics (Phase F3). No external linter.
+    -- Bash: bashls auto-integrates shellcheck. DO NOT add here.
+    -- Markdown: markdownlint-cli2 for style rules. marksman LSP handles link diagnostics.
     linters_by_ft = {
-      -- typescript = { "eslint" },       -- Phase F
-      -- javascript = { "eslint" },       -- Phase F
-      -- typescriptreact = { "eslint" },  -- Phase F
-      -- javascriptreact = { "eslint" },  -- Phase F
-      -- python = { "ruff" },             -- Phase F
-      -- markdown = { "markdownlint" },   -- Phase F
+      markdown = { "markdownlint-cli2" },   -- Phase F6: style/convention linting
+      -- python = { "ruff" },               -- DROPPED: basedpyright is sole Python LSP
+      -- typescript = { "eslint" },          -- ESLint runs as LSP, not nvim-lint
+      -- sh = { "shellcheck" },             -- bashls integrates shellcheck. DO NOT ADD.
     },
   },
 
