@@ -35,6 +35,11 @@
 --            was unsolvable without endless suppressions. ruff_format KEPT via conform.
 --            | ROLLBACK: Remove "basedpyright" from ensure_installed,
 --            delete lsp/basedpyright.lua
+--            2026-02-12 | IDEI Phase F6. Added marksman (Markdown LSP).
+--            Structural intelligence: links, goto def, references, document symbols,
+--            TOC code action. Style linting via markdownlint-cli2 in nvim-lint (separate).
+--            Formatting via prettierd (already Phase F1). Zero diagnostic overlap.
+--            | ROLLBACK: Remove "marksman" from ensure_installed, delete lsp/marksman.lua
 return {
   -- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
   -- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -54,8 +59,8 @@ return {
   -- files (native 0.11+ auto-discovery) merged with nvim-lspconfig bundled configs.
   --
   -- WHAT CHANGED FROM LAST TIME:
-  -- - ensure_installed expanded for Phase F2 (Java language expansion)
-  -- - jdtls added to automatic_enable.exclude (nvim-jdtls owns startup)
+  -- - ensure_installed expanded for Phase F6 (Markdown language expansion)
+  -- - marksman added: standard auto-enable (no exclude needed)
   -- - No stylua/prettierd/google-java-format here (formatters are NOT LSP servers)
   {
     "mason-org/mason-lspconfig.nvim",
@@ -79,10 +84,11 @@ return {
         "bashls",                     -- Bash/sh (shellcheck auto-integrated) — Phase F11
         "jsonls",                     -- JSON/JSONC (SchemaStore.nvim for schema intelligence) — Phase F12
         "basedpyright",               -- Python type checking + LSP (sole Python server) — Phase F3
+        "marksman",                   -- Markdown (structural: links, symbols, TOC) — Phase F6
       },
       -- WHY automatic_enable with exclude: v2 default auto-calls vim.lsp.enable()
-      -- for every installed server. This is correct for lua_ls, ts_ls, eslint —
-      -- they use the standard lsp/<server>.lua + vim.lsp.config pattern.
+      -- for every installed server. This is correct for lua_ls, ts_ls, eslint,
+      -- marksman — they use the standard lsp/<server>.lua + vim.lsp.config pattern.
       --
       -- jdtls is EXCLUDED because nvim-jdtls handles startup via
       -- require("jdtls").start_or_attach() in ftplugin/java.lua. If we let
