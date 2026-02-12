@@ -418,6 +418,68 @@ Two user preferences finalized during Java validation:
 
 ---
 
+## Phase F3 — Python Language Expansion
+
+**Started:** 2026-02-12
+**Completed:** 2026-02-12
+**Status:** ✅ PASSED (zero duplicate diagnostics, single-server architecture)
+
+### What We Built
+
+| Task | File                            | What It Does                                                             |
+| ---- | ------------------------------- | ------------------------------------------------------------------------ |
+| F3-1 | `lsp/basedpyright.lua`          | Native server config — types, hover, goto, diagnostics (sole Python LSP) |
+| F3-2 | `plugins/editor/lsp.lua`        | Added basedpyright to `ensure_installed`                                 |
+| F3-3 | `plugins/editor/formatting.lua` | Added python = ruff_format via conform                                   |
+| F3-4 | Mason (manual install)          | `:MasonInstall basedpyright ruff`                                        |
+
+### Research Findings (R25 — The Ruff Overlap Problem)
+
+| Item                              | Finding                                                                                                                                                                                                                                                                                                                                                                                      | Impact                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| R25 — basedpyright + ruff overlap | Systemic diagnostic overlap extends far beyond unused imports. Affected rules: F401↔reportUnusedImport, F841↔reportUnusedVariable, B018↔reportUnusedExpression, F821↔reportUndefinedVariable, E702↔parser errors, W605↔reportInvalidStringEscapeSequence, PLC0414, RUF013, RUF016. Community has been playing whack-a-mole for 1+ year (basedpyright#203, ruff-lsp#384, LazyVim#5818). | ruff LSP dropped entirely. basedpyright as sole Python LSP.          |
+| Parser-level conflicts unsolvable | basedpyright's Python parser catches syntax errors like statement separation (E702). These are NOT diagnostic rules — they're fundamental parser errors. Cannot be suppressed via `diagnosticSeverityOverrides`. No config can fix this.                                                                                                                                                     | Proved whack-a-mole is futile. Some overlaps have no solution.       |
+| Community patterns all flawed     | LazyVim/LunarVim/Helix all tried different approaches: selective rule suppression (tedious, incomplete), `python.analysis.ignore = ['*']` (kills ALL type checking), ruff-only (loses type checking). No clean boundary exists between the two servers' diagnostic domains.                                                                                                                  | Confirmed: the two-server Python approach is architecturally broken. |
+
+### Bugs Found & Fixed
+
+#### Bug 3: Duplicate Diagnostics — basedpyright + ruff
+
+- **Symptom:** Same errors appeared twice with different wording from different sources:
+  - `"num0" is not defined` (basedpyright) + `Undefined name 'num0'` (ruff F821)
+  - `Statements must be separated...` (basedpyright parser) + `Simple statements must be...` (ruff E702)
+- **First Attempt:** Added `F821` to ruff `init_options.settings.lint.ignore`. Eliminated F821 duplicates but E702 still duplicated.
+- **Second Attempt:** Researched deeper. Discovered E702 is a parser-level conflict — basedpyright's parser catches statement separation as a fundamental syntax error, not a diagnostic rule. Cannot be suppressed on either side.
+- **Research:** Searched community solutions across basedpyright issues, ruff issues, LazyVim discussions, Helix forums, Reddit threads. All paths lead to whack-a-mole.
+- **Final Fix:** Dropped ruff as LSP entirely. basedpyright is sole Python LSP. ruff_format kept via conform (CLI formatter, no LSP needed).
+- **Lesson:** Two LSP servers with overlapping diagnostic domains is architecturally broken for Python. Unlike TypeScript (ts_ls=types, eslint=lint — clean boundary), basedpyright and ruff both claim ownership of the same diagnostic space. The only clean solution is one server.
+
+### Decisions Made
+
+| Decision                                      | Rationale                                                                                                                                                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ruff LSP DROPPED                              | Systemic diagnostic overlap with basedpyright. Parser errors (E702), F821, F841, W605 all duplicate. Community whack-a-mole for 1+ year. No clean boundary exists between the two servers.                     |
+| basedpyright as sole Python LSP               | `"standard"` mode catches real bugs: type errors, undefined names, unused imports, syntax errors. Sufficient for secondary language (Python is scripting/tooling, not primary like Java/TS).                   |
+| ruff_format via conform (CLI, no LSP)         | ruff_format is a standalone CLI formatter. Doesn't need ruff LSP to run. Manual-only pattern consistent with all other languages.                                                                              |
+| basedpyright overlap suppressions REMOVED     | Initial config had `diagnosticSeverityOverrides` suppressing F401/F841/B018 to avoid ruff overlap. With ruff dropped, basedpyright should report ALL its diagnostics. Cleaner config, no phantom suppressions. |
+| Future ruff linting path: nvim-lint if needed | If deeper ruff linting needed later, add ruff to nvim-lint as CLI linter with curated rule set excluding basedpyright overlaps. But for secondary language use, basedpyright `"standard"` is sufficient.       |
+
+### Checkpoint F3 Results
+
+| Check                            | Expected                       | Actual |
+| -------------------------------- | ------------------------------ | ------ |
+| `:LspInfo` on `.py` file         | Exactly 1 client: basedpyright | ✅     |
+| Type error diagnostics           | Source: basedpyright           | ✅     |
+| Undefined name detection         | `"num0" is not defined`        | ✅     |
+| Unused import/variable detection | basedpyright warnings          | ✅     |
+| Zero duplicate diagnostics       | One source per diagnostic      | ✅     |
+| `:ConformInfo` on `.py` file     | `ruff_format ready (python)`   | ✅     |
+| `<leader>cf` format              | ruff_format runs via conform   | ✅     |
+| `:w` saves without formatting    | No auto-format on save         | ✅     |
+| `documentFormattingProvider`     | `false`                        | ✅     |
+
+---
+
 ## Current State — File Inventory
 
 ```
@@ -429,28 +491,38 @@ Two user preferences finalized during Java validation:
 │   ├── lua_ls.lua                        ← Phase A + B (diagnostics, completion, snippet kill)
 │   ├── ts_ls.lua                         ← Phase F1 (types, formatting kill, ignoredCodes, inlay hints)
 │   ├── eslint.lua                        ← Phase F1 (lint diagnostics, code actions, workingDirectories)
-│   └── tailwindcss.lua                   ← Phase F1 (class completion, hover, validation, classRegex)
+│   ├── tailwindcss.lua                   ← Phase F1 (class completion, hover, validation, classRegex)
+│   ├── basedpyright.lua                  ← Phase F3 (sole Python LSP — types, diagnostics, hover)
+│   ├── lemminx.lua                       ← Phase F7 (XML — all concerns)
+│   ├── yamlls.lua                        ← Phase F8 (YAML — SchemaStore.nvim integration)
+│   ├── taplo.lua                         ← Phase F9 (TOML — Cargo.toml, pyproject.toml)
+│   ├── fish_lsp.lua                      ← Phase F10 (Fish shell)
+│   ├── bashls.lua                        ← Phase F11 (Bash — shellcheck auto-integrated)
+│   └── jsonls.lua                        ← Phase F12 (JSON — SchemaStore.nvim, validate.enable)
 └── lua/
     ├── core/                             ← Phase 1 (core PDE rebuild)
     ├── config/
     │   └── lazy.lua                      ← lazy.nvim bootstrap
     └── plugins/
         ├── editor/
-        │   ├── lsp.lua                   ← Phase A + F1 + F2 (Mason, mason-lspconfig, LspAttach, diagnostics)
+        │   ├── lsp.lua                   ← Phase A + F1-F12 (Mason, mason-lspconfig, LspAttach, diagnostics)
         │   ├── completion.lua            ← Phase B (blink.cmp, manual trigger, snippet kill)
-        │   ├── formatting.lua            ← Phase C + F1 + F2 (conform: stylua + prettierd + google-java-format)
+        │   ├── formatting.lua            ← Phase C + F1-F3 (conform: stylua + prettierd + google-java-format + ruff_format + shfmt + fish_indent + taplo)
         │   └── lint.lua                  ← Phase D (nvim-lint, infrastructure, idle for Lua)
-        └── lang/
-            └── java.lua                  ← Phase F2 (nvim-jdtls plugin spec, ft = java)
+        ├── lang/
+        │   └── java.lua                  ← Phase F2 (nvim-jdtls plugin spec, ft = java)
+        └── ui/
+            └── schemastore.lua           ← Phase F8/F12 (SchemaStore.nvim for jsonls + yamlls)
 ```
 
 **Mason-installed tools:**
 
-- LSP servers (via `ensure_installed`): lua_ls, ts_ls, eslint, tailwindcss, jdtls
-- Formatters (via `:MasonInstall`): stylua, prettierd, google-java-format
+- LSP servers (via `ensure_installed`): lua_ls, ts_ls, eslint, tailwindcss, jdtls, basedpyright, lemminx, yaml-language-server, taplo, fish-lsp, bash-language-server, json-lsp
+- Formatters (via `:MasonInstall`): stylua, prettierd, google-java-format, ruff, shfmt
 
 ---
 
 _IDEI Field Journal — February 2026 | Neovim 0.11.x | M4 Max · HHKB Type-S_
 _Constitution v2.4 compliant | Lua-first validation methodology_
-_Phases A-F2 complete | Lua + TypeScript + Tailwind + Java verified_
+_Phases A-F3 complete | Lua + TypeScript + Tailwind + Java + Python verified_
+_Phases F7-F12 complete | XML + YAML + TOML + Fish + Bash + JSON verified_
