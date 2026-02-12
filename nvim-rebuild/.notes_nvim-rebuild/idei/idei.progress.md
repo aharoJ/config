@@ -132,7 +132,7 @@
 | F3  | Python         | basedpyright                 | ruff eliminated removed      | basedpyright (built-in) | ✅     |
 | F4  | Rust           | rust_analyzer                | rustfmt via conform          | clippy (via RA)         | ⬜     |
 | F5  | SQL            | —                            | sql-formatter                | —                       | ✅     |
-| F6  | Markdown       | marksman                     | prettierd                    | markdownlint-cli2       | ⬜     |
+| F6  | Markdown       | marksman                     | prettierd                    | markdownlint-cli2       | ✅     |
 | F7  | XML            | lemminx                      | lemminx (LSP)                | lemminx (LSP)           | ✅     |
 | F8  | YAML           | yamlls + SchemaStore.nvim    | prettierd                    | yamlls (LSP)            | ✅     |
 | F9  | TOML           | taplo                        | taplo via conform            | taplo (LSP)             | ✅     |
