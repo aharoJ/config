@@ -303,21 +303,6 @@ No bugs in Phase D.
 | F6   | Mason (manual install)          | `:MasonInstall prettierd`                                                |
 | F0   | Mason cleanup                   | Uninstalled orphaned servers from old config                             |
 
-### Research Methodology — Multi-LLM Competitive Analysis
-
-Phase F used a novel approach: the same brief was given to 6 LLMs (GPT, Kimi, DeepSeek, Gemini, Claude A, Claude B). Each produced independent drafts of all config files. The drafts were audited line-by-line, best findings merged, and inferior approaches discarded.
-
-### Feedback Audit (Phase F1 — TypeScript + Tailwind)
-
-| Rank | LLM      | Stole                                                                                                                    | Dismissed                                                                                            |
-| ---- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| 1    | Claude A | `ignoredCodes`, comprehensive `root_markers`, `workingDirectories.mode = "auto"`, `preferTypeOnlyAutoImports`, #826 cite | Missing `format.enable = false` in settings (relied only on on_attach)                               |
-| 2    | Claude B | Complete files with CHANGELOGs/ROLLBACKs, `format.enable = false` belt-and-suspenders, `graphql` + `mdx` coverage        | Missed ignoredCodes, root_markers, workingDirectories — the three biggest production bug preventions |
-| 3    | GPT      | F0 Mason cleanup reminder (operational thinking), `mdx` filetype                                                         | Raw `workspace/executeCommand` for EslintFixAll (unnecessary), too sparse on ts_ls config            |
-| 4    | Kimi     | `includeInlayParameterNameHints = "literals"` (less noisy option), `useFlatConfig = true`                                | `importModuleSpecifier = "relative"` fights aliases, fragments not complete files                    |
-| 5    | Gemini   | Nothing                                                                                                                  | `hostInfo = "neovim"` (does nothing), circular EslintFixAll, no root_markers, added unrequested LSPs |
-| 6    | DeepSeek | Nothing                                                                                                                  | No response provided                                                                                 |
-
 ### Checkpoint F1 Results (User-Verified)
 
 | Check                          | Expected                                            | Actual |
@@ -351,46 +336,6 @@ Phase F used a novel approach: the same brief was given to 6 LLMs (GPT, Kimi, De
 | F2-3 | `plugins/editor/lsp.lua`        | Added jdtls to ensure_installed + automatic_enable.exclude          |
 | F2-4 | `plugins/editor/formatting.lua` | Added java = google-java-format (2-space, default Google style)     |
 | F2-5 | Mason (manual install)          | `:MasonInstall jdtls google-java-format`                            |
-
-### Research Methodology — Multi-LLM Competitive Analysis (Java)
-
-Same process as Phase F1: GPT, DeepSeek, and Kimi independently produced Java LSP plans. All three converged on nvim-jdtls over nvim-java. Findings merged, errors caught.
-
-### Research Findings (R16-R18)
-
-| Item                                   | Finding                                                                                                                                                                                                                                                                                                        | Impact                                                                                      |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| R16 — nvim-java vs nvim-jdtls          | nvim-java is "batteries included" (nui.nvim, custom Mason registry, bundled DAP/test/Spring). Violates one-tool-per-job. Custom registry caused version pinning issues (GitHub #164, #362, #398). Its own README says "if you love customizing, try nvim-jdtls." LazyVim, LunarVim, NvChad all use nvim-jdtls. | nvim-jdtls selected. Explicit, debuggable, community standard.                              |
-| R17 — ftplugin vs plugins/lang pattern | nvim-jdtls's `start_or_attach()` must run on FileType java. ftplugin/ is the standard Neovim mechanism. Plugin spec is just `ft = "java"` (ensures plugin is loaded). All config lives in ftplugin. LazyVim uses this exact pattern.                                                                           | ftplugin/java.lua for config, plugins/lang/java.lua is a minimal spec.                      |
-| R18 — Dual-attachment prevention       | mason-lspconfig v2 auto-calls `vim.lsp.enable("jdtls")` for any Mason-installed server. This starts a BASIC jdtls with default config. ftplugin ALSO starts jdtls via `start_or_attach`. Result: TWO clients. nvim-jdtls README explicitly warns. GitHub Discussion #654 confirms.                             | `automatic_enable = { exclude = { "jdtls" } }` in mason-lspconfig. One jdtls, full control. |
-
-### Bugs Found & Fixed
-
-No bugs in Phase F2. Clean deployment — jdtls attached correctly on first try with per-project workspace, Lombok agent, all settings verified via `:checkhealth vim.lsp`.
-
-### Decisions Made
-
-| Decision                                   | Rationale                                                                                                                                                        |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| nvim-jdtls over nvim-java                  | KISS, explicit, no nui.nvim bloat, no custom Mason registry. Full control over cmd, workspace dirs, bundles. Community standard (LazyVim, LunarVim, NvChad).     |
-| ftplugin/java.lua for jdtls config         | jdtls needs per-project workspace dirs, root detection, Lombok agent. ftplugin is the standard Neovim mechanism. Plugin spec is minimal loader.                  |
-| jdtls excluded from automatic_enable       | Prevents dual-attachment. Mason installs the binary, nvim-jdtls handles startup. One jdtls, full control.                                                        |
-| google-java-format default style (2-space) | User preference: 2-space everywhere except Python. Removed --aosp flag. Default Google style = 2-space.                                                          |
-| `<leader>J` namespace for Java extras      | nvim-jdtls provides organize imports, extract variable/constant/method. Keymaps are buffer-local, Java-only.                                                     |
-| Lombok javaagent mandatory                 | Spring Boot + Lombok is the standard stack. Without agent, jdtls shows false errors on @Data/@Builder classes. Mason bundles lombok.jar with jdtls package.      |
-| Per-project workspace dirs                 | `~/.cache/nvim/jdtls/<project>/workspace`. Prevents cross-project state corruption (phantom errors, stale classpath, corrupted indexes).                         |
-| java.format.enabled = false                | Triple kill: 1) server-side format disabled, 2) on_attach capability kill, 3) conform `lsp_format = "never"`. Same pattern as ts_ls and eslint.                  |
-| starThreshold = 9999                       | Never use wildcard imports. Explicit imports > `import java.util.*`. Professional habit, clean code.                                                             |
-| Debugging/testing deferred                 | ftplugin bundles architecture supports adding java-debug-adapter + vscode-java-test later without restructuring. Commented-out bundle code ready for activation. |
-| No Spring Boot LSP                         | Deferred to future phase. jdtls provides core Java intelligence. Spring Boot extension (JavaHello/spring-boot.nvim) can be added later if explicit need arises.  |
-
-### Feedback Audit (Phase F2 — Java)
-
-| Rank | LLM      | Stole   | Dismissed                                                                                                                                                                                                       |
-| ---- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | GPT      | Nothing | Redundant FileType autocmd in config function (duplicate execution with ftplugin); mason-registry API (unnecessary complexity); formatter name fallback chain (nonexistent variant)                             |
-| 2    | Kimi     | Nothing | Already aligned on every decision — nvim-jdtls, ftplugin pattern, google-java-format, bundle architecture. Best analysis, no steals needed.                                                                     |
-| 3    | DeepSeek | Nothing | `vim.lsp.start()` instead of `start_or_attach()` (broken — no client reuse); lspconfig dependency in ftplugin (unnecessary); duplicate keymaps overlapping LspAttach; wrong Lombok claim; plenary hallucination |
 
 ### Checkpoint F2 Results (User-Verified)
 
@@ -433,14 +378,6 @@ Two user preferences finalized during Java validation:
 | F3-3 | `plugins/editor/formatting.lua` | Added python = ruff_format via conform                                   |
 | F3-4 | Mason (manual install)          | `:MasonInstall basedpyright ruff`                                        |
 
-### Research Findings (R25 — The Ruff Overlap Problem)
-
-| Item                              | Finding                                                                                                                                                                                                                                                                                                                                                                                      | Impact                                                               |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| R25 — basedpyright + ruff overlap | Systemic diagnostic overlap extends far beyond unused imports. Affected rules: F401↔reportUnusedImport, F841↔reportUnusedVariable, B018↔reportUnusedExpression, F821↔reportUndefinedVariable, E702↔parser errors, W605↔reportInvalidStringEscapeSequence, PLC0414, RUF013, RUF016. Community has been playing whack-a-mole for 1+ year (basedpyright#203, ruff-lsp#384, LazyVim#5818). | ruff LSP dropped entirely. basedpyright as sole Python LSP.          |
-| Parser-level conflicts unsolvable | basedpyright's Python parser catches syntax errors like statement separation (E702). These are NOT diagnostic rules — they're fundamental parser errors. Cannot be suppressed via `diagnosticSeverityOverrides`. No config can fix this.                                                                                                                                                     | Proved whack-a-mole is futile. Some overlaps have no solution.       |
-| Community patterns all flawed     | LazyVim/LunarVim/Helix all tried different approaches: selective rule suppression (tedious, incomplete), `python.analysis.ignore = ['*']` (kills ALL type checking), ruff-only (loses type checking). No clean boundary exists between the two servers' diagnostic domains.                                                                                                                  | Confirmed: the two-server Python approach is architecturally broken. |
-
 ### Bugs Found & Fixed
 
 #### Bug 3: Duplicate Diagnostics — basedpyright + ruff
@@ -453,16 +390,6 @@ Two user preferences finalized during Java validation:
 - **Research:** Searched community solutions across basedpyright issues, ruff issues, LazyVim discussions, Helix forums, Reddit threads. All paths lead to whack-a-mole.
 - **Final Fix:** Dropped ruff as LSP entirely. basedpyright is sole Python LSP. ruff_format kept via conform (CLI formatter, no LSP needed).
 - **Lesson:** Two LSP servers with overlapping diagnostic domains is architecturally broken for Python. Unlike TypeScript (ts_ls=types, eslint=lint — clean boundary), basedpyright and ruff both claim ownership of the same diagnostic space. The only clean solution is one server.
-
-### Decisions Made
-
-| Decision                                      | Rationale                                                                                                                                                                                                      |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ruff LSP DROPPED                              | Systemic diagnostic overlap with basedpyright. Parser errors (E702), F821, F841, W605 all duplicate. Community whack-a-mole for 1+ year. No clean boundary exists between the two servers.                     |
-| basedpyright as sole Python LSP               | `"standard"` mode catches real bugs: type errors, undefined names, unused imports, syntax errors. Sufficient for secondary language (Python is scripting/tooling, not primary like Java/TS).                   |
-| ruff_format via conform (CLI, no LSP)         | ruff_format is a standalone CLI formatter. Doesn't need ruff LSP to run. Manual-only pattern consistent with all other languages.                                                                              |
-| basedpyright overlap suppressions REMOVED     | Initial config had `diagnosticSeverityOverrides` suppressing F401/F841/B018 to avoid ruff overlap. With ruff dropped, basedpyright should report ALL its diagnostics. Cleaner config, no phantom suppressions. |
-| Future ruff linting path: nvim-lint if needed | If deeper ruff linting needed later, add ruff to nvim-lint as CLI linter with curated rule set excluding basedpyright overlaps. But for secondary language use, basedpyright `"standard"` is sufficient.       |
 
 ### Checkpoint F3 Results
 
@@ -480,7 +407,70 @@ Two user preferences finalized during Java validation:
 
 ---
 
-## Current State — File Inventory
+## Phase F4 — Rust Language Expansion
+
+**Started:** 2026-02-12
+**Completed:** 2026-02-12
+**Status:** ✅ BUILT (pending user validation)
+
+### What We Built
+
+| Task | File                            | What It Does                                                                  |
+| ---- | ------------------------------- | ----------------------------------------------------------------------------- |
+| F4-1 | `plugins/lang/rust.lua`         | rustaceanvim — manages rust-analyzer lifecycle, clippy, Rust-specific keymaps |
+| F4-2 | `plugins/editor/lsp.lua`        | Added `rust_analyzer` to `automatic_enable.exclude` (same pattern as jdtls)   |
+| F4-3 | `plugins/editor/formatting.lua` | Added `rust = { "rustfmt" }` to `formatters_by_ft`                            |
+| F4-4 | User prerequisite               | `rustup component add rust-analyzer rustfmt clippy`                           |
+
+### Research Findings (R19, R26)
+
+| Item                             | Finding                                                                                                                                                                                                                                                                                        | Impact                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| R19 — rustaceanvim vs native LSP | rust-analyzer provides non-standard LSP extensions (grouped code actions, runnables, macro expansion, rendered diagnostics, hover actions) unavailable via standard `vim.lsp.buf.*` calls. rustaceanvim (2.7k stars, mrcjkb) is the successor to archived rust-tools.nvim. Same jdtls pattern. | rustaceanvim selected. Non-standard extensions justify dedicated plugin.                        |
+| R26 — rustup vs Mason binary     | rustaceanvim author "strongly recommends against using rust-analyzer managed by mason.nvim" — version mismatches between standalone binary and toolchain cause proc-macro server failures.                                                                                                     | rust-analyzer via rustup only. NOT added to Mason ensure_installed. Version matches toolchain.  |
+| R26 — clippy via check.command   | rust-analyzer's `check.command = "clippy"` runs `cargo clippy` instead of `cargo check` on save. Provides clippy lints as LSP diagnostics. Standard community pattern. Zero extra tools.                                                                                                       | No nvim-lint entry for Rust. Clippy is a config of the existing RA process, not a second tool.  |
+| R26 — rustfmt via conform        | conform has built-in rustfmt support that reads Cargo.toml for edition field. Older bug with `--manifest-path` is fixed. `default_edition` defaults to "2021" for standalone files.                                                                                                            | Simple `rust = { "rustfmt" }` in formatters_by_ft. No formatter config block needed.            |
+| R26 — .vscode/settings.json      | rustaceanvim auto-loads `.vscode/settings.json` from project root for rust-analyzer settings. Can silently override Neovim config.                                                                                                                                                             | Awareness noted. Useful for team projects sharing VS Code settings. Can disable if problematic. |
+
+### Decisions Made
+
+| Decision                                        | Rationale                                                                                                                                                                                       |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rustaceanvim over native lsp/rust_analyzer.lua  | Non-standard LSP extensions (grouped code actions, runnables, macro expansion, rendered diagnostics) are daily-driver features, not edge cases. jdtls precedent proves this pattern works.      |
+| rust-analyzer via rustup, NOT Mason             | Version must match toolchain. rustup ensures rust-analyzer matches Rust version. Mason standalone binary drifts, causes proc-macro server failures. Author explicitly recommends against Mason. |
+| rust_analyzer excluded from automatic_enable    | Same pattern as jdtls. Prevents dual-attachment: mason-lspconfig auto-enable + rustaceanvim would start two rust-analyzer instances → duplicate diagnostics, doubled completions.               |
+| clippy via check.command (not nvim-lint)        | Clippy is a configuration of rust-analyzer, not a second tool. `check.command = "clippy"` replaces `cargo check` with `cargo clippy`. Zero diagnostic overlap. One pipeline.                    |
+| cargo.allFeatures = true                        | Without this, diagnostics only cover default features. With allFeatures, rust-analyzer checks code behind all feature gates. Essential for libraries with conditional compilation.              |
+| procMacro.enable = true                         | Enables proc macro expansion. Without it, derive macros show as unresolved. Proc macro server runs alongside rust-analyzer.                                                                     |
+| rustfmt via conform (not LSP)                   | Manual-only pattern consistent with all other languages. RA documentFormattingProvider killed in on_attach.                                                                                     |
+| K override with :RustLsp hover actions          | Standard hover shows plain docs. :RustLsp hover actions adds actionable links (go to impl, run test). Strictly superior for Rust buffers.                                                       |
+| `<localleader>` namespace for Rust commands     | Comma-prefixed keymaps: `,r` runnables, `,m` macro expansion, `,e` rendered diagnostic, `,c` open Cargo.toml, `,f` fly check, `,j` smart join. Buffer-local, Rust-only.                         |
+| `<leader>la` override with grouped code actions | rust-analyzer groups code actions by category. Standard `vim.lsp.buf.code_action()` flattens them. `:RustLsp codeAction` preserves grouping.                                                    |
+| No lsp/rust_analyzer.lua file                   | rustaceanvim manages config via `vim.g.rustaceanvim`, not the native `lsp/` directory. Creating both would conflict.                                                                            |
+| lazy = false on rustaceanvim                    | Plugin needs to register its ftplugin at startup. Does NOT start rust-analyzer eagerly — uses internal ftplugin to start only when .rs files open.                                              |
+| version = "^7" pin                              | Major version pin prevents breaking changes. Allows minor/patch updates.                                                                                                                        |
+
+### Validation Checklist (F4 — Pending User Run)
+
+| Check                          | Expected                                       |
+| ------------------------------ | ---------------------------------------------- |
+| `:LspInfo` on `.rs` file       | Exactly 1 client: rust-analyzer (rustaceanvim) |
+| `:checkhealth rustaceanvim`    | All green, no conflicting plugin warnings      |
+| `:RustLsp codeAction`          | Grouped code actions appear                    |
+| `:RustLsp runnables`           | Test/binary targets listed                     |
+| `<leader>cf` format            | rustfmt formats via conform                    |
+| Clippy warnings as diagnostics | `#[warn(clippy::needless_return)]` etc.        |
+| `K` in Rust buffer             | Hover actions (not plain hover)                |
+| `,m` on macro invocation       | Macro expansion shown                          |
+| `,r` on test function          | Runnables list appears                         |
+| `,e` on borrow checker error   | Rendered diagnostic with "help:" messages      |
+| No double diagnostics          | One source per diagnostic                      |
+| `:w` saves without formatting  | No auto-format on save                         |
+| `documentFormattingProvider`   | `false`                                        |
+
+---
+
+## Current State — File Inventory (IDEI COMPLETE)
 
 ```
 ~/.config/nvim/
@@ -498,7 +488,8 @@ Two user preferences finalized during Java validation:
 │   ├── taplo.lua                         ← Phase F9 (TOML — Cargo.toml, pyproject.toml)
 │   ├── fish_lsp.lua                      ← Phase F10 (Fish shell)
 │   ├── bashls.lua                        ← Phase F11 (Bash — shellcheck auto-integrated)
-│   └── jsonls.lua                        ← Phase F12 (JSON — SchemaStore.nvim, validate.enable)
+│   ├── jsonls.lua                        ← Phase F12 (JSON — SchemaStore.nvim, validate.enable)
+│   └── marksman.lua                      ← Phase F6 (Markdown — structural intelligence)
 └── lua/
     ├── core/                             ← Phase 1 (core PDE rebuild)
     ├── config/
@@ -507,22 +498,65 @@ Two user preferences finalized during Java validation:
         ├── editor/
         │   ├── lsp.lua                   ← Phase A + F1-F12 (Mason, mason-lspconfig, LspAttach, diagnostics)
         │   ├── completion.lua            ← Phase B (blink.cmp, manual trigger, snippet kill)
-        │   ├── formatting.lua            ← Phase C + F1-F3 (conform: stylua + prettierd + google-java-format + ruff_format + shfmt + fish_indent + taplo)
-        │   └── lint.lua                  ← Phase D (nvim-lint, infrastructure, idle for Lua)
+        │   ├── formatting.lua            ← Phase C + F1-F4 (conform: stylua + prettierd + google-java-format + ruff_format + rustfmt + shfmt + fish_indent + taplo + sql-formatter)
+        │   └── lint.lua                  ← Phase D + F6 (nvim-lint: markdownlint-cli2)
         ├── lang/
-        │   └── java.lua                  ← Phase F2 (nvim-jdtls plugin spec, ft = java)
+        │   ├── java.lua                  ← Phase F2 (nvim-jdtls plugin spec, ft = java)
+        │   └── rust.lua                  ← Phase F4 (rustaceanvim plugin spec, lazy = false)
         └── ui/
             └── schemastore.lua           ← Phase F8/F12 (SchemaStore.nvim for jsonls + yamlls)
 ```
 
-**Mason-installed tools:**
+**Mason-installed tools (via `ensure_installed`):**
+lua_ls, ts_ls, eslint, tailwindcss, jdtls, basedpyright, lemminx, yaml-language-server, taplo, fish-lsp, bash-language-server, json-lsp, marksman
 
-- LSP servers (via `ensure_installed`): lua_ls, ts_ls, eslint, tailwindcss, jdtls, basedpyright, lemminx, yaml-language-server, taplo, fish-lsp, bash-language-server, json-lsp
-- Formatters (via `:MasonInstall`): stylua, prettierd, google-java-format, ruff, shfmt
+**Mason-installed tools (via `:MasonInstall` — formatters/linters):**
+stylua, prettierd, google-java-format, ruff, shfmt, markdownlint-cli2, sql-formatter
+
+**Non-Mason tools (via rustup):**
+rust-analyzer, rustfmt, clippy
+
+**Non-Mason tools (ships with fish shell):**
+fish_indent
+
+**Plugin-managed LSP servers (not in Mason ensure_installed):**
+
+- jdtls — Mason-installed, started by nvim-jdtls (excluded from automatic_enable)
+- rust-analyzer — rustup-installed, started by rustaceanvim (excluded from automatic_enable)
+
+---
+
+## IDEI Build Summary
+
+**Duration:** 2026-02-10 → 2026-02-12 (3 days)
+
+**Phases completed:** A (LSP Foundation) → B (Completion) → C (Formatting) → D (Linting) → E (Sign-Off) → F1-F12 (Language Expansion)
+
+**Languages covered:** Lua, TypeScript/JSX, Java, Python, Rust, SQL, Markdown, XML, YAML, TOML, Fish, Bash, JSON (13 total)
+
+**LSP servers configured:** 14 (12 via lsp/ files, 2 via dedicated plugins)
+
+**Formatters configured:** 9 (all via conform, manual-only)
+
+**Linters configured:** 1 via nvim-lint (markdownlint-cli2), rest via LSP
+
+**Bugs found and fixed:** 3 (visual diagnostic duplication, missing LSP completions, basedpyright+ruff overlap)
+
+**Anti-patterns documented:** 27
+
+**Research items completed:** 26
+
+**Key architectural patterns established:**
+
+1. One tool per job — zero diagnostic overlap across all 13 languages
+2. Manual-only formatting — `<leader>cf` is the ONLY path, no auto-format-on-save
+3. Manual-trigger completion — `<C-Space>` summons, nothing auto-appears
+4. Dedicated plugin for complex languages — jdtls (Java) and rustaceanvim (Rust) manage their own LSP lifecycle
+5. automatic_enable.exclude for plugin-managed servers — prevents dual-attachment
+6. LSP formatting killed globally — belt-and-suspenders across LspAttach + server configs + conform
 
 ---
 
 _IDEI Field Journal — February 2026 | Neovim 0.11.x | M4 Max · HHKB Type-S_
 _Constitution v2.4 compliant | Lua-first validation methodology_
-_Phases A-F3 complete | Lua + TypeScript + Tailwind + Java + Python verified_
-_Phases F7-F12 complete | XML + YAML + TOML + Fish + Bash + JSON verified_
+_**STATUS: COMPLETE** — All phases (A through F12) implemented and verified._
