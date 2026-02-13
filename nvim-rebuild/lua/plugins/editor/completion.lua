@@ -1,168 +1,187 @@
--- path: nvim/lua/plugins/core/treesitter.lua
--- Description: Syntax highlighting, indentation, and parser management.
---              Uses nvim-treesitter MAIN branch (2025 incompatible rewrite):
---                - The old require('nvim-treesitter.configs').setup({}) API is GONE
---                - setup() is minimal (only install_dir)
---                - Parser install is explicit via require('nvim-treesitter').install({...})
---                - Highlighting/indentation/folding are NOT auto-enabled by the plugin
---                - YOU enable features via Neovim's native APIs (vim.treesitter.start, etc.)
---              Folding is already configured globally in core/options.lua (foldmethod/foldexpr).
--- CHANGELOG: 2026-02-04 | Full rewrite for nvim-treesitter main branch | ROLLBACK: Delete file
--- CHANGELOG: 2026-02-13 | Lua exclusion from treesitter indent (empty-region bug) | ROLLBACK: Remove Lua filetype guard
--- CHANGELOG: 2026-02-13 | Switch indent from blocklist to allowlist | ROLLBACK: Revert to previous blocklist pattern
+-- path: nvim/lua/plugins/editor/completion.lua
+-- Description: blink.cmp — completion engine. Auto-show ON by default.
+--              <leader>tc toggles completion on/off per-buffer via vim.b.completion
+--              (blink.cmp's built-in mechanism, checked on every trigger event).
+--              <C-Space> manually summons menu. <C-y> accepts. <C-n/p> navigates.
+--              Sources: LSP + path + buffer. Snippets OFF.
+--              Capabilities auto-wired to LSP servers via blink.cmp's plugin/blink-cmp.lua
+--              (Neovim 0.11+ vim.lsp.config integration — no manual wiring needed).
+-- CHANGELOG: 2026-02-11 | Phase B build. Manual trigger, no snippets, Lua-only validation.
+--            Added transform_items snippet filter (belt-and-suspenders with lua_ls
+--            callSnippet/keywordSnippet = "Disable"). Stolen from ChatGPT feedback.
+--            | ROLLBACK: Delete file, remove blink.cmp dependency from lsp.lua
+--            2026-02-12 | Deep dive cleanup. Switched transform_items from
+--            blink.cmp.types internal import to vim.lsp.protocol (LSP spec enum,
+--            never changes, zero external dependency). Added event field clarification
+--            comment (dependency chain preempts these events in practice).
+--            | ROLLBACK: Revert transform_items to require("blink.cmp.types"), remove comment
+--            2026-02-13 | Switched from manual-only (auto_show = false) to auto-show
+--            ON by default. Added <leader>tc toggle via vim.b.completion — blink.cmp's
+--            built-in buffer-local kill switch, checked on every trigger event. When
+--            toggled off: keymaps, auto-show, manual <C-Space>, and signature help
+--            are ALL disabled for the current buffer. vim.notify confirms state.
+--            Removed auto_show = false from menu config. Kept <C-Space> as manual
+--            summon (still works when completion is enabled).
+--            | ROLLBACK: Set completion.menu.auto_show = false, remove <leader>tc
+--            key entry, remove toggle comment block
 
 return {
-  "nvim-treesitter/nvim-treesitter",
-  branch = "main",                    -- Explicit: main is the 2025 rewrite, master is frozen
-  lazy = false,                       -- Plugin does NOT support lazy-loading (per upstream README)
-  build = ":TSUpdate",                -- Keep parsers pinned to compatible versions on plugin update
+  "saghen/blink.cmp",
+  version = "1.*",                    -- Stable releases with pre-built fuzzy binary (M4 Max: aarch64-apple-darwin)
 
-  config = function()
-    local ts = require("nvim-treesitter")
+  -- WHY these events: InsertEnter is the primary trigger for completion.
+  -- CmdlineEnter enables cmdline completion (: and / modes).
+  -- NOTE: In practice, blink.cmp loads earlier than these events because lsp.lua
+  -- lists it as a mason-lspconfig dependency (which loads on BufReadPre). These
+  -- events serve as a fallback and document intent — if the dependency chain ever
+  -- changes, blink.cmp still loads at the right time.
+  event = { "InsertEnter", "CmdlineEnter" },
 
-    -- ── Minimal Setup ───────────────────────────────────────────
-    -- WHY: The only config the main branch accepts is install_dir.
-    -- Default (stdpath("data") .. "/site") is correct — no override needed.
-    ts.setup({})
+  -- WHY no friendly-snippets: Snippets are OFF for Phase B. We validate completion
+  -- in isolation before adding snippet complexity. Add in Phase E if wanted.
+  -- dependencies = { "rafamadriz/friendly-snippets" },
 
-    -- ── Parser Installation ─────────────────────────────────────
-    -- WHY: ensure_installed is gone in the rewrite. Explicit install is the new way.
-    -- install() is async and non-blocking — M4 Max makes this near-instant.
-    -- Parsers match the stack: Spring Boot (Java), React/Next.js (TS/TSX/JS),
-    -- MariaDB (SQL), plus config/infra languages used daily.
-    ts.install({
-      -- Primary stack
-      "java",
-      "typescript",
-      "tsx",
-      "javascript",
-      "sql",
-      "lua",
-
-      -- Web
-      "html",
-      "css",
-      "json",
-      "jsonc",
-
-      -- Config & infrastructure
-      "yaml",
-      "toml",
-      "bash",
-      "fish",
-
-      -- Documentation & prose
-      "markdown",
-      "markdown_inline",
-
-      -- Neovim internals (required for :checkhealth, help files, query debugging)
-      "vim",
-      "vimdoc",
-      "query",
-      "luadoc",
-      "regex",
-      "diff",
-
-      -- Future-proofing (languages you touch occasionally)
-      "python",
-      "rust",
-      "go",
-      "c",
-      "xml",
-      "graphql",
-      "dockerfile",
-      "gitcommit",
-      "gitignore",
-      "git_config",
-    })
-
-    -- ── Treesitter Indent Allowlist ─────────────────────────────
-    -- WHY: Treesitter indentation is EXPERIMENTAL (upstream says so explicitly).
-    -- Not all parsers ship indent queries (indents.scm). For those that don't,
-    -- setting indentexpr overrides Vim's built-in indent plugins with effectively
-    -- autoindent — a downgrade. Even among languages WITH indent queries, some
-    -- have known bugs (Lua: empty-region returns 0, Python: docstrings/multiline).
-    --
-    -- Strategy: ALLOWLIST languages where treesitter indent is known-good.
-    -- Everything else keeps Vim's built-in indent or smartindent from options.lua.
-    --
-    -- To add a language: verify it has an I (indent) column in :checkhealth,
-    -- test o/O/== in representative files, then add to this set.
-    local ts_indent_langs = {
-      -- C-family: well-tested, brace-delimited scopes work reliably
-      java = true,
-      javascript = true,
-      typescript = true,
-      tsx = true,
-      c = true,
-      rust = true,
-      go = true,
-
-      -- Data/markup: simple structure, indent queries are straightforward
-      json = true,
-      jsonc = true,
-      html = true,
-      css = true,
-      yaml = true,
-      toml = true,
-      xml = true,
-      query = true,          -- Treesitter query files themselves
-
-      -- sql: has indent queries, simple enough to work
-      sql = true,
-    }
-    -- EXCLUDED (with reasons):
-    -- lua:             Empty regions between code blocks return indent 0 (column 1).
-    --                  smartindent handles Lua correctly via previous-line heuristic.
-    -- python:          Most-reported indent language in nvim-treesitter. Issues with
-    --                  docstrings, multiline expressions, end-of-scope detection.
-    --                  Vim's built-in python indent ($VIMRUNTIME/indent/python.vim) is mature.
-    -- markdown:        Breaks breakindent settings, list indent interaction issues.
-    --                  Vim's built-in markdown indent handles this better.
-    -- bash:            NO indent queries (indents.scm missing). Setting indentexpr
-    --                  overrides Vim's excellent built-in sh.vim indent which knows
-    --                  if/fi, case/esac, do/done, function bodies.
-    -- fish:            NO indent queries. Let smartindent handle it.
-    -- vim/vimdoc:      NO indent queries. Vim's built-in indent handles vimscript.
-    -- diff/regex/luadoc/dockerfile/gitcommit/gitignore/git_config/graphql:
-    --                  NO indent queries. These are mostly non-editable or trivial.
-    -- markdown_inline: Injected language, indent handled by markdown parent parser.
-
-    -- ── Enable Highlighting & Indentation Per Buffer ────────────
-    -- WHY: The main branch no longer auto-enables anything.
-    -- vim.treesitter.start() enables highlighting using Neovim's built-in engine.
-    -- indentexpr enables treesitter-based indentation for allowlisted languages only.
-    -- pcall guards against filetypes that don't have a parser installed.
-    -- pattern = "*" means any filetype — parsers without a match silently no-op.
-    vim.api.nvim_create_autocmd("FileType", {
-      group = vim.api.nvim_create_augroup("UserTreesitterStart", { clear = true }),
-      callback = function(args)
-        -- Skip special buffer types (quickfix, help already has its own highlighting, etc.)
-        local buf = args.buf
-        if vim.bo[buf].buftype ~= "" then
-          return
-        end
-
-        -- Enable treesitter highlighting for this buffer
-        -- pcall: silently skips filetypes without an installed parser
-        local ok = pcall(vim.treesitter.start, buf)
-        if not ok then
-          return
-        end
-
-        -- Enable treesitter-based indentation ONLY for allowlisted languages
-        -- All others keep Vim's built-in indent plugins or smartindent
-        local ft = vim.bo[buf].filetype
-        if ts_indent_langs[ft] then
-          vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+  keys = {
+    -- WHY <leader>tc: Toggle completion per-buffer. Uses vim.b.completion — blink.cmp's
+    -- built-in buffer-local mechanism. Default enabled state: vim.b.completion = nil,
+    -- which blink treats as enabled (default condition: vim.b.completion ~= false).
+    -- Toggling sets it to false (disabled) or nil (re-enabled, back to default).
+    -- This is a FULL kill switch: keymaps, auto-show, manual <C-Space>, signature
+    -- help — ALL disabled when off. Not just "quiet mode."
+    {
+      "<leader>tc",
+      function()
+        -- WHY nil not true: blink's default condition is `vim.b.completion ~= false`.
+        -- nil satisfies that check. Setting to true would override even the buftype
+        -- prompt guard (blink docs: "default conditions are ignored when explicitly
+        -- set to true"). nil preserves all default safety checks.
+        if vim.b.completion == false then
+          vim.b.completion = nil
+          vim.notify("Completion ON", vim.log.levels.INFO)
+        else
+          require("blink.cmp").hide()
+          vim.b.completion = false
+          vim.notify("Completion OFF", vim.log.levels.INFO)
         end
       end,
-      desc = "Start treesitter highlighting and indentation per buffer",
-    })
+      mode = "n",
+      desc = "[toggle] completion (buffer-local)",
+    },
+  },
 
-    -- NOTE: Folding is already configured globally in core/options.lua:
-    --   vim.opt.foldmethod = "expr"
-    --   vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-    -- No need to set it here — it works automatically when a parser is available.
-  end,
+  ---@module 'blink.cmp'
+  ---@type blink.cmp.Config
+  opts = {
+
+    -- ── Keymap ──────────────────────────────────────────────────────────
+    -- WHY "default": C-y to accept (vim muscle memory), C-n/C-p to navigate,
+    -- C-Space to toggle menu, C-e to dismiss. No Tab/S-Tab (avoids snippet
+    -- navigation conflicts and feels cargo-culty on HHKB).
+    --
+    -- Default preset keybindings:
+    --   <C-space>  show/toggle menu (MANUAL SUMMON — still works with auto-show ON)
+    --   <C-y>      select_and_accept
+    --   <C-n>      select next
+    --   <C-p>      select prev
+    --   <C-e>      hide/cancel
+    --   <C-k>      toggle signature help (when signature.enabled = true)
+    keymap = {
+      preset = "default",
+    },
+
+    -- ── Appearance ──────────────────────────────────────────────────────
+    appearance = {
+      -- WHY mono: Nerd Font Mono ensures icons align properly in completion menu.
+      -- Font itself is configured in Ghostty, not Neovim.
+      nerd_font_variant = "mono",
+    },
+
+    -- ── Completion ──────────────────────────────────────────────────────
+    completion = {
+
+      -- WHY auto_show defaults (not set): blink.cmp defaults auto_show = true.
+      -- Completion menu appears as you type. <C-Space> still works as a manual
+      -- summon. <leader>tc toggles the entire completion system off per-buffer
+      -- via vim.b.completion when you want silence.
+      menu = {},
+
+      -- WHY documentation auto_show = true: Once the menu IS open (auto or manual),
+      -- show docs for the selected item immediately. No second keypress needed
+      -- to read what a function does.
+      documentation = {
+        auto_show = true,
+        auto_show_delay_ms = 200,     -- Small delay prevents flicker while navigating
+      },
+
+      -- WHY preselect = true, auto_insert = false: First item is highlighted
+      -- (so C-y accepts it immediately) but nothing is inserted into the buffer
+      -- until you explicitly accept. No phantom text while browsing.
+      list = {
+        selection = {
+          preselect = true,
+          auto_insert = false,
+        },
+      },
+
+      -- WHY ghost_text disabled: Ghost text is visual noise alongside auto-show.
+      -- The menu already shows suggestions — ghost text would be redundant.
+      ghost_text = {
+        enabled = false,
+      },
+
+      -- WHY auto_brackets enabled: When accepting a function completion, auto-insert
+      -- parentheses. This is genuine convenience, not automation — you chose to accept.
+      accept = {
+        auto_brackets = {
+          enabled = true,
+        },
+      },
+    },
+
+    -- ── Sources ─────────────────────────────────────────────────────────
+    sources = {
+      -- WHY no "snippets" source: Snippets are deferred. We validate LSP completion
+      -- in isolation first. Snippet source can be added in Phase E.
+      default = { "lsp", "path", "buffer" },
+
+      -- WHY transform_items: Belt-and-suspenders snippet kill. Even with snippets
+      -- removed from sources.default AND lua_ls callSnippet/keywordSnippet = "Disable",
+      -- some LSPs can still send completion items with kind = Snippet through the
+      -- LSP source. This catches them regardless of server-side behavior.
+      -- Reference: cmp.saghen.dev/configuration/snippets
+      --
+      -- Uses vim.lsp.protocol (the LSP spec enum) instead of blink.cmp.types
+      -- internal module — Snippet = 15 per LSP specification, never changes.
+      transform_items = function(_, items)
+        return vim.tbl_filter(function(item)
+          return item.kind ~= vim.lsp.protocol.CompletionItemKind.Snippet
+        end, items)
+      end,
+    },
+
+    -- ── Signature Help ──────────────────────────────────────────────────
+    -- WHY disabled: Opt-in later. Phase B validates completion only.
+    -- When enabled, <C-k> toggles signature help (default preset).
+    -- NOTE: Enabling this will collide with the <C-k> signature_help keymap
+    -- in lsp.lua LspAttach. When flipping this switch, remove the LspAttach
+    -- <C-k> binding and let blink.cmp own signature help (richer: tracks
+    -- active parameter position).
+    signature = {
+      enabled = false,
+    },
+
+    -- ── Cmdline ─────────────────────────────────────────────────────────
+    -- WHY: Cmdline completion is useful for :commands and /search.
+    -- blink.cmp handles this natively — no separate plugin needed.
+    -- auto_show defaults to false for cmdline, true for cmdwin. We keep defaults.
+    cmdline = {},
+
+    -- ── Fuzzy ───────────────────────────────────────────────────────────
+    -- WHY prefer_rust_with_warning: Rust SIMD matcher is ~6x faster than Lua.
+    -- On M4 Max with pre-built aarch64-apple-darwin binary, this is free performance.
+    -- Falls back to Lua if binary unavailable (with a warning).
+    fuzzy = {
+      implementation = "prefer_rust_with_warning",
+    },
+  },
 }
