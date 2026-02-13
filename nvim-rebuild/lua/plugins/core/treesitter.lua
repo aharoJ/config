@@ -98,7 +98,12 @@ return {
         end
 
         -- Enable treesitter-based indentation (experimental but solid for our stack)
-        vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        -- WHY Lua excluded: treesitter Lua indent queries return 0 in empty regions
+        -- between code blocks (no enclosing scope detected). smartindent handles
+        -- Lua correctly — it uses the previous line's indent level.
+        if vim.bo[buf].filetype ~= "lua" then
+          vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        end
       end,
       desc = "Start treesitter highlighting and indentation per buffer",
     })
