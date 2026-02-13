@@ -35,20 +35,20 @@
 
 ### Phase 2 — Navigation & UI
 
-| #   | File                         | Purpose                   | Status |
-| --- | ---------------------------- | ------------------------- | ------ |
-| 10  | `plugins/core/telescope.lua` | Fuzzy finder              | ⬜     |
-| 11  | `plugins/ui/explorer.lua`    | File explorer             | ⬜     |
-| 12  | `plugins/ui/statusline.lua`  | Statusline                | ⬜     |
-| 13  | `plugins/tools/git.lua`      | Git integration           | ⬜     |
-| 14  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation    | ⬜     |
-| 15  | `lsp/*.lua`                  | Native LSP server         | ⬜     |
+| #   | File                         | Purpose                | Status |
+| --- | ---------------------------- | ---------------------- | ------ |
+| 10  | `plugins/core/telescope.lua` | Fuzzy finder           | ⬜     |
+| 11  | `plugins/ui/explorer.lua`    | File explorer          | ⬜     |
+| 12  | `plugins/ui/statusline.lua`  | Statusline             | ⬜     |
+| 13  | `plugins/tools/git.lua`      | Git integration        | ⬜     |
+| 14  | `plugins/tools/tmux.lua`     | tmux ↔ nvim navigation | ⬜     |
+| 15  | `lsp/*.lua`                  | Native LSP server      | ⬜     |
 
 ### Phase 3 — Editor Intelligence
 
 | #   | File                             | Purpose                   | Status |
 | --- | -------------------------------- | ------------------------- | ------ |
-| 16  | `plugins/editor/lsp.lua`         | LSP plugin config         | ⬜     |
+| 16  | `plugins/editor/lsp.lua`         | LSP plugin config         | ✅     |
 | 17  | `plugins/editor/completion.lua`  | Completion engine         | ⬜     |
 | 18  | `plugins/editor/diagnostics.lua` | Diagnostic display        | ⬜     |
 | 19  | `plugins/editor/formatting.lua`  | Formatting (conform.nvim) | ⬜     |
