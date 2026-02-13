@@ -1,8 +1,11 @@
 -- path: nvim/lua/plugins/editor/formatting.lua
--- Description: conform.nvim — formatting engine. Manual-only via <leader>cf.
+-- Description: conform.nvim — formatting engine. Manual-only triggers.
+--              <leader>cf formats entire buffer (normal mode).
+--              <leader>f formats visual selection (visual mode).
 --              NO format-on-save. NO LSP formatting (killed in Phase A LspAttach).
 --              Formatters: stylua for Lua, prettierd for TypeScript/JavaScript/web,
---              google-java-format for Java.
+--              google-java-format for Java, rustfmt for Rust, taplo for TOML,
+--              fish_indent for Fish, shfmt for sh/bash, sql_formatter for SQL.
 -- CHANGELOG: 2026-02-11 | Phase C build. Manual trigger only. stylua for Lua.
 --            | ROLLBACK: Delete file
 --            2026-02-11 | Phase F1. Added prettierd (with prettier fallback) for
@@ -29,12 +32,64 @@
 --            rustfmt ships with rustup (not Mason). conform reads Cargo.toml
 --            edition automatically. No formatter config block needed.
 --            | ROLLBACK: Remove rust entry from formatters_by_ft
+--            2026-02-13 | Split keymaps: <leader>cf (normal → buffer), <leader>f
+--            (visual → selection). Extracted shared format_with_fallback() local
+--            to eliminate duplicate function bodies. Conform handles visual range
+--            detection internally via '< '> marks — no manual range code needed.
+--            Guarded LSP fallback to XML-only — prevents accidental LSP formatting
+--            if a future server exposes formatting capability.
+--            | ROLLBACK: Replace both keys with single <leader>cf in mode = { "n", "v" },
+--            inline the function body, delete format_with_fallback local.
+--            For LSP guard rollback: revert else branch to unconditional
+--            vim.lsp.buf.format() call
 
 -- WHY a local: Used 6 times across filetypes. Avoids typos in the fallback chain.
 -- prettierd is the daemon wrapper (stays warm between invocations, ~10x faster cold start).
 -- prettier is the fallback if prettierd isn't installed. stop_after_first = true means
 -- conform uses the FIRST available formatter, not both.
 local prettier = { "prettierd", "prettier", stop_after_first = true }
+
+-- WHY a local: Shared by <leader>cf (normal) and <leader>f (visual). Same logic,
+-- different trigger context. In visual mode, conform detects the selection internally
+-- and formats only the range (for formatters that support it — stylua, prettierd, rustfmt).
+-- Formatters without range support (shfmt, google-java-format, fish_indent, taplo)
+-- will format the entire buffer regardless of visual selection.
+local function format_with_fallback()
+    local conform = require("conform")
+    -- WHY: Check if conform has a formatter for this buffer's filetype.
+    -- Most filetypes (Lua, TS, Java, Python) have explicit conform formatters.
+    -- XML is the exception — lemminx is the ONLY formatter, and it's an LSP.
+    -- This detects "no conform formatter" and falls back to vim.lsp.buf.format().
+    --
+    -- ARCHITECTURAL NOTE: This does NOT change behavior for ANY existing language.
+    -- If a conform formatter exists → conform runs with lsp_format = "never" (unchanged).
+    -- If no conform formatter exists AND filetype is xml → LSP formatting (lemminx).
+    -- If no conform formatter AND not xml → warning notification, no formatting.
+    -- This prevents accidental LSP formatting from sneaking in via future servers.
+    local formatters = conform.list_formatters(0)
+    if #formatters > 0 then
+        -- Conform has a formatter — use it, never LSP (standard path)
+        conform.format({
+            bufnr = 0,
+            lsp_format = "never",
+            async = false,
+            timeout_ms = 3000,
+        })
+    else
+        -- No conform formatter — ONLY allow LSP formatting for XML (lemminx).
+        -- WHY guarded: Prevents accidental LSP formatting if a future server
+        -- exposes formatting capability. One tool per job — if a filetype needs
+        -- formatting, add it to formatters_by_ft explicitly.
+        if vim.bo.filetype == "xml" then
+            vim.lsp.buf.format({
+                async = false,
+                timeout_ms = 3000,
+            })
+        else
+            vim.notify("No conform formatter for ft=" .. vim.bo.filetype, vim.log.levels.WARN)
+        end
+    end
+end
 
 return {
     "stevearc/conform.nvim",
@@ -43,40 +98,11 @@ return {
     -- No event trigger — conform doesn't need to load until you press the keymap.
     cmd = { "ConformInfo" },
     keys = {
-        {
-            "<leader>cf",
-            function()
-                local conform = require("conform")
-                -- WHY: Check if conform has a formatter for this buffer's filetype.
-                -- Most filetypes (Lua, TS, Java, Python) have explicit conform formatters.
-                -- XML is the exception — lemminx is the ONLY formatter, and it's an LSP.
-                -- This detects "no conform formatter" and falls back to vim.lsp.buf.format().
-                --
-                -- ARCHITECTURAL NOTE: This does NOT change behavior for ANY existing language.
-                -- If a conform formatter exists → conform runs with lsp_format = "never" (unchanged).
-                -- If no conform formatter exists → LSP formatting (currently only lemminx/XML).
-                -- If neither exists → conform.format() with lsp_format = "never" is a no-op
-                -- and vim.lsp.buf.format() only runs if there's an LSP with formatting capability.
-                local formatters = conform.list_formatters(0)
-                if #formatters > 0 then
-                    -- Conform has a formatter — use it, never LSP (standard path)
-                    conform.format({
-                        bufnr = 0,
-                        lsp_format = "never",
-                        async = false,
-                        timeout_ms = 3000,
-                    })
-                else
-                    -- No conform formatter — fall back to LSP (XML/lemminx exception)
-                    vim.lsp.buf.format({
-                        async = false,
-                        timeout_ms = 3000,
-                    })
-                end
-            end,
-            mode = { "n", "v" },
-            desc = "Format buffer (conform → LSP fallback)",
-        },
+        -- WHY split keymaps: <leader>cf is the conscious "format everything" action.
+        -- <leader>f in visual is the quick "format just this" action. Conform handles
+        -- visual range detection internally — same function, different ergonomic intent.
+        { "<leader>cf", format_with_fallback, mode = "n", desc = "[code] format" },
+        { "<leader>f", format_with_fallback, mode = "v", desc = "[code] format range" },
     },
     opts = {
         -- ── Formatters by Filetype ──────────────────────────────────────────
@@ -105,10 +131,10 @@ return {
             -- python = { "black" },              -- future phase
             toml = { "taplo" },                   -- Phase F9 (TOML)
             fish = { "fish_indent" },             -- Phase F10 (Fish shell)
-            sh = { "shfmt" },                     -- ← NEW (Phase F11)
-            bash = { "shfmt" },                   -- ← NEW (Phase F11)
+            sh = { "shfmt" },                     -- Phase F11 (sh)
+            bash = { "shfmt" },                   -- Phase F11 (bash)
             sql = { "sql_formatter" },
-            rust = { "rustfmt" },           -- Phase F4 (Rust — rustfmt via rustup, NOT Mason)
+            rust = { "rustfmt" },                 -- Phase F4 (Rust — rustfmt via rustup, NOT Mason)
         },
         -- ── Formatter-Specific Configuration ────────────────────────────────
         formatters = {
@@ -118,7 +144,6 @@ return {
                 prepend_args = { "-i", "2", "-ci" },
             },
         },
-
 
         -- ── Default Format Options ──────────────────────────────────────────
         -- WHY lsp_format = "never": LSP formatting is dead. Phase A killed the
