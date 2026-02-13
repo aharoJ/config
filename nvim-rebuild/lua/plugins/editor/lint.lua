@@ -31,7 +31,7 @@ return {
     -- Bash: bashls auto-integrates shellcheck. DO NOT add here.
     -- Markdown: markdownlint-cli2 for style rules. marksman LSP handles link diagnostics.
     linters_by_ft = {
-      markdown = { "markdownlint-cli2" },   -- Phase F6: style/convention linting
+      -- markdown = { "markdownlint-cli2" },   -- HATE LINT ON MD
       -- python = { "ruff" },               -- DROPPED: basedpyright is sole Python LSP
       -- typescript = { "eslint" },          -- ESLint runs as LSP, not nvim-lint
       -- sh = { "shellcheck" },             -- bashls integrates shellcheck. DO NOT ADD.
