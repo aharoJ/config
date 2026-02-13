@@ -8,6 +8,8 @@
 --                - YOU enable features via Neovim's native APIs (vim.treesitter.start, etc.)
 --              Folding is already configured globally in core/options.lua (foldmethod/foldexpr).
 -- CHANGELOG: 2026-02-04 | Full rewrite for nvim-treesitter main branch | ROLLBACK: Delete file
+-- CHANGELOG: 2026-02-13 | Lua exclusion from treesitter indent (empty-region bug) | ROLLBACK: Remove Lua filetype guard
+-- CHANGELOG: 2026-02-13 | Switch indent from blocklist to allowlist | ROLLBACK: Revert to previous blocklist pattern
 
 return {
   "nvim-treesitter/nvim-treesitter",
@@ -74,11 +76,62 @@ return {
       "git_config",
     })
 
+    -- ── Treesitter Indent Allowlist ─────────────────────────────
+    -- WHY: Treesitter indentation is EXPERIMENTAL (upstream says so explicitly).
+    -- Not all parsers ship indent queries (indents.scm). For those that don't,
+    -- setting indentexpr overrides Vim's built-in indent plugins with effectively
+    -- autoindent — a downgrade. Even among languages WITH indent queries, some
+    -- have known bugs (Lua: empty-region returns 0, Python: docstrings/multiline).
+    --
+    -- Strategy: ALLOWLIST languages where treesitter indent is known-good.
+    -- Everything else keeps Vim's built-in indent or smartindent from options.lua.
+    --
+    -- To add a language: verify it has an I (indent) column in :checkhealth,
+    -- test o/O/== in representative files, then add to this set.
+    local ts_indent_langs = {
+      -- C-family: well-tested, brace-delimited scopes work reliably
+      java = true,
+      javascript = true,
+      typescript = true,
+      tsx = true,
+      c = true,
+      rust = true,
+      go = true,
+
+      -- Data/markup: simple structure, indent queries are straightforward
+      json = true,
+      jsonc = true,
+      html = true,
+      css = true,
+      yaml = true,
+      toml = true,
+      xml = true,
+      query = true,          -- Treesitter query files themselves
+
+      -- sql: has indent queries, simple enough to work
+      sql = true,
+    }
+    -- EXCLUDED (with reasons):
+    -- lua:             Empty regions between code blocks return indent 0 (column 1).
+    --                  smartindent handles Lua correctly via previous-line heuristic.
+    -- python:          Most-reported indent language in nvim-treesitter. Issues with
+    --                  docstrings, multiline expressions, end-of-scope detection.
+    --                  Vim's built-in python indent ($VIMRUNTIME/indent/python.vim) is mature.
+    -- markdown:        Breaks breakindent settings, list indent interaction issues.
+    --                  Vim's built-in markdown indent handles this better.
+    -- bash:            NO indent queries (indents.scm missing). Setting indentexpr
+    --                  overrides Vim's excellent built-in sh.vim indent which knows
+    --                  if/fi, case/esac, do/done, function bodies.
+    -- fish:            NO indent queries. Let smartindent handle it.
+    -- vim/vimdoc:      NO indent queries. Vim's built-in indent handles vimscript.
+    -- diff/regex/luadoc/dockerfile/gitcommit/gitignore/git_config/graphql:
+    --                  NO indent queries. These are mostly non-editable or trivial.
+    -- markdown_inline: Injected language, indent handled by markdown parent parser.
+
     -- ── Enable Highlighting & Indentation Per Buffer ────────────
     -- WHY: The main branch no longer auto-enables anything.
     -- vim.treesitter.start() enables highlighting using Neovim's built-in engine.
-    -- indentexpr enables treesitter-based indentation (experimental, but works well
-    -- for the languages in this stack — especially Lua, TS, Java).
+    -- indentexpr enables treesitter-based indentation for allowlisted languages only.
     -- pcall guards against filetypes that don't have a parser installed.
     -- pattern = "*" means any filetype — parsers without a match silently no-op.
     vim.api.nvim_create_autocmd("FileType", {
@@ -97,11 +150,10 @@ return {
           return
         end
 
-        -- Enable treesitter-based indentation (experimental but solid for our stack)
-        -- WHY Lua excluded: treesitter Lua indent queries return 0 in empty regions
-        -- between code blocks (no enclosing scope detected). smartindent handles
-        -- Lua correctly — it uses the previous line's indent level.
-        if vim.bo[buf].filetype ~= "lua" then
+        -- Enable treesitter-based indentation ONLY for allowlisted languages
+        -- All others keep Vim's built-in indent plugins or smartindent
+        local ft = vim.bo[buf].filetype
+        if ts_indent_langs[ft] then
           vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
         end
       end,
