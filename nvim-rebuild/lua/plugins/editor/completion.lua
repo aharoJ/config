@@ -7,6 +7,11 @@
 --            Added transform_items snippet filter (belt-and-suspenders with lua_ls
 --            callSnippet/keywordSnippet = "Disable"). Stolen from ChatGPT feedback.
 --            | ROLLBACK: Delete file, remove blink.cmp dependency from lsp.lua
+--            2026-02-12 | Deep dive cleanup. Switched transform_items from
+--            blink.cmp.types internal import to vim.lsp.protocol (LSP spec enum,
+--            never changes, zero external dependency). Added event field clarification
+--            comment (dependency chain preempts these events in practice).
+--            | ROLLBACK: Revert transform_items to require("blink.cmp.types"), remove comment
 
 return {
   "saghen/blink.cmp",
@@ -14,6 +19,10 @@ return {
 
   -- WHY these events: InsertEnter is the primary trigger for completion.
   -- CmdlineEnter enables cmdline completion (: and / modes).
+  -- NOTE: In practice, blink.cmp loads earlier than these events because lsp.lua
+  -- lists it as a mason-lspconfig dependency (which loads on BufReadPre). These
+  -- events serve as a fallback and document intent — if the dependency chain ever
+  -- changes, blink.cmp still loads at the right time.
   event = { "InsertEnter", "CmdlineEnter" },
 
   -- WHY no friendly-snippets: Snippets are OFF for Phase B. We validate completion
@@ -100,10 +109,13 @@ return {
       -- removed from sources.default AND lua_ls callSnippet/keywordSnippet = "Disable",
       -- some LSPs can still send completion items with kind = Snippet through the
       -- LSP source. This catches them regardless of server-side behavior.
-      -- Stolen from ChatGPT feedback audit. Reference: cmp.saghen.dev/configuration/snippets
+      -- Reference: cmp.saghen.dev/configuration/snippets
+      --
+      -- Uses vim.lsp.protocol (the LSP spec enum) instead of blink.cmp.types
+      -- internal module — Snippet = 15 per LSP specification, never changes.
       transform_items = function(_, items)
         return vim.tbl_filter(function(item)
-          return item.kind ~= require("blink.cmp.types").CompletionItemKind.Snippet
+          return item.kind ~= vim.lsp.protocol.CompletionItemKind.Snippet
         end, items)
       end,
     },
@@ -111,6 +123,10 @@ return {
     -- ── Signature Help ──────────────────────────────────────────────────
     -- WHY disabled: Opt-in later. Phase B validates completion only.
     -- When enabled, <C-k> toggles signature help (default preset).
+    -- NOTE: Enabling this will collide with the <C-k> signature_help keymap
+    -- in lsp.lua LspAttach. When flipping this switch, remove the LspAttach
+    -- <C-k> binding and let blink.cmp own signature help (richer: tracks
+    -- active parameter position).
     signature = {
       enabled = false,
     },

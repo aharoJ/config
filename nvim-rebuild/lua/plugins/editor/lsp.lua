@@ -47,6 +47,11 @@
 --            Formatting via rustfmt in conform. Clippy via rust-analyzer check.command.
 --            | ROLLBACK: Remove "rust_analyzer" from automatic_enable.exclude,
 --            delete plugins/lang/rust.lua, remove rust entry from formatting.lua
+--            2026-02-12 | Deep dive cleanup. Removed redundant [d/]d remaps (0.11+
+--            built-in does the same thing — notes.md explicitly warns against this).
+--            Removed <leader>ct/ci/cr (built-in grt/gri/grr cover these). Added
+--            future collision note on <C-k> signature help vs blink.cmp.
+--            | ROLLBACK: Re-add [d/]d maps and <leader>ct/ci/cr block from previous version
 return {
 	-- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
 	-- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -167,6 +172,13 @@ return {
 			-- WHY: Capability-gated keymaps. Only create bindings when the attached
 			-- server actually supports the feature. No "method not supported" errors.
 			-- These are BUFFER-LOCAL — they only exist in buffers with an active LSP.
+			--
+			-- NOTE ON 0.11+ BUILT-IN KEYMAPS: Neovim 0.11+ ships these defaults:
+			--   grn → rename, gra → code action, grr → references, gri → implementation,
+			--   grt → type definition, gO → document symbols, K → hover,
+			--   [d/]d → diagnostic jump, [D/]D → first/last diagnostic, <C-w>d → diag float
+			-- We add <leader>-namespaced aliases for which-key discoverability,
+			-- but do NOT remap the built-in [d/]d/K/gr* — they work correctly as-is.
 			vim.api.nvim_create_autocmd("LspAttach", {
 				group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true }),
 				callback = function(event)
@@ -180,41 +192,36 @@ return {
 					end
 
 					-- ── Navigation ────────────────────────────────────────────
-					-- WHY: These are the core LSP navigation keymaps. 0.11+ provides
-					-- defaults (grn, gra, grr, gri, gO) but we add explicit <leader>l
-					-- namespace bindings for discoverability via which-key.
+					-- WHY gd/gD: These are the core "go to" motions. gd is not a 0.11+
+					-- default (grr/gri/grt are, but gd is not). gD for declaration is
+					-- rare but useful in C/Rust.
 					if client:supports_method("textDocument/definition") then
 						map("n", "gd", vim.lsp.buf.definition, "LSP: Go to definition")
 					end
 					if client:supports_method("textDocument/declaration") then
 						map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to declaration")
 					end
-					-- - grn → vim.lsp.buf.rename()
-					-- - gra → vim.lsp.buf.code_action()
-					-- - grr → vim.lsp.buf.references()
-					-- - gri → vim.lsp.buf.implementation()
-					-- - grt → vim.lsp.buf.type_definition()
-
-					-- ── Navigation (we can delete these) ──────────────────────────
-					if client:supports_method("textDocument/typeDefinition") then
-						map("n", "<leader>ct", vim.lsp.buf.type_definition, "LSP: Type definition")
-					end
-					if client:supports_method("textDocument/implementation") then
-						map("n", "<leader>ci", vim.lsp.buf.implementation, "LSP: Implementation")
-					end
-					if client:supports_method("textDocument/references") then
-						map("n", "<leader>cr", vim.lsp.buf.references, "LSP: References")
-					end
+					-- 0.11+ built-in defaults (DO NOT override):
+					-- grn → vim.lsp.buf.rename()
+					-- gra → vim.lsp.buf.code_action()
+					-- grr → vim.lsp.buf.references()
+					-- gri → vim.lsp.buf.implementation()
+					-- grt → vim.lsp.buf.type_definition()
+					-- gO  → vim.lsp.buf.document_symbol()
 
 					-- ── Information ───────────────────────────────────────────
 					if client:supports_method("textDocument/hover") then
 						map("n", "K", vim.lsp.buf.hover, "LSP: Hover documentation")
 					end
+					-- NOTE ON <C-k>: When blink.cmp signature.enabled is flipped to true,
+					-- remove this binding. blink.cmp's default preset owns <C-k> for
+					-- signature help with richer parameter tracking. Keeping both would
+					-- collide. For now, this is the only signature help path.
 					if client:supports_method("textDocument/signatureHelp") then
 						map("i", "<C-k>", vim.lsp.buf.signature_help, "LSP: Signature help")
 					end
 
-					-- ── Refactoring ───────────────────────────────────────────
+					-- ── Refactoring (<leader>c namespace for which-key) ───────
 					if client:supports_method("textDocument/rename") then
 						map("n", "<leader>cn", vim.lsp.buf.rename, "LSP: Rename symbol")
 					end
@@ -222,14 +229,10 @@ return {
 						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: Code action")
 					end
 
-					-- ── Diagnostics ───────────────────────────────────────────
+					-- ── Diagnostics (<leader>d namespace for which-key) ───────
+					-- NOTE: [d/]d and <C-w>d are 0.11+ built-ins — NOT remapped here.
+					-- These <leader>d bindings are for which-key discoverability only.
 					map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
-					map("n", "[d", function()
-						vim.diagnostic.jump({ count = -1 })
-					end, "Diagnostics: Previous")
-					map("n", "]d", function()
-						vim.diagnostic.jump({ count = 1 })
-					end, "Diagnostics: Next")
 					map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
 
 					-- ── Formatting Kill (belt-and-suspenders) ─────────────────
