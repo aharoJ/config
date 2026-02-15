@@ -204,9 +204,6 @@ return {
 
 					-- ── Information ───────────────────────────────────────────
 					-- K        → vim.lsp.buf.hover()
-					if client:supports_method("textDocument/hover") then
-						map("n", "K", vim.lsp.buf.hover, "LSP: Hover documentation")
-					end
 
 					-- ── Refactoring  ────────────────────────────────────────────
           -- grn      → vim.lsp.buf.rename()
@@ -219,11 +216,11 @@ return {
 					end
 
 					-- ── Diagnostics  ────────────────────────────────────────────
-					-- [d → Jump to previous diagnostic
-					-- d] → Jump to next diagnostic
-					-- [D → Jump to first diagnostic in buffer
-          -- ]D → Jump to last diagnostic in buffer
-          -- <C-w>d → Open diagnostic float
+					-- [d       → vim.diagnostic.jump() (previous)
+					-- ]d       → vim.diagnostic.jump() (next)
+					-- [D       → vim.diagnostic.jump() (first in buffer)
+					-- ]D       → vim.diagnostic.jump() (last in buffer)
+					-- <C-w>d   → vim.diagnostic.open_float()
 					map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
 					map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
 
