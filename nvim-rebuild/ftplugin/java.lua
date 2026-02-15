@@ -251,8 +251,7 @@ local config = {
       vim.tbl_extend("force", opts, { desc = "Java: Extract constant" }))
     vim.keymap.set("v", "<leader>Jc", function() jdtls.extract_constant(true) end,
       vim.tbl_extend("force", opts, { desc = "Java: Extract constant (visual)" }))
-    vim.keymap.set("v", "<leader>Jm", function() jdtls.extract_method(true) end,
-      vim.tbl_extend("force", opts, { desc = "Java: Extract method (visual)" }))
+    vim.keymap.set("v", "<leader>Jm", function() jdtls.extract_method(true) end, vim.tbl_extend("force", opts, { desc = "Java: Extract method (visual)" }))
 
     -- ── Debugging keymaps (future phase) ────────────────────────
     -- vim.keymap.set("n", "<leader>Jt", function() jdtls.test_class() end,
@@ -261,6 +260,14 @@ local config = {
     --   vim.tbl_extend("force", opts, { desc = "Java: Test nearest method" }))
   end,
 }
+
+-- ── Capabilities (blink.cmp) ────────────────────────────────────────────
+-- WHY: jdtls.start_or_attach() bypasses vim.lsp.config(), so blink.cmp's
+-- automatic capability wiring (via plugin/blink-cmp.lua) doesn't reach jdtls.
+-- Without this, jdtls only sees resolveSupport = { "additionalTextEdits", "command" }
+-- — missing "documentation" and "detail". Result: completion popup shows only
+-- the short type name (e.g. "java.lang.Integer") instead of full Javadoc.
+config.capabilities = require("blink.cmp").get_lsp_capabilities()
 
 -- ── Launch ──────────────────────────────────────────────────────────────
 jdtls.start_or_attach(config)
