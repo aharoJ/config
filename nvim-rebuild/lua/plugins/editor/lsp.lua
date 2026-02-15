@@ -192,36 +192,25 @@ return {
 					end
 
 					-- ── Navigation ────────────────────────────────────────────
-					-- WHY gd/gD: These are the core "go to" motions. gd is not a 0.11+
-					-- default (grr/gri/grt are, but gd is not). gD for declaration is
-					-- rare but useful in C/Rust.
+					-- grr → vim.lsp.buf.references()
+					-- gri → vim.lsp.buf.implementation()
+					-- grt → vim.lsp.buf.type_definition()
 					if client:supports_method("textDocument/definition") then
 						map("n", "gd", vim.lsp.buf.definition, "LSP: Go to definition")
 					end
 					if client:supports_method("textDocument/declaration") then
 						map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to declaration")
 					end
-					-- 0.11+ built-in defaults (DO NOT override):
-					-- grn → vim.lsp.buf.rename()
-					-- gra → vim.lsp.buf.code_action()
-					-- grr → vim.lsp.buf.references()
-					-- gri → vim.lsp.buf.implementation()
-					-- grt → vim.lsp.buf.type_definition()
-					-- gO  → vim.lsp.buf.document_symbol()
 
 					-- ── Information ───────────────────────────────────────────
+					-- K        → vim.lsp.buf.hover()
 					if client:supports_method("textDocument/hover") then
 						map("n", "K", vim.lsp.buf.hover, "LSP: Hover documentation")
 					end
-					-- NOTE ON <C-k>: When blink.cmp signature.enabled is flipped to true,
-					-- remove this binding. blink.cmp's default preset owns <C-k> for
-					-- signature help with richer parameter tracking. Keeping both would
-					-- collide. For now, this is the only signature help path.
-					if client:supports_method("textDocument/signatureHelp") then
-						map("i", "<C-k>", vim.lsp.buf.signature_help, "LSP: Signature help")
-					end
 
-					-- ── Refactoring (<leader>c namespace for which-key) ───────
+					-- ── Refactoring  ────────────────────────────────────────────
+          -- grn      → vim.lsp.buf.rename()
+          -- gra      → vim.lsp.buf.code_action()
 					if client:supports_method("textDocument/rename") then
 						map("n", "<leader>cn", vim.lsp.buf.rename, "LSP: Rename symbol")
 					end
@@ -229,13 +218,16 @@ return {
 						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: Code action")
 					end
 
-					-- ── Diagnostics (<leader>d namespace for which-key) ───────
-					-- NOTE: [d/]d and <C-w>d are 0.11+ built-ins — NOT remapped here.
-					-- These <leader>d bindings are for which-key discoverability only.
+					-- ── Diagnostics  ────────────────────────────────────────────
+					-- [d → Jump to previous diagnostic
+					-- d] → Jump to next diagnostic
+					-- [D → Jump to first diagnostic in buffer
+          -- ]D → Jump to last diagnostic in buffer
+          -- <C-w>d → Open diagnostic float
 					map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
 					map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
 
-					-- ── Formatting Kill (belt-and-suspenders) ─────────────────
+					-- ── Formatting Kill ──────────────────────
 					-- WHY: Even though each lsp/<server>.lua and ftplugin/java.lua kills
 					-- formatting individually, this is the GLOBAL safety net. If any
 					-- future server forgets to disable formatting, this catches it.
