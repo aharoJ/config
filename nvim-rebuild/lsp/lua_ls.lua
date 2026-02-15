@@ -9,6 +9,11 @@
 --            generating snippet-type completion items at the source. Belt-and-suspenders
 --            with transform_items filter in completion.lua.
 --            | ROLLBACK: Remove the `completion` block under settings.Lua
+--            2026-02-13 | SNIPPETS ENABLED. Changed callSnippet/keywordSnippet from
+--            "Disable" to "Replace". lua_ls now generates snippet completions for
+--            function calls (with parameter placeholders) and keywords (with body
+--            templates). Works with blink.cmp's snippets source + friendly-snippets.
+--            | ROLLBACK: Set callSnippet/keywordSnippet back to "Disable"
 
 return {
   settings = {
@@ -31,7 +36,6 @@ return {
         library = {
           vim.env.VIMRUNTIME,
         },
-
       },
 
       -- ── Telemetry ──────────────────────────────────────────────────
@@ -48,15 +52,15 @@ return {
       },
 
       -- ── Completion ─────────────────────────────────────────────────
-      -- WHY DISABLED: Snippets are OFF by IDEI Phase B design. These settings
-      -- tell lua_ls to NOT generate snippet-type completion items at the source.
-      -- Some LSPs ignore the client-side snippetSupport=false capability flag,
-      -- so this is the server-side kill switch. Belt-and-suspenders with the
-      -- transform_items filter in completion.lua.
-      -- Reference: https://cmp.saghen.dev/configuration/snippets
+      -- WHY "Replace": Function calls expand with parameter placeholders
+      -- (e.g., accepting `vim.keymap.set` inserts `vim.keymap.set(mode, lhs, rhs)`
+      -- with tabstops). Keywords expand with body templates (e.g., `for` expands
+      -- to a full for-loop skeleton). Navigate placeholders with <C-l>/<C-k>.
+      -- Previously "Disable" during Phase B (snippet isolation). Now enabled
+      -- alongside friendly-snippets and blink.cmp's snippets source.
       completion = {
-        callSnippet = "Disable",      -- Don't expand function calls as snippets
-        keywordSnippet = "Disable",   -- Don't expand keywords as snippets
+        callSnippet = "Replace",      -- Function calls include parameter placeholders
+        keywordSnippet = "Replace",   -- Keywords expand to full body templates
       },
     },
   },
