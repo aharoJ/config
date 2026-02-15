@@ -4,7 +4,6 @@
 -- CHANGELOG: 2026-02-03 | Created bootstrap sequence | ROLLBACK: N/A (foundation)
 
 -- ── 1. Leader Key ───────────────────────────────────────────
--- MUST be set before ANY plugin or keymap loads.
 vim.g.mapleader = " "
 vim.g.maplocalleader = ","
 
