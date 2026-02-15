@@ -18,6 +18,12 @@
 --            Debugging/testing deferred to future phase.
 --            | ROLLBACK: Delete this file, remove nvim-jdtls from plugins/lang/java.lua,
 --            remove "jdtls" from ensure_installed in lsp.lua
+--            2026-02-14 | IDEI Phase F2+. Added code generation bindings (toString,
+--            hashCode/equals, constructors), super_implementation navigation, workspace
+--            commands (compile, reload build config). Exhaustive jdtls function catalog
+--            in on_attach comment block. Standard LSP bindings (incoming_calls,
+--            outgoing_calls, typehierarchy) moved to lsp.lua — they're not jdtls-specific.
+--            | ROLLBACK: Revert on_attach to previous version (remove <leader>Ji/Jt/Je/Jk/Ju/Jb)
 
 -- ── Guard: only run if nvim-jdtls is installed ──────────────────────────
 -- WHY: ftplugin/java.lua runs on EVERY FileType java event, even before
@@ -25,7 +31,7 @@
 -- launch, lazy hasn't synced), fail silently instead of erroring.
 local ok, jdtls = pcall(require, "jdtls")
 if not ok then
-  return
+	return
 end
 
 -- ── Mason paths ─────────────────────────────────────────────────────────
@@ -37,11 +43,11 @@ local jdtls_bin = mason_registry .. "/bin/jdtls"
 
 -- ── Verify jdtls is installed ───────────────────────────────────────────
 if not vim.uv.fs_stat(jdtls_bin) then
-  vim.notify(
-    "[IDEI] jdtls not found. Run :MasonInstall jdtls",
-    vim.log.levels.WARN
-  )
-  return
+	vim.notify(
+		"[IDEI] jdtls not found. Run :MasonInstall jdtls",
+		vim.log.levels.WARN
+	)
+	return
 end
 
 -- ── Lombok ──────────────────────────────────────────────────────────────
@@ -55,20 +61,20 @@ local lombok_jar = jdtls_install .. "/lombok.jar"
 -- classpath, dependencies, and workspace settings. gradlew/mvnw before .git
 -- because build tools define the actual project boundary in monorepos.
 local root_dir = vim.fs.root(0, {
-  "gradlew",
-  "mvnw",
-  "pom.xml",
-  "build.gradle",
-  "build.gradle.kts",
-  "settings.gradle",
-  "settings.gradle.kts",
-  ".git",
+	"gradlew",
+	"mvnw",
+	"pom.xml",
+	"build.gradle",
+	"build.gradle.kts",
+	"settings.gradle",
+	"settings.gradle.kts",
+	".git",
 })
 
 -- WHY fallback to cwd: Single-file Java editing (rare but possible).
 -- jdtls needs SOME root to create a workspace directory.
 if not root_dir then
-  root_dir = vim.fn.getcwd()
+	root_dir = vim.fn.getcwd()
 end
 
 -- WHY project_name: Each project gets its own jdtls workspace directory.
@@ -90,15 +96,15 @@ local workspace_dir = cache_dir .. "/workspace"
 -- jar glob, and JVM startup. Saves us from hardcoding version-specific paths.
 -- The wrapper requires Python 3.9+.
 local cmd = {
-  jdtls_bin,
-  "-configuration", config_dir,
-  "-data", workspace_dir,
+	jdtls_bin,
+	"-configuration", config_dir,
+	"-data", workspace_dir,
 }
 
 -- WHY jvm-arg for lombok: The wrapper script accepts --jvm-arg flags that
 -- get passed through to the JVM. javaagent must be set at JVM startup.
 if vim.uv.fs_stat(lombok_jar) then
-  table.insert(cmd, string.format("--jvm-arg=-javaagent:%s", lombok_jar))
+	table.insert(cmd, string.format("--jvm-arg=-javaagent:%s", lombok_jar))
 end
 
 -- ── Bundles (debugging + testing — future phase) ────────────────────────
@@ -129,136 +135,213 @@ local bundles = {}
 -- attaches to it (no duplicate server). If no, starts a new one.
 -- This file runs on EVERY FileType java event — the guard is essential.
 local config = {
-  name = "jdtls",
-  cmd = cmd,
-  root_dir = root_dir,
+	name = "jdtls",
+	cmd = cmd,
+	root_dir = root_dir,
 
-  -- ── Server settings ─────────────────────────────────────────────────
-  -- Reference: https://github.com/eclipse/eclipse.jdt.ls/wiki/Running-the-JAVA-LS-server-from-the-command-line#initialize-request
-  settings = {
-    java = {
-      -- ── Signature Help ──────────────────────────────────────────
-      signatureHelp = {
-        enabled = true,               -- Show parameter info as you type
-        description = { enabled = true },
-      },
+	-- ── Server settings ─────────────────────────────────────────────────
+	-- Reference: https://github.com/eclipse/eclipse.jdt.ls/wiki/Running-the-JAVA-LS-server-from-the-command-line#initialize-request
+	settings = {
+		java = {
+			-- ── Signature Help ──────────────────────────────────────────
+			signatureHelp = {
+				enabled = true,               -- Show parameter info as you type
+				description = { enabled = true },
+			},
 
-      -- ── Completion ──────────────────────────────────────────────
-      -- WHY favoriteStaticMembers: Common static imports that jdtls should
-      -- suggest without requiring a full class path. These are the standard
-      -- Java/Spring/testing static imports that every Java dev uses.
-      completion = {
-        favoriteStaticMembers = {
-          "org.junit.Assert.*",
-          "org.junit.jupiter.api.Assertions.*",
-          "org.mockito.Mockito.*",
-          "org.hamcrest.MatcherAssert.*",
-          "org.hamcrest.Matchers.*",
-          "java.util.Objects.requireNonNull",
-          "java.util.Objects.requireNonNullElse",
-        },
-        filteredTypes = {
-          "com.sun.*",                -- Hide internal JDK types from completion
-          "io.micrometer.shaded.*",   -- Hide shaded (relocated) packages
-          "java.awt.*",              -- Hide AWT (not used in Spring Boot)
-          "jdk.*",                   -- Hide JDK internal types
-          "sun.*",                   -- Hide sun internal types
-        },
-        importOrder = {               -- Import organization order
-          "java",
-          "javax",
-          "org",
-          "com",
-          "",                         -- Blank line separator
-          "#",                        -- Static imports last
-        },
-      },
+			-- ── Completion ──────────────────────────────────────────────
+			-- WHY favoriteStaticMembers: Common static imports that jdtls should
+			-- suggest without requiring a full class path. These are the standard
+			-- Java/Spring/testing static imports that every Java dev uses.
+			completion = {
+				favoriteStaticMembers = {
+					"org.junit.Assert.*",
+					"org.junit.jupiter.api.Assertions.*",
+					"org.mockito.Mockito.*",
+					"org.hamcrest.MatcherAssert.*",
+					"org.hamcrest.Matchers.*",
+					"java.util.Objects.requireNonNull",
+					"java.util.Objects.requireNonNullElse",
+				},
+				filteredTypes = {
+					"com.sun.*",                -- Hide internal JDK types from completion
+					"io.micrometer.shaded.*",   -- Hide shaded (relocated) packages
+					"java.awt.*",              -- Hide AWT (not used in Spring Boot)
+					"jdk.*",                   -- Hide JDK internal types
+					"sun.*",                   -- Hide sun internal types
+				},
+				importOrder = {               -- Import organization order
+					"java",
+					"javax",
+					"org",
+					"com",
+					"",                         -- Blank line separator
+					"#",                        -- Static imports last
+				},
+			},
 
-      -- ── Sources ─────────────────────────────────────────────────
-      sources = {
-        organizeImports = {
-          starThreshold = 9999,       -- Never use wildcard imports (explicit > *)
-          staticStarThreshold = 9999, -- Never use static wildcard imports
-        },
-      },
+			-- ── Sources ─────────────────────────────────────────────────
+			sources = {
+				organizeImports = {
+					starThreshold = 9999,       -- Never use wildcard imports (explicit > *)
+					staticStarThreshold = 9999, -- Never use static wildcard imports
+				},
+			},
 
-      -- ── Code Generation ─────────────────────────────────────────
-      codeGeneration = {
-        toString = {
-          template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
-        },
-        hashCodeEquals = {
-          useJava7Objects = true,      -- Use Objects.hash() / Objects.equals()
-        },
-        useBlocks = true,              -- Use blocks in generated code
-      },
+			-- ── Code Generation ─────────────────────────────────────────
+			codeGeneration = {
+				toString = {
+					template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
+				},
+				hashCodeEquals = {
+					useJava7Objects = true,      -- Use Objects.hash() / Objects.equals()
+				},
+				useBlocks = true,              -- Use blocks in generated code
+			},
 
-      -- ── Formatting ──────────────────────────────────────────────
-      -- WHY disabled: Formatting is google-java-format's job via conform.nvim.
-      -- jdtls formatting uses Eclipse's internal formatter which produces
-      -- different output. One tool per job.
-      format = {
-        enabled = false,
-      },
+			-- ── Formatting ──────────────────────────────────────────────
+			-- WHY disabled: Formatting is google-java-format's job via conform.nvim.
+			-- jdtls formatting uses Eclipse's internal formatter which produces
+			-- different output. One tool per job.
+			format = {
+				enabled = false,
+			},
 
-      -- ── Inlay Hints ────────────────────────────────────────────
-      inlayHints = {
-        parameterNames = {
-          enabled = "all",            -- Show parameter names in method calls
-        },
-      },
+			-- ── Inlay Hints ────────────────────────────────────────────
+			inlayHints = {
+				parameterNames = {
+					enabled = "all",            -- Show parameter names in method calls
+				},
+			},
 
-      -- ── References Code Lens ───────────────────────────────────
-      referencesCodeLens = {
-        enabled = true,
-      },
-      implementationsCodeLens = {
-        enabled = true,
-      },
-    },
-  },
+			-- ── References Code Lens ───────────────────────────────────
+			referencesCodeLens = {
+				enabled = true,
+			},
+			implementationsCodeLens = {
+				enabled = true,
+			},
+		},
+	},
 
-  -- ── Initialization Options ──────────────────────────────────────────
-  init_options = {
-    bundles = bundles,
-    -- WHY extendedClientCapabilities: nvim-jdtls provides extended capabilities
-    -- that standard LSP doesn't cover. These enable jdtls-specific features
-    -- like organize imports, extract variable, generate code.
-    extendedClientCapabilities = jdtls.extendedClientCapabilities,
-  },
+	-- ── Initialization Options ──────────────────────────────────────────
+	init_options = {
+		bundles = bundles,
+		-- WHY extendedClientCapabilities: nvim-jdtls provides extended capabilities
+		-- that standard LSP doesn't cover. These enable jdtls-specific features
+		-- like organize imports, extract variable, generate code.
+		extendedClientCapabilities = jdtls.extendedClientCapabilities,
+	},
 
-  -- ── Formatting Kill (belt-and-suspenders) ───────────────────────────
-  -- WHY: Same pattern as ts_ls and eslint. Even though format.enabled = false
-  -- above, we also kill the LSP capability at the client level. Triple kill:
-  -- 1. java.format.enabled = false (server-side)
-  -- 2. on_attach capability kill (client-side)
-  -- 3. conform lsp_format = "never" (formatting engine refuses LSP)
-  on_attach = function(client, bufnr)
-    client.server_capabilities.documentFormattingProvider = false
-    client.server_capabilities.documentRangeFormattingProvider = false
+	-- ── Formatting Kill (belt-and-suspenders) ───────────────────────────
+	-- WHY: Same pattern as ts_ls and eslint. Even though format.enabled = false
+	-- above, we also kill the LSP capability at the client level. Triple kill:
+	-- 1. java.format.enabled = false (server-side)
+	-- 2. on_attach capability kill (client-side)
+	-- 3. conform lsp_format = "never" (formatting engine refuses LSP)
+	on_attach = function(client, bufnr)
+		client.server_capabilities.documentFormattingProvider = false
+		client.server_capabilities.documentRangeFormattingProvider = false
 
-    -- ── Java-specific keymaps ─────────────────────────────────────
-    -- WHY: nvim-jdtls provides additional commands beyond standard LSP.
-    -- These are jdtls-specific and only make sense in Java buffers.
-    local opts = { buffer = bufnr, silent = true }
-    vim.keymap.set("n", "<leader>Jo", function() jdtls.organize_imports() end,
-      vim.tbl_extend("force", opts, { desc = "Java: Organize imports" }))
-    vim.keymap.set("n", "<leader>Jv", function() jdtls.extract_variable() end,
-      vim.tbl_extend("force", opts, { desc = "Java: Extract variable" }))
-    vim.keymap.set("v", "<leader>Jv", function() jdtls.extract_variable(true) end,
-      vim.tbl_extend("force", opts, { desc = "Java: Extract variable (visual)" }))
-    vim.keymap.set("n", "<leader>Jc", function() jdtls.extract_constant() end,
-      vim.tbl_extend("force", opts, { desc = "Java: Extract constant" }))
-    vim.keymap.set("v", "<leader>Jc", function() jdtls.extract_constant(true) end,
-      vim.tbl_extend("force", opts, { desc = "Java: Extract constant (visual)" }))
-    vim.keymap.set("v", "<leader>Jm", function() jdtls.extract_method(true) end, vim.tbl_extend("force", opts, { desc = "Java: Extract method (visual)" }))
+		-- ── Java-specific keymaps (nvim-jdtls exclusive) ──────────────
+		-- These functions exist ONLY in nvim-jdtls, not in vim.lsp.buf.
+		-- Standard LSP keymaps (gd, grr, gra, K, [d, ]d, etc.) work
+		-- automatically via the LspAttach autocmd in plugins/editor/lsp.lua.
+		-- Standard LSP functions (incoming_calls, outgoing_calls, typehierarchy)
+		-- are bound in lsp.lua — they're not jdtls-specific.
+		--
+		-- ── nvim-jdtls Functions (complete catalog) ───────────────────
+		--
+		-- Refactoring:
+		--   jdtls.organize_imports()              → Clean up imports
+		--   jdtls.extract_variable()              → Extract to variable
+		--   jdtls.extract_constant()              → Extract to constant
+		--   jdtls.extract_method()                → Extract to method (visual)
+		--
+		-- Navigation:
+		--   jdtls.super_implementation()          → Jump to super implementation
+		--
+		-- Code Generation:
+		--   jdtls.generate_toString()             → Generate toString()
+		--   jdtls.generate_hashCodeAndEquals()    → Generate hashCode/equals
+		--   jdtls.generate_constructors()         → Generate constructors
+		--   jdtls.generate_delegate_methods()     → Generate delegate methods
+		--
+		-- Workspace:
+		--   jdtls.compile()                       → Full compile (BUILD)
+		--   jdtls.build_projects()                → Build specific projects
+		--   jdtls.update_project_config()         → Reload pom.xml/build.gradle
+		--   jdtls.javap()                         → Decompile class under cursor
+		--   jdtls.jshell()                        → Open JShell REPL
+		--   jdtls.jol()                           → Java Object Layout analysis
+		--   jdtls.set_runtime()                   → Switch JDK runtime
+		--
+		-- Testing (requires java-test bundle — future phase):
+		--   jdtls.test_class()                    → Run tests in class
+		--   jdtls.test_nearest_method()           → Run nearest test
+		--   jdtls.pick_test()                     → Pick and run test
+		--
+		-- Debugging (requires java-debug-adapter bundle — future phase):
+		--   jdtls.setup_dap()                     → Initialize DAP config
+		--   jdtls.setup_dap_main_class_configs()  → Discover main classes
 
-    -- ── Debugging keymaps (future phase) ────────────────────────
-    -- vim.keymap.set("n", "<leader>Jt", function() jdtls.test_class() end,
-    --   vim.tbl_extend("force", opts, { desc = "Java: Test class" }))
-    -- vim.keymap.set("n", "<leader>Jn", function() jdtls.test_nearest_method() end,
-    --   vim.tbl_extend("force", opts, { desc = "Java: Test nearest method" }))
-  end,
+		local opts = { buffer = bufnr, silent = true }
+
+		-- ── Refactoring ───────────────────────────────────────────────
+		vim.keymap.set("n", "<leader>Jo", function() jdtls.organize_imports() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Organize imports" }))
+		vim.keymap.set("n", "<leader>Jv", function() jdtls.extract_variable() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Extract variable" }))
+		vim.keymap.set("v", "<leader>Jv", function() jdtls.extract_variable(true) end,
+			vim.tbl_extend("force", opts, { desc = "Java: Extract variable (visual)" }))
+		vim.keymap.set("n", "<leader>Jc", function() jdtls.extract_constant() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Extract constant" }))
+		vim.keymap.set("v", "<leader>Jc", function() jdtls.extract_constant(true) end,
+			vim.tbl_extend("force", opts, { desc = "Java: Extract constant (visual)" }))
+		vim.keymap.set("v", "<leader>Jm", function() jdtls.extract_method(true) end,
+			vim.tbl_extend("force", opts, { desc = "Java: Extract method (visual)" }))
+
+		-- ── Navigation ────────────────────────────────────────────────
+		-- WHY: In Spring Boot with deep inheritance (AbstractController → BaseController →
+		-- UserController), jumping to the parent implementation is a frequent operation.
+		-- Standard LSP gd goes to the definition; this goes UP the hierarchy.
+		vim.keymap.set("n", "<leader>Ji", function() jdtls.super_implementation() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Super implementation" }))
+
+		-- ── Code Generation ───────────────────────────────────────────
+		-- WHY: jdtls generates Java boilerplate that follows your codeGeneration
+		-- settings above (Objects.hash, block style, toString template). These are
+		-- interactive — jdtls prompts you to select which fields to include.
+		vim.keymap.set("n", "<leader>Jt", function() jdtls.generate_toString() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Generate toString()" }))
+		vim.keymap.set("n", "<leader>Je", function() jdtls.generate_hashCodeAndEquals() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Generate hashCode/equals" }))
+		vim.keymap.set("n", "<leader>Jk", function() jdtls.generate_constructors() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Generate constructors" }))
+
+		-- ── Workspace ─────────────────────────────────────────────────
+		-- WHY update_project_config: After editing pom.xml or build.gradle, jdtls
+		-- caches the old classpath. This forces a reload without restarting the server.
+		-- Essential when adding Spring dependencies mid-session.
+		vim.keymap.set("n", "<leader>Ju", function() jdtls.update_project_config() end,
+			vim.tbl_extend("force", opts, { desc = "Java: Reload build config" }))
+		-- WHY compile: Triggers a full Eclipse incremental build. Surfaces errors
+		-- that incremental saves miss (circular dependencies, annotation processing).
+		vim.keymap.set("n", "<leader>Jb", function() jdtls.compile("full") end,
+			vim.tbl_extend("force", opts, { desc = "Java: Full compile" }))
+
+		-- ── Testing (future phase — requires java-test bundle) ────────
+		-- vim.keymap.set("n", "<leader>JT", function() jdtls.test_class() end,
+		--   vim.tbl_extend("force", opts, { desc = "Java: Test class" }))
+		-- vim.keymap.set("n", "<leader>Jn", function() jdtls.test_nearest_method() end,
+		--   vim.tbl_extend("force", opts, { desc = "Java: Test nearest method" }))
+		-- vim.keymap.set("n", "<leader>Jp", function() jdtls.pick_test() end,
+		--   vim.tbl_extend("force", opts, { desc = "Java: Pick test" }))
+
+		-- ── Debugging (future phase — requires java-debug-adapter bundle)
+		-- vim.keymap.set("n", "<leader>Jd", function() jdtls.setup_dap({ hotcodereplace = "auto" }) end,
+		--   vim.tbl_extend("force", opts, { desc = "Java: Setup DAP" }))
+	end,
 }
 
 -- ── Capabilities (blink.cmp) ────────────────────────────────────────────
