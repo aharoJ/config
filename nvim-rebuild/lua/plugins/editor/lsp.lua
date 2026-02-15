@@ -52,6 +52,10 @@
 --            Removed <leader>ct/ci/cr (built-in grt/gri/grr cover these). Added
 --            future collision note on <C-k> signature help vs blink.cmp.
 --            | ROLLBACK: Re-add [d/]d maps and <leader>ct/ci/cr block from previous version
+-- CHANGELOG: 2026-02-14 | Added call hierarchy (incoming/outgoing) and type
+--            hierarchy bindings. Standard LSP — works with any server that
+--            supports these capabilities (jdtls, ts_ls, rust-analyzer, etc.).
+--            | ROLLBACK: Delete the three capability-gated blocks below
 return {
 	-- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
 	-- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -208,9 +212,6 @@ return {
 					-- ── Refactoring  ────────────────────────────────────────────
           -- grn      → vim.lsp.buf.rename()
           -- gra      → vim.lsp.buf.code_action()
-					if client:supports_method("textDocument/rename") then
-						map("n", "<leader>cn", vim.lsp.buf.rename, "LSP: Rename symbol")
-					end
 					if client:supports_method("textDocument/codeAction") then
 						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: Code action")
 					end
@@ -242,6 +243,27 @@ return {
 								{ bufnr = event.buf }
 							)
 						end, "Toggle inlay hints")
+					end
+
+          -- ── Call Hierarchy ─────────────────────────────────────────
+					-- WHY: "Who calls this method?" and "What does this method call?"
+					-- In a Spring Boot codebase with DI, tracing @Transactional call
+					-- chains or controller→service→repository flows is daily work.
+					-- Results land in quickfix — use ]q/[q to navigate, or
+					-- <leader>gr (Telescope) for exploratory browsing.
+					if client:supports_method("callHierarchy/incomingCalls") then
+						map("n", "<leader>ci", vim.lsp.buf.incoming_calls, "LSP: Incoming calls")
+					end
+					if client:supports_method("callHierarchy/outgoingCalls") then
+						map("n", "<leader>co", vim.lsp.buf.outgoing_calls, "LSP: Outgoing calls")
+					end
+
+					-- ── Type Hierarchy ─────────────────────────────────────────
+					-- WHY: Shows subtypes/supertypes in quickfix. For Spring Boot with
+					-- deep inheritance (AbstractRepository → JpaRepository → UserRepo),
+					-- this answers "what extends this?" without grep.
+					if client:supports_method("textDocument/typeHierarchy") then
+						map("n", "<leader>ct", vim.lsp.buf.typehierarchy, "LSP: Type hierarchy")
 					end
 
 					-- ── Document Highlight ────────────────────────────────────
