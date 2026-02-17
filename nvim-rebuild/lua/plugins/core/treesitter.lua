@@ -25,6 +25,19 @@ return {
     -- Default (stdpath("data") .. "/site") is correct — no override needed.
     ts.setup({})
 
+        -- ── Pre-flight Check ────────────────────────────────────────
+    -- WHY: The main branch requires tree-sitter-cli (>=0.25.0) to compile
+    -- parsers. Without it, install() hangs indefinitely with NO error
+    -- (known bug: nvim-treesitter#7873, #8010, #8426). Fail loud instead.
+    if vim.fn.executable("tree-sitter") ~= 1 then
+      vim.notify(
+        "tree-sitter-cli not found! Parsers cannot be compiled.\n"
+          .. "Install via: brew install tree-sitter",
+        vim.log.levels.ERROR
+      )
+      return
+    end
+
     -- ── Parser Installation ─────────────────────────────────────
     -- WHY: ensure_installed is gone in the rewrite. Explicit install is the new way.
     -- install() is async and non-blocking — M4 Max makes this near-instant.
