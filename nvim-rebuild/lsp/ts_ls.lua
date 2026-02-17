@@ -38,7 +38,10 @@ return {
     -- Suppressing here prevents duplicate "unused variable" diagnostics.
     -- Code 6196: "declared but never used" (type-only variant, same overlap).
     diagnostics = {
-      ignoredCodes = { 6133, 6196 },
+      -- ignoredCodes = { 6133, 6196 },
+      -- WHY removed: These suppressed "unused import/variable" diagnostics from ts_ls.
+      -- Original intent was eslint @typescript-eslint/no-unused-vars handling it,
+      -- but eslint config doesn't reliably cover this. Let ts_ls warn natively.
     },
 
     typescript = {
