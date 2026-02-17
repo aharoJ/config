@@ -77,6 +77,41 @@ keymap("n", "<leader>q", "<cmd>q!<CR>", { desc = "Quit" })
 -- Clear search highlight on Escape
 -- NOTE: No <Esc> → nohlsearch needed. hlsearch=false means highlights never persist.
 
+-- path: nvim/lua/core/keymaps.lua (add to QUALITY OF LIFE section)
+
+-- Copy file path as comment (filetype-aware, project-relative)
+-- WHY: Quick path annotation for headers, reviews, and documentation.
+-- Uses git root for project-relative path, falls back to cwd.
+keymap("n", "<leader>gp", function()
+  local filepath = vim.fn.expand("%:p")
+  if filepath == "" then
+    vim.notify("No file in current buffer", vim.log.levels.WARN)
+    return
+  end
+
+  -- Project-relative path: git root first, then cwd
+  local rel = vim.fn.fnamemodify(filepath, ":.")
+  local git_dir = vim.fs.root(0, ".git")
+  if git_dir then
+    rel = filepath:sub(#git_dir + 2) -- +2 to skip trailing slash
+  end
+
+  -- Filetype-aware comment prefix
+  local prefix_map = {
+    lua = "-- path: ", sql = "-- path: ",
+    python = "# path: ", fish = "# path: ", sh = "# path: ",
+    bash = "# path: ", yaml = "# path: ", toml = "# path: ",
+    html = "<!-- path: ", xml = "<!-- path: ", markdown = "<!-- path: ",
+  }
+  local ft = vim.bo.filetype
+  local prefix = prefix_map[ft] or "// path: "
+  local suffix = ft == "html" or ft == "xml" or ft == "markdown" and " -->" or ""
+
+  local comment = prefix .. rel .. suffix
+  vim.fn.setreg("+", comment, "l")
+  vim.notify(comment, vim.log.levels.INFO)
+end, { desc = "Copy file path as comment to clipboard" })
+
 -- Word replace under cursor (fastest refactor motion in vanilla vim)
 keymap("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = "Replace word under cursor globally" })
 keymap("v", "<leader>s", function() vim.cmd('noau normal! "zy') local text = vim.fn.getreg("z") local escaped = vim.fn.escape(text, [[/\]]) local cmd = ":%s/\\V\\C" .. escaped .. "/" .. escaped .. "/g" vim.api.nvim_feedkeys( vim.api.nvim_replace_termcodes(cmd .. string.rep("<Left>", 2), true, false, true), "n", false) end, { desc = "Replace selection globally" })
