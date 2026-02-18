@@ -37,7 +37,7 @@ vim.opt.timeoutlen = 150                  -- Faster keymap sequence timeout
 -- ── Recovery & Persistence ──────────────────────────────────
 -- WHY: Git only protects committed work. These protect EVERYTHING —
 vim.opt.undofile = true                   -- Persistent undo across sessions (SSD is fast on M4 Max)
-vim.opt.swapfile = false                   -- Crash recovery: if terminal dies, recover unsaved changes
+vim.opt.swapfile = true                   -- Crash recovery: if terminal dies, recover unsaved changes
 vim.opt.backup = true                     -- Keep pre-save copy: safety net for bad saves beyond git
 vim.opt.writebackup = true                -- Backup during write, deleted after success (default, made explicit)
 vim.opt.undolevels = 10000                -- Deep undo history (M4 Max doesn't care)
