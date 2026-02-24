@@ -56,6 +56,10 @@
 --            hierarchy bindings. Standard LSP — works with any server that
 --            supports these capabilities (jdtls, ts_ls, rust-analyzer, etc.).
 --            | ROLLBACK: Delete the three capability-gated blocks below
+--            2026-02-19 | Added <leader>tl LSP toggle. Stops all attached clients
+--            per-buffer, re-triggers via :edit. Lives on nvim-lspconfig keys (not
+--            LspAttach) because buffer-local keymaps die when clients stop.
+--            | ROLLBACK: Remove keys = {} block from nvim-lspconfig spec
 return {
 	-- ── Mason: Package Manager for LSP Servers, Formatters, Linters ───────
 	-- WHY: Single binary installer for the entire IDEI stack. Servers, formatters,
@@ -141,6 +145,30 @@ return {
 	{
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
+		keys = {
+			-- WHY <leader>tl: Toggle LSP per-buffer. Stops all attached clients when ON,
+			-- re-triggers attachment via :edit when OFF. Lives here (not in LspAttach)
+			-- because LspAttach buffer-local keymaps are destroyed when clients stop —
+			-- you'd have no way to restart. Same pattern as <leader>tc on blink.cmp.
+			--
+			-- Stop: vim.lsp.stop_client() gracefully shuts down each client's connection.
+			-- Start: :edit re-triggers BufReadPre → mason-lspconfig → LspAttach cycle.
+			{
+				"<leader>tl",
+				function()
+					local clients = vim.lsp.get_clients({ bufnr = 0 })
+					if #clients > 0 then
+						vim.lsp.stop_client(clients)
+						vim.notify("LSP OFF (" .. #clients .. " stopped)", vim.log.levels.INFO)
+					else
+						vim.cmd("edit")
+						vim.notify("LSP ON (reattaching)", vim.log.levels.INFO)
+					end
+				end,
+				mode = "n",
+				desc = "[toggle] LSP (buffer-local)",
+			},
+		},
 		config = function()
 			-- ── Diagnostics Configuration ─────────────────────────────────
 			-- WHY here (not in a separate diagnostics.lua): Diagnostics are the
@@ -210,8 +238,8 @@ return {
 					-- K        → vim.lsp.buf.hover()
 
 					-- ── Refactoring  ────────────────────────────────────────────
-          -- grn      → vim.lsp.buf.rename()
-          -- gra      → vim.lsp.buf.code_action()
+					-- grn      → vim.lsp.buf.rename()
+					-- gra      → vim.lsp.buf.code_action()
 					if client:supports_method("textDocument/codeAction") then
 						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: Code action")
 					end
@@ -224,6 +252,13 @@ return {
 					-- <C-w>d   → vim.diagnostic.open_float()
 					map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
 					map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
+					map("n", "<leader>dt", function()
+						vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+						vim.notify(
+							"Diagnostics " .. (vim.diagnostic.is_enabled() and "ON" or "OFF"),
+							vim.log.levels.INFO
+						)
+					end, "Diagnostics: Toggle on/off")
 
 					-- ── Formatting Kill ──────────────────────
 					-- WHY: Even though each lsp/<server>.lua and ftplugin/java.lua kills
@@ -245,7 +280,7 @@ return {
 						end, "Toggle inlay hints")
 					end
 
-          -- ── Call Hierarchy ─────────────────────────────────────────
+					-- ── Call Hierarchy ─────────────────────────────────────────
 					-- WHY: "Who calls this method?" and "What does this method call?"
 					-- In a Spring Boot codebase with DI, tracing @Transactional call
 					-- chains or controller→service→repository flows is daily work.
