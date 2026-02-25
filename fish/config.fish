@@ -16,6 +16,9 @@ set -gx VISUAL nvim
 # (Optional) Silence the greeting
 set -g fish_greeting ""
 
+# internal/notes..
+set -gx NOTES_DIR "$HOME/notes"
+
 # Autoload functions from internal/* subdirs
 set -l _root "$HOME/.config/fish/internal"
 if test -d "$_root"
