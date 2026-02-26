@@ -1,4 +1,4 @@
-# path: ~/.config/fish/internal/notes/nerror.fish
+# path: ~/.config/fish/internal/notes/correct/nerror.fish
 # description: Error notebook (错题本 cuòtí běn). Log mistakes with trigger patterns
 #              and prevention protocols. Includes pattern analysis to surface recurring
 #              error types across all logged errors.
@@ -6,6 +6,12 @@
 #          Bjork (1994) desirable difficulties — errors + correction = stronger encoding,
 #          East Asian cuòtí tradition — systematic error tracking as core study method
 # absorbed: nerror_patterns.fish (recurring pattern analysis — same error-tracking system)
+# patched: 2026-02-26
+#   - fix: {$time_stamp} brace-delimited (Claude audit)
+#   - fix: uses __notes_slug for safe filenames (ChatGPT audit)
+#   - fix: pattern matching uses fixed-string grep to avoid regex injection (Claude + ChatGPT audit)
+#   - fix: fzf preview quotes {} for filenames with spaces (ChatGPT audit)
+#   - fix: grep -m 1 → grep | head -1 for max portability (Kimi second-pass audit)
 # date: 2026-02-26
 function nerror --description "notes: error notebook + pattern analysis"
     __notes_require; or return 1
@@ -30,7 +36,6 @@ function nerror --description "notes: error notebook + pattern analysis"
         case patterns
             _nerror_patterns
         case '*'
-            # WHY: anything that isn't a subcommand is treated as a topic
             _nerror_log $argv
     end
 end
@@ -38,7 +43,7 @@ end
 # --- internal: log a new error ---
 function _nerror_log
     set -l topic (string join ' ' $argv)
-    set -l slug (string replace -a ' ' '-' (string lower "$topic"))
+    set -l slug (__notes_slug $argv)
     set -l day (date +%Y-%m-%d)
     set -l time_stamp (date +%H:%M)
     set -l file "$NOTES_DIR/learning/errors/$day-$slug.md"
@@ -46,7 +51,7 @@ function _nerror_log
     if not test -f "$file"
         echo "# Error: $topic" >"$file"
         echo "" >>"$file"
-        echo "_Date: $day at $time_stamp_" >>"$file"
+        echo "_Date: $day at {$time_stamp}_" >>"$file"
         echo "" >>"$file"
         echo "---" >>"$file"
         echo "" >>"$file"
@@ -100,7 +105,7 @@ end
 # --- internal: list all logged errors ---
 function _nerror_list
     set -l dir "$NOTES_DIR/learning/errors"
-    set -l count (find "$dir" -name '*.md' 2>/dev/null | wc -l | string trim)
+    set -l count (find "$dir" -type f -name '*.md' 2>/dev/null | wc -l | string trim)
 
     if test "$count" -eq 0
         echo "No errors logged yet."
@@ -110,10 +115,11 @@ function _nerror_list
     echo "=== ERROR LOG ($count errors) ==="
     echo ""
 
-    # WHY: reverse chronological — most recent errors first
-    for f in (find "$dir" -name '*.md' | sort -r)
+    for f in (find "$dir" -type f -name '*.md' | sort -r)
         set -l name (basename "$f" .md)
-        set -l error_type (grep -m 1 '^type: ' "$f" 2>/dev/null | sed 's/type: *//')
+        # WHY: grep | head -1 instead of grep -m 1 — macOS BSD grep has -m but
+        # some BSDs don't. pipe to head is universally portable (Kimi audit)
+        set -l error_type (grep '^type: ' "$f" 2>/dev/null | head -1 | sed 's/type: *//')
         if test -n "$error_type"
             echo "  $name  [$error_type]"
         else
@@ -123,11 +129,17 @@ function _nerror_list
     echo ""
 
     # WHY: fzf for quick navigation if available
+    # WHY: quote {} in preview string for filenames with spaces (ChatGPT audit)
     if command -q fzf
-        set -l chosen (find "$dir" -name '*.md' | sort -r | while read -l f
+        set -l preview_cmd "cat '$dir/{}.md'"
+        if command -q bat
+            set preview_cmd "bat --color=always --style=plain '$dir/{}.md'"
+        end
+
+        set -l chosen (find "$dir" -type f -name '*.md' | sort -r | while read -l f
             set -l name (basename "$f" .md)
             echo "$name"
-        end | fzf --prompt="Open error > " --preview="bat --color=always --style=plain $dir/{}.md" 2>/dev/null)
+        end | fzf --prompt="Open error > " --preview="$preview_cmd" 2>/dev/null)
 
         if test -n "$chosen"
             $EDITOR "$dir/$chosen.md"
@@ -136,11 +148,9 @@ function _nerror_list
 end
 
 # --- internal: analyze recurring error patterns ---
-# WHY: absorbed from nerror_patterns.fish — this IS error tracking,
-# not a separate concern. Pattern analysis is the payoff of logging errors.
 function _nerror_patterns
     set -l dir "$NOTES_DIR/learning/errors"
-    set -l count (find "$dir" -name '*.md' 2>/dev/null | wc -l | string trim)
+    set -l count (find "$dir" -type f -name '*.md' 2>/dev/null | wc -l | string trim)
 
     if test "$count" -eq 0
         echo "No errors logged yet. Log some first: nerror <topic>"
@@ -150,11 +160,10 @@ function _nerror_patterns
     echo "=== ERROR PATTERN ANALYSIS ==="
     echo ""
 
-    # WHY: extract all error types and count occurrences
-    # this surfaces your SYSTEMIC weaknesses, not just individual mistakes
     set -l types
-    for f in (find "$dir" -name '*.md')
-        set -l t (grep -m 1 '^type: ' "$f" 2>/dev/null | sed 's/type: *//' | string trim)
+    for f in (find "$dir" -type f -name '*.md')
+        # WHY: grep | head -1 for portability (Kimi audit)
+        set -l t (grep '^type: ' "$f" 2>/dev/null | head -1 | sed 's/type: *//' | string trim)
         if test -n "$t"
             set types $types "$t"
         end
@@ -166,7 +175,6 @@ function _nerror_patterns
         return 0
     end
 
-    # WHY: sort and count — most frequent error types first
     echo "  Error type frequency:"
     echo ""
     printf '%s\n' $types | sort | uniq -c | sort -rn | while read -l line
@@ -176,12 +184,13 @@ function _nerror_patterns
     end
     echo ""
 
-    # WHY: show most recent error per type for quick context
     echo "  Most recent per type:"
     echo ""
     set -l unique_types (printf '%s\n' $types | sort -u)
     for t in $unique_types
-        set -l latest (grep -rl "^type: $t" "$dir" 2>/dev/null | sort -r | head -1)
+        # WHY: use grep -F (fixed string) to avoid regex injection
+        # error types like "c++" or "array[0]" would be interpreted as regex (Claude + ChatGPT audit)
+        set -l latest (grep -Frl "type: $t" "$dir" 2>/dev/null | sort -r | head -1)
         if test -n "$latest"
             echo "    [$t] → "(basename "$latest" .md)
         end
@@ -191,7 +200,6 @@ function _nerror_patterns
     echo "  Total errors logged: $count"
     echo "  Types tagged: "(count $types)" / $count"
 
-    # WHY: flag untagged errors — they're invisible to pattern analysis
     set -l untagged (math "$count - (count $types)")
     if test $untagged -gt 0
         echo ""

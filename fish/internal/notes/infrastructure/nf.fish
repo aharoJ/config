@@ -1,6 +1,9 @@
 # path: ~/.config/fish/internal/notes/infrastructure/nf.fish
 # description: Fuzzy-find notes by filename using fzf with bat preview.
 #              Opens the selected file in $EDITOR. Distinct from ns (content search).
+# patched: 2026-02-26
+#   - fix: quote {} in fzf preview for filenames with spaces (ChatGPT audit)
+#   - fix: bat health check before using (Kimi audit)
 # date: 2026-02-26
 function nf --description "notes: fuzzy find by filename"
     __notes_require; or return 1
@@ -14,10 +17,12 @@ function nf --description "notes: fuzzy find by filename"
 
     # WHY: find only .md files, exclude .git and secret directories
     # -name '*.md' is correct (not -path which matches directory components)
-    set -l preview_cmd "cat {}"
-    if command -q bat
+    # WHY: wrap {} in quotes inside preview string to handle filenames with spaces
+    set -l preview_cmd "cat '{}'"
+    if command -q bat; and bat --version &>/dev/null
         # WHY: bat gives syntax highlighting and line numbers in the preview
-        set preview_cmd "bat --color=always --style=plain --line-range=:50 {}"
+        # WHY: bat health check — command -q alone doesn't catch corrupted installs
+        set preview_cmd "bat --color=always --style=plain --line-range=:50 '{}'"
     end
 
     set -l chosen (find . -name '*.md' \

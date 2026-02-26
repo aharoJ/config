@@ -1,4 +1,4 @@
-# path: ~/.config/fish/internal/notes/nwhy.fish
+# path: ~/.config/fish/internal/notes/encode/nwhy.fish
 # description: Elaborative interrogation — ask WHY and HOW questions to connect new
 #              knowledge to prior knowledge. Also forces falsifiable claims (absorbed
 #              from ncollapse) to commit understanding into testable statements.
@@ -6,6 +6,9 @@
 #          Dunlosky et al. (2013) rated elaborative interrogation "moderate-to-high utility",
 #          Chi et al. (1989) self-explanation effect — explaining forces deeper processing
 # absorbed: ncollapse.fish (falsifiable claims — same self-explanation mechanism family)
+# patched: 2026-02-26
+#   - fix: {$time_stamp} brace-delimited to avoid Fish reading undefined `time_stamp_` (Claude audit)
+#   - fix: uses __notes_slug for safe filenames (ChatGPT audit)
 # date: 2026-02-26
 function nwhy --description "notes: elaborative interrogation + falsifiable claims"
     __notes_require; or return 1
@@ -18,7 +21,7 @@ function nwhy --description "notes: elaborative interrogation + falsifiable clai
         return 1
     end
 
-    set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
+    set -l slug (__notes_slug $argv)
     set -l day (date +%Y-%m-%d)
     set -l time_stamp (date +%H:%M)
     set -l dir "$NOTES_DIR/learning/why"
@@ -26,9 +29,11 @@ function nwhy --description "notes: elaborative interrogation + falsifiable clai
     mkdir -p "$dir"
 
     if not test -f "$file"
+        # WHY: {$time_stamp} not $time_stamp_ — Fish treats trailing _ as part of
+        # the variable name, reading undefined var `time_stamp_` (Claude audit)
         echo "# Why: $argv" >"$file"
         echo "" >>"$file"
-        echo "_Date: $day at $time_stamp_" >>"$file"
+        echo "_Date: $day at {$time_stamp}_" >>"$file"
         echo "" >>"$file"
         echo "---" >>"$file"
         echo "" >>"$file"
