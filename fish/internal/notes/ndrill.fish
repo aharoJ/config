@@ -1,19 +1,17 @@
 # path: ~/.config/fish/internal/notes/ndrill.fish
-# description: Flashcard drill from your notes (Q/A).
+# description: Flashcard drill from your notes. Implements active recall via self-testing.
 # science: Roediger & Karpicke (2006) testing effect, Slamecka & Graf (1978) generation effect
 # date: 2026-02-24
 function ndrill --description "notes: flashcard drill"
-    __notes_require; or return 1
-
     set -l deck_dir "$NOTES_DIR/learning/drills"
     mkdir -p "$deck_dir"
 
     if test (count $argv) -eq 0
         echo "Usage:"
-        echo "  ndrill add <deck> <question> :: <answer>"
-        echo "  ndrill run <deck>"
-        echo "  ndrill list"
-        echo "  ndrill from <file>"
+        echo "  ndrill add <deck> <question> :: <answer>    Add a card"
+        echo "  ndrill run <deck>                           Drill a deck"
+        echo "  ndrill list                                 List all decks"
+        echo "  ndrill from <file>                          Generate cards from note headings"
         return 1
     end
 
@@ -21,23 +19,14 @@ function ndrill --description "notes: flashcard drill"
 
     switch $cmd
         case add
-            if test (count $argv) -lt 4
+            if test (count $argv) -lt 3
                 echo "Usage: ndrill add <deck> <question> :: <answer>"
                 return 1
             end
-
             set -l deck $argv[2]
             set -l content (string join ' ' $argv[3..-1])
-            set -l parts (string split -m1 ' :: ' -- $content)
-
-            if test (count $parts) -lt 2
-                echo "ERROR: Missing delimiter ' :: '"
-                echo "Example: ndrill add acct \"What is accrual?\" :: \"Recognize revenue when earned\""
-                return 1
-            end
-
-            set -l question (string trim -- $parts[1])
-            set -l answer (string trim -- $parts[2])
+            set -l question (echo $content | sed 's/ :: .*//')
+            set -l answer (echo $content | sed 's/.* :: //')
             set -l file "$deck_dir/$deck.md"
 
             if not test -f "$file"
@@ -55,7 +44,6 @@ function ndrill --description "notes: flashcard drill"
                 echo "Usage: ndrill run <deck>"
                 return 1
             end
-
             set -l deck $argv[2]
             set -l file "$deck_dir/$deck.md"
 
@@ -64,25 +52,19 @@ function ndrill --description "notes: flashcard drill"
                 return 1
             end
 
-            set -l questions (rg --no-heading '^Q: ' "$file")
-            set -l answers (rg --no-heading '^A: ' "$file")
+            set -l questions (grep '^Q: ' "$file")
+            set -l answers (grep '^A: ' "$file")
             set -l total (count $questions)
-
-            if test $total -eq 0
-                echo "No cards in deck: $deck"
-                return 0
-            end
-
             set -l correct 0
             set -l missed 0
 
             echo "=== DRILL: $deck ($total cards) ==="
-            echo "Answer BEFORE revealing."
+            echo "For each question, try to answer BEFORE pressing Enter."
             echo ""
 
             for i in (seq 1 $total)
                 echo "[$i/$total] $questions[$i]"
-                read -P "  (Press Enter to reveal) " -l _
+                read -P "  Your answer (press Enter to reveal): "
                 echo "  $answers[$i]"
                 read -P "  Got it right? [y/n]: " -l result
                 if test "$result" = "y"
@@ -95,15 +77,15 @@ function ndrill --description "notes: flashcard drill"
 
             echo "=== Results: $correct/$total correct ==="
             if test $missed -gt 0
-                echo "Review missed cards again tomorrow."
+                echo "Review the $missed missed cards again soon (tomorrow)."
             end
 
         case list
             echo "=== Drill Decks ==="
             for f in $deck_dir/*.md
                 if test -f "$f"
-                    set -l name (basename "$f" .md)
-                    set -l count (rg -c '^Q: ' "$f")
+                    set -l name (basename $f .md)
+                    set -l count (grep -c '^Q: ' "$f")
                     echo "  $name ($count cards)"
                 end
             end
@@ -111,27 +93,22 @@ function ndrill --description "notes: flashcard drill"
         case from
             if test (count $argv) -lt 2
                 echo "Usage: ndrill from <file>"
+                echo "Extracts headings from a note and creates question stubs."
                 return 1
             end
-
             set -l source $argv[2]
             if not test -f "$NOTES_DIR/$source"
-                set source (find "$NOTES_DIR" -type f -iname "*$source*" -name "*.md" \
-                    -not -path '*/.git/*' -not -path '*/secret/*' | head -1)
-            else
-                set source "$NOTES_DIR/$source"
+                set source (find "$NOTES_DIR" -name "*$source*" -path '*.md' | head -1)
             end
-
-            if test -z "$source"; or not test -f "$source"
+            if not test -f "$source"
                 echo "File not found."
                 return 1
             end
-
-            echo "=== Headings from: "(basename "$source")" ==="
-            echo "Write Q/A cards with: ndrill add <deck> <Q> :: <A>"
+            echo "=== Headings from: "(basename $source)" ==="
+            echo "For each heading, write a Q&A card with: ndrill add <deck> <Q> :: <A>"
             echo ""
-            rg --no-heading '^#' "$source" | while read -l heading
-                set -l clean (string replace -r '^#+\s*' '' -- "$heading")
+            grep '^#' "$source" | while read -l heading
+                set -l clean (echo $heading | sed 's/^#* //')
                 echo "  Topic: $clean"
                 echo "    Suggested Q: What is $clean? / Why does $clean matter? / How does $clean work?"
             end

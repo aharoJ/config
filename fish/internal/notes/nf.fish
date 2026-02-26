@@ -1,5 +1,6 @@
 # path: ~/.config/fish/internal/notes/nf.fish
 # description: Fuzzy-find any note. Uses bat for preview if available, falls back to sed.
+# credit: ChatGPT improvement (bat fallback, space handling)
 # date: 2026-02-24
 function nf --description "notes: fuzzy find"
     __notes_require; or return 1

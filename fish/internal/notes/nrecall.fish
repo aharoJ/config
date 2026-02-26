@@ -1,12 +1,14 @@
 # path: ~/.config/fish/internal/notes/nrecall.fish
-# description: Retrieval practice for a specific topic. Recall first, then check notes.
+# description: Retrieval practice for a specific topic. Write from memory FIRST, then check.
 # science: Roediger & Karpicke (2006) testing effect, generation effect (Slamecka & Graf 1978)
+# credit: ChatGPT suggestion, distinct from nmorning (which is yesterday-focused)
 # date: 2026-02-24
 function nrecall --description "notes: retrieval practice (recall first)"
     __notes_require; or return 1
 
     if test (count $argv) -eq 0
         echo "Usage: nrecall <topic>"
+        echo "Creates a blank page. You recall first. Then check your real notes."
         return 1
     end
 
