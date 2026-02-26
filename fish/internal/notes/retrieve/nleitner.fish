@@ -214,7 +214,9 @@ function _nleitner_run
     # simplified: we drill all cards in box 1 always, then probabilistically
     # include higher boxes. For a terminal tool, just drill box 1-2 always,
     # box 3+ based on day calculation.
-    set -l today_num (date +%j | string trim --chars '0')
+    # NOTE: `string trim --chars '0'` would strip ALL zeros including meaningful
+    # ones (day 100 → "1", day 200 → "2"). math handles leading zeros correctly.
+    set -l today_num (math (date +%j))
     set -l due_indices
 
     for i in (seq 1 $total)
@@ -279,7 +281,10 @@ function _nleitner_run
         if test "$result" = "y"
             set correct (math $correct + 1)
             # WHY: promote to next box (max 5)
-            set -l new_box (math "min($box + 1, 5)")
+            set -l new_box (math "$box + 1")
+            if test $new_box -gt 5
+                set new_box 5
+            end
             set boxes[$idx] $new_box
             if test $elapsed -le 3
                 echo "  ✓ Fast ($elapsed"s") → Box $new_box"

@@ -1,114 +1,95 @@
-# path: ~/.config/fish/internal/notes/ncalibrate.fish
-# description: Predict-then-verify metacognitive calibration loop.
-# science: Koriat (1998) illusion of knowing, Dunning-Kruger metacognitive component,
-#          Carpenter et al. (2022) metacognition and strategy use
-# date: 2026-02-24
-function ncalibrate --description "notes: metacognitive calibration"
+# path: ~/.config/fish/internal/notes/calibrate/ncalibrate.fish
+# description: Metacognitive calibration. Predict how much you know about a topic,
+#              state your confidence, then test yourself and compare prediction to reality.
+#              Distinct from nrecall (which tests knowledge) — ncalibrate tests your
+#              AWARENESS of your knowledge. The prediction step catches the illusion of knowing.
+# science: Koriat (1997, 1998) illusion of knowing — fluency biases confidence upward,
+#          Dunning & Kruger (1999) miscalibration is worst for low-performing individuals,
+#          Carpenter et al. (2022) metacognitive monitoring improves study decisions
+# date: 2026-02-26
+function ncalibrate --description "notes: metacognitive calibration (predict → test → compare)"
     __notes_require; or return 1
 
     if test (count $argv) -eq 0
-        echo "Usage:"
-        echo "  ncalibrate test <topic>   - predict then test yourself"
-        echo "  ncalibrate log            - view calibration history"
+        echo "Usage: ncalibrate <topic>"
+        echo ""
+        echo "Predict how much you know BEFORE testing yourself."
+        echo "The gap between prediction and reality is the learning signal."
         return 1
     end
 
-    set -l cmd $argv[1]
-    set -l cal_dir "$NOTES_DIR/learning/calibration"
-    set -l cal_log "$cal_dir/calibration-log.md"
-    mkdir -p "$cal_dir"
+    set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
+    set -l day (date +%Y-%m-%d)
+    set -l time_stamp (date +%H:%M)
+    set -l dir "$NOTES_DIR/learning/calibrate"
+    set -l file "$dir/$day-$slug.md"
+    mkdir -p "$dir"
 
-    switch $cmd
-        case test
-            if test (count $argv) -lt 2
-                echo "Usage: ncalibrate test <topic>"
-                return 1
-            end
-
-            set -l topic (string join ' ' $argv[2..-1])
-            set -l day (date +%Y-%m-%d)
-            set -l time_stamp (date +%H:%M)
-
-            echo "=== CALIBRATION TEST: $topic ==="
-            echo ""
-            echo "BEFORE testing yourself, predict your performance."
-            echo ""
-            echo "How many key facts/concepts can you recall about '$topic'?"
-            read -P "  Predicted count [number]: " -l predicted
-            echo ""
-            echo "How confident are you in your understanding? (0-100%)"
-            read -P "  Confidence: " -l confidence
-            echo ""
-            echo "Now write everything you know. Be specific."
-            echo "When done, count your accurate items."
-            echo ""
-            read -P "  Press Enter to open scratch note... "
-
-            set -l slug (string replace -a ' ' '-' (string lower "$topic"))
-            set -l scratch "$cal_dir/$day-calibrate-$slug.md"
-            if not test -f "$scratch"
-                echo "# Calibration: $topic" >"$scratch"
-                echo "" >>"$scratch"
-                echo "_Date: $day at $time_stamp_" >>"$scratch"
-                echo "_Predicted: $predicted items at $confidence% confidence_" >>"$scratch"
-                echo "" >>"$scratch"
-                echo "## Brain dump (write everything, no peeking)" >>"$scratch"
-                echo "" >>"$scratch"
-                echo "## After checking: how many were correct?" >>"$scratch"
-                echo "" >>"$scratch"
-                echo "Actual correct: " >>"$scratch"
-                echo "" >>"$scratch"
-                echo "## What did fluency trick me about?" >>"$scratch"
-                echo "<!-- Things that FELT familiar but I could not actually retrieve -->" >>"$scratch"
-                echo "" >>"$scratch"
-            end
-
-            $EDITOR "$scratch"
-
-            echo ""
-            read -P "  Actual correct count: " -l actual
-
-            if test -n "$predicted" -a -n "$actual" -a -n "$confidence"
-                set -l diff (math "$actual - $predicted")
-                set -l label "calibrated"
-                if test $diff -gt 0
-                    set label "UNDERCONFIDENT (you knew more than you thought)"
-                else if test $diff -lt 0
-                    set label "OVERCONFIDENT (illusion of knowing)"
-                end
-
-                if not test -f "$cal_log"
-                    echo "# Calibration Log" >"$cal_log"
-                    echo "" >>"$cal_log"
-                    echo "| Date | Topic | Predicted | Actual | Confidence | Result |" >>"$cal_log"
-                    echo "|------|-------|-----------|--------|------------|--------|" >>"$cal_log"
-                end
-
-                echo "| $day | $topic | $predicted | $actual | $confidence% | $label |" >>"$cal_log"
-
-                echo ""
-                echo "=== RESULT: $label ==="
-                echo "  Predicted: $predicted  Actual: $actual  (delta: $diff)"
-                echo "  Confidence: $confidence%"
-
-                if test $diff -lt 0
-                    echo ""
-                    echo "  WARNING: Fluency fooled you."
-                    echo "  The material felt familiar but you could not retrieve it."
-                    echo "  This is the #1 reason people overstudy easy material"
-                    echo "  and understudy hard material."
-                end
-            end
-
-        case log
-            if test -f "$cal_log"
-                cat "$cal_log"
-            else
-                echo "No calibration data yet. Run: ncalibrate test <topic>"
-            end
-
-        case '*'
-            echo "Unknown command: $cmd"
-            return 1
+    if not test -f "$file"
+        echo "# Calibrate: $argv" >"$file"
+        echo "" >>"$file"
+        echo "_Date: $day at $time_stamp_" >>"$file"
+        echo "" >>"$file"
+        echo "---" >>"$file"
+        echo "" >>"$file"
+        echo "## Step 1: PREDICT (before testing)" >>"$file"
+        echo "<!-- Fill this in BEFORE you test yourself. -->" >>"$file"
+        echo "" >>"$file"
+        echo "How many key facts/concepts can I recall about this topic?" >>"$file"
+        echo "" >>"$file"
+        echo "Predicted count: ___" >>"$file"
+        echo "" >>"$file"
+        echo "Confidence: ___% (0-100)" >>"$file"
+        echo "" >>"$file"
+        echo "---" >>"$file"
+        echo "" >>"$file"
+        echo "## Step 2: TEST (write from memory)" >>"$file"
+        echo "<!-- Now list everything you actually know. No looking. -->" >>"$file"
+        echo "" >>"$file"
+        echo "1. " >>"$file"
+        echo "2. " >>"$file"
+        echo "3. " >>"$file"
+        echo "4. " >>"$file"
+        echo "5. " >>"$file"
+        echo "" >>"$file"
+        echo "Actual count: ___" >>"$file"
+        echo "" >>"$file"
+        echo "---" >>"$file"
+        echo "" >>"$file"
+        echo "## Step 3: COMPARE" >>"$file"
+        echo "" >>"$file"
+        echo "Delta (predicted - actual): ___" >>"$file"
+        echo "" >>"$file"
+        echo "### If positive (overconfident):" >>"$file"
+        echo "<!-- Fluency fooled you. The material FELT familiar but wasn't retained. -->" >>"$file"
+        echo "<!-- This is the #1 study trap — mistaking recognition for recall. -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "### If negative (underconfident):" >>"$file"
+        echo "<!-- You know more than you think. Your anxiety outpaces your gaps. -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "### If zero (well-calibrated):" >>"$file"
+        echo "<!-- Your self-model is accurate. This is the goal. -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "## What does this tell me about how I should study this topic?" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
     end
+
+    echo "=== METACOGNITIVE CALIBRATION ==="
+    echo ""
+    echo "  Topic: $argv"
+    echo ""
+    echo "  Step 1: PREDICT — how many facts can you recall? How confident?"
+    echo "  Step 2: TEST — write everything from memory."
+    echo "  Step 3: COMPARE — prediction vs. reality."
+    echo ""
+    echo "  The delta is the learning signal."
+    echo "  Overconfident = fluency fooled you."
+    echo "  Underconfident = anxiety outpaces your gaps."
+    echo ""
+
+    cd "$NOTES_DIR"; and $EDITOR "$file"
 end

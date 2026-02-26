@@ -1,63 +1,85 @@
-# path: ~/.config/fish/internal/notes/nstruggle.fish
-# description: Productive failure -- attempt a problem before learning the solution.
-# science: Kapur (2008) productive failure, Sinha & Kapur (2021) meta-analysis,
-#          Schwartz & Bransford (1998) preparation for future learning
-# date: 2026-02-24
-function nstruggle --description "notes: productive failure exercise"
+# path: ~/.config/fish/internal/notes/encode/nstruggle.fish
+# description: Productive failure. Attempt a problem BEFORE any instruction or lookup.
+#              Generate 2-3 solution attempts, document where each breaks, then learn
+#              the real answer. Failed attempts create mental "hooks" for instruction
+#              to attach to — the struggle is the mechanism, not the obstacle.
+# science: Kapur (2008) productive failure improves conceptual understanding,
+#          Sinha & Kapur (2021) meta-analysis g=0.36-0.87 depending on domain,
+#          Schwartz & Bransford (1998) "preparation for future learning" effect
+# date: 2026-02-26
+function nstruggle --description "notes: productive failure (attempt before instruction)"
     __notes_require; or return 1
 
     if test (count $argv) -eq 0
-        echo "Usage: nstruggle <concept-you-have-NOT-learned-yet>"
+        echo "Usage: nstruggle <problem-or-topic>"
         echo ""
-        echo "The point is to FAIL first, then learn."
-        echo "The struggle creates mental hooks for the instruction to attach to."
+        echo "RULE: Do NOT look anything up yet."
+        echo "Attempt first. Fail first. Then learn."
         return 1
     end
 
     set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
     set -l day (date +%Y-%m-%d)
-    set -l dir "$NOTES_DIR/learning/struggles"
+    set -l time_stamp (date +%H:%M)
+    set -l dir "$NOTES_DIR/learning/struggle"
     set -l file "$dir/$day-$slug.md"
     mkdir -p "$dir"
 
     if not test -f "$file"
-        echo "# Productive Failure: $argv" >"$file"
+        echo "# Struggle: $argv" >"$file"
         echo "" >>"$file"
-        echo "_Date: $day_" >>"$file"
-        echo "" >>"$file"
-        echo "## The problem (what I am trying to solve/understand)" >>"$file"
-        echo "" >>"$file"
-        echo "## My attempts (BEFORE any instruction/reading)" >>"$file"
-        echo "" >>"$file"
-        echo "### Attempt 1" >>"$file"
-        echo "" >>"$file"
-        echo "### Attempt 2" >>"$file"
-        echo "" >>"$file"
-        echo "### Attempt 3" >>"$file"
-        echo "" >>"$file"
-        echo "## What I assumed / what prior knowledge I used" >>"$file"
-        echo "" >>"$file"
-        echo "## Where each attempt breaks down" >>"$file"
+        echo "_Date: $day at $time_stamp_" >>"$file"
         echo "" >>"$file"
         echo "---" >>"$file"
         echo "" >>"$file"
-        echo "## NOW read/learn the actual solution" >>"$file"
+        echo "## The problem / question" >>"$file"
         echo "" >>"$file"
-        echo "## The canonical approach" >>"$file"
         echo "" >>"$file"
-        echo "## What my failed attempts taught me that direct instruction would not have" >>"$file"
+        echo "## Attempt 1" >>"$file"
+        echo "<!-- Your first approach. Even if it's wrong, write it fully. -->" >>"$file"
         echo "" >>"$file"
-        echo "## The gap between my intuition and reality" >>"$file"
+        echo "" >>"$file"
+        echo "### Where does attempt 1 break?" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "## Attempt 2" >>"$file"
+        echo "<!-- Try a different angle. What if the opposite were true? -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "### Where does attempt 2 break?" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "## Attempt 3 (optional)" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "---" >>"$file"
+        echo "" >>"$file"
+        echo "## NOW look it up — the real answer" >>"$file"
+        echo "<!-- Only fill this in AFTER you've exhausted your attempts. -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "## What did my failed attempts teach me?" >>"$file"
+        echo "<!-- The gap between your attempts and reality IS the learning. -->" >>"$file"
+        echo "" >>"$file"
+        echo "" >>"$file"
+        echo "## Which attempt was closest? Why?" >>"$file"
+        echo "" >>"$file"
         echo "" >>"$file"
     end
 
     echo "=== PRODUCTIVE FAILURE ==="
     echo ""
-    echo "RULES:"
-    echo "  1. You WILL fail. That is the point."
-    echo "  2. Generate as many solution attempts as possible."
-    echo "  3. DO NOT look up the answer until you have at least 2-3 attempts."
-    echo "  4. More failed attempts = better learning from the real answer."
+    echo "  Topic: $argv"
+    echo ""
+    echo "  RULE: Do NOT look anything up."
+    echo ""
+    echo "  1. Read the problem."
+    echo "  2. Write your best attempt at a solution."
+    echo "  3. Identify exactly where it breaks."
+    echo "  4. Try again from a different angle."
+    echo "  5. THEN — and only then — look up the real answer."
+    echo ""
+    echo "  Your failed attempts prime your brain to encode the correct answer."
     echo ""
 
     cd "$NOTES_DIR"; and $EDITOR "$file"
