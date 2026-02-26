@@ -2,6 +2,11 @@
 # description: Append a timestamped one-liner to today's journal. No editor opens.
 #              For capturing thoughts mid-flow without context-switching.
 #              Distinct from note (which opens $EDITOR — higher friction, deeper capture).
+# patched: 2026-02-26
+#   - fix: uses shared _notes_ensure_journal to eliminate template duplication (Claude audit)
+#   - fix: sanitize newlines/carriage returns from argv (Kimi audit)
+#   - fix: regex-based sanitization — single-quoted '\n' is literal backslash-n,
+#     not a newline character. Use -ra regex mode (ChatGPT + Kimi second-pass audit)
 # date: 2026-02-26
 function nq --description "notes: quick append to journal (no editor)"
     __notes_require; or return 1
@@ -14,30 +19,18 @@ function nq --description "notes: quick append to journal (no editor)"
         return 1
     end
 
-    set -l year (date +%Y)
-    set -l month (date +%m)
-    set -l day (date +%Y-%m-%d)
-    set -l weekday (date +%A)
+    # WHY: shared helper ensures template exists and returns the path
+    set -l file (_notes_ensure_journal)
+    or return 1
     set -l time_stamp (date +%H:%M)
-    set -l dir "$NOTES_DIR/journal/$year/$month"
-    set -l file "$dir/$day.md"
 
-    mkdir -p "$dir"
-
-    # WHY: create journal with template if it doesn't exist yet
-    # same template as note.fish — both write to the same file
-    if not test -f "$file"
-        echo "# $day ($weekday)" >"$file"
-        echo "" >>"$file"
-        echo "---" >>"$file"
-        echo "" >>"$file"
-        echo "## Log" >>"$file"
-        echo "" >>"$file"
-    end
+    # WHY: sanitize newlines and carriage returns from input
+    # must use -ra (regex mode) — in non-regex mode, '\n' matches the literal
+    # two-character string backslash-n, NOT an actual newline (Kimi + ChatGPT audit)
+    set -l entry (string join ' ' $argv | string replace -ra '[\r\n]+' ' ')
 
     # WHY: append with timestamp — the journal becomes a timestamped log
-    set -l entry (string join ' ' $argv)
     echo "- $time_stamp — $entry" >>"$file"
 
-    echo "  [$time_stamp] → $day.md"
+    echo "  [$time_stamp] → "(basename "$file")
 end

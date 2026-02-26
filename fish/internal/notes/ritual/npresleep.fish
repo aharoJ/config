@@ -6,22 +6,23 @@
 # science: Wilhelm et al. (2011) expectancy enhances sleep-dependent memory consolidation,
 #          Rasch et al. (2007) hippocampal replay during slow-wave sleep,
 #          Diekelmann et al. (2013) sleep selectively consolidates expected-relevant memories
+# patched: 2026-02-26
+#   - fix: exact-line duplicate check with grep -qxF not -qF (ChatGPT audit)
+#   - fix: preserve queue on incomplete session / Ctrl+C (Kimi audit)
+#   - fix: filter blank lines from queue to prevent ghost entries (Claude audit)
 # date: 2026-02-26
 function npresleep --description "notes: pre-sleep review queue (expectation priming)"
     __notes_require; or return 1
 
     set -l queue_file "$NOTES_DIR/.presleep-queue"
-    set -l today (date +%Y-%m-%d)
 
     if test (count $argv) -eq 0
-        # WHY: no args = run the review session
         _npresleep_review
         return $status
     end
 
     switch $argv[1]
         case add
-            # WHY: add a note to tonight's review queue
             if test (count $argv) -lt 2
                 echo "Usage: npresleep add <note-path>"
                 return 1
@@ -29,7 +30,6 @@ function npresleep --description "notes: pre-sleep review queue (expectation pri
             _npresleep_add $argv[2..-1]
 
         case clear
-            # WHY: reset the queue (e.g., after completing a session)
             if test -f "$queue_file"
                 rm "$queue_file"
                 echo "  Queue cleared."
@@ -54,7 +54,6 @@ function _npresleep_add
     set -l queue_file "$NOTES_DIR/.presleep-queue"
     set -l note_path (string join ' ' $argv)
 
-    # WHY: resolve relative paths against NOTES_DIR
     if not test -f "$note_path"
         if test -f "$NOTES_DIR/$note_path"
             set note_path "$NOTES_DIR/$note_path"
@@ -64,9 +63,10 @@ function _npresleep_add
         end
     end
 
-    # WHY: prevent duplicate entries in the queue
+    # WHY: grep -qxF for exact full-line match, not substring
+    # -qF alone would match "/path/to/foo.md" against "/path/to/foobar.md" (ChatGPT audit)
     if test -f "$queue_file"
-        if grep -qF "$note_path" "$queue_file"
+        if grep -qxF "$note_path" "$queue_file"
             echo "  Already in queue: "(basename "$note_path")
             return 0
         end
@@ -89,7 +89,11 @@ function _npresleep_list
     echo "=== PRE-SLEEP QUEUE ==="
     echo ""
     set -l i 0
+    # WHY: filter blank lines to prevent ghost entries (Claude audit)
     while read -l line
+        if test -z "$line"
+            continue
+        end
         set i (math $i + 1)
         echo "  $i. "(string replace "$NOTES_DIR/" "" "$line")
     end <"$queue_file"
@@ -107,7 +111,6 @@ function _npresleep_review
         echo "  Or review today's learning notes:"
         echo ""
 
-        # WHY: fallback — show today's learning notes as candidates
         set -l today (date +%Y-%m-%d)
         set -l todays_notes (find "$NOTES_DIR/learning" -name "$today-*.md" 2>/dev/null)
         if test (count $todays_notes) -gt 0
@@ -120,7 +123,8 @@ function _npresleep_review
         return 0
     end
 
-    set -l notes (cat "$queue_file")
+    # WHY: read notes into array, filtering blank lines (Claude audit)
+    set -l notes (cat "$queue_file" | string match -v '')
     set -l total (count $notes)
 
     echo "=== PRE-SLEEP REVIEW ==="
@@ -136,6 +140,7 @@ function _npresleep_review
 
     read -P "Ready to begin? [Enter] " -l _
 
+    set -l reviewed 0
     for f in $notes
         if not test -f "$f"
             echo "  Skipping (file not found): $f"
@@ -146,6 +151,7 @@ function _npresleep_review
         echo ""
         echo "--- Reviewing: $rel ---"
         $EDITOR "$f"
+        set reviewed (math $reviewed + 1)
 
         echo ""
         echo "  Say to yourself: \"I will be tested on this tomorrow.\""
@@ -154,10 +160,15 @@ function _npresleep_review
 
     echo ""
     echo "=== PRE-SLEEP REVIEW COMPLETE ==="
-    echo "  $total note(s) reviewed."
-    echo "  Sleep will consolidate these. Morning recall will test them."
-    echo ""
+    echo "  $reviewed / $total note(s) reviewed."
 
-    # WHY: clear the queue after a completed session — prevents stale entries
-    rm "$queue_file"
+    # WHY: only clear the queue if ALL notes were reviewed
+    # if user Ctrl+C'd or skipped, preserve the queue for retry (Kimi audit)
+    if test $reviewed -eq $total
+        echo "  Sleep will consolidate these. Morning recall will test them."
+        rm "$queue_file"
+    else
+        echo ""
+        echo "  Session incomplete. Queue preserved — run npresleep again to resume."
+    end
 end

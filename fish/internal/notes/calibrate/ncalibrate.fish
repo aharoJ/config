@@ -6,6 +6,9 @@
 # science: Koriat (1997, 1998) illusion of knowing — fluency biases confidence upward,
 #          Dunning & Kruger (1999) miscalibration is worst for low-performing individuals,
 #          Carpenter et al. (2022) metacognitive monitoring improves study decisions
+# patched: 2026-02-26
+#   - fix: {$time_stamp} brace-delimited (Claude audit)
+#   - fix: uses __notes_slug for safe filenames (ChatGPT audit)
 # date: 2026-02-26
 function ncalibrate --description "notes: metacognitive calibration (predict → test → compare)"
     __notes_require; or return 1
@@ -18,7 +21,7 @@ function ncalibrate --description "notes: metacognitive calibration (predict →
         return 1
     end
 
-    set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
+    set -l slug (__notes_slug $argv)
     set -l day (date +%Y-%m-%d)
     set -l time_stamp (date +%H:%M)
     set -l dir "$NOTES_DIR/learning/calibrate"
@@ -28,7 +31,7 @@ function ncalibrate --description "notes: metacognitive calibration (predict →
     if not test -f "$file"
         echo "# Calibrate: $argv" >"$file"
         echo "" >>"$file"
-        echo "_Date: $day at $time_stamp_" >>"$file"
+        echo "_Date: $day at {$time_stamp}_" >>"$file"
         echo "" >>"$file"
         echo "---" >>"$file"
         echo "" >>"$file"

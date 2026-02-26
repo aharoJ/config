@@ -6,6 +6,9 @@
 # science: Roediger & Karpicke (2006) testing effect — retrieval beats restudy for long-term retention,
 #          Slamecka & Graf (1978) generation effect — self-generated info remembered better,
 #          Tulving (1967) free recall engages different retrieval processes than cued recall
+# patched: 2026-02-26
+#   - fix: {$time_stamp} brace-delimited (Claude audit)
+#   - fix: uses __notes_slug for safe filenames (ChatGPT audit)
 # date: 2026-02-26
 function nrecall --description "notes: free recall (blank page → check)"
     __notes_require; or return 1
@@ -18,7 +21,7 @@ function nrecall --description "notes: free recall (blank page → check)"
         return 1
     end
 
-    set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
+    set -l slug (__notes_slug $argv)
     set -l day (date +%Y-%m-%d)
     set -l time_stamp (date +%H:%M)
     set -l dir "$NOTES_DIR/learning/recall"
@@ -28,7 +31,7 @@ function nrecall --description "notes: free recall (blank page → check)"
     if not test -f "$file"
         echo "# Recall: $argv" >"$file"
         echo "" >>"$file"
-        echo "_Date: $day at $time_stamp_" >>"$file"
+        echo "_Date: $day at {$time_stamp}_" >>"$file"
         echo "" >>"$file"
         echo "---" >>"$file"
         echo "" >>"$file"
