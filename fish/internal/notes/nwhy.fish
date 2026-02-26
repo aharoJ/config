@@ -1,21 +1,18 @@
 # path: ~/.config/fish/internal/notes/nwhy.fish
-# description: Elaborative interrogation prompts for deeper encoding.
+# description: Elaborative interrogation: ask why/how about a concept and answer it.
 # science: Pressley et al. (1988), Dunlosky et al. (2013) moderate-to-high utility technique
 # date: 2026-02-24
 function nwhy --description "notes: elaborative interrogation"
-    __notes_require; or return 1
-
     if test (count $argv) -eq 0
         echo "Usage: nwhy <concept>"
+        echo "Forces you to answer WHY and HOW questions about a concept."
         return 1
     end
-
     set -l slug (string replace -a ' ' '-' (string lower (string join ' ' $argv)))
     set -l day (date +%Y-%m-%d)
     set -l dir "$NOTES_DIR/learning/interrogations"
     set -l file "$dir/$day-$slug.md"
     mkdir -p "$dir"
-
     if not test -f "$file"
         echo "# Interrogation: $argv" >"$file"
         echo "" >>"$file"
@@ -29,11 +26,10 @@ function nwhy --description "notes: elaborative interrogation"
         echo "" >>"$file"
         echo "## Where have I seen this pattern before?" >>"$file"
         echo "" >>"$file"
-        echo "## Simplest real-world example" >>"$file"
+        echo "## What is the simplest real-world example?" >>"$file"
         echo "" >>"$file"
-        echo "## What did I get wrong on my first attempt?" >>"$file"
+        echo "## What did I get wrong on my first attempt to explain this?" >>"$file"
         echo "" >>"$file"
     end
-
     cd "$NOTES_DIR"; and $EDITOR "$file"
 end
