@@ -166,7 +166,7 @@ return {
 					end
 				end,
 				mode = "n",
-				desc = "[toggle] LSP (buffer-local)",
+				desc = "[toggle] lsp",
 			},
 		},
 		config = function()
@@ -253,7 +253,7 @@ return {
 					map("n", "<leader>dd", vim.diagnostic.open_float, "[diag] Line diagnostics")
 					map("n", "<leader>dl", vim.diagnostic.setloclist, "[diag] Location list")
 					map("n", "<leader>td", function() vim.diagnostic.enable(not vim.diagnostic.is_enabled()) vim.notify( "Diagnostics " .. (vim.diagnostic.is_enabled() and "ON" or "OFF"), vim.log.levels.INFO)
-					end, "[diag] on/off")
+					end, "[toggle] diagnostic")
 
 					-- ── Formatting Kill ──────────────────────
 					-- WHY: Even though each lsp/<server>.lua and ftplugin/java.lua kills

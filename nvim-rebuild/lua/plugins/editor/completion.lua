@@ -78,7 +78,7 @@ return {
 				end
 			end,
 			mode = "n",
-			desc = "[toggle] completion (buffer-local)",
+			desc = "[toggle] completion",
 		},
 	},
 
