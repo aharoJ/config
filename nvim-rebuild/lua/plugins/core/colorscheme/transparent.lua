@@ -29,6 +29,6 @@ return {
     vim.cmd("TransparentDisable")
 
     -- MAPPINGS
-    vim.keymap.set("n", "<leader>tt", "<cmd>TransparentToggle<cr>", { desc = "[t] transparent" })
+    vim.keymap.set("n", "<leader>tt", "<cmd>TransparentToggle<cr>", { desc = "[toggle] transparent" })
   end,
 }
