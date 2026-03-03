@@ -163,5 +163,6 @@ return {
                 file_ignore_patterns = { "node_modules", ".git/" },
             },
         })
+        require("telescope").load_extension("fzf")
     end,
 }
