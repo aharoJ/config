@@ -228,10 +228,10 @@ return {
 					-- gri → vim.lsp.buf.implementation()
 					-- grt → vim.lsp.buf.type_definition()
 					if client:supports_method("textDocument/definition") then
-						map("n", "gd", vim.lsp.buf.definition, "LSP: Go to definition")
+						map("n", "gd", vim.lsp.buf.definition, "[lsp] Go to definition")
 					end
 					if client:supports_method("textDocument/declaration") then
-						map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to declaration")
+						map("n", "gD", vim.lsp.buf.declaration, "[lsp] Go to declaration")
 					end
 
 					-- ── Information ───────────────────────────────────────────
@@ -241,7 +241,7 @@ return {
 					-- grn      → vim.lsp.buf.rename()
 					-- gra      → vim.lsp.buf.code_action()
 					if client:supports_method("textDocument/codeAction") then
-						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: Code action")
+						map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "[lsp] Code action")
 					end
 
 					-- ── Diagnostics  ────────────────────────────────────────────
@@ -250,15 +250,10 @@ return {
 					-- [D       → vim.diagnostic.jump() (first in buffer)
 					-- ]D       → vim.diagnostic.jump() (last in buffer)
 					-- <C-w>d   → vim.diagnostic.open_float()
-					map("n", "<leader>dd", vim.diagnostic.open_float, "Diagnostics: Line diagnostics")
-					map("n", "<leader>dl", vim.diagnostic.setloclist, "Diagnostics: Location list")
-					map("n", "<leader>dt", function()
-						vim.diagnostic.enable(not vim.diagnostic.is_enabled())
-						vim.notify(
-							"Diagnostics " .. (vim.diagnostic.is_enabled() and "ON" or "OFF"),
-							vim.log.levels.INFO
-						)
-					end, "Diagnostics: Toggle on/off")
+					map("n", "<leader>dd", vim.diagnostic.open_float, "[diag] Line diagnostics")
+					map("n", "<leader>dl", vim.diagnostic.setloclist, "[diag] Location list")
+					map("n", "<leader>td", function() vim.diagnostic.enable(not vim.diagnostic.is_enabled()) vim.notify( "Diagnostics " .. (vim.diagnostic.is_enabled() and "ON" or "OFF"), vim.log.levels.INFO)
+					end, "[diag] on/off")
 
 					-- ── Formatting Kill ──────────────────────
 					-- WHY: Even though each lsp/<server>.lua and ftplugin/java.lua kills
@@ -287,10 +282,10 @@ return {
 					-- Results land in quickfix — use ]q/[q to navigate, or
 					-- <leader>gr (Telescope) for exploratory browsing.
 					if client:supports_method("callHierarchy/incomingCalls") then
-						map("n", "<leader>ci", vim.lsp.buf.incoming_calls, "LSP: Incoming calls")
+						map("n", "<leader>ci", vim.lsp.buf.incoming_calls, "[lsp] Incoming calls")
 					end
 					if client:supports_method("callHierarchy/outgoingCalls") then
-						map("n", "<leader>co", vim.lsp.buf.outgoing_calls, "LSP: Outgoing calls")
+						map("n", "<leader>co", vim.lsp.buf.outgoing_calls, "[lsp] Outgoing calls")
 					end
 
 					-- ── Type Hierarchy ─────────────────────────────────────────
@@ -298,7 +293,7 @@ return {
 					-- deep inheritance (AbstractRepository → JpaRepository → UserRepo),
 					-- this answers "what extends this?" without grep.
 					if client:supports_method("textDocument/typeHierarchy") then
-						map("n", "<leader>ct", vim.lsp.buf.typehierarchy, "LSP: Type hierarchy")
+						map("n", "<leader>ct", vim.lsp.buf.typehierarchy, "[lsp] Type hierarchy")
 					end
 
 					-- ── Document Highlight ────────────────────────────────────
@@ -318,7 +313,7 @@ return {
 						})
 					end
 				end,
-				desc = "LSP: Configure keymaps and buffer settings on attach",
+				desc = "[lsp] Configure keymaps and buffer settings on attach",
 			})
 		end,
 	},
