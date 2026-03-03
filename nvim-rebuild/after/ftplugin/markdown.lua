@@ -43,3 +43,8 @@ vim.keymap.set("n", "j", "gj", opts)
 vim.keymap.set("n", "k", "gk", opts)
 vim.keymap.set("n", "0", "g0", opts)
 vim.keymap.set("n", "$", "g$", opts)
+
+
+vim.keymap.set("n", "<leader>tw", function()
+  vim.opt_local.wrap = not vim.opt_local.wrap:get()
+end, { buffer = true, silent = true, desc = "[toggle] wrap" })
