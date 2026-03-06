@@ -147,3 +147,16 @@ autocmd("FileType", {
 	end,
 	desc = "Close help/qf/man windows with q",
 })
+
+
+
+-- Add to UserIndentOverrides augroup (or create a new augroup if you prefer separation)
+autocmd("FileType", {
+  group = "UserIndentOverrides",
+  pattern = { "markdown" },
+  callback = function()
+    vim.opt_local.foldmethod = "manual"
+    vim.opt_local.foldexpr = ""
+  end,
+  desc = "Manual folds for Markdown (zf works, Treesitter folds are noise in prose)",
+})
