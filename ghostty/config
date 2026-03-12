@@ -27,10 +27,10 @@ font-thicken = true
 
 # ── Transparency ─────────────────────────────────────────────────────────────
 # 70% opacity - see your desktop through the terminal
-background-opacity = 0.50
+background-opacity = 0.80
 
 # No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
-background-blur = true
+background-blur = false
 # Apply opacity to cells with explicit background colors too (e.g., Neovim themes)
 # Set to true if you want full transparency even in TUI apps
 background-opacity-cells = false
@@ -153,6 +153,10 @@ keybind = cmd+m=ignore
 
 # ── tmux ──
 keybind = cmd+z=text:\x02
+
+# ── claude code ──
+keybind = shift+enter=text:\x1b[13;2u
+
 
 # ── Pass-through to Neovim ──
 # Ensure Ctrl sequences reach Neovim unmolested
