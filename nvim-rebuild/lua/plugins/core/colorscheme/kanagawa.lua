@@ -61,6 +61,36 @@ return {
         DiagnosticVirtualTextWarn = { fg = colors.palette.roninYellow, bg = "NONE" },
         DiagnosticVirtualTextInfo = { fg = colors.palette.waveAqua1, bg = "NONE" },
         DiagnosticVirtualTextHint = { fg = colors.palette.dragonBlue, bg = "NONE" },
+
+
+
+        -- ── render-markdown.nvim: Custom heading colors ─────────────
+        RenderMarkdownH1   = { fg = "#b34e44" },
+        RenderMarkdownH2   = { fg = "#9b9578" },
+        RenderMarkdownH3   = { fg = "#6b806b" },
+        RenderMarkdownH4   = { fg = "#6d84b4" },
+        RenderMarkdownH5   = { fg = "#ffffff" },
+        RenderMarkdownH6   = { fg = "#ffffff" },
+        RenderMarkdownH1Bg = { bg = theme.ui.bg, fg = "#b34e44" },
+        RenderMarkdownH2Bg = { bg = theme.ui.bg, fg = "#9b9578" },
+        RenderMarkdownH3Bg = { bg = theme.ui.bg, fg = "#6b806b" },
+        RenderMarkdownH4Bg = { bg = theme.ui.bg, fg = "#6d84b4" },
+        RenderMarkdownH5Bg = { bg = theme.ui.bg, fg = "#ffffff" },
+        RenderMarkdownH6Bg = { bg = theme.ui.bg, fg = "#ffffff"  },
+
+        -- ── render-markdown.nvim: Softer code blocks ────────────────
+        RenderMarkdownCode = { bg = "#191920" },  -- barely darker than bg
+        RenderMarkdownCodeInline = { bg = "#2A2A37" },
+
+        -- ── render-markdown.nvim: Muted dash line ───────────────────
+        RenderMarkdownDash = { fg = theme.ui.bg_p2 },
+
+        -- ── Muted strings ───────────────────────────────────────────
+        String = { fg = "#899989" },
+
+
+
+
       }
     end,
   },

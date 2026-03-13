@@ -45,6 +45,15 @@ return {
     client.server_capabilities.documentRangeFormattingProvider = false
   end,
 
+
+  -- TEMP FIX: FlatCompat + eslint-plugin-react creates a circular object reference
+  -- that crashes textDocument/diagnostic serialization. Push diagnostics still work.
+  -- REMOVE AFTER BLEEDING MERGE: ESLint 10 + native flat config eliminates FlatCompat,
+  -- which eliminates the circular ref. This handler becomes dead code.
+  handlers = {
+    ["textDocument/diagnostic"] = function() end,
+  },
+
   settings = {
     -- ── Validation ────────────────────────────────────────────────────
     validate = "on",
