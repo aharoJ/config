@@ -9,5 +9,17 @@
 # addition (SIP disabled) which we don't have. Close/minimize/deminimize
 # are native macOS shortcuts (Cmd+Q, Cmd+H, Cmd+M) — no need to duplicate.
 #
+# ── Float ──────────────────────────────────────────────────────────────────
+# Hyper+D: pop window out of stack into a centered float (or push back in)
+# WHY: Pull a reference window (docs, chat) out of the stack so you can
+# see it alongside the stack. Toggle again to re-stack it. Works with SIP.
+hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+
+
+# ── SIP-GATED (not available) ─────────────────────────────────────────────
+# window --space, space --focus, scratchpad, opacity, animations, shadows
+# all require partially disabled SIP. Not usable on this machine.
+
+
 # FREE HYPER KEYS (available for future use):
-#   b, d, e, h, l, m, n, r, s, w, x, y, z
+#   b, e, m, n, r, s, w, x, y, z
