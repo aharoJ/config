@@ -14,6 +14,12 @@ hyper - j : yabai -m window --focus stack.next || yabai -m window --focus stack.
 hyper - k : yabai -m window --focus stack.prev || yabai -m window --focus stack.last
 
 
+# ── Focus Recent (alt-tab within stack) ────────────────────────────────────
+# Hyper+S: jump back to the last focused window. Same as Ctrl-^ in Neovim.
+# Editor ↔ browser, terminal ↔ docs — instant toggle without cycling.
+hyper - s : yabai -m window --focus recent
+
+
 # ── tmux Window Cycling (no prefix needed) ─────────────────────────────────
 # Horizontal axis: h=prev, l=next. Vertical axis (j/k) is yabai stack above.
 hyper - h : tmux select-window -t :-1
