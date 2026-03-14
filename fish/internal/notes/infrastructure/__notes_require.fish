@@ -23,5 +23,12 @@ function __notes_require
         return 1
     end
 
+    # WHY: check write permission — a read-only NOTES_DIR passes -d but
+    # all note functions will fail with cryptic write errors (Sweep audit)
+    if not test -w "$NOTES_DIR"
+        echo "Error: NOTES_DIR is not writable: $NOTES_DIR"
+        return 1
+    end
+
     return 0
 end

@@ -43,11 +43,16 @@ function nleitner --description "notes: Leitner box flashcard SRS (create + dril
     set -l cmd $argv[1]
     set -l deck_dir "$NOTES_DIR/learning/drills"
     set -l state_dir "$NOTES_DIR/learning/leitner"
-    mkdir -p "$deck_dir" "$state_dir"
+
+    # WHY: mkdir can fail on permission errors — check return status (Sweep audit)
+    if not mkdir -p "$deck_dir" "$state_dir" 2>/dev/null
+        echo "Error: could not create deck directories under $NOTES_DIR"
+        return 1
+    end
 
     switch $cmd
         case add
-            if test (count $argv) -lt 2
+            if test (count $argv) -lt 2; or test -z "$argv[2]"
                 echo "Usage: nleitner add <deck>"
                 return 1
             end
@@ -97,7 +102,12 @@ function _nleitner_date_add
     # WHY: macOS uses -v+Nd, GNU/Linux uses -d '+N days'
     set -l result (date -v+"$days"d +%Y-%m-%d 2>/dev/null)
     if test $status -ne 0
-        set result (date -d "+$days days" +%Y-%m-%d)
+        set result (date -d "+$days days" +%Y-%m-%d 2>/dev/null)
+    end
+    # WHY: if both date forms fail, fall back to today — prevents empty due dates
+    # which would corrupt state file (Sweep audit)
+    if test -z "$result"
+        set result (date +%Y-%m-%d)
     end
     echo "$result"
 end
@@ -117,6 +127,14 @@ end
 # --- internal: add a single card interactively ---
 function _nleitner_add
     set -l deck $argv[1]
+
+    # WHY: reject deck names with slashes or dots to prevent path traversal
+    # "../../etc/foo" would write outside NOTES_DIR (Sweep audit pass 2)
+    if string match -qr '[/\\.]' "$deck"
+        echo "  Error: deck name cannot contain slashes or dots: $deck"
+        return 1
+    end
+
     set -l deck_dir "$NOTES_DIR/learning/drills"
     set -l file "$deck_dir/$deck.md"
 
@@ -151,6 +169,13 @@ end
 # --- internal: extract Q&A pairs from a note ---
 function _nleitner_from
     set -l deck $argv[1]
+
+    # WHY: reject deck names with slashes or dots to prevent path traversal (Sweep audit)
+    if string match -qr '[/\\.]' "$deck"
+        echo "  Error: deck name cannot contain slashes or dots: $deck"
+        return 1
+    end
+
     set -l note_path (string join ' ' $argv[2..-1])
     set -l deck_dir "$NOTES_DIR/learning/drills"
     set -l file "$deck_dir/$deck.md"
@@ -282,7 +307,7 @@ function _nleitner_run
     end
 
     # WHY: reconcile state with deck before drilling
-    _nleitner_reconcile $deck
+    _nleitner_reconcile $deck; or return 1
 
     set -l questions (grep '^Q: ' "$file" | sed 's/^Q: //')
     set -l answers (grep '^A: ' "$file" | sed 's/^A: //')
@@ -291,6 +316,14 @@ function _nleitner_run
     if test $total -eq 0
         echo "No cards in deck: $deck"
         return 0
+    end
+
+    # WHY: Q and A counts must match — mismatched pairs would display wrong answers
+    # for the wrong questions. Fail fast instead of silently corrupting drill (Sweep audit)
+    if test (count $answers) -ne $total
+        echo "Error: Q/A count mismatch in deck '$deck' — "(count $questions)" questions, "(count $answers)" answers."
+        echo "Check the deck file for missing or extra Q:/A: lines."
+        return 1
     end
 
     # WHY: read state into parallel arrays — BOX and NEXT_DUE per card
@@ -314,8 +347,10 @@ function _nleitner_run
     # WHY: compare per-card due date against today — true interval-based scheduling
     # replaces day-of-year modulo which was calendar-dependent (ChatGPT + DeepSeek audit)
     for i in (seq 1 $limit)
-        # WHY: string comparison works for ISO dates (YYYY-MM-DD)
-        if test "$due_dates[$i]" \<= "$today"
+        # WHY: Fish test has no <= operator — \<= is invalid and always fails.
+        # Use negated > instead: "not greater than" = "less than or equal".
+        # String comparison works for ISO dates (YYYY-MM-DD) (Sweep audit pass 1+2)
+        if not test "$due_dates[$i]" \> "$today"
             set due_indices $due_indices $i
         end
     end
@@ -480,7 +515,7 @@ function _nleitner_status
     # WHY: count due cards
     set -l due_count 0
     for i in (seq 1 (count $due_dates))
-        if test "$due_dates[$i]" \<= "$today"
+        if not test "$due_dates[$i]" \> "$today"
             set due_count (math $due_count + 1)
         end
     end
