@@ -82,6 +82,7 @@ Config in `tmux.conf`. Plugins managed by TPM: tmux-resurrect, tmux-continuum, v
 
 ## Conventions
 
-- Config files use header comments with `path:`, `description:`, `CHANGELOG:`, and `ROLLBACK:` annotations.
+- Config files use header comments with `path:`, `description:`, `patched:`, and `date:` annotations.
+- Repo-level change history lives in `CHANGELOG.md`.
 - Yabai rules use anchored regex (`^...$`) for app matching.
 - The `nvim/` directory (without `-rebuild` suffix) is legacy — do not modify it.
