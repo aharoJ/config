@@ -1,0 +1,20 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  navigation.skhdrc — Stack Window Focus                                    ║
+# ║  path: ~/.config/skhd/modules/stack/navigation.skhdrc                      ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# STACK NAVIGATION
+# ────────────────
+# Two operations: next and prev. j=next (down), k=prev (up).
+# Both wrap around at boundaries — you never hit a dead end.
+
+
+# ── Stack Cycling ──────────────────────────────────────────────────────────
+hyper - j : yabai -m window --focus stack.next || yabai -m window --focus stack.first
+hyper - k : yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+
+
+# ── tmux Window Cycling (no prefix needed) ─────────────────────────────────
+# Horizontal axis: h=prev, l=next. Vertical axis (j/k) is yabai stack above.
+hyper - h : tmux select-window -t :-1
+hyper - l : tmux select-window -t :+1
