@@ -43,6 +43,11 @@ function _nrate_get_frontmatter_field
     set -l file $argv[1]
     set -l field $argv[2]
 
+    # WHY: guard against nonexistent files — awk errors are cryptic (Sweep audit)
+    if not test -f "$file"
+        return 1
+    end
+
     awk -v field="$field" '
         { gsub(/\r$/, "") }
         NR == 1 {
@@ -104,7 +109,15 @@ function _nrate_set_frontmatter
         cat "$file" >>"$tmp"
     end
 
-    mv "$tmp" "$file"
+    # WHY: verify tmp file has content before replacing — if awk fails silently,
+    # an empty tmp file would destroy the note (Sweep audit)
+    if test -s "$tmp"
+        mv "$tmp" "$file"
+    else
+        echo "Error: frontmatter update failed — original file preserved." >&2
+        rm -f "$tmp"
+        return 1
+    end
 end
 
 # --- internal: show due queue ---

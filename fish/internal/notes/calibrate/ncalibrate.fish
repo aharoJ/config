@@ -26,7 +26,11 @@ function ncalibrate --description "notes: metacognitive calibration (predict →
     set -l time_stamp (date +%H:%M)
     set -l dir "$NOTES_DIR/learning/calibrate"
     set -l file "$dir/$day-$slug.md"
-    mkdir -p "$dir"
+    # WHY: check mkdir success — permission errors cascade into silent write failures (Sweep audit)
+    if not mkdir -p "$dir" 2>/dev/null
+        echo "Error: could not create directory: $dir"
+        return 1
+    end
 
     if not test -f "$file"
         echo "# Calibrate: $argv" >"$file"

@@ -9,7 +9,12 @@ function note --description "notes: open today's journal"
 
     # WHY: shared helper ensures template exists and returns the path
     # single source of truth — change the template in one place (Claude audit)
+    # WHY: check return status — if journal dir creation fails, $file is empty
+    # and $EDITOR would open with no target (Sweep audit)
     set -l file (_notes_ensure_journal)
+    if test $status -ne 0 -o -z "$file"
+        return 1
+    end
 
     cd "$NOTES_DIR"; and $EDITOR "$file"
 end
