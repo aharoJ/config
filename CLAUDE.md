@@ -49,7 +49,22 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 **yabai** (`yabai/`): Neutral base config in `yabairc` — no layout opinion. Layout-specific settings (BSP, stack, float) live in `profiles/`. SIP is fully enabled (no scripting addition).
 
-**skhd** (`skhd/`): Modular — `skhdrc` is entry point that `.load`s modules from `modules/` (navigation, manipulation, layout, resize, services, apps, scripts). Uses skhd-zig fork.
+**skhd** (`skhd/`): Profile-based architecture using symlink swap. Uses skhd-zig fork.
+
+```
+skhd/
+├── skhdrc                    # Entry point — loads shared/ + active/
+├── modules/
+│   ├── active → stack/       # Symlink swapped by `yp` fish function + skhd -r
+│   ├── shared/               # Always loaded (apps, scripts, services)
+│   ├── stack/                # Stack-only bindings (primary workflow)
+│   └── bsp/                  # BSP-only bindings
+└── scripts/                  # Helper scripts for skhd bindings
+```
+
+Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish function which swaps `modules/active` symlink and reloads skhd. Stack and BSP bindings are completely isolated — no fallback chains, no silent no-ops.
+
+**SIP is fully enabled** — `window --space`, `space --focus`, scratchpad, opacity, animations, and shadows are all unavailable. Only bind commands that work without the scripting addition.
 
 **Karabiner** (`karabiner/`): CapsLock → Hyper (Ctrl+Opt+Shift+Cmd). Escape held → Hyper, tapped → Escape. Config is auto-generated JSON — edit with care.
 
@@ -59,7 +74,7 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 - `Ctrl + h/j/k/l` → RESERVED for Neovim ↔ tmux navigation (never bind in skhd)
 - `Alt + h/j/k/l` → RESERVED for Neovim resize
 - `Ctrl + Space` → tmux prefix
-- `Hyper + 1-9, [, ]` → Karabiner-claimed
+- `Hyper + 1-9, [, ]` → Karabiner-claimed (desktop switching, backlight)
 
 ## tmux (`tmux/`)
 
