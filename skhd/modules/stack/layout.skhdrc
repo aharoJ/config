@@ -1,0 +1,13 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  layout.skhdrc — Stack Layout Controls                                     ║
+# ║  path: ~/.config/skhd/modules/stack/layout.skhdrc                          ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# STACK LAYOUT
+# ────────────
+# Intentionally minimal. Float grid and zoom commands require the scripting
+# addition (SIP disabled) which we don't have. Close/minimize/deminimize
+# are native macOS shortcuts (Cmd+Q, Cmd+H, Cmd+M) — no need to duplicate.
+#
+# FREE HYPER KEYS (available for future use):
+#   b, d, e, h, l, m, n, r, s, w, x, y, z

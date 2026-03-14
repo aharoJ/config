@@ -1,0 +1,43 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  resize.skhdrc — BSP Resize Mode                                           ║
+# ║  path: ~/.config/skhd/modules/bsp/resize.skhdrc                            ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# HOW RESIZE MODE WORKS
+# ─────────────────────
+# 1. Press Hyper+S from default mode -> enters resize mode
+# 2. All keypresses are captured (@ flag) — nothing leaks to focused app
+# 3. Press h/j/k/l repeatedly to resize in that direction
+# 4. Press = to balance (equalize) all windows
+# 5. Press Escape or Return to exit back to default mode
+#
+# This mode only exists in the BSP profile. In stack mode, the resize mode
+# declaration is never loaded — Hyper+S is free for stack-specific use.
+
+
+# ── Mode Declaration ───────────────────────────────────────────────────────
+# The @ flag captures ALL keypresses in the mode, preventing leaks to the
+# focused app. Without @, unbound keys pass through — dangerous while resizing.
+:: resize @
+
+
+# ── Enter Resize Mode ─────────────────────────────────────────────────────
+# Hyper+S (S for Size) from default mode enters resize
+hyper - s ; resize
+
+
+# ── Resize Bindings (active only in resize mode) ──────────────────────────
+# Grow/shrink by 50px per tap. Stays in resize mode for repeated adjustments.
+resize < h : yabai -m window --resize right:-50:0 || yabai -m window --resize left:-50:0
+resize < j : yabai -m window --resize bottom:0:50 || yabai -m window --resize top:0:50
+resize < k : yabai -m window --resize bottom:0:-50 || yabai -m window --resize top:0:-50
+resize < l : yabai -m window --resize right:50:0 || yabai -m window --resize left:50:0
+
+
+# ── Balance (equalize all windows) ────────────────────────────────────────
+resize < 0x18 : yabai -m space --balance
+
+
+# ── Exit Resize Mode ──────────────────────────────────────────────────────
+resize < escape ; default
+resize < return ; default
