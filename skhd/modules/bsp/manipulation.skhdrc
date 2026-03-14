@@ -1,0 +1,18 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  manipulation.skhdrc — BSP Window Swap                                     ║
+# ║  path: ~/.config/skhd/modules/bsp/manipulation.skhdrc                      ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# BSP MANIPULATION
+# ────────────────
+# Swap exchanges two windows' positions in the BSP tree.
+# Shift+Alt is heavier than bare Hyper — intentional. Swap changes window
+# positions (destructive), focus just moves the cursor (non-destructive).
+
+
+# ── Window Swap ──────────────────────────────────────────────────────────
+# Shift+Alt + hjkl: swap focused window with neighbor in direction
+shift + alt - h : yabai -m window --swap west
+shift + alt - j : yabai -m window --swap south
+shift + alt - k : yabai -m window --swap north
+shift + alt - l : yabai -m window --swap east

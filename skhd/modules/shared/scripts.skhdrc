@@ -1,0 +1,7 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  scripts.skhdrc — Script Bindings                                          ║
+# ║  path: ~/.config/skhd/modules/shared/scripts.skhdrc                        ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+# ── Toggle Blur Toggle ─────────────────────────────────────────────────────
+hyper - g : python3 "$HOME/.scripts/ghostty_toggle_blur.py"

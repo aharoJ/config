@@ -1,0 +1,17 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  navigation.skhdrc — BSP Window Focus                                      ║
+# ║  path: ~/.config/skhd/modules/bsp/navigation.skhdrc                        ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# BSP NAVIGATION
+# ──────────────
+# Pure directional focus. No stack fallbacks — this config is only loaded
+# when yabai is in BSP mode.
+# h=west, j=south, k=north, l=east — standard vim directional mapping.
+
+
+# ── Directional Focus ─────────────────────────────────────────────────────
+hyper - h : yabai -m window --focus west
+hyper - j : yabai -m window --focus south
+hyper - k : yabai -m window --focus north
+hyper - l : yabai -m window --focus east

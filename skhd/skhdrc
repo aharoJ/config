@@ -6,12 +6,22 @@
 #
 # ARCHITECTURE
 # ────────────
-# This file is the entry point. It declares the shell, modes, and loads
-# domain-specific modules. No hotkey bindings live here — they live in
-# modules/ organized by responsibility.
+# This file is the entry point. It loads shared modules (layout-agnostic)
+# and active profile modules (layout-specific) via a symlink.
 #
-# skhd processes .load directives in order. Later definitions of the same
-# hotkey override earlier ones (last-write-wins). Each module is independent.
+# modules/
+# ├── shared/          ← always loaded (apps, scripts, services)
+# ├── active → stack/  ← symlink swapped by `yp` fish function
+# ├── stack/           ← stack-only bindings
+# └── bsp/             ← BSP-only bindings
+#
+# Profile switching (Hyper+T / Hyper+P) calls the `yp` fish function which:
+#   1. Applies the yabai profile (layout, padding, gaps)
+#   2. Swaps modules/active symlink to the matching skhd profile
+#   3. Reloads skhd (`skhd -r`) so new bindings take effect
+#
+# This means stack mode loads ONLY stack bindings and BSP mode loads
+# ONLY BSP bindings. No silent no-ops, no fallback chains, no dead keys.
 #
 # KEYBINDING SOVEREIGNTY
 # ──────────────────────
@@ -39,22 +49,21 @@
 .shell "/bin/bash"
 
 
-# ── Mode Declarations ────────────────────────────────────────────────────────
-# The @ flag captures ALL keypresses in the mode, preventing leaks to the
-# focused app. Without @, unbound keys pass through — dangerous while resizing.
-
-:: default : # default mode — always exists, declared here for clarity
-:: resize @ : # resize mode — hjkl to resize windows, Escape to exit
+# ── Default Mode ─────────────────────────────────────────────────────────────
+# Declared explicitly for clarity. Additional modes (e.g., resize for BSP)
+# are declared within their respective profile modules.
+:: default :
 
 
-# ── Module Loads ─────────────────────────────────────────────────────────────
-# Each module is a self-contained domain of bindings.
-# Order matters only if two modules bind the same key (they shouldn't).
+# ── Shared Modules (layout-agnostic) ────────────────────────────────────────
+.load "modules/shared/services.skhdrc"
+.load "modules/shared/apps.skhdrc"
+.load "modules/shared/scripts.skhdrc"
 
-.load "modules/navigation.skhdrc"
-.load "modules/manipulation.skhdrc"
-.load "modules/layout.skhdrc"
-.load "modules/resize.skhdrc"
-.load "modules/services.skhdrc"
-.load "modules/apps.skhdrc"
-.load "modules/scripts.skhdrc"
+
+# ── Active Profile Modules (swapped by symlink) ─────────────────────────────
+# modules/active is a symlink → modules/stack or modules/bsp
+# Swapped at runtime by the `yp` fish function + skhd reload.
+.load "modules/active/navigation.skhdrc"
+.load "modules/active/manipulation.skhdrc"
+.load "modules/active/layout.skhdrc"
