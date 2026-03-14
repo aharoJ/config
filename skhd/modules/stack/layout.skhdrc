@@ -5,21 +5,29 @@
 #
 # STACK LAYOUT
 # ────────────
-# Intentionally minimal. Float grid and zoom commands require the scripting
-# addition (SIP disabled) which we don't have. Close/minimize/deminimize
-# are native macOS shortcuts (Cmd+Q, Cmd+H, Cmd+M) — no need to duplicate.
-#
-# ── Float ──────────────────────────────────────────────────────────────────
-# Hyper+D: pop window out of stack into a centered float (or push back in)
-# WHY: Pull a reference window (docs, chat) out of the stack so you can
-# see it alongside the stack. Toggle again to re-stack it. Works with SIP.
+# Float snaps for pulling reference windows out of the stack.
+# --toggle float + --grid works with SIP (operates on floating windows only).
+# Same key unfloats the window back into the stack.
+
+
+# ── Float: Center ─────────────────────────────────────────────────────────
+# Hyper+D: pop window to centered float (50% screen) or push back into stack
 hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
 
+# ── Float: Right Half ────────────────────────────────────────────────────
+# Hyper+R: snap float to right half (reference window beside your stack)
+hyper - r : yabai -m window --toggle float; yabai -m window --grid 1:2:1:0:1:1
 
-# ── SIP-GATED (not available) ─────────────────────────────────────────────
+# ── Float: Left Half ─────────────────────────────────────────────────────
+# Hyper+E: snap float to left half
+hyper - e : yabai -m window --toggle float; yabai -m window --grid 1:2:0:0:1:1
+
+
+
+# ── SIP-GATED (not available) ────────────────────────────────────────────
 # window --space, space --focus, scratchpad, opacity, animations, shadows
 # all require partially disabled SIP. Not usable on this machine.
 
 
 # FREE HYPER KEYS (available for future use):
-#   b, e, m, n, r, s, w, x, y, z
+#   b, m, n, w, x, y, z
