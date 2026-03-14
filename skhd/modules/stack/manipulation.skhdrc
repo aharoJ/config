@@ -6,18 +6,9 @@
 # STACK MANIPULATION
 # ──────────────────
 # Reorder the focused window within the stack (move it up/down in order).
-# Send windows between spaces to declutter the stack.
 
 
 # ── Reorder Within Stack ──────────────────────────────────────────────────
 # Shift+Option + j/k: move focused window down/up in stack order
 shift + alt - j : yabai -m window --swap stack.next || yabai -m window --swap stack.first
 shift + alt - k : yabai -m window --swap stack.prev || yabai -m window --swap stack.last
-
-
-# ── Send to Space ─────────────────────────────────────────────────────────
-# Shift+Option + [ / ]: send focused window to adjacent space and follow focus
-# NOTE: macOS must have Ctrl+Left/Right enabled in Mission Control settings
-#       AND those spaces must exist. yabai cannot create spaces with SIP enabled.
-shift + alt - 0x21 : yabai -m window --space prev && yabai -m space --focus prev  # [
-shift + alt - 0x1E : yabai -m window --space next && yabai -m space --focus next  # ]
