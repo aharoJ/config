@@ -17,7 +17,7 @@ hyper - k : yabai -m window --focus stack.prev || yabai -m window --focus stack.
 # ── Focus Recent (alt-tab within stack) ────────────────────────────────────
 # Hyper+S: jump back to the last focused window. Same as Ctrl-^ in Neovim.
 # Editor ↔ browser, terminal ↔ docs — instant toggle without cycling.
-hyper - s : yabai -m window --focus recent
+hyper - space : yabai -m window --focus recent
 
 
 # ── tmux Window Cycling (no prefix needed) ─────────────────────────────────
