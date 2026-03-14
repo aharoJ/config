@@ -28,7 +28,11 @@ function nerror --description "notes: error notebook + pattern analysis"
 
     set -l cmd $argv[1]
     set -l dir "$NOTES_DIR/learning/errors"
-    mkdir -p "$dir"
+    # WHY: check mkdir success — permission errors cascade into silent write failures (Sweep audit)
+    if not mkdir -p "$dir" 2>/dev/null
+        echo "Error: could not create directory: $dir"
+        return 1
+    end
 
     switch $cmd
         case list
@@ -131,18 +135,18 @@ function _nerror_list
     # WHY: fzf for quick navigation if available
     # WHY: quote {} in preview string for filenames with spaces (ChatGPT audit)
     if command -q fzf
-        set -l preview_cmd "cat '$dir/{}.md'"
+        # WHY: use full relative path in fzf, not just basename — if errors are
+        # ever nested in subdirectories, basename loses the path (Sweep audit)
+        set -l preview_cmd "cat '{}'"
         if command -q bat
-            set preview_cmd "bat --color=always --style=plain '$dir/{}.md'"
+            set preview_cmd "bat --color=always --style=plain '{}'"
         end
 
-        set -l chosen (find "$dir" -type f -name '*.md' | sort -r | while read -l f
-            set -l name (basename "$f" .md)
-            echo "$name"
-        end | fzf --prompt="Open error > " --preview="$preview_cmd" 2>/dev/null)
+        set -l chosen (find "$dir" -type f -name '*.md' | sort -r \
+            | fzf --prompt="Open error > " --preview="$preview_cmd" 2>/dev/null)
 
         if test -n "$chosen"
-            $EDITOR "$dir/$chosen.md"
+            $EDITOR "$chosen"
         end
     end
 end

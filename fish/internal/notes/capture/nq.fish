@@ -20,14 +20,25 @@ function nq --description "notes: quick append to journal (no editor)"
     end
 
     # WHY: shared helper ensures template exists and returns the path
+    # WHY: check both exit status AND non-empty result — if journal creation fails,
+    # $file would be empty and we'd append to nothing (Sweep audit)
     set -l file (_notes_ensure_journal)
-    or return 1
+    if test $status -ne 0 -o -z "$file"
+        return 1
+    end
     set -l time_stamp (date +%H:%M)
 
     # WHY: sanitize newlines and carriage returns from input
     # must use -ra (regex mode) — in non-regex mode, '\n' matches the literal
     # two-character string backslash-n, NOT an actual newline (Kimi + ChatGPT audit)
-    set -l entry (string join ' ' $argv | string replace -ra '[\r\n]+' ' ')
+    set -l entry (string join ' ' $argv | string replace -ra '[\r\n]+' ' ' | string trim)
+
+    # WHY: guard against empty entry after sanitization — input that was only
+    # newlines/whitespace would produce a blank journal line (Sweep audit)
+    if test -z "$entry"
+        echo "Error: entry is empty after sanitization."
+        return 1
+    end
 
     # WHY: append with timestamp — the journal becomes a timestamped log
     echo "- $time_stamp — $entry" >>"$file"

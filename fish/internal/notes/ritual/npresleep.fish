@@ -63,6 +63,12 @@ function _npresleep_add
         end
     end
 
+    # WHY: resolve to absolute path — relative paths like "journal/2026-03-13.md" and
+    # "$NOTES_DIR/journal/2026-03-13.md" are the same file but grep -qxF treats them
+    # as different, creating duplicate queue entries (Sweep audit)
+    set -l resolved (realpath "$note_path" 2>/dev/null; or echo "$note_path")
+    set note_path "$resolved"
+
     # WHY: grep -qxF for exact full-line match, not substring
     # -qF alone would match "/path/to/foo.md" against "/path/to/foobar.md" (ChatGPT audit)
     if test -f "$queue_file"
@@ -123,8 +129,15 @@ function _npresleep_review
         return 0
     end
 
-    # WHY: read notes into array, filtering blank lines (Claude audit)
-    set -l notes (cat "$queue_file" | string match -v '')
+    # WHY: read notes into array line-by-line — using `while read` instead of
+    # command substitution to properly handle paths with special characters.
+    # Filter blank lines to prevent ghost entries (Claude audit + Sweep audit)
+    set -l notes
+    while read -l line
+        if test -n "$line"
+            set notes $notes "$line"
+        end
+    end <"$queue_file"
     set -l total (count $notes)
 
     echo "=== PRE-SLEEP REVIEW ==="

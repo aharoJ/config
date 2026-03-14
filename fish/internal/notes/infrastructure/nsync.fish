@@ -46,7 +46,10 @@ function nsync --description "notes: git sync (pull → commit → push)"
         #   aws_access_key_id (any context — this is never in normal prose)
         #   AKIA[16 alphanums] (AWS access key shape)
         #   -----BEGIN.*PRIVATE KEY----- (PEM private keys)
-        echo 'if git diff --cached --diff-filter=ACM -z --name-only | xargs -0 grep -lEi "(api[_-]?key\s*[=:]|password\s*[=:]|secret\s*[=:]|token\s*[=:]|aws_access_key_id|AKIA[A-Z0-9]{16}|-----BEGIN.*PRIVATE KEY-----)" 2>/dev/null; then' >>"$hook"
+        # WHY: use [[:space:]]* not \s* — POSIX ERE (grep -E) does not support \s.
+        # BSD grep on macOS treats \s as literal 's', making the hook miss secrets
+        # with spaces around = or : (Sweep audit pass 1+2)
+        echo 'if git diff --cached --diff-filter=ACM -z --name-only | xargs -0 grep -lEi "(api[_-]?key[[:space:]]*[=:]|password[[:space:]]*[=:]|secret[[:space:]]*[=:]|token[[:space:]]*[=:]|aws_access_key_id|AKIA[A-Z0-9]{16}|-----BEGIN.*PRIVATE KEY-----)" 2>/dev/null; then' >>"$hook"
         echo '    echo "BLOCKED: potential secret detected in staged files."' >>"$hook"
         echo '    echo "Review with: git diff --cached"' >>"$hook"
         echo '    exit 1' >>"$hook"

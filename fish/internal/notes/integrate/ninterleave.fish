@@ -56,6 +56,11 @@ function ninterleave --description "notes: interleaved mixed-topic review"
     # this GUARANTEES notes come from different topics (ChatGPT audit:
     # "the code just pools all candidates and picks random ones — can choose
     # multiple files from the same subdirectory/topic family")
+    # WHY: check awk availability — it's used for random shuffling (Sweep audit)
+    if not command -q awk
+        echo "Error: awk is required for random selection."
+        return 1
+    end
     set -l shuffled_buckets (printf '%s\n' $bucket_dirs | awk 'BEGIN{srand()}{print rand()"\t"$0}' | sort -n | cut -f2- | head -n $count)
 
     set -l selected
@@ -100,7 +105,9 @@ function ninterleave --description "notes: interleaved mixed-topic review"
 
         if test "$f" != "$selected[-1]"
             read -P "Next note? [Enter to continue, q to stop] " -l response
-            if test "$response" = "q"
+            # WHY: trim whitespace and accept Q/q — user may type " q " or "Q" (Sweep audit)
+            set response (string trim "$response")
+            if string match -qir '^q$' "$response"
                 echo "Stopped."
                 return 0
             end
