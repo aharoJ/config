@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-18 — Pre-commit Secret Scanner
+
+Added a 3-layer pre-commit hook (ported from `~/.notes/`) to prevent accidental secret leaks in this public repo.
+
+### Changes
+
+1. **`.pre-commit-hook`** — Source template with path blocking (`stripe/`, `gh/`), content scanning (31 patterns), and allowlist support
+2. **`.hook-allowlist`** — Initial allowlist (the hook file itself)
+3. **`.gitignore`** — Added `stripe/` (Stripe CLI credentials directory)
+4. **`CLAUDE.md`** — Documented hook architecture and post-clone install step
+
 ## 2026-02-26 — Fish Notes System Audit & Patch
 
 Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 passes, 86 findings triaged. 25 edits applied across 14 files.
