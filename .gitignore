@@ -8,6 +8,7 @@ unlink.py
 # Ignore specific directories
 /.trash
 /.obsidian
+stripe/
 
 # Ignore system files
 .DS_Store
