@@ -80,6 +80,16 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 
 Config in `tmux.conf`. Plugins managed by TPM: tmux-resurrect, tmux-continuum, vim-tmux-navigator. Vi copy-mode with `y` → pbcopy.
 
+## Pre-commit Hook
+
+A 3-layer pre-commit hook (`.pre-commit-hook`) prevents accidental secret leaks:
+
+1. **Path blocking** — hard-blocks `stripe/`, `gh/`, and any path matching `credentials`, `env.bak`, `.env`. Never bypassable.
+2. **Content scanning** — 31 regex patterns catching private keys, API keys (`sk_test_`, `ghp_`, `AKIA`, etc.), passwords, DB URLs, cloud creds.
+3. **Allowlist** — `.hook-allowlist` skips content scanning for files that reference patterns but aren't secrets (e.g., the hook itself).
+
+**Install after cloning:** `cp .pre-commit-hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
+
 ## Conventions
 
 - Config files use header comments with `path:`, `description:`, `patched:`, and `date:` annotations.
