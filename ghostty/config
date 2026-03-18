@@ -49,6 +49,7 @@ window-theme = auto
 window-padding-x = 4
 window-padding-y = 4
 window-padding-balance = true
+window-padding-color = extend
 
 # Start with a reasonable size (cells, not pixels)
 window-width = 120
@@ -143,7 +144,7 @@ keybind = global:cmd+grave_accent=toggle_quick_terminal
 # keybind = cmd+comma=open_config
 keybind = cmd+shift+r=reload_config
 keybind = cmd+shift+p=toggle_command_palette
-keybind = cmd+enter=toggle_fullscreen
+keybind = cmd+enter=ignore
 
 # ── Safety ──
 # Block accidental macOS Hide/Minimize while typing fast in Neovim
@@ -153,6 +154,14 @@ keybind = cmd+m=ignore
 
 # ── tmux ──
 keybind = cmd+z=text:\x02
+
+# ── tmux Session & Window Navigation (prefix-free via Cmd+Shift) ──
+# Ghostty intercepts before macOS — no system shortcut conflicts.
+# h/l = windows (horizontal), j/k = sessions (vertical).
+keybind = cmd+shift+h=text:\x02h
+keybind = cmd+shift+l=text:\x02l
+keybind = cmd+shift+j=text:\x02)
+keybind = cmd+shift+k=text:\x02(
 
 # ── claude code ──
 keybind = shift+enter=text:\x1b[13;2u
