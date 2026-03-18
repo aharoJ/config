@@ -263,9 +263,17 @@
                         ]
                     },
                     {
+                        "description": "Caps Lock → Hyper (HHKB only)",
                         "manipulators": [
                             {
-                                "description": "Change caps_lock to command+control+option+shift.",
+                                "conditions": [
+                                    {
+                                        "type": "device_if",
+                                        "identifiers": [
+                                            { "vendor_id": 1278, "product_id": 33 }
+                                        ]
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "caps_lock",
                                     "modifiers": { "optional": ["any"] }
@@ -276,6 +284,27 @@
                                         "modifiers": ["left_command", "left_control", "left_option"]
                                     }
                                 ],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Caps Lock → Control (MacBook internal keyboard, HHKB mimic)",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "type": "device_unless",
+                                        "identifiers": [
+                                            { "vendor_id": 1278, "product_id": 33 }
+                                        ]
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "caps_lock",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "key_code": "left_control" }],
                                 "type": "basic"
                             }
                         ]
