@@ -221,7 +221,7 @@
                         ]
                     },
                     {
-                        "description": "ESCAPE to HYPER (SHIFT+COMMAND+OPTION+CONTROL) or ESCAPE (If Alone)",
+                        "description": "Escape → Hyper (held) / Escape (tapped)",
                         "manipulators": [
                             {
                                 "from": {
@@ -236,9 +236,13 @@
                                 ],
                                 "to_if_alone": [{ "key_code": "escape" }],
                                 "type": "basic"
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Block macOS sysdiagnose shortcuts (Hyper+, Hyper+. Hyper+/ would trigger sysdiagnose without these)",
+                        "manipulators": [
                             {
-                                "description": "Avoid starting sysdiagnose with the built-in macOS shortcut cmd+shift+option+ctrl+,",
                                 "from": {
                                     "key_code": "comma",
                                     "modifiers": { "mandatory": ["command", "shift", "option", "control"] }
@@ -247,7 +251,6 @@
                                 "type": "basic"
                             },
                             {
-                                "description": "Avoid starting sysdiagnose with the built-in macOS shortcut cmd+shift+option+ctrl+.",
                                 "from": {
                                     "key_code": "period",
                                     "modifiers": { "mandatory": ["command", "shift", "option", "control"] }
@@ -257,7 +260,6 @@
                             },
                             {
                                 "from": {
-                                    "description": "Avoid starting sysdiagnose with the built-in macOS shortcut cmd+shift+option+ctrl+/",
                                     "key_code": "slash",
                                     "modifiers": { "mandatory": ["command", "shift", "option", "control"] }
                                 },
