@@ -206,3 +206,10 @@ yabai/scripts/profiles/.current_profile
 
 # LLM cross-review generated intakes (contain full source code)
 docs/prompts/*.md
+
+# Cross-review infrastructure (symlinked to ~/.notes/)
+.claude/rules
+GOTCHAS.md
+scripts/templates
+scripts/generate-intake.sh
+.claude/skills/review/references/
