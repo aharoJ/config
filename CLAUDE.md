@@ -18,6 +18,7 @@ Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/` and i
 | Starship   | Automatic on new prompt                                       |
 | Ghostty    | Automatic on config save                                      |
 | Karabiner  | Automatic on JSON save                                        |
+| Hammerspoon| Automatic on `.lua` save (pathwatcher), or `hs -c "hs.reload()"` |
 
 ## Neovim (`nvim-rebuild/`)
 
@@ -75,6 +76,23 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 - `Alt + h/j/k/l` → RESERVED for Neovim resize
 - `Ctrl + Space` → tmux prefix
 - `Hyper + 1-9, [, ]` → Karabiner-claimed (desktop switching, backlight)
+
+## Hammerspoon (`hammerspoon/`)
+
+Visual stack indicators for yabai. Config lives in `~/.config/hammerspoon/` and is symlinked from `~/.hammerspoon/init.lua`.
+
+```
+hammerspoon/
+├── init.lua                  # Entry point — IPC, module loading, startup alert
+├── modules/
+│   ├── reload.lua            # Auto-reload on .lua save via hs.pathwatcher
+│   ├── stack-indicators.lua  # App icon pills for yabai window stacks
+│   └── utils.lua             # yabaiQuery(), isDarkMode(), debounce()
+```
+
+**Stack indicators:** Queries `yabai -m query --windows --space`, groups by `stack-index`, draws rounded pills with app icons in the yabai left padding gap. Click-to-focus, theme-aware (light/dark), debounced redraws.
+
+**Reload:** Auto-reloads on any `.lua` file save. Also reloaded by `Hyper+Q` (via `yr` fish function alongside yabai/skhd). IPC enabled for `hs -c` CLI commands.
 
 ## tmux (`tmux/`)
 
