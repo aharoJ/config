@@ -158,8 +158,8 @@ keybind = cmd+z=text:\x02
 # ── tmux Session & Window Navigation (prefix-free via Cmd+Shift) ──
 # Ghostty intercepts before macOS — no system shortcut conflicts.
 # h/l = windows (horizontal), j/k = sessions (vertical).
-keybind = cmd+shift+h=text:\x02h
-keybind = cmd+shift+l=text:\x02l
+keybind = cmd+shift+h=text:\x02p
+keybind = cmd+shift+l=text:\x02n
 keybind = cmd+shift+j=text:\x02)
 keybind = cmd+shift+k=text:\x02(
 
