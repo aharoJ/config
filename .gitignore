@@ -203,3 +203,6 @@ backend/src/main/resources/application.properties
 programming/app projects/twitter/.obsidian/workspace.json
 gh
 yabai/scripts/profiles/.current_profile
+
+# LLM cross-review generated intakes (contain full source code)
+docs/prompts/*.md

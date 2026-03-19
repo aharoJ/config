@@ -108,6 +108,23 @@ A 3-layer pre-commit hook (`.pre-commit-hook`) prevents accidental secret leaks:
 
 **Install after cloning:** `cp .pre-commit-hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
 
+## LLM Cross-Review System
+
+Adversarial multi-model code review via templated intake documents. Send code to 5+ web LLMs independently, triage findings, fix real issues, iterate until convergence (all PASS).
+
+```bash
+./scripts/generate-intake.sh <template-name> > docs/prompts/llm.intake.<name>.md
+```
+
+Templates at `scripts/templates/*.md`. Use `{{FILE:path/relative/to/repo}}` markers. Output at `docs/prompts/` (gitignored). Review loop: generate -> feed to 5 web LLMs -> triage -> fix -> repeat until clean.
+
+## Severity Classification
+
+- **P0**: Data corruption, security holes, silent wrong behavior
+- **P1**: Functional bugs that affect correctness but have workarounds
+- **P2**: Code quality, edge cases unlikely in normal use
+- **P3**: Style, naming, minor improvements
+
 ## Conventions
 
 - Config files use header comments with `path:`, `description:`, `patched:`, and `date:` annotations.
