@@ -59,6 +59,9 @@ function yr --description "yabai + skhd: restart + apply profile"
     # ── Restart skhd ────────────────────────────────────────────
     skhd --restart-service 2>/dev/null
 
+    # ── Reload Hammerspoon ────────────────────────────────────
+    hs -c "hs.reload()" 2>/dev/null
+
     # ── Confirm ─────────────────────────────────────────────────
     set_color yellow
     echo ""
