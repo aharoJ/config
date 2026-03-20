@@ -162,6 +162,7 @@ keybind = cmd+shift+h=text:\x02p
 keybind = cmd+shift+l=text:\x02n
 keybind = cmd+shift+j=text:\x02(
 keybind = cmd+shift+k=text:\x02)
+keybind = cmd+shift+t=text:\x02t
 
 # ── claude code ──
 keybind = shift+enter=text:\x1b[13;2u
