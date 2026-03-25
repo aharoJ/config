@@ -14,13 +14,13 @@
 # Hyper+D: pop window to centered float (50% screen) or push back into stack
 hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
 
-# ── Float: Right Half ────────────────────────────────────────────────────
-# Hyper+R: snap float to right half (reference window beside your stack)
-hyper - r : yabai -m window --toggle float; yabai -m window --grid 1:2:1:0:1:1
+# ── Float: Left Half ──────────────────────────────────────────────────
+# Hyper+W: snap float to left half
+hyper - w : yabai -m window --toggle float; yabai -m window --grid 1:2:0:0:1:1
 
-# ── Float: Left Half ─────────────────────────────────────────────────────
-# Hyper+E: snap float to left half
-hyper - e : yabai -m window --toggle float; yabai -m window --grid 1:2:0:0:1:1
+# ── Float: Right Half ────────────────────────────────────────────────────
+# Hyper+E: snap float to right half
+hyper - e : yabai -m window --toggle float; yabai -m window --grid 1:2:1:0:1:1
 
 
 
@@ -30,4 +30,4 @@ hyper - e : yabai -m window --toggle float; yabai -m window --grid 1:2:0:0:1:1
 
 
 # FREE HYPER KEYS (available for future use):
-#   b, m, n, w, x, y, z
+#   b, m, n, x, y, z
