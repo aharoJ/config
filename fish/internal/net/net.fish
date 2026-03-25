@@ -16,9 +16,10 @@
 #          Option C DNS (router upstream = Cloudflare), benchmark caveats
 # patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug, remove
 #          dead compare subcommand, wifi parsing fallbacks
-# patched: 2026-03-24 — R3 cross-review (6 LLMs): signal/noise awk field fix
-#          ($6 was "/" not noise, corrected to $7), remove dead bssid variable,
-#          defensive math -s0 on median to force integer
+# patched: 2026-03-24 — R3 cross-review (6 LLMs): signal/noise awk field fix,
+#          remove dead bssid, defensive math -s0 on median
+# patched: 2026-03-24 — R4 cross-review (5 LLMs): mktemp guard, networkQuality
+#          check, flush error handling, curl -- separator, signal/noise label
 # date: 2026-03-24
 
 function net --description "Network diagnostics and location switching"
@@ -107,6 +108,10 @@ function net --description "Network diagnostics and location switching"
             end
 
         case quality
+            if not command -q networkQuality
+                echo "net: networkQuality not found (requires macOS 12+)"
+                return 1
+            end
             echo "net: running networkQuality (throughput + responsiveness)"
             echo "      RPM > 2000 = High | 600-2000 = Medium | < 600 = Low"
             echo ""
@@ -120,22 +125,26 @@ function net --description "Network diagnostics and location switching"
             echo "net: curl timing breakdown → $url"
             echo ""
             for _q in 1 2 3
-                curl -o /dev/null -s -w "  dns:%{time_namelookup}s  connect:%{time_connect}s  tls:%{time_appconnect}s  ttfb:%{time_starttransfer}s  total:%{time_total}s\n" "$url"
+                curl -o /dev/null -s -w "  dns:%{time_namelookup}s  connect:%{time_connect}s  tls:%{time_appconnect}s  ttfb:%{time_starttransfer}s  total:%{time_total}s\n" -- "$url"
             end
 
         case flush
             echo "net: flushing DNS caches"
             sudo dscacheutil -flushcache
-            sudo killall -HUP mDNSResponder
-            set_color green
-            echo "net: flushed mDNSResponder + Directory Services cache"
-            set_color normal
+            sudo killall -HUP mDNSResponder 2>/dev/null
+            if test $status -eq 0
+                set_color green
+                echo "net: flushed mDNSResponder + Directory Services cache"
+                set_color normal
+            else
+                echo "net: flushed Directory Services cache (mDNSResponder not running)"
+            end
 
         case wifi
             echo "net: wifi connection details"
             echo ""
             # Pipe system_profiler directly — command substitution collapses newlines
-            set -l tmpfile (mktemp)
+            set -l tmpfile (mktemp); or begin; echo "net: failed to create temp file"; return 1; end
             system_profiler SPAirPortDataType 2>/dev/null > $tmpfile
 
             set -l ssid (awk '/Current Network Information:/{getline; gsub(/^ +| *:$/, ""); print; exit}' $tmpfile)
@@ -155,7 +164,7 @@ function net --description "Network diagnostics and location switching"
             printf "  channel:  %s\n" "$channel"
             printf "  phy mode: %s\n" "$phymode"
             printf "  tx rate:  %s Mbps\n" "$txrate"
-            printf "  signal:   %s dBm\n" "$rssi"
+            printf "  sig/noise: %s dBm\n" "$rssi"
             echo ""
             set_color brblack
             echo "  tip: Option+Click WiFi icon for live details"
