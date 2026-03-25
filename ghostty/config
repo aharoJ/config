@@ -30,7 +30,7 @@ font-thicken = true
 background-opacity = 0.80
 
 # No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
-background-blur = false
+background-blur = true
 # Apply opacity to cells with explicit background colors too (e.g., Neovim themes)
 # Set to true if you want full transparency even in TUI apps
 background-opacity-cells = false
@@ -160,8 +160,8 @@ keybind = cmd+z=text:\x02
 # h/l = windows (horizontal), j/k = sessions (vertical).
 keybind = cmd+shift+h=text:\x02p
 keybind = cmd+shift+l=text:\x02n
-keybind = cmd+shift+j=text:\x02(
-keybind = cmd+shift+k=text:\x02)
+keybind = cmd+shift+j=text:\x02)
+keybind = cmd+shift+k=text:\x02(
 keybind = cmd+shift+t=text:\x02t
 
 # ── claude code ──
