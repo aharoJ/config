@@ -1,5 +1,53 @@
 # Changelog
 
+## v1.0 — net.fish Cross-Review Hardening (2026-03-25)
+
+6-round adversarial multi-model code review (6 independent LLMs: Kimi, DeepSeek, Gemini, Grok, Codex, Claude Code) of the `net` fish function. 21 bugs found and fixed, 0 regression tests (no test framework — dotfiles project). Finding rate: 7 → 3 → 4 → 5 → 2 → 0.
+
+### Modified: `fish/internal/net/net.fish`
+
+**R1 (6 models):**
+- **P1**: Median crash when <3 dig queries succeed (`$sorted[2]` OOB)
+- **P2**: No mDNSResponder bypass caveat on bench output
+- **P2**: Compare diff labels ambiguous (`+N` → `↓N`)
+- **P2**: `net home` hardcoded Cloudflare DNS → moved to Option C (router upstream)
+- **P3**: Added `net quality`, `net curltime`, `net flush`, `net wifi` subcommands
+
+**R2 (6 models):**
+- **P1**: Median variable scoping — `set -l` inside fish if-block doesn't leak (0/6 caught, found by triage)
+- **P2**: Removed obsolete `net compare` (both profiles use DHCP after Option C)
+- **P2**: Added "unknown" fallbacks to `net wifi` for empty fields
+
+**R3 (6 models):**
+- **P2**: Signal/noise awk field — `$6` was `/`, corrected to `$7`
+- **P2**: `net wifi` completely broken — fish command substitution collapses newlines (0/6 caught, found by live testing)
+- **P3**: Removed dead `$bssid` variable
+- **P3**: Defensive `math -s0` on median
+
+**R4 (5 models):**
+- **P2**: Guard `mktemp` failure in wifi
+- **P3**: `networkQuality` command existence check
+- **P3**: Suppress `killall` stderr in flush, report partial success
+- **P3**: `curl --` separator for argument injection prevention
+- **P3**: Renamed "signal:" to "sig/noise:" label
+
+**R5 (5 models):**
+- **P3**: flush tracks both dscacheutil and killall exit status independently
+- **P3**: home/work guards DNS clear + DHCP renewal with `and`/`or` chain
+
+**R6 (5 models):** All-PASS convergence (3/5 PASS, 2 FAIL with verified false positives only).
+
+### Architecture Changes
+- DNS moved from hardcoded Cloudflare on Mac (Option A) to router upstream Cloudflare + Mac DHCP (Option C)
+- `net compare` removed (obsolete under Option C)
+- `net wifi` uses tmpfile to preserve newlines from `system_profiler`
+
+### New Subcommands
+- `net quality` — wraps `networkQuality -v` (throughput + RPM)
+- `net curltime [url]` — curl timing breakdown (dns/connect/tls/ttfb/total)
+- `net flush` — flush mDNSResponder + Directory Services cache
+- `net wifi` — WiFi connection details (SSID, channel, PHY, tx rate, signal/noise)
+
 ## 2026-03-19 — Hammerspoon Nuke & Rebuild + Claude Code Keybindings
 
 Nuked the old GPT/Grok-built stackline (~2,500 lines) and rebuilt Hammerspoon from scratch (~150 lines). Moved config into dotfiles repo. Also tweaked Claude Code keybindings and default modes.
