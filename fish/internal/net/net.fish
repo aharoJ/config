@@ -20,6 +20,8 @@
 #          remove dead bssid, defensive math -s0 on median
 # patched: 2026-03-24 — R4 cross-review (5 LLMs): mktemp guard, networkQuality
 #          check, flush error handling, curl -- separator, signal/noise label
+# patched: 2026-03-25 — R5 cross-review (5 LLMs): flush tracks both command
+#          statuses, home/work guards DNS+DHCP commands
 # date: 2026-03-24
 
 function net --description "Network diagnostics and location switching"
@@ -130,14 +132,20 @@ function net --description "Network diagnostics and location switching"
 
         case flush
             echo "net: flushing DNS caches"
-            sudo dscacheutil -flushcache
-            sudo killall -HUP mDNSResponder 2>/dev/null
-            if test $status -eq 0
+            set -l ds_ok 0; set -l mdns_ok 0
+            sudo dscacheutil -flushcache; and set ds_ok 1
+            sudo killall -HUP mDNSResponder 2>/dev/null; and set mdns_ok 1
+            if test $ds_ok -eq 1 -a $mdns_ok -eq 1
                 set_color green
                 echo "net: flushed mDNSResponder + Directory Services cache"
                 set_color normal
-            else
+            else if test $ds_ok -eq 1
                 echo "net: flushed Directory Services cache (mDNSResponder not running)"
+            else if test $mdns_ok -eq 1
+                echo "net: flushed mDNSResponder cache (Directory Services flush failed)"
+            else
+                echo "net: failed to flush DNS caches"
+                return 1
             end
 
         case wifi
@@ -196,7 +204,8 @@ function net --description "Network diagnostics and location switching"
 
             # Both use automatic DNS — no hardcoded DNS on Mac side
             sudo networksetup -setdnsservers Wi-Fi empty
-            sudo ipconfig set $iface DHCP
+            and sudo ipconfig set $iface DHCP
+            or begin; echo "net: failed to configure network"; return 1; end
             set_color green
             echo "net: $msg"
             set_color normal
