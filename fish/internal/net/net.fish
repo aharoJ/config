@@ -14,9 +14,11 @@
 #   net wifi              → show current WiFi connection details
 # patched: 2026-03-24 — R1 cross-review (6 LLMs): median bug, new subcommands,
 #          Option C DNS (router upstream = Cloudflare), benchmark caveats
-# patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug (set -l
-#          inside if-block doesn't leak), remove dead compare subcommand,
-#          wifi parsing fallbacks
+# patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug, remove
+#          dead compare subcommand, wifi parsing fallbacks
+# patched: 2026-03-24 — R3 cross-review (6 LLMs): signal/noise awk field fix
+#          ($6 was "/" not noise, corrected to $7), remove dead bssid variable,
+#          defensive math -s0 on median to force integer
 # date: 2026-03-24
 
 function net --description "Network diagnostics and location switching"
@@ -85,7 +87,7 @@ function net --description "Network diagnostics and location switching"
                 if test $cnt -eq 1
                     set median $sorted[1]
                 else if test $cnt -eq 2
-                    set median (math "($sorted[1] + $sorted[2]) / 2")
+                    set median (math -s0 "($sorted[1] + $sorted[2]) / 2")
                 else
                     set median $sorted[2]
                 end
@@ -132,14 +134,16 @@ function net --description "Network diagnostics and location switching"
         case wifi
             echo "net: wifi connection details"
             echo ""
-            # Current connection info via system_profiler
-            set -l info (system_profiler SPAirPortDataType 2>/dev/null)
-            set -l channel (echo "$info" | awk '/Channel:/{print $2; exit}')
-            set -l phymode (echo "$info" | awk '/PHY Mode:/{print $NF; exit}')
-            set -l rssi (echo "$info" | awk '/Signal \/ Noise:/{print $4 " / " $6; exit}')
-            set -l txrate (echo "$info" | awk '/Transmit Rate:/{print $3; exit}')
-            set -l ssid (echo "$info" | awk '/Current Network Information:/{getline; gsub(/^ +| *:$/, ""); print; exit}')
-            set -l bssid (echo "$info" | awk '/BSSID:/{print $2; exit}')
+            # Pipe system_profiler directly — command substitution collapses newlines
+            set -l tmpfile (mktemp)
+            system_profiler SPAirPortDataType 2>/dev/null > $tmpfile
+
+            set -l ssid (awk '/Current Network Information:/{getline; gsub(/^ +| *:$/, ""); print; exit}' $tmpfile)
+            set -l channel (awk '/Current Network Information:/,/Other Local Wi-Fi/{if(/Channel:/){print $2; exit}}' $tmpfile)
+            set -l phymode (awk '/Current Network Information:/,/Other Local Wi-Fi/{if(/PHY Mode:/){print $NF; exit}}' $tmpfile)
+            set -l rssi (awk '/Current Network Information:/,/Other Local Wi-Fi/{if(/Signal \/ Noise:/){print $4 " / " $7; exit}}' $tmpfile)
+            set -l txrate (awk '/Current Network Information:/,/Other Local Wi-Fi/{if(/Transmit Rate:/){print $3; exit}}' $tmpfile)
+            rm -f $tmpfile
 
             test -z "$ssid"; and set ssid "unknown"
             test -z "$channel"; and set channel "unknown"
