@@ -35,7 +35,7 @@ prepend_keymap = [
   # ── Clipboard namespace ────────────────────────────────────────
   { on = ["c", "c"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" \"$@\"'", desc = "[copy] content(s)" },
   { on = ["c", "t"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" \"$@\"'", desc = "[copy] tree(s)" },
-  { on = ["c", "p"], run = "copy path", desc = "[copy] path"},
+  { on = ["c", "p"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-paths.sh\" \"$@\"'", desc = "[copy] path(s)" },
   { on = "Y", run = ["shell -- cat \"$@\" | pbcopy", "noop"], desc = "[copy] raw" },
 
   # ── Selection: no auto-advance ─────────────────────────────────
