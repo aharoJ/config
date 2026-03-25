@@ -1,5 +1,42 @@
 # Changelog
 
+## v1.1 — Phase 2 Ad/Malware Blocking: NextDNS Deployment (2026-03-25)
+
+2-round research cross-review (5 LLMs each: Gemini, Codex, Claude, Kimi, DeepSeek) + 2-round code audit (5 LLMs each). 3 bugs found and fixed in `net.fish`, 0 regression tests (no test framework). Finding rate: 3 → 0.
+
+### Research decisions (2 rounds, 10 model reviews)
+- **NextDNS Pro** ($20/year) replaces Cloudflare 1.1.1.2 as router upstream DNS
+- Both router DNS entries = NextDNS IPs (no Cloudflare secondary — round-robin bypass defeats blocking)
+- Blocklists: OISD (full) + NextDNS Ads & Trackers (2 max — stacking counterproductive)
+- uBlock Origin MV2 easy mode in Vivaldi (medium mode dismissed — breaks streaming/university)
+- Bitdefender web protection works without VPN tunnel
+- Router-only NextDNS (no Mac profile — preserves WesternU captive portal)
+
+### Modified: `fish/internal/net/net.fish`
+
+**Code audit R1 (5 models: Gemini, Codex, Claude, DeepSeek, Kimi):**
+- **P2**: `%-12s` column overflow — `cloudflare-mw` is 13 chars, broke bench output alignment. Fixed: `%-14s` (5/5)
+- **P3**: Missing Phase 2 `patched:` entry in file header (5/5)
+- **P3**: Stale `date:` header (2026-03-24 → 2026-03-25) (2/5)
+
+**Code audit R2 (5 models):** All-PASS convergence (5/5 PASS).
+
+**Phase 2 deploy changes (pre-audit):**
+- Comments updated: Cloudflare → NextDNS as router upstream
+- `net bench`: tests `1.1.1.2` (Cloudflare malware) as comparison baseline instead of `1.1.1.1`
+- `net home`/`net work`: no logic changes (DHCP DNS is router-agnostic)
+
+### New files
+- `~/.notes/projects/wifi/ad-blocking.md` — Phase 2 runbook
+- `~/.notes/projects/wifi/templates/rounds/ad-blocking/` — research + audit intake templates
+- `~/.notes/projects/wifi/gotchas.md` — 5 new constraints (#9-13) from Phase 2 cross-review
+
+### Infrastructure
+- `generate-intake.sh` now supports subdirectory templates (`speed/`, `ad-blocking/`)
+- Templates reorganized: `rounds/<phase>/` and `generated/<phase>/`
+
+---
+
 ## v1.0 — net.fish Cross-Review Hardening (2026-03-25)
 
 6-round adversarial multi-model code review (6 independent LLMs: Kimi, DeepSeek, Gemini, Grok, Codex, Claude Code) of the `net` fish function. 21 bugs found and fixed, 0 regression tests (no test framework — dotfiles project). Finding rate: 7 → 3 → 4 → 5 → 2 → 0.

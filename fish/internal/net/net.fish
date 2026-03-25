@@ -1,12 +1,12 @@
 # path: ~/.config/fish/internal/net/net.fish
 # description: Network diagnostics and macOS network location switching.
-#              Home = DHCP DNS (router handles Cloudflare upstream).
+#              Home = DHCP DNS (router handles NextDNS upstream).
 #              Work = DHCP DNS (WesternU EDU captive portal).
 # usage:
-#   net home              → DHCP DNS (router upstream = Cloudflare)
+#   net home              → DHCP DNS (router upstream = NextDNS)
 #   net work              → DHCP DNS (WesternU EDU)
 #   net status            → show current location + DNS servers
-#   net bench             → benchmark DNS resolvers (current, cloudflare, google, router)
+#   net bench             → benchmark DNS resolvers (current, cloudflare-mw, google, router)
 #   net quality           → run Apple networkQuality (throughput + RPM)
 # removed: net compare    — obsolete after Option C (both profiles use DHCP DNS)
 #   net curltime [url]    → curl timing breakdown (dns/connect/tls/ttfb/total)
@@ -22,7 +22,9 @@
 #          check, flush error handling, curl -- separator, signal/noise label
 # patched: 2026-03-25 — R5 cross-review (5 LLMs): flush tracks both command
 #          statuses, home/work guards DNS+DHCP commands
-# date: 2026-03-24
+# patched: 2026-03-25 — Phase 2 ad-blocking deploy: comments Cloudflare → NextDNS,
+#          bench server 1.1.1.1 → 1.1.1.2 (cloudflare-mw), %-14s column fix
+# date: 2026-03-25
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
@@ -48,8 +50,8 @@ function net --description "Network diagnostics and location switching"
         case bench
             set -l iface (networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2; exit}')
             set -l router (ipconfig getoption $iface router 2>/dev/null)
-            set -l names current cloudflare google
-            set -l servers "" 1.1.1.1 8.8.8.8
+            set -l names current cloudflare-mw google
+            set -l servers "" 1.1.1.2 8.8.8.8
             if test -n "$router"
                 set -a names router
                 set -a servers $router
@@ -79,7 +81,7 @@ function net --description "Network diagnostics and location switching"
                 end
 
                 if test (count $times) -eq 0
-                    printf "  %-12s %s\n" $name "timeout"
+                    printf "  %-14s %s\n" $name "timeout"
                     continue
                 end
 
@@ -100,7 +102,7 @@ function net --description "Network diagnostics and location switching"
                     set best_name $name
                 end
 
-                printf "  %-12s %sms\n" $name $median
+                printf "  %-14s %sms\n" $name $median
             end
 
             if test -n "$best_name"
@@ -188,9 +190,9 @@ function net --description "Network diagnostics and location switching"
             sudo -v; or begin; echo "net: sudo auth failed"; return 1; end
 
             # Both home and work use DHCP DNS (automatic)
-            # Home: router upstream = Cloudflare (set in router admin UI)
+            # Home: router upstream = NextDNS (set in router admin UI)
             # Work: WesternU EDU network provides its own DNS via DHCP
-            set -l loc Home; set -l msg "home — DHCP DNS (router → Cloudflare upstream)"
+            set -l loc Home; set -l msg "home — DHCP DNS (router → NextDNS upstream)"
             if test "$subcmd" = work
                 set loc WesternU; set msg "work — DHCP DNS (WesternU EDU)"
             end
