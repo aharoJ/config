@@ -113,10 +113,10 @@ A 3-layer pre-commit hook (`.pre-commit-hook`) prevents accidental secret leaks:
 Adversarial multi-model code review via templated intake documents. Send code to 5+ web LLMs independently, triage findings, fix real issues, iterate until convergence (all PASS).
 
 ```bash
-./scripts/generate-intake.sh <template-name> | pbcopy
+./scripts/generate-intake.sh <template-name>
 ```
 
-Templates at `scripts/templates/*.md`. Use `{{FILE:path/relative/to/repo}}` markers. Output piped directly to clipboard. Review loop: generate -> feed to 5 web LLMs -> triage -> fix -> repeat until clean.
+Templates at `scripts/templates/rounds/*.md`. Use `{{FILE:path/relative/to/repo}}` markers. Output persisted to `scripts/templates/generated/llm.intake.<name>.md`. Review loop: generate -> feed to 5 web LLMs -> triage -> fix -> repeat until clean.
 
 ## Severity Classification
 
