@@ -7,20 +7,23 @@
 #   net work              → DHCP DNS (WesternU EDU)
 #   net status            → show current location + DNS servers
 #   net bench             → benchmark DNS resolvers (current, cloudflare, google, router)
-#   net compare           → bench home vs work side-by-side, restore original config
 #   net quality           → run Apple networkQuality (throughput + RPM)
+# removed: net compare    — obsolete after Option C (both profiles use DHCP DNS)
 #   net curltime [url]    → curl timing breakdown (dns/connect/tls/ttfb/total)
 #   net flush             → flush macOS DNS caches (mDNSResponder + DS)
 #   net wifi              → show current WiFi connection details
 # patched: 2026-03-24 — R1 cross-review (6 LLMs): median bug, new subcommands,
 #          Option C DNS (router upstream = Cloudflare), benchmark caveats
+# patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug (set -l
+#          inside if-block doesn't leak), remove dead compare subcommand,
+#          wifi parsing fallbacks
 # date: 2026-03-24
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
 
     if test -z "$subcmd"
-        echo "usage: net [home|work|status|bench|compare|quality|curltime|flush|wifi]"
+        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi]"
         return 1
     end
 
@@ -78,13 +81,13 @@ function net --description "Network diagnostics and location switching"
                 # Median: handle 1, 2, or 3 results
                 set -l sorted (printf '%s\n' $times | sort -n)
                 set -l cnt (count $sorted)
+                set -l median
                 if test $cnt -eq 1
-                    set -l median $sorted[1]
+                    set median $sorted[1]
                 else if test $cnt -eq 2
-                    # Average of two (integer division)
-                    set -l median (math "($sorted[1] + $sorted[2]) / 2")
+                    set median (math "($sorted[1] + $sorted[2]) / 2")
                 else
-                    set -l median $sorted[2]
+                    set median $sorted[2]
                 end
 
                 if test $median -lt $best_ms
@@ -100,112 +103,6 @@ function net --description "Network diagnostics and location switching"
                 printf "  fastest: %s (%sms)\n" $best_name $best_ms
                 set_color normal
             end
-
-        case compare
-            set -l iface (networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2; exit}')
-            if test -z "$iface"
-                echo "net: could not find Wi-Fi interface"
-                return 1
-            end
-
-            set -l original (networksetup -getcurrentlocation)
-            sudo -v; or begin; echo "net: sudo auth failed"; return 1; end
-
-            set -l names cloudflare google
-            set -l servers 1.1.1.1 8.8.8.8
-            set -l router (ipconfig getoption $iface router 2>/dev/null)
-            if test -n "$router"
-                set -a names router
-                set -a servers $router
-            end
-
-            echo "net: compare home vs work (3 queries each)"
-            echo ""
-
-            set -l home_results
-            set -l work_results
-
-            for profile in home work
-                if test "$profile" = home
-                    sudo networksetup -switchtolocation Home 2>/dev/null
-                    or begin
-                        sudo networksetup -createlocation Home populate >/dev/null
-                        and sudo networksetup -switchtolocation Home 2>/dev/null
-                    end
-                    sudo networksetup -setdnsservers Wi-Fi empty
-                else
-                    sudo networksetup -switchtolocation WesternU 2>/dev/null
-                    or begin
-                        sudo networksetup -createlocation WesternU populate >/dev/null
-                        and sudo networksetup -switchtolocation WesternU 2>/dev/null
-                    end
-                    sudo networksetup -setdnsservers Wi-Fi empty
-                end
-                sudo ipconfig set $iface DHCP
-                sleep 1
-
-                set -l results
-                for i in (seq (count $names))
-                    set -l server $servers[$i]
-                    set -l times
-                    for _q in 1 2 3
-                        set -l ms (dig +noall +stats google.com @$server 2>/dev/null | awk '/Query time:/{print $4}')
-                        test -n "$ms"; and set -a times $ms
-                    end
-                    if test (count $times) -eq 0
-                        set -a results -1
-                    else
-                        set -l sorted (printf '%s\n' $times | sort -n)
-                        set -l cnt (count $sorted)
-                        if test $cnt -eq 1
-                            set -a results $sorted[1]
-                        else if test $cnt -eq 2
-                            set -a results (math "($sorted[1] + $sorted[2]) / 2")
-                        else
-                            set -a results $sorted[2]
-                        end
-                    end
-                end
-
-                if test "$profile" = home
-                    set home_results $results
-                else
-                    set work_results $results
-                end
-            end
-
-            # Print side-by-side
-            printf "  %-12s %10s %10s %10s\n" "" "home" "work" "winner"
-            echo "  ──────────────────────────────────────────"
-
-            for i in (seq (count $names))
-                set -l h $home_results[$i]
-                set -l w $work_results[$i]
-                set -l h_str (test $h -eq -1; and echo "timeout"; or echo "$h"ms)
-                set -l w_str (test $w -eq -1; and echo "timeout"; or echo "$w"ms)
-                set -l winner ""
-                if test $h -ne -1 -a $w -ne -1
-                    set -l d (math "$h - $w")
-                    if test $d -gt 0
-                        set winner "work ↓$d"ms
-                    else if test $d -lt 0
-                        set d (math "0 - $d")
-                        set winner "home ↓$d"ms
-                    else
-                        set winner "tie"
-                    end
-                end
-                printf "  %-12s %10s %10s %10s\n" $names[$i] $h_str $w_str $winner
-            end
-
-            # Restore original
-            echo ""
-            sudo networksetup -switchtolocation "$original" 2>/dev/null
-            sudo networksetup -setdnsservers Wi-Fi empty
-            sudo ipconfig set $iface DHCP
-            set_color yellow
-            echo "  restored: $original"
-            set_color normal
 
         case quality
             echo "net: running networkQuality (throughput + responsiveness)"
@@ -243,6 +140,12 @@ function net --description "Network diagnostics and location switching"
             set -l txrate (echo "$info" | awk '/Transmit Rate:/{print $3; exit}')
             set -l ssid (echo "$info" | awk '/Current Network Information:/{getline; gsub(/^ +| *:$/, ""); print; exit}')
             set -l bssid (echo "$info" | awk '/BSSID:/{print $2; exit}')
+
+            test -z "$ssid"; and set ssid "unknown"
+            test -z "$channel"; and set channel "unknown"
+            test -z "$phymode"; and set phymode "unknown"
+            test -z "$txrate"; and set txrate "unknown"
+            test -z "$rssi"; and set rssi "unknown"
 
             printf "  ssid:     %s\n" "$ssid"
             printf "  channel:  %s\n" "$channel"
@@ -287,7 +190,7 @@ function net --description "Network diagnostics and location switching"
 
         case '*'
             echo "unknown: '$subcmd'"
-            echo "usage: net [home|work|status|bench|compare|quality|curltime|flush|wifi]"
+            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi]"
             return 1
     end
 end
