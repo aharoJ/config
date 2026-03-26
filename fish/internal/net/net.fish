@@ -6,7 +6,7 @@
 #   net home              → DHCP DNS (router upstream = NextDNS)
 #   net work              → DHCP DNS (WesternU EDU)
 #   net status            → show current location + DNS servers
-#   net bench             → benchmark DNS resolvers (current, cloudflare-mw, google, router)
+#   net bench             → benchmark DNS resolvers (current, cloudflare-mw, google, nextdns, router)
 #   net quality           → run Apple networkQuality (throughput + RPM)
 # removed: net compare    — obsolete after Option C (both profiles use DHCP DNS)
 #   net curltime [url]    → curl timing breakdown (dns/connect/tls/ttfb/total)
@@ -24,7 +24,8 @@
 #          statuses, home/work guards DNS+DHCP commands
 # patched: 2026-03-25 — Phase 2 ad-blocking deploy: comments Cloudflare → NextDNS,
 #          bench server 1.1.1.1 → 1.1.1.2 (cloudflare-mw), %-14s column fix
-# date: 2026-03-25
+# patched: 2026-03-26 — Flint 2 verification: no code changes needed, router-agnostic
+# date: 2026-03-26
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
@@ -50,8 +51,8 @@ function net --description "Network diagnostics and location switching"
         case bench
             set -l iface (networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2; exit}')
             set -l router (ipconfig getoption $iface router 2>/dev/null)
-            set -l names current cloudflare-mw google
-            set -l servers "" 1.1.1.2 8.8.8.8
+            set -l names current cloudflare-mw google nextdns
+            set -l servers "" 1.1.1.2 8.8.8.8 45.90.28.98
             if test -n "$router"
                 set -a names router
                 set -a servers $router
