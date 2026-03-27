@@ -12,6 +12,11 @@
 #   net curltime [url]    → curl timing breakdown (dns/connect/tls/ttfb/total)
 #   net flush             → flush macOS DNS caches (mDNSResponder + DS)
 #   net wifi              → show current WiFi connection details
+#   net devices           → list DHCP clients from router
+#   net monitor           → router health (load, RAM, temp, SQM, devices, uptime)
+#   net scan              → detect unknown/misplaced devices vs known-devices.conf
+#   net traffic           → per-device bandwidth via nlbwmon
+#   net dns               → show .lan hostname mappings from router dnsmasq
 # patched: 2026-03-24 — R1 cross-review (6 LLMs): median bug, new subcommands,
 #          Option C DNS (router upstream = Cloudflare), benchmark caveats
 # patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug, remove
@@ -27,13 +32,17 @@
 # patched: 2026-03-26 — Flint 2 verification: no code changes needed, router-agnostic
 # patched: 2026-03-26 — Phase 4 monitoring: net devices, monitor, scan, traffic
 #          (2-round cross-review, 5 LLMs each, 10 total, 0 open disagreements)
-# date: 2026-03-26
+# patched: 2026-03-26 — Phase 5 isolation: VLAN column in devices/scan/monitor
+#          (2-round research cross-review, 5 LLMs each, 10 total, converged)
+# patched: 2026-03-27 — Phase 6 local DNS: net dns subcommand
+#          (4-round research cross-review, 5 LLMs each, 19 total, converged)
+# date: 2026-03-27
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
 
     if test -z "$subcmd"
-        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic]"
+        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns]"
         return 1
     end
 
@@ -184,7 +193,7 @@ function net --description "Network diagnostics and location switching"
             set_color normal
 
         case devices
-            echo "net: devices on LAN (via router)"
+            echo "net: devices on network (via router)"
             echo ""
             if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
                 set_color red; echo "  router unreachable (ssh flint failed)"; set_color normal
@@ -192,14 +201,28 @@ function net --description "Network diagnostics and location switching"
             end
             # Parse leases on router with awk → tab-delimited (handles hostnames with spaces)
             set -l lines (ssh flint "awk '{name=\$4; if(name==\"*\") name=\"(unknown)\"; printf \"%s\\t%s\\t%s\\n\", name, \$3, \$2}' /tmp/dhcp.leases 2>/dev/null" 2>/dev/null)
-            printf "  %-20s %-15s %-17s\n" "HOSTNAME" "IP" "MAC"
+            if test $status -ne 0
+                set_color red; echo "  failed to fetch data from router"; set_color normal
+                return 1
+            end
+            printf "  %-20s %-15s %-17s %-6s\n" "HOSTNAME" "IP" "MAC" "VLAN"
             set_color brblack
-            printf "  %-20s %-15s %-17s\n" "--------" "--" "---"
+            printf "  %-20s %-15s %-17s %-6s\n" "--------" "--" "---" "----"
             set_color normal
             for line in $lines
                 set -l parts (string split \t -- $line)
                 if test (count $parts) -ge 3
-                    printf "  %-20s %-15s %-17s\n" $parts[1] $parts[2] $parts[3]
+                    set -l vlan "main"
+                    if string match -q "192.168.10.*" $parts[2]
+                        set vlan "iot"
+                    end
+                    if test "$vlan" = "iot"
+                        set_color yellow
+                    end
+                    printf "  %-20s %-15s %-17s %-6s\n" $parts[1] $parts[2] $parts[3] $vlan
+                    if test "$vlan" = "iot"
+                        set_color normal
+                    end
                 end
             end
 
@@ -215,11 +238,15 @@ function net --description "Network diagnostics and location switching"
                 echo '::LOAD::'; cat /proc/loadavg
                 echo '::MEM::'; awk '/MemTotal/{t=\$2} /MemAvailable/{a=\$2} END{printf \"%d %d\n\", t/1024, a/1024}' /proc/meminfo
                 echo '::TEMP::'; cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null
-                echo '::DEVICES::'; wc -l < /tmp/dhcp.leases
+                echo '::DEVICES::'; awk 'END{printf \"%d %d\n\", NR, iot} /192\\.168\\.10\\./{iot++}' /tmp/dhcp.leases 2>/dev/null
                 echo '::CAKE_UP::'; tc -s qdisc show dev eth1 2>/dev/null | head -3
                 echo '::CAKE_DN::'; tc -s qdisc show dev ifb4eth1 2>/dev/null | head -3
                 echo '::UPTIME::'; uptime
             " 2>/dev/null)
+            if test $status -ne 0
+                set_color red; echo "  failed to fetch data from router"; set_color normal
+                return 1
+            end
 
             set -l section ""
             for line in $data
@@ -252,7 +279,16 @@ function net --description "Network diagnostics and location switching"
                             printf "  temperature: %s°C\n" $temp_c
                         end
                     case devices
-                        printf "  devices:     %s connected\n" (string trim -- $line)
+                        # Atomic: single awk outputs "total iot" on one line
+                        set -l parts (string split -n " " -- $line)
+                        if test (count $parts) -ge 2
+                            set -l total $parts[1]
+                            set -l iot $parts[2]
+                            set -l main_count (math "$total - $iot")
+                            printf "  devices:     %s connected (%s main, %s iot)\n" $total $main_count $iot
+                        else if test (count $parts) -ge 1
+                            printf "  devices:     %s connected\n" $parts[1]
+                        end
                     case cake_up
                         if string match -q "*cake*" -- $line
                             printf "  sqm upload:  "
@@ -272,7 +308,7 @@ function net --description "Network diagnostics and location switching"
             set -l known_file ~/.config/net/known-devices.conf
             if not test -f $known_file
                 echo "net: known devices file not found at $known_file"
-                echo "  create it with: MAC  Name  Type (one per line, # for comments)"
+                echo "  create it with: MAC  Name  Type  VLAN (one per line, # for comments)"
                 return 1
             end
 
@@ -284,36 +320,64 @@ function net --description "Network diagnostics and location switching"
             end
             # Single SSH call — fetch all lease data, parse locally (no N+1)
             set -l leases (ssh flint "awk '{printf \"%s\\t%s\\t%s\\n\", tolower(\$2), \$3, \$4}' /tmp/dhcp.leases 2>/dev/null" 2>/dev/null)
+            if test $status -ne 0
+                set_color red; echo "  failed to fetch data from router"; set_color normal
+                return 1
+            end
             if test -z "$leases"
                 set_color yellow; echo "  no DHCP leases found"; set_color normal
                 return 0
             end
             set -l unknown_count 0
+            set -l misplaced_count 0
 
             for line in $leases
                 set -l parts (string split \t -- $line)
                 if test (count $parts) -ge 3
                     set -l mac $parts[1]
-                    if not grep -qFi "$mac" $known_file 2>/dev/null
+                    set -l ip $parts[2]
+                    set -l name $parts[3]
+                    test "$name" = "*"; and set name "(unnamed)"
+
+                    # Detect current VLAN from IP prefix
+                    set -l current_vlan "main"
+                    if string match -q "192.168.10.*" $ip
+                        set current_vlan "iot"
+                    end
+
+                    # Anchored awk: match first field only, skip comments, first match wins
+                    set -l expected_vlan (awk -v mac="$mac" 'tolower($1)==mac {print $4; exit}' $known_file 2>/dev/null | string trim)
+
+                    if test -z "$expected_vlan"
                         set unknown_count (math $unknown_count + 1)
-                        set -l name $parts[3]
-                        test "$name" = "*"; and set name "(unnamed)"
                         set_color red
-                        printf "  UNKNOWN: %s  %s  %s\n" $mac $parts[2] $name
+                        printf "  UNKNOWN: %s  %s  %s  [%s]\n" $mac $ip $name $current_vlan
+                        set_color normal
+                    else if test "$expected_vlan" != "$current_vlan"
+                        set misplaced_count (math $misplaced_count + 1)
+                        set_color yellow
+                        printf "  MISPLACED: %s  %s  %s  [on %s, expected %s]\n" $mac $ip $name $current_vlan $expected_vlan
                         set_color normal
                     end
                 end
             end
 
-            if test $unknown_count -eq 0
+            if test $unknown_count -eq 0 -a $misplaced_count -eq 0
                 set_color green
-                echo "  all devices known"
+                echo "  all devices known and on correct VLANs"
                 set_color normal
             else
                 echo ""
-                set_color yellow
-                printf "  %d unknown device(s) found\n" $unknown_count
-                set_color normal
+                if test $unknown_count -gt 0
+                    set_color yellow
+                    printf "  %d unknown device(s) found\n" $unknown_count
+                    set_color normal
+                end
+                if test $misplaced_count -gt 0
+                    set_color yellow
+                    printf "  %d device(s) on wrong VLAN\n" $misplaced_count
+                    set_color normal
+                end
             end
 
         case traffic
@@ -323,6 +387,10 @@ function net --description "Network diagnostics and location switching"
             end
             # Single SSH call: check nlbw exists and fetch data in one shot
             set -l lines (ssh flint "command -v nlbw >/dev/null 2>&1 || { echo '::MISSING::'; exit 0; }; nlbw -c csv -g mac 2>/dev/null" 2>/dev/null)
+            if test $status -ne 0
+                set_color red; echo "net: failed to fetch data from router"; set_color normal
+                return 1
+            end
             if test (count $lines) -ge 1 -a "$lines[1]" = "::MISSING::"
                 echo "net: nlbwmon not installed on router"
                 echo "  install: ssh flint 'apk add nlbwmon'"
@@ -347,6 +415,80 @@ function net --description "Network diagnostics and location switching"
                     set -l rx_mb (math -s1 "$parts[3] / 1048576")
                     set -l tx_mb (math -s1 "$parts[5] / 1048576")
                     printf "  %-17s %10s MB %10s MB\n" $mac $rx_mb $tx_mb
+                end
+            end
+
+        case dns
+            echo "net: .lan hostname mappings (via router dnsmasq)"
+            echo ""
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "  router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+            # Extract host entries (dns='1') and domain entries from UCI
+            # UCI format: dhcp.@host[N].key='val' or dhcp.named.key='val'
+            # Pipeline split: ssh+awk first (check $pipestatus), sort after
+            set -l raw (ssh flint "
+                uci show dhcp 2>&1 || { echo '::UCI_FAIL::'; exit 1; }
+            " 2>/dev/null | awk -F= '
+                /::UCI_FAIL::/ { fail=1; exit 1 }
+                {
+                    key=$1; val=$2
+                    gsub(/^dhcp\./, "", key)
+                    n=split(key, kp, ".")
+                    sec=""
+                    for(i=1;i<n;i++) sec = (sec=="" ? kp[i] : sec"."kp[i])
+                    field=kp[n]
+                    gsub(/^'"'"'/, "", val); gsub(/'"'"'$/, "", val)
+                }
+                field=="dns" && val=="1" { hosts[sec]=1 }
+                field=="name" { names[sec]=val }
+                field=="ip" { ips[sec]=val }
+                END {
+                    if (fail) exit 1
+                    for (s in names) {
+                        if (s in ips) {
+                            type = (s in hosts) ? "host" : "domain"
+                            printf "%s\t%s\t%s\n", names[s], ips[s], type
+                        }
+                    }
+                }
+            ')
+            set -l ssh_rc $pipestatus[1]; set -l awk_rc $pipestatus[2]
+            if test $ssh_rc -ne 0
+                set_color red; echo "  router connection failed"; set_color normal
+                return 1
+            else if test $awk_rc -ne 0
+                set_color red; echo "  failed to parse data from router (UCI error)"; set_color normal
+                return 1
+            end
+            if test (count $raw) -eq 0
+                echo "  no hostname mappings found"
+                return 0
+            end
+            set -l entries (printf '%s\n' $raw | sort -t\t -k2)
+
+            printf "  %-20s %-16s %-8s %-6s\n" "HOSTNAME" "IP" "TYPE" "VLAN"
+            set_color brblack
+            printf "  %-20s %-16s %-8s %-6s\n" "--------" "--" "----" "----"
+            set_color normal
+            for line in $entries
+                set -l parts (string split \t -- $line)
+                if test (count $parts) -ge 3
+                    set -l hname $parts[1]
+                    set -l ip $parts[2]
+                    set -l type $parts[3]
+                    set -l vlan "main"
+                    if string match -q "192.168.10.*" $ip
+                        set vlan "iot"
+                    end
+                    if test "$vlan" = "iot"
+                        set_color yellow
+                    end
+                    printf "  %-20s %-16s %-8s %-6s\n" "$hname.lan" $ip $type $vlan
+                    if test "$vlan" = "iot"
+                        set_color normal
+                    end
                 end
             end
 
@@ -384,7 +526,7 @@ function net --description "Network diagnostics and location switching"
 
         case '*'
             echo "unknown: '$subcmd'"
-            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic]"
+            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns]"
             return 1
     end
 end
