@@ -216,3 +216,8 @@ scripts/generate-intake.sh
 
 # WireGuard private keys
 wireguard/
+
+# Network monitoring (MAC addresses = device fingerprints)
+net/known-devices.conf
+net/router.log
+net/socat.err
