@@ -1,5 +1,102 @@
 # Changelog
 
+## v1.5 — Phase 6 Local DNS Cross-Review Hardening (2026-03-27)
+
+8-round adversarial multi-model review (5 independent LLMs × 8 rounds = 39 reviews) of Phase 6 local DNS hostname resolution. 4 research rounds (architecture decisions) + 4 code audit rounds (`net dns` fish function + UCI config). 8 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 5 → 2 → 1 → 0.
+
+### Research decisions (4 rounds, 19 model reviews)
+- **TLD `.lan`** over `.local`/`.home.arpa` (4/4 R1) — `.local` conflicts with mDNS/Bonjour (RFC 6762)
+- **`dhcp.@host[]` + `dns='1'`** for DHCP clients (4/4 R1) — creates A+PTR records via hosts file
+- **`dhcp.@domain[]`** for router self-reference (4/4 R1) — router doesn't DHCP from itself
+- **`local='/lan/'`** for authority (4/4 R1) — prevents all `.lan` leaks to NextDNS
+- **Flat `.lan` for both VLANs** (3/4 R1) — DNS visibility is informational, firewall blocks traffic
+- **DHCP pool start → 110** (4/5 R3) — keeps static IPs outside dynamic range
+- Dismissed: `.local` TLD (mDNS conflict), `/etc/hosts` for router (not UCI-managed), second `@domain[]` for IoT gateway IP (causes round-robin), IoT subdomain `iot.lan` (unnecessary complexity)
+
+### Modified: `fish/internal/net/net.fish`
+
+**Code audit R1 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- **P1**: awk `gsub(/^./, ...)` stripped any character, not just quotes — latent corruption vector. Fixed: `gsub(/^'/, "", val); gsub(/'$/, "", val)` targeting single quotes specifically (5/5)
+- **P2**: Silent empty results — printed headers with zero rows, no "no entries found" message. Fixed: `(count $entries) -eq 0` check (5/5)
+- **P2**: `$status` only caught SSH transport failures — awk always exits 0, `uci` failures invisible. Fixed: `::UCI_FAIL::` sentinel with awk detection (1/5 CC, verified)
+- **P3**: Unordered output from awk `for-in` hash iteration. Fixed: `| sort -t\t -k2` (4/5)
+- **P3**: Header comment missing 4 subcommands (devices, monitor, scan, traffic). Fixed (1/5 CC)
+
+**Code audit R2 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- **P1**: Pipeline masking — `sort` at end of pipeline swallowed awk's exit code, `$status` always 0. Fixed: split pipeline, `ssh|awk` first then sort separately (5/5)
+- **P1**: awk `END` block runs after `exit 1` — partial data emitted on UCI failure. Fixed: `fail` flag in sentinel handler, `END` checks before output (2/5 Codex, DeepSeek)
+
+**Code audit R3 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- **P2**: SSH failure not detected — only `$pipestatus[2]` (awk) checked, not `$pipestatus[1]` (SSH). Fixed: capture both into separate variables, check SSH first then awk (4/5)
+
+**Code audit R4 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- 3/5 FAIL on false positive: claimed `$pipestatus` clobbered between `;`-separated `set` commands — disproven by empirical test (`false | true; set -l a $pipestatus[1]; set -l b $pipestatus[2]` → `a=1 b=0`)
+- 2/5 PASS. Converged at 0 findings.
+
+### Modified: `net/known-devices.conf`
+- Added 5th column (hostname) for `.lan` DNS name cross-reference
+
+### Router: `/etc/config/dhcp` (via UCI SSH)
+- 1 `@domain[]` entry (router → 192.168.1.1)
+- 10 `@host[]` entries with `dns='1'` (9 new, 3 updated from existing)
+- `dhcp.lan.start='110'` (pool adjustment)
+- `domain`, `local`, `expandhosts`, `domainneeded` were already GL-MT6000 defaults
+
+### Gotchas
+- Added #55-#61 (7 new validated constraints from Phase 6)
+
+## v1.4 — Phase 5 Device Isolation Cross-Review Hardening (2026-03-27)
+
+4-round adversarial multi-model review (5 independent LLMs × 4 rounds = 20 reviews) of Phase 5 device isolation. 2 research rounds (VLAN architecture decisions) + 2 code audit rounds (fish functions + UCI config). 8 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 7 → 1 → 0.
+
+### Research decisions (2 rounds, 10 model reviews)
+- **Separate bridge** (`br-iot`) over VLAN-filtering on `br-lan` (5/5 unanimous R1)
+- **No `lan → iot` forwarding** initially — least-privilege (2/5 R1, decided conservative)
+- **DNS redirect** (DNAT port 53) to catch hardcoded DNS in IoT devices (5/5 R1)
+- **`bridge_isolate='1'`** closes cross-radio L2 gap between 2.4GHz and 5GHz IoT clients (5/5 R2)
+- **`delegate='0'`** + `ra='disabled'` + `dhcpv6='disabled'` for IPv6 lockdown (adopted R1+R2)
+- Dismissed: VLAN-filtering bridge (unnecessary for WiFi-only IoT), hidden SSID (breaks IoT devices), masquerade on iot zone (WAN masq covers egress)
+
+### Modified: `fish/internal/net/net.fish`
+
+**Code audit R1 (5 models: Gemini, GPT, Kimi, DeepSeek, CC):**
+- **P1**: `grep -Fi` MAC lookup in `net scan` — substring match against entire line, matches comments and duplicates, returns list → `test` crash. Fixed: anchored `awk -v mac tolower($1)==mac` with `exit` + `string trim` (5/5)
+- **P2**: SSH data calls unchecked after reachability check in `devices`, `scan`, `monitor`. Fixed: `$status` check after each data SSH call (4/5)
+- **P2**: Race condition between `wc -l` and `grep -c` in `net monitor`. Fixed: single atomic `awk` pass outputs `"total iot"` on one line (4/5)
+- **P2**: Missing ICMP echo-request rule on iot zone — Roku/Hisense ping gateway for connectivity check. Fixed: added `Allow-IoT-ICMP` firewall rule (2/5)
+- **P3**: `\r\n` line endings in `known-devices.conf`. Fixed: `string trim` on awk output (4/5)
+- **P3**: Race condition `wc -l` vs `grep -c`. Fixed: merged into single awk pass (3/5)
+- **P3**: Third VLAN falls through to "main". Documented as future concern (2/5)
+
+**Code audit R2 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- **P3**: `net traffic` missing SSH status check (consistency with other subcommands). Fixed (1/5). 3/5 PASS.
+- All 7 R1 fixes verified landed (5/5)
+- 2/5 FAIL on false positive: hallucinated `nlbw` CSV delimiter format (contradicted by Gotcha #38 + live output)
+
+### Router changes (via SSH, not in dotfiles repo)
+- `br-iot` bridge device + `iot` network interface (192.168.10.1/24, delegate=0)
+- `iot` firewall zone (input=REJECT, output=ACCEPT, forward=REJECT)
+- `iot → wan` forwarding (internet access for IoT devices)
+- Allow-IoT-DHCP (UDP 67), Allow-IoT-DNS (TCP/UDP 53), Allow-IoT-ICMP (echo-request)
+- Force-IoT-DNS redirect (DNAT port 53 → 192.168.10.1, catches hardcoded DNS)
+- IoT DHCP pool (.100-.149, 12h lease, ra/dhcpv6 disabled)
+- Static leases: Roku TV → 192.168.10.10, Hisense #2 → 192.168.10.11
+- IoT WiFi SSIDs on radio0 + radio1 (psk2+ccmp, isolate=1, bridge_isolate=1)
+- nlbwmon `local_network` updated to include `iot`
+
+### Modified: `net/known-devices.conf`
+- Added VLAN column (4th field: main/iot)
+- 6 new devices discovered and added during Phase 5
+
+### New files
+- `~/.notes/projects/wifi/isolation.md` — Phase 5 runbook
+- `~/.notes/projects/wifi/templates/rounds/isolation/` — 4 templates (2 research, 2 code audit)
+
+### Gotchas
+- 12 new constraints (#43-54) added from Phase 5 cross-review
+
+---
+
 ## v1.3 — Phase 4 Monitoring Cross-Review Hardening (2026-03-27)
 
 4-round adversarial multi-model review (5 independent LLMs × 4 rounds = 20 reviews) of Phase 4 monitoring implementation. 2 research rounds (tool selection) + 2 code audit rounds (implementation). 15 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 14 → 1 → 0.
