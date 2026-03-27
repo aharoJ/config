@@ -1,5 +1,88 @@
 # Changelog
 
+## v1.3 — Phase 4 Monitoring Cross-Review Hardening (2026-03-27)
+
+4-round adversarial multi-model review (5 independent LLMs × 4 rounds = 20 reviews) of Phase 4 monitoring implementation. 2 research rounds (tool selection) + 2 code audit rounds (implementation). 15 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 14 → 1 → 0.
+
+### Research decisions (2 rounds, 10 model reviews)
+- **nlbwmon** for per-device bandwidth (5/5 unanimous R1)
+- **Router-side DHCP hotplug** for new device detection (5/5 R2)
+- **Fish functions** over TUI dashboards (5/5 R1)
+- **socat + launchd** for Mac syslog receiver (3/5 R1, validated R2)
+- **SSH ControlMaster** for responsive CLI commands (5/5 R1)
+- Dismissed: netdata (too heavy), vnStat (interface-only), arpwatch (Mac sleeps), collectd (CLI sufficient)
+
+### Modified: `fish/internal/net/net.fish`
+
+**4 new subcommands added:** `net devices`, `net monitor`, `net scan`, `net traffic`
+
+**Code audit R1 (5 models: Gemini, GPT, Kimi, DeepSeek, Claude):**
+- **P0**: `net scan` false "all clear" on SSH failure — empty MAC list → `unknown_count=0`. Fixed: SSH reachability guard (5/5)
+- **P0**: `net traffic` prints header with no data on SSH failure. Fixed: SSH guard + sentinel pattern (4/5)
+- **P1**: socat `fork` per UDP packet → resource exhaustion on Mac. Fixed: `UDP4-RECV` single-process mode (5/5)
+- **P1**: N+1 SSH calls in `net scan` — one SSH per unknown device. Fixed: single SSH call, local parsing (5/5)
+- **P1**: Hostname spaces break `net devices` — space-split parsing. Fixed: awk tab-delimited on router (5/5)
+- **P1**: `net monitor` `free` field guard wrong (-ge 4, accesses $parts[7]). Fixed: `/proc/meminfo` awk parsing (5/5)
+- **P2**: DHCP hook TOCTOU race — concurrent writes. Fixed: `flock -x 200` (5/5)
+- **P2**: socat binds `0.0.0.0` — exposed on public WiFi. Fixed: bound to `192.168.1.220` (5/5)
+- **P2**: nlbwmon duplicate `lan` in local_network. Fixed: single entry (5/5)
+- **P2**: nlbwmon 24h commit → data loss on reboot. Fixed: reduced to 2h (2/5)
+- **P2**: `net traffic` wastes SSH round-trip on existence check. Fixed: combined into single SSH (2/5)
+- **P2**: DHCP hook unbounded file growth. Fixed: 500-line cap with `tail -n 500` rotation (4/5)
+- **P2**: MAC addresses in known-devices.conf (privacy). Fixed: added to `.gitignore` (2/5)
+- **P2**: No log rotation for router.log. Fixed: newsyslog config (4/5)
+
+**Code audit R2 (5 models: Gemini, GPT, Kimi, DeepSeek, Claude):**
+- **P2**: socat `UDP-RECVFROM` exits after one packet — log gaps during bursts. Fixed: `UDP4-RECV` (3/5). 2/5 PASS.
+- All 14 R1 fixes verified landed (5/5)
+
+### New files
+- `~/.notes/projects/wifi/monitoring.md` — Phase 4 runbook
+- `~/.notes/projects/wifi/templates/rounds/monitoring/monitoring-research-flint.md` — research R1
+- `~/.notes/projects/wifi/templates/rounds/monitoring/monitoring-research-flint-v2.md` — research R2
+- `~/.notes/projects/wifi/templates/rounds/monitoring/monitoring-audit.md` — code audit R1
+- `~/.notes/projects/wifi/templates/rounds/monitoring/monitoring-audit-v2.md` — code audit R2
+- `~/.config/net/known-devices.conf` — device inventory (gitignored)
+- `~/Library/LaunchAgents/local.router.syslog.plist` — socat syslog receiver
+
+### Router changes (via SSH, not in dotfiles repo)
+- nlbwmon installed and configured (`/var/lib/nlbwmon`, 2h commit, LZ4 compression)
+- DHCP hotplug hook at `/etc/hotplug.d/dhcp/90-newdev` (flock, 500-line cap)
+- Syslog port changed from 514 to 5514
+
+### Infrastructure
+- SSH ControlMaster multiplexing added to `~/.ssh/config` (Host flint)
+- `~/.config/net/` directory for monitoring data (router.log, known-devices, socat.err)
+- `.gitignore` updated for monitoring files
+
+### Gotchas
+- 8 new constraints (#35-42) added to gotchas.md from Phase 4 cross-review
+
+---
+
+## v1.2 — Phase 3 Security Hardening (2026-03-26)
+
+3-round adversarial research cross-review (5 LLMs × 3 rounds = 15 reviews). 14 hardening actions converged, 0 code bugs (router UCI commands only). Finding rate: 12 → 5 → 0.
+
+### Router changes (via SSH, not in dotfiles repo)
+- SSH key-only auth (Ed25519, password disabled) — P0
+- WireGuard vpn zone isolation (input=REJECT, explicit DNS+SSH allow) — P0
+- uhttpd bound to 192.168.1.1 only — P1
+- IPv6 echo-request DROP (ordered before ACCEPT) — P1
+- DNS-over-HTTPS via https-dns-proxy → NextDNS (profile 534aee) — P1
+- 2.4GHz country code US — P1
+- WAN drop logging (10/min) — P2
+- Remote syslog to Mac — P2
+- WireGuard keepalive, SSH/LuCI timeouts, sysctl hardening — P2
+
+### New files
+- `~/.notes/projects/wifi/security.md` — Phase 3 runbook
+- `~/.ssh/config` — Host flint alias with Ed25519 key
+- `~/.ssh/flint_ed25519` / `.pub` — router SSH key
+- `~/.config/wireguard/flint2.conf` — WireGuard client config (gitignored)
+
+---
+
 ## v1.1 — Phase 2 Ad/Malware Blocking: NextDNS Deployment (2026-03-25)
 
 2-round research cross-review (5 LLMs each: Gemini, Codex, Claude, Kimi, DeepSeek) + 2-round code audit (5 LLMs each). 3 bugs found and fixed in `net.fish`, 0 regression tests (no test framework). Finding rate: 3 → 0.

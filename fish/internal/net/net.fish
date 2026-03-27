@@ -25,13 +25,15 @@
 # patched: 2026-03-25 — Phase 2 ad-blocking deploy: comments Cloudflare → NextDNS,
 #          bench server 1.1.1.1 → 1.1.1.2 (cloudflare-mw), %-14s column fix
 # patched: 2026-03-26 — Flint 2 verification: no code changes needed, router-agnostic
+# patched: 2026-03-26 — Phase 4 monitoring: net devices, monitor, scan, traffic
+#          (2-round cross-review, 5 LLMs each, 10 total, 0 open disagreements)
 # date: 2026-03-26
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
 
     if test -z "$subcmd"
-        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi]"
+        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic]"
         return 1
     end
 
@@ -181,6 +183,173 @@ function net --description "Network diagnostics and location switching"
             echo "  tip: Option+Click WiFi icon for live details"
             set_color normal
 
+        case devices
+            echo "net: devices on LAN (via router)"
+            echo ""
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "  router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+            # Parse leases on router with awk → tab-delimited (handles hostnames with spaces)
+            set -l lines (ssh flint "awk '{name=\$4; if(name==\"*\") name=\"(unknown)\"; printf \"%s\\t%s\\t%s\\n\", name, \$3, \$2}' /tmp/dhcp.leases 2>/dev/null" 2>/dev/null)
+            printf "  %-20s %-15s %-17s\n" "HOSTNAME" "IP" "MAC"
+            set_color brblack
+            printf "  %-20s %-15s %-17s\n" "--------" "--" "---"
+            set_color normal
+            for line in $lines
+                set -l parts (string split \t -- $line)
+                if test (count $parts) -ge 3
+                    printf "  %-20s %-15s %-17s\n" $parts[1] $parts[2] $parts[3]
+                end
+            end
+
+        case monitor
+            echo "net: router health (via ssh flint)"
+            echo ""
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "  router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+            # Stable awk-based parsing on router side to avoid field-index brittleness
+            set -l data (ssh flint "
+                echo '::LOAD::'; cat /proc/loadavg
+                echo '::MEM::'; awk '/MemTotal/{t=\$2} /MemAvailable/{a=\$2} END{printf \"%d %d\n\", t/1024, a/1024}' /proc/meminfo
+                echo '::TEMP::'; cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null
+                echo '::DEVICES::'; wc -l < /tmp/dhcp.leases
+                echo '::CAKE_UP::'; tc -s qdisc show dev eth1 2>/dev/null | head -3
+                echo '::CAKE_DN::'; tc -s qdisc show dev ifb4eth1 2>/dev/null | head -3
+                echo '::UPTIME::'; uptime
+            " 2>/dev/null)
+
+            set -l section ""
+            for line in $data
+                switch $line
+                    case "::LOAD::"; set section load; continue
+                    case "::MEM::"; set section mem; continue
+                    case "::TEMP::"; set section temp; continue
+                    case "::DEVICES::"; set section devices; continue
+                    case "::CAKE_UP::"; set section cake_up; continue
+                    case "::CAKE_DN::"; set section cake_dn; continue
+                    case "::UPTIME::"; set section uptime; continue
+                end
+                switch $section
+                    case load
+                        set -l parts (string split -n " " -- $line)
+                        if test (count $parts) -ge 3
+                            printf "  cpu load:    %s %s %s\n" $parts[1] $parts[2] $parts[3]
+                        end
+                    case mem
+                        set -l parts (string split -n " " -- $line)
+                        if test (count $parts) -ge 2
+                            set -l total_mb $parts[1]
+                            set -l avail_mb $parts[2]
+                            set -l used_mb (math -s0 "$total_mb - $avail_mb")
+                            printf "  memory:      %sMB used / %sMB total (%sMB available)\n" $used_mb $total_mb $avail_mb
+                        end
+                    case temp
+                        if test -n "$line"
+                            set -l temp_c (math -s1 "$line / 1000")
+                            printf "  temperature: %s°C\n" $temp_c
+                        end
+                    case devices
+                        printf "  devices:     %s connected\n" (string trim -- $line)
+                    case cake_up
+                        if string match -q "*cake*" -- $line
+                            printf "  sqm upload:  "
+                            set_color green; echo "active"; set_color normal
+                        end
+                    case cake_dn
+                        if string match -q "*cake*" -- $line
+                            printf "  sqm download: "
+                            set_color green; echo "active"; set_color normal
+                        end
+                    case uptime
+                        printf "  uptime:      %s\n" (string trim -- $line)
+                end
+            end
+
+        case scan
+            set -l known_file ~/.config/net/known-devices.conf
+            if not test -f $known_file
+                echo "net: known devices file not found at $known_file"
+                echo "  create it with: MAC  Name  Type (one per line, # for comments)"
+                return 1
+            end
+
+            echo "net: scanning for unknown devices"
+            echo ""
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "  router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+            # Single SSH call — fetch all lease data, parse locally (no N+1)
+            set -l leases (ssh flint "awk '{printf \"%s\\t%s\\t%s\\n\", tolower(\$2), \$3, \$4}' /tmp/dhcp.leases 2>/dev/null" 2>/dev/null)
+            if test -z "$leases"
+                set_color yellow; echo "  no DHCP leases found"; set_color normal
+                return 0
+            end
+            set -l unknown_count 0
+
+            for line in $leases
+                set -l parts (string split \t -- $line)
+                if test (count $parts) -ge 3
+                    set -l mac $parts[1]
+                    if not grep -qFi "$mac" $known_file 2>/dev/null
+                        set unknown_count (math $unknown_count + 1)
+                        set -l name $parts[3]
+                        test "$name" = "*"; and set name "(unnamed)"
+                        set_color red
+                        printf "  UNKNOWN: %s  %s  %s\n" $mac $parts[2] $name
+                        set_color normal
+                    end
+                end
+            end
+
+            if test $unknown_count -eq 0
+                set_color green
+                echo "  all devices known"
+                set_color normal
+            else
+                echo ""
+                set_color yellow
+                printf "  %d unknown device(s) found\n" $unknown_count
+                set_color normal
+            end
+
+        case traffic
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "net: router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+            # Single SSH call: check nlbw exists and fetch data in one shot
+            set -l lines (ssh flint "command -v nlbw >/dev/null 2>&1 || { echo '::MISSING::'; exit 0; }; nlbw -c csv -g mac 2>/dev/null" 2>/dev/null)
+            if test (count $lines) -ge 1 -a "$lines[1]" = "::MISSING::"
+                echo "net: nlbwmon not installed on router"
+                echo "  install: ssh flint 'apk add nlbwmon'"
+                return 1
+            end
+
+            echo "net: per-device bandwidth (via nlbwmon)"
+            echo ""
+            printf "  %-17s %12s %12s\n" "MAC" "DOWNLOAD" "UPLOAD"
+            set_color brblack
+            printf "  %-17s %12s %12s\n" "---" "--------" "------"
+            set_color normal
+
+            # nlbw outputs tab-separated quoted fields: "mac" "conns" "rx_bytes" "rx_pkts" "tx_bytes" "tx_pkts"
+            for line in $lines
+                set -l clean (string replace -a '"' '' -- $line)
+                set -l parts (string split \t -- $clean)
+                if test (count $parts) -ge 5
+                    set -l mac $parts[1]
+                    test "$mac" = "mac"; and continue
+                    test -z "$parts[3]" -o "$parts[3]" = "0"; and test -z "$parts[5]" -o "$parts[5]" = "0"; and continue
+                    set -l rx_mb (math -s1 "$parts[3] / 1048576")
+                    set -l tx_mb (math -s1 "$parts[5] / 1048576")
+                    printf "  %-17s %10s MB %10s MB\n" $mac $rx_mb $tx_mb
+                end
+            end
+
         case home work
             set -l iface (networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2; exit}')
             if test -z "$iface"
@@ -215,7 +384,7 @@ function net --description "Network diagnostics and location switching"
 
         case '*'
             echo "unknown: '$subcmd'"
-            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi]"
+            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic]"
             return 1
     end
 end
