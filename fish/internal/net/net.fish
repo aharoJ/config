@@ -17,6 +17,7 @@
 #   net scan              → detect unknown/misplaced devices vs known-devices.conf
 #   net traffic           → per-device bandwidth via nlbwmon
 #   net dns               → show .lan hostname mappings from router dnsmasq
+#   net wake [device]     → wake device via WoL magic packet (default: ubuntu)
 # patched: 2026-03-24 — R1 cross-review (6 LLMs): median bug, new subcommands,
 #          Option C DNS (router upstream = Cloudflare), benchmark caveats
 # patched: 2026-03-24 — R2 cross-review (6 LLMs): median scoping bug, remove
@@ -36,13 +37,15 @@
 #          (2-round research cross-review, 5 LLMs each, 10 total, converged)
 # patched: 2026-03-27 — Phase 6 local DNS: net dns subcommand
 #          (4-round research cross-review, 5 LLMs each, 19 total, converged)
-# date: 2026-03-27
+# patched: 2026-03-28 — Phase 7 WoL: net wake subcommand
+#          (2-round research cross-review, 5 LLMs each, 10 total, converged)
+# date: 2026-03-28
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
 
     if test -z "$subcmd"
-        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns]"
+        echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns|wake]"
         return 1
     end
 
@@ -308,7 +311,7 @@ function net --description "Network diagnostics and location switching"
             set -l known_file ~/.config/net/known-devices.conf
             if not test -f $known_file
                 echo "net: known devices file not found at $known_file"
-                echo "  create it with: MAC  Name  Type  VLAN (one per line, # for comments)"
+                echo "  create it with: MAC  Name  Type  VLAN  Hostname (one per line, # for comments)"
                 return 1
             end
 
@@ -492,6 +495,90 @@ function net --description "Network diagnostics and location switching"
                 end
             end
 
+        case wake
+            set -l target "ubuntu"
+            if test (count $argv) -ge 2
+                set target $argv[2]
+            end
+
+            # Reject placeholder hostname (known-devices.conf uses '-' for no DNS)
+            if test "$target" = "-"
+                set_color red; echo "net: '-' is not a valid wake target"; set_color normal
+                return 1
+            end
+
+            set -l conf ~/.config/net/known-devices.conf
+            if not test -f $conf
+                set_color red; echo "net: known-devices.conf not found"; set_color normal
+                return 1
+            end
+
+            # Lookup MAC and device type in single awk pass (skip comments)
+            set -l info (awk -v h="$target" '!/^[[:space:]]*#/ && $5 == h {print $1 "\t" $3; exit}' $conf)
+            if test -z "$info"
+                set_color red; echo "net: device '$target' not found in known-devices.conf"; set_color normal
+                return 1
+            end
+            set -l mac (string split \t -- $info)[1]
+            set -l dtype (string split \t -- $info)[2]
+
+            # Validate MAC format before passing to remote shell
+            if not string match -qr '^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$' -- $mac
+                set_color red; echo "net: invalid MAC '$mac' in known-devices.conf"; set_color normal
+                return 1
+            end
+
+            # Block device types that don't support WoL
+            if contains -- $dtype phone tablet laptop
+                set_color red; echo "net: '$target' is $dtype (WiFi-only, WoL not supported)"; set_color normal
+                return 1
+            end
+
+            # Check if already awake (-W 1000 = 1s timeout on macOS, which uses ms)
+            if ping -c 1 -W 1000 "$target.lan" >/dev/null 2>&1
+                set_color green; echo "net: $target.lan is already awake"; set_color normal
+                return 0
+            end
+
+            # Pre-check router SSH (consistent with devices/monitor/scan/traffic/dns)
+            if not ssh -o ConnectTimeout=3 flint true 2>/dev/null
+                set_color red; echo "net: router unreachable (ssh flint failed)"; set_color normal
+                return 1
+            end
+
+            # Send magic packet via router
+            set -l wake_err (ssh flint "etherwake -i br-lan $mac" 2>&1)
+            if test $status -ne 0
+                set_color red
+                if string match -q "*not found*" -- $wake_err
+                    echo "net: etherwake not installed on router (apk add etherwake)"
+                else
+                    echo "net: failed to send magic packet: $wake_err"
+                end
+                set_color normal
+                return 1
+            end
+
+            set_color yellow; echo "net: magic packet sent to $target ($mac)"; set_color normal
+
+            # Poll for wake — ping every 2s, wall-clock timeout 30s
+            set -l start (date +%s)
+            while true
+                sleep 2
+                if ping -c 1 -W 1000 "$target.lan" >/dev/null 2>&1
+                    set -l elapsed (math (date +%s) - $start)
+                    set_color green; echo "net: $target.lan woke in "$elapsed"s"; set_color normal
+                    return 0
+                end
+                set -l elapsed (math (date +%s) - $start)
+                if test $elapsed -ge 30
+                    break
+                end
+            end
+
+            set_color red; echo "net: $target.lan failed to wake after 30s"; set_color normal
+            return 1
+
         case home work
             set -l iface (networksetup -listallhardwareports 2>/dev/null | awk '/Hardware Port: Wi-Fi/{getline; print $2; exit}')
             if test -z "$iface"
@@ -526,7 +613,7 @@ function net --description "Network diagnostics and location switching"
 
         case '*'
             echo "unknown: '$subcmd'"
-            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns]"
+            echo "usage: net [home|work|status|bench|quality|curltime|flush|wifi|devices|monitor|scan|traffic|dns|wake]"
             return 1
     end
 end

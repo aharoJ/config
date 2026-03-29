@@ -1,5 +1,78 @@
 # Changelog
 
+## v1.7 — Phase 7 Wake-on-LAN Implementation + Cross-Review Hardening (2026-03-28)
+
+Phase 7 (final): Wake-on-LAN for Ubuntu 24.04 LTS desktop, wired Ethernet on LAN port 4. Full implementation + 5-round adversarial multi-model review (2 research rounds + 3 code audit rounds, 5-6 LLMs each, 16 code reviews). 12 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 10 → 1 → 1 → 0.
+
+### Infrastructure deployed
+
+| Component | Detail |
+|---|---|
+| Ubuntu SSH | openssh-server, key-only auth (password disabled), `ssh ubuntu` alias with ControlMaster |
+| Ubuntu WoL | NetworkManager `802-3-ethernet.wake-on-lan magic`, `Wake-on: g` persists across suspend/resume |
+| Ubuntu static IP | `192.168.1.60`, hostname `ubuntu`, WiFi disabled |
+| Ubuntu hostname | `ubuntu.lan` via dnsmasq `dhcp.@host[]` + `dns='1'` |
+| BIOS | WoL enabled, ErP disabled, Fast Boot disabled, AC recovery → Power On |
+| Router | etherwake installed, static DHCP lease, DNS entry |
+| Claude Code | Installed on Ubuntu, controllable via `ssh ubuntu` then `claude` |
+
+### Research decisions (2 rounds, 10 model reviews, 5/5 PASS R2)
+
+| Decision | Consensus | Rationale |
+|---|---|---|
+| etherwake (Layer 2) over wol/wakeonlan | 5/5 R1 | L2 doesn't need ARP, works on bridged interfaces |
+| NetworkManager WoL persistence | 5/5 R1 | Native on Ubuntu 24.04 Desktop, systemd fallback if needed |
+| Suspend (S3) as default power state | 5/5 R1 | LUKS blocks S5 cold boot (passphrase prompt), S3 bypasses |
+| Disable WiFi on desktop | 5/5 R1 | WoL is Ethernet-only, WiFi adds confusion |
+| Auto-suspend 30min idle | 4/5 R1 | Power savings when not in use |
+| Static IP .60, hostname ubuntu | 5/5 R1 | Below DHCP pool (.110+), no conflicts |
+
+### Modified: `fish/internal/net/net.fish`
+
+**Code audit R1 (5 models: Gemini, Codex, Kimi, DeepSeek, CC):**
+- **P1**: `ping -W 1` = 1ms on macOS (uses milliseconds, not seconds) — changed to `-W 1000` (4/5)
+- **P1**: `net wake -` matches placeholder hostname `-` in known-devices.conf — added rejection guard (4/5)
+- **P2**: MAC not validated before SSH command interpolation — added `string match -qr` regex validation (5/5)
+- **P2**: SSH stderr suppressed with `2>/dev/null` hiding etherwake-not-installed — removed suppression, added specific error messages (5/5)
+- **P2**: Comment lines not skipped in awk lookup — added `!/^#/` guard (2/5 CC, Grok)
+- **P2**: Missing SSH pre-check unlike all other subcommands — added `ssh flint true` pre-check (2/5 DeepSeek, Grok)
+- **P2**: Elapsed time used fixed counter, not wall clock — switched to `date +%s` (5/5)
+- **P2**: Device type filter missing `laptop` (WiFi-only MacBooks) — added to blocked types (5/5)
+- **P3**: TOCTOU dual awk lookups for MAC and type — combined into single awk pass (4/5)
+- **P3**: known-devices.conf header said "tab-separated" but uses whitespace — fixed comment (4/5)
+
+**Code audit R2 (6 models: Gemini, Codex, Kimi, DeepSeek, CC, Grok — 3/6 PASS):**
+- **P3**: awk comment guard `!/^#/` doesn't skip indented comments — upgraded to `!/^[[:space:]]*#/` (4/6)
+
+**Code audit R3 (6 models: Gemini, GPT, Kimi, DeepSeek, CC, Grok — 5/6 PASS):**
+- **P3**: `net scan` instruction string missing hostname column (stale from pre-Phase 6) — added `Hostname` to format help (1/6 Gemini)
+
+### Modified: `net/known-devices.conf`
+- Added Ubuntu Desktop entry: `2c:f0:5d:d5:70:f6  Ubuntu-Desktop  desktop  main  ubuntu`
+- Updated format comment: "tab-separated" → "whitespace-separated"
+
+### Modified: `~/.ssh/config`
+- Added `Host ubuntu` entry with ControlMaster multiplexing
+
+### Router: `/etc/config/dhcp` (via UCI SSH)
+- 1 `@host[]` entry: ubuntu → 192.168.1.60, MAC `2c:f0:5d:d5:70:f6`, `dns='1'`
+- etherwake installed via `apk add etherwake`
+
+### Gotchas added
+- **#62**: macOS `ping -W` is milliseconds, not seconds
+- **#63**: Validate MAC format before SSH command interpolation
+- **#64**: Skip comment lines in awk lookups on config files
+- **#65**: `known-devices.conf` uses `-` as placeholder hostname
+
+### Cross-review templates
+- Research R1: `templates/rounds/wake-on-lan/wake-on-lan-research.md`
+- Research R2: `templates/rounds/wake-on-lan/wake-on-lan-research-v2.md`
+- Code audit R1: `templates/rounds/wake-on-lan/wake-on-lan-audit.md`
+- Code audit R2: `templates/rounds/wake-on-lan/wake-on-lan-audit-v2.md`
+- Code audit R3: `templates/rounds/wake-on-lan/wake-on-lan-audit-v3.md`
+
+---
+
 ## v1.5 — Phase 6 Local DNS Cross-Review Hardening (2026-03-27)
 
 8-round adversarial multi-model review (5 independent LLMs × 8 rounds = 39 reviews) of Phase 6 local DNS hostname resolution. 4 research rounds (architecture decisions) + 4 code audit rounds (`net dns` fish function + UCI config). 8 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 5 → 2 → 1 → 0.
