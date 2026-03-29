@@ -1,5 +1,66 @@
 # Changelog
 
+## v1.9 — Phase 8 Guest WiFi Implementation + Cross-Review Hardening (2026-03-29)
+
+Phase 8: Guest WiFi with bandwidth priority for family visitors. 5-round adversarial multi-model review (3 research + 2 code audit rounds, 5 LLMs each, 25 total reviews). 2 code bugs found and fixed. Research finding rate: converged R3. Code audit finding rate: 2 → 0. Gotchas #66-#67 added.
+
+### Infrastructure deployed (router UCI + nftables)
+
+| Component | Detail |
+|---|---|
+| Bridge | `br-guest` (192.168.20.0/24), `delegate='0'` (no IPv6 PD) |
+| WiFi | `flint-guest` on radio0 (2.4GHz only), WPA2-PSK (`psk2+ccmp`), `isolate='0'` (AirDrop) |
+| DHCP | Pool .100-.199, 4h lease, IPv6 disabled |
+| Firewall | `guest` zone (input=REJECT, forward=REJECT), guest→wan forwarding |
+| Input rules | Allow-Guest-DHCP (UDP 67), Allow-Guest-DNS (TCP/UDP 53), Allow-Guest-ICMP (echo-request) |
+| DNS redirect | DNAT port 53 → 192.168.20.1 (catches hardcoded DNS like 8.8.8.8) |
+| SQM/CAKE | `layer_cake.qos`, `diffserv4 wash nat dual-srchost/dual-dsthost`, `squash_dscp='0'` |
+| DSCP marking | nftables chain in fw4: guest traffic → CS1 (Bulk tin) via `ip saddr` + `ct original ip saddr` |
+| nlbwmon | Guest added to `local_network` for per-device bandwidth tracking |
+
+### Research decisions (3 rounds, 15 model reviews)
+
+| Decision | Consensus | Rationale |
+|---|---|---|
+| New `br-guest` bridge | 5/5 R1 | Clean L2 isolation, proven Phase 5 pattern |
+| CAKE `diffserv4` + DSCP CS1 marking | 5/5 R1 | Dynamic priority — guests get idle bandwidth, yield under contention |
+| 2.4GHz only for guest | User decision | Separate radio = zero 5GHz airtime contention with owner devices |
+| WPA2-PSK (`psk2+ccmp`) | 4/5 R1 | Compatibility for older kid devices |
+| Client isolation disabled | 5/5 R1 | Family AirDrop/gaming between cousins |
+| Captive portal dismissed | 5/5 R1 | Overkill for family guest network |
+| 4h lease time | User decision | Transient guests, don't hoard the pool |
+| `.lan` leakage accepted | User decision | Firewall blocks access to .lan IPs regardless |
+| `squash_dscp='0'` + `wash` | 5/5 R2-R3 | Preserve marks for CAKE classification, strip before ISP |
+| Upload-only bandwidth priority | User decision | Download (400 Mbps) unlikely to bottleneck; upload (23.5 Mbps) is scarce |
+
+### Modified: `fish/internal/net/net.fish`
+
+**Code audit R1 (5 models: Gemini, GPT, Kimi, DeepSeek, CC):**
+- **P0**: Ingress DSCP mark in nftables prerouting doesn't reach CAKE on ifb4eth1 — tc ingress redirect fires before netfilter. Empirically verified. **Decision: Accept upload-only priority.** Documented as Gotcha #66. (2/5 CC, DeepSeek-R2)
+- **P2**: Monitor awk regex `/192\.168\.20\./` not field-anchored — could false-match on hostname/client-id. Fixed: `$3 ~ /^192\.168\.20\./`. Documented as Gotcha #67. (4/5)
+
+**Code audit R2 (5 models: Gemini, GPT, Kimi, DeepSeek, CC — 1/5 PASS, rest re-raised settled items):**
+- 0 new real bugs. Converged at 0 findings.
+
+**Phase 8 fish changes:**
+- `net devices`: 3rd VLAN branch `192.168.20.*` → "guest" (cyan color)
+- `net monitor`: awk counts guest devices separately, 3-way display (main/iot/guest), field-anchored regex
+- `net scan`: guest VLAN detection from IP prefix
+- `net dns`: guest VLAN classification (cyan color)
+
+### Gotchas added
+- **#66**: nftables DSCP marks in prerouting don't reach CAKE on ifb4eth1 (ingress) — tc redirect fires before netfilter
+- **#67**: awk regex in SSH command substitutions must be field-anchored (`$3 ~`)
+
+### Cross-review templates
+- Research R1: `templates/rounds/guest-wifi/guest-wifi-research.md`
+- Research R2: `templates/rounds/guest-wifi/guest-wifi-research-v2.md`
+- Research R3: `templates/rounds/guest-wifi/guest-wifi-research-v3.md`
+- Code audit R1: `templates/rounds/guest-wifi/guest-wifi-audit.md`
+- Code audit R2: `templates/rounds/guest-wifi/guest-wifi-audit-v2.md`
+
+---
+
 ## v1.7 — Phase 7 Wake-on-LAN Implementation + Cross-Review Hardening (2026-03-28)
 
 Phase 7 (final): Wake-on-LAN for Ubuntu 24.04 LTS desktop, wired Ethernet on LAN port 4. Full implementation + 5-round adversarial multi-model review (2 research rounds + 3 code audit rounds, 5-6 LLMs each, 16 code reviews). 12 bugs found and fixed, 0 regression tests (no test framework). Finding rate: 10 → 1 → 1 → 0.

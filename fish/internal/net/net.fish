@@ -39,7 +39,9 @@
 #          (4-round research cross-review, 5 LLMs each, 19 total, converged)
 # patched: 2026-03-28 — Phase 7 WoL: net wake subcommand
 #          (2-round research cross-review, 5 LLMs each, 10 total, converged)
-# date: 2026-03-28
+# patched: 2026-03-29 — Phase 8 guest WiFi: 3rd VLAN branch (guest) in
+#          devices, monitor, scan, dns subcommands (cyan color)
+# date: 2026-03-29
 
 function net --description "Network diagnostics and location switching"
     set -l subcmd $argv[1]
@@ -216,14 +218,18 @@ function net --description "Network diagnostics and location switching"
                 set -l parts (string split \t -- $line)
                 if test (count $parts) -ge 3
                     set -l vlan "main"
-                    if string match -q "192.168.10.*" $parts[2]
+                    if string match -q "192.168.20.*" $parts[2]
+                        set vlan "guest"
+                    else if string match -q "192.168.10.*" $parts[2]
                         set vlan "iot"
                     end
-                    if test "$vlan" = "iot"
+                    if test "$vlan" = "guest"
+                        set_color cyan
+                    else if test "$vlan" = "iot"
                         set_color yellow
                     end
                     printf "  %-20s %-15s %-17s %-6s\n" $parts[1] $parts[2] $parts[3] $vlan
-                    if test "$vlan" = "iot"
+                    if test "$vlan" = "iot" -o "$vlan" = "guest"
                         set_color normal
                     end
                 end
@@ -241,7 +247,7 @@ function net --description "Network diagnostics and location switching"
                 echo '::LOAD::'; cat /proc/loadavg
                 echo '::MEM::'; awk '/MemTotal/{t=\$2} /MemAvailable/{a=\$2} END{printf \"%d %d\n\", t/1024, a/1024}' /proc/meminfo
                 echo '::TEMP::'; cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null
-                echo '::DEVICES::'; awk 'END{printf \"%d %d\n\", NR, iot} /192\\.168\\.10\\./{iot++}' /tmp/dhcp.leases 2>/dev/null
+                echo '::DEVICES::'; awk 'END{printf \"%d %d %d\n\", NR, iot, guest} \$3 ~ /^192\\.168\\.10\\./{iot++} \$3 ~ /^192\\.168\\.20\\./{guest++}' /tmp/dhcp.leases 2>/dev/null
                 echo '::CAKE_UP::'; tc -s qdisc show dev eth1 2>/dev/null | head -3
                 echo '::CAKE_DN::'; tc -s qdisc show dev ifb4eth1 2>/dev/null | head -3
                 echo '::UPTIME::'; uptime
@@ -282,9 +288,15 @@ function net --description "Network diagnostics and location switching"
                             printf "  temperature: %s°C\n" $temp_c
                         end
                     case devices
-                        # Atomic: single awk outputs "total iot" on one line
+                        # Atomic: single awk outputs "total iot guest" on one line
                         set -l parts (string split -n " " -- $line)
-                        if test (count $parts) -ge 2
+                        if test (count $parts) -ge 3
+                            set -l total $parts[1]
+                            set -l iot $parts[2]
+                            set -l guest $parts[3]
+                            set -l main_count (math "$total - $iot - $guest")
+                            printf "  devices:     %s connected (%s main, %s iot, %s guest)\n" $total $main_count $iot $guest
+                        else if test (count $parts) -ge 2
                             set -l total $parts[1]
                             set -l iot $parts[2]
                             set -l main_count (math "$total - $iot")
@@ -344,7 +356,9 @@ function net --description "Network diagnostics and location switching"
 
                     # Detect current VLAN from IP prefix
                     set -l current_vlan "main"
-                    if string match -q "192.168.10.*" $ip
+                    if string match -q "192.168.20.*" $ip
+                        set current_vlan "guest"
+                    else if string match -q "192.168.10.*" $ip
                         set current_vlan "iot"
                     end
 
@@ -482,14 +496,18 @@ function net --description "Network diagnostics and location switching"
                     set -l ip $parts[2]
                     set -l type $parts[3]
                     set -l vlan "main"
-                    if string match -q "192.168.10.*" $ip
+                    if string match -q "192.168.20.*" $ip
+                        set vlan "guest"
+                    else if string match -q "192.168.10.*" $ip
                         set vlan "iot"
                     end
-                    if test "$vlan" = "iot"
+                    if test "$vlan" = "guest"
+                        set_color cyan
+                    else if test "$vlan" = "iot"
                         set_color yellow
                     end
                     printf "  %-20s %-16s %-8s %-6s\n" "$hname.lan" $ip $type $vlan
-                    if test "$vlan" = "iot"
+                    if test "$vlan" = "iot" -o "$vlan" = "guest"
                         set_color normal
                     end
                 end
