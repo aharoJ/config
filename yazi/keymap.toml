@@ -14,9 +14,9 @@
 # ── OVERRIDES (shadow defaults) ──────────────────────────────────
 prepend_keymap = [
 
-  # ── Quit swap ──────────────────────────────────────────────────
-  { on = "q", run = "quit --no-cwd-file", desc = "Quit (no cd)" },
-  { on = "Q", run = "quit",               desc = "Quit + cd to CWD" },
+  # ── Quit ────────────────────────────────────────────────────────
+  { on = "q", run = "quit",               desc = "Quit + cd to CWD" },
+  { on = "Q", run = "quit --no-cwd-file", desc = "Quit (no cd)" },
 
   # ── Escape: nuclear cancel ─────────────────────────────────────
   { on = "<Esc>", run = "escape --all", desc = "Escape (clear all)" },
