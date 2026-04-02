@@ -19,6 +19,9 @@ set -g fish_greeting ""
 # internal/notes..
 set -gx NOTES_DIR "$HOME/notes"
 
+# Claude Code
+set -gx CLAUDE_CODE_EFFORT_LEVEL max
+
 # Autoload functions from internal/* subdirs
 set -l _root "$HOME/.config/fish/internal"
 if test -d "$_root"
@@ -79,6 +82,7 @@ if status is-interactive
 
 
     alias n="NVIM_APPNAME=nvim-rebuild nvim"
+    alias nvim-v3="NVIM_APPNAME=nvim-v3 nvim"
 
 
 
