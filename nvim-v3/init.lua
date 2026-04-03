@@ -111,6 +111,10 @@ vim.pack.add({
   "https://github.com/lewis6991/gitsigns.nvim",
   "https://github.com/stevearc/conform.nvim",
   "https://github.com/christoomey/vim-tmux-navigator",
+  -- Phase 3: LSP + Completion
+  "https://github.com/neovim/nvim-lspconfig",
+  { src = "https://github.com/saghen/blink.cmp", version = vim.version.range("1.x") },
+  "https://github.com/b0o/SchemaStore.nvim",
 })
 
 -- ============================================================================
@@ -122,6 +126,58 @@ require("kanagawa").setup({
   background = { dark = "wave", light = "lotus" },
 })
 vim.cmd.colorscheme("kanagawa")
+
+-- ============================================================================
+-- blink.cmp (D2, D23, D33, D34)
+-- ============================================================================
+local blink = require("blink.cmp")
+
+-- Explicit capability injection (D23 — C17: plugin/ files don't load during init.lua)
+vim.lsp.config("*", {
+  capabilities = blink.get_lsp_capabilities(),
+})
+
+blink.setup({
+  keymap = { preset = "default" },
+  appearance = { nerd_font_variant = "mono" },
+  completion = {
+    documentation = { auto_show = true },
+    list = { selection = { preselect = true, auto_insert = false } },
+    ghost_text = { enabled = false },
+  },
+  sources = {
+    default = { "lsp", "path", "buffer" },
+  },
+  fuzzy = { implementation = "prefer_rust_with_warning" },
+})
+
+-- ============================================================================
+-- LSP servers (D25 — enable all, missing binaries fail gracefully)
+-- ============================================================================
+vim.lsp.enable({
+  "lua_ls", "basedpyright", "ts_ls", "eslint", "tailwindcss",
+  "rust_analyzer", "fish_lsp", "bashls", "jsonls", "taplo",
+  "marksman", "lemminx",
+})
+
+-- ============================================================================
+-- Diagnostics (D29)
+-- ============================================================================
+vim.diagnostic.config({
+  virtual_text = true,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = " ",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.INFO] = " ",
+      [vim.diagnostic.severity.HINT] = " ",
+    },
+  },
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+  float = { source = true },
+})
 
 -- ============================================================================
 -- fzf-lua (D5)
@@ -381,20 +437,73 @@ autocmd("LspProgress", {
   callback = function() vim.cmd.redrawstatus() end,
 })
 
--- LSP attach keymaps (servers configured in Phase 3 via lsp/ directory)
+-- LSP attach keymaps + capabilities (D27, D28)
 -- 0.12 defaults already provide: gd, gD, grr, gra, grn, gri, grt, grx, K, ]d, [d
 -- Only add <leader> aliases that don't conflict with defaults
 autocmd("LspAttach", {
   group = augroup("lsp-keymaps", { clear = true }),
   callback = function(event)
     local buf = event.buf
+    local client = vim.lsp.get_client_by_id(event.data.client_id)
+    if not client then return end
+
     local m = function(mode, lhs, rhs, desc)
       vim.keymap.set(mode, lhs, rhs, { buffer = buf, desc = desc })
     end
+
+    -- Kill LSP formatting (D27) — lemminx exempt (only XML formatter)
+    if client.name ~= "lemminx" then
+      client.server_capabilities.documentFormattingProvider = false
+      client.server_capabilities.documentRangeFormattingProvider = false
+    end
+
     m("n", "<leader>ca", vim.lsp.buf.code_action, "Code action")
     m("n", "<leader>cr", vim.lsp.buf.rename, "Rename")
     m("n", "<leader>cd", vim.diagnostic.open_float, "Line diagnostics")
-    m("n", "<leader>cl", function() vim.lsp.codelens.run() end, "CodeLens run")
-    vim.lsp.codelens.enable(true, { bufnr = buf })
+    if client:supports_method("textDocument/codeLens") then
+      m("n", "<leader>cl", function() vim.lsp.codelens.run() end, "CodeLens run")
+      vim.lsp.codelens.enable(true, { bufnr = buf })
+    end
+
+    -- Inlay hints toggle
+    if client:supports_method("textDocument/inlayHint") then
+      m("n", "<leader>ch", function()
+        vim.lsp.inlay_hint.enable(
+          not vim.lsp.inlay_hint.is_enabled({ bufnr = buf }),
+          { bufnr = buf }
+        )
+      end, "Toggle inlay hints")
+    end
+
+    -- Document highlight (cursor symbol highlighting)
+    if client:supports_method("textDocument/documentHighlight") then
+      local hl_group = augroup("lsp-highlight-" .. buf, { clear = true })
+      autocmd({ "CursorHold", "CursorHoldI" }, {
+        group = hl_group, buffer = buf,
+        callback = vim.lsp.buf.document_highlight,
+      })
+      autocmd({ "CursorMoved", "CursorMovedI" }, {
+        group = hl_group, buffer = buf,
+        callback = vim.lsp.buf.clear_references,
+      })
+    end
+  end,
+})
+
+-- Clean up document highlight autocmds when last capable client detaches
+autocmd("LspDetach", {
+  group = augroup("lsp-highlight-detach", { clear = true }),
+  callback = function(event)
+    local buf = event.buf
+    local remaining = vim.lsp.get_clients({ bufnr = buf, method = "textDocument/documentHighlight" })
+    -- Filter out the detaching client (still in the list during LspDetach)
+    local count = 0
+    for _, c in ipairs(remaining) do
+      if c.id ~= event.data.client_id then count = count + 1 end
+    end
+    if count == 0 then
+      vim.lsp.buf.clear_references()
+      pcall(vim.api.nvim_del_augroup_by_name, "lsp-highlight-" .. buf)
+    end
   end,
 })
