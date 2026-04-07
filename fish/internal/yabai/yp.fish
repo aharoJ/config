@@ -7,8 +7,8 @@
 #   yp bsp              → switch to BSP mode (yabai + skhd)
 #   yp float            → switch to float mode (yabai only, skhd stays current)
 # date: 2026-02-07
-# changelog: 2026-03-13 | Added skhd symlink swap + reload for profile separation
-#            ROLLBACK: Remove symlink logic + skhd -r, restore previous yp.fish
+# changelog: 2026-04-07 | D-01: Extract symlink swap to _swap_skhd_profile helper
+#            2026-03-13 | Added skhd symlink swap + reload for profile separation
 
 function yp --description "yabai + skhd: switch profile (no restart)"
     set -l profile $argv[1]
@@ -28,15 +28,15 @@ function yp --description "yabai + skhd: switch profile (no restart)"
     end
 
     # ── Apply yabai profile ────────────────────────────────────────
-    bash "$script"
+    if not bash "$script"
+        echo "yp: yabai profile '$profile' failed to apply" >&2
+        return 1
+    end
 
     # ── Swap skhd modules symlink ──────────────────────────────────
     # Only swap if skhd has a matching profile directory.
     # Float mode has no dedicated skhd profile — keeps current bindings.
-    set -l skhd_profile_dir "$HOME/.config/skhd/modules/$profile"
-
-    if test -d "$skhd_profile_dir"
-        ln -sfn "$skhd_profile_dir" "$HOME/.config/skhd/modules/active"
+    if _swap_skhd_profile "$profile"
         skhd -r 2>/dev/null
         set_color yellow
         echo "yp: yabai=$profile  skhd=$profile"
