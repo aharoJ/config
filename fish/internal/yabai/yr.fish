@@ -2,13 +2,14 @@
 # description: Restart yabai + skhd and apply a layout profile.
 #              Also swaps the skhd modules/active symlink to match the profile.
 # usage:
-#   yr                  → restart with stack profile (default)
-#   yr -P bsp           → restart with BSP profile
-#   yr -P float         → restart with float profile
+#   yr                  → restart with current profile (detected from symlink)
+#   yr -P bsp           → restart with BSP profile (explicit override)
+#   yr -P float         → restart with float profile (explicit override)
 #   yr --status         → show current yabai + skhd state (no restart)
 # date: 2026-02-08
-# changelog: 2026-03-13 | Added skhd symlink swap for profile separation
-#            ROLLBACK: Remove symlink logic, restore previous yr.fish
+# changelog: 2026-04-07 | D-01: Extract symlink swap to _swap_skhd_profile helper
+#            2026-04-07 | D-03: Detect current profile from symlink, fallback stack
+#            2026-03-13 | Added skhd symlink swap for profile separation
 function yr --description "yabai + skhd: restart + apply profile"
     argparse 'P/profile=' S/status -- $argv
     or return
@@ -45,22 +46,31 @@ function yr --description "yabai + skhd: restart + apply profile"
     set -l profile "stack"
     if set -q _flag_profile
         set profile $_flag_profile
-    end
-
-    # ── Swap skhd modules symlink ───────────────────────────────
-    set -l skhd_profile_dir "$HOME/.config/skhd/modules/$profile"
-    if test -d "$skhd_profile_dir"
-        ln -sfn "$skhd_profile_dir" "$HOME/.config/skhd/modules/active"
+    else
+        set -l detected (readlink "$HOME/.config/skhd/modules/active" 2>/dev/null | sed 's|.*/||')
+        if test -n "$detected"
+            set profile "$detected"
+        end
     end
 
     # ── Restart yabai + Apply Profile ───────────────────────────
-    bash ~/.config/yabai/scripts/yabai-restart.sh "$profile"
+    # WHY yabai first: if restart fails, don't touch skhd symlink or service.
+    if not bash ~/.config/yabai/scripts/yabai-restart.sh "$profile"
+        echo "yr: yabai restart failed (profile=$profile)" >&2
+        return 1
+    end
 
-    # ── Restart skhd ────────────────────────────────────────────
-    skhd --restart-service 2>/dev/null
-
-    # ── Reload Hammerspoon ────────────────────────────────────
-    hs -c "hs.reload()" 2>/dev/null
+    # ── Swap skhd modules symlink ───────────────────────────────
+    if _swap_skhd_profile "$profile"
+        skhd --restart-service 2>/dev/null
+    else
+        # No skhd profile for this layout (e.g., float) — restart skhd
+        # with current bindings intact.
+        skhd --restart-service 2>/dev/null
+        set_color yellow
+        echo "yr: no skhd profile for '$profile' — keybindings unchanged"
+        set_color normal
+    end
 
     # ── Confirm ─────────────────────────────────────────────────
     set_color yellow
