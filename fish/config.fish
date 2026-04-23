@@ -20,7 +20,7 @@ set -g fish_greeting ""
 set -gx NOTES_DIR "$HOME/notes"
 
 # Claude Code
-set -gx CLAUDE_CODE_EFFORT_LEVEL max
+set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
 
 # Autoload functions from internal/* subdirs
 set -l _root "$HOME/.config/fish/internal"
@@ -80,6 +80,11 @@ if status is-interactive
     abbr .. "cd .."
     abbr ... "cd ../.."
 
+    # Ctrl+D: delete char if line has content, do nothing if empty.
+    # Prevents pane death when Kimi (which uses Ctrl+D as its copy key) leaks
+    # extra keypresses into the shell prompt.
+    bind \cd 'set -l _cmd (commandline); if test (string length -- "$_cmd") -gt 0; commandline -f delete-char; end'
+
 
     alias n="NVIM_APPNAME=nvim-rebuild nvim"
     alias nvim-v3="NVIM_APPNAME=nvim-v3 nvim"
@@ -88,3 +93,6 @@ if status is-interactive
 
 
 end
+
+# Nuke CC effort override — must never be set as env var (settings.json governs)
+set -e CLAUDE_CODE_EFFORT_LEVEL
