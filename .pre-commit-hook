@@ -86,6 +86,12 @@ PATTERNS=(
   'sk_live_[a-zA-Z0-9]+'
   'pk_test_[a-zA-Z0-9]+'
   'pk_live_[a-zA-Z0-9]+'
+  'sk-[a-zA-Z0-9]{32}'              # DeepSeek / short sk- keys (32-char hex)
+  'sk\\x2d[a-zA-Z0-9]{32}'          # fish_variables encodes - as \x2d
+  'SETUVAR.*api[_-]?key'            # any fish universal-var API key export
+  'SETUVAR.*token'                  # any fish universal-var token export
+  'SETUVAR.*secret'                 # any fish universal-var secret export
+  'DEEPSEEK_API_KEY'                # belt-and-suspenders for DeepSeek specifically
 )
 
 COMBINED=$(IFS='|'; echo "${PATTERNS[*]}")
