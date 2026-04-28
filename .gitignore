@@ -221,3 +221,6 @@ wireguard/
 net/known-devices.conf
 net/router.log
 net/socat.err
+
+# Local secrets (sourced by fish conf.d but never committed)
+fish/conf.d/*.local.fish
