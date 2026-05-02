@@ -27,7 +27,7 @@ font-thicken = true
 
 # ── Transparency ─────────────────────────────────────────────────────────────
 # 70% opacity - see your desktop through the terminal
-background-opacity = 0.80
+background-opacity = 1
 
 # No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
 background-blur = true
@@ -152,6 +152,11 @@ keybind = cmd+h=ignore
 keybind = cmd+m=ignore
 
 
+# ── Extended Keys (CSI u) ──
+# modifyOtherKeys protocol doesn't cover Enter+modifiers — explicit binds required
+keybind = shift+enter=text:\x1b[13;2u
+keybind = alt+enter=text:\x1b[13;3u
+
 # ── tmux ──
 keybind = cmd+z=text:\x02
 
@@ -160,12 +165,9 @@ keybind = cmd+z=text:\x02
 # h/l = windows (horizontal), j/k = sessions (vertical).
 keybind = cmd+shift+h=text:\x02p
 keybind = cmd+shift+l=text:\x02n
-keybind = cmd+shift+j=text:\x02)
-keybind = cmd+shift+k=text:\x02(
+# keybind = cmd+shift+j=text:\x02)
+# keybind = cmd+shift+k=text:\x02(
 keybind = cmd+shift+t=text:\x02t
-
-# ── claude code ──
-keybind = shift+enter=text:\x1b[13;2u
 
 
 # ── Pass-through to Neovim ──
