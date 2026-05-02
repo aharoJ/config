@@ -41,7 +41,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         return 1
     end
 
-    set -l agents codex gemini cc deepseek
+    set -l agents gemini codex cc deepseek
 
     if test (count $argv) -eq 0
         set argv all
