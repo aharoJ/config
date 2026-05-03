@@ -23,10 +23,23 @@ function yr --description "yabai + skhd: restart + apply profile"
         set -l gap (yabai -m config window_gap 2>/dev/null)
         set -l balance (yabai -m config auto_balance 2>/dev/null)
         set -l padding_top (yabai -m config top_padding 2>/dev/null)
+        set -l yabai_agents (launchctl list 2>/dev/null | awk '$3 ~ /yabai/ { print $3 ":" $1 }')
+        set -l yabai_processes (pgrep -x yabai 2>/dev/null)
         echo "layout      : $layout"
         echo "gap         : $gap"
         echo "padding     : $padding_top"
         echo "auto_balance: $balance"
+        if test (count $yabai_agents) -gt 0
+            echo "launchd     : "(string join ", " $yabai_agents)
+        else
+            echo "launchd     : none"
+        end
+        echo "processes   : "(count $yabai_processes)
+        if test (count $yabai_agents) -gt 1; or test (count $yabai_processes) -gt 1
+            set_color red
+            echo "warning     : multiple yabai owners detected"
+            set_color normal
+        end
 
         set_color yellow
         echo ""
