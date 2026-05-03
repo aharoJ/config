@@ -6,13 +6,13 @@
 # STACK LAYOUT
 # ────────────
 # Float snaps for pulling reference windows out of the stack.
-# --toggle float + --grid works with SIP (operates on floating windows only).
-# Same key unfloats the window back into the stack.
+# Grid works with SIP after the window is floating.
+# Hyper+D is idempotent: repeated presses re-center instead of reattaching.
 
 
 # ── Float: Center ─────────────────────────────────────────────────────────
-# Hyper+D: pop window to centered float (50% screen) or push back into stack
-hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+# Hyper+D: pop window to centered float (50% screen), or re-center if floating
+hyper - d : if ! yabai -m query --windows --window | jq -e '."is-floating"' >/dev/null; then yabai -m window --toggle float; fi; yabai -m window --grid 4:4:1:1:2:2
 
 # ── Float: Left Half ──────────────────────────────────────────────────
 # Hyper+W: snap float to left half

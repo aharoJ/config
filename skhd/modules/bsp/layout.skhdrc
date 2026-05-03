@@ -18,8 +18,8 @@ hyper - z : yabai -m window --toggle zoom-fullscreen
 # Hyper+W: toggle zoom-parent (window fills parent container)
 hyper - w : yabai -m window --toggle zoom-parent
 
-# Hyper+D: toggle float + center window in a 50% grid
-hyper - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+# Hyper+D: pop window to centered float (50% screen), or re-center if floating
+hyper - d : if ! yabai -m query --windows --window | jq -e '."is-floating"' >/dev/null; then yabai -m window --toggle float; fi; yabai -m window --grid 4:4:1:1:2:2
 
 
 # ── BSP Tree Operations ──────────────────────────────────────────────────

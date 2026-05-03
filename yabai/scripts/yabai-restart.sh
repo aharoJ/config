@@ -11,13 +11,53 @@ set -euo pipefail
 PROFILE="${1:-stack}"
 PROFILES_DIR="${HOME}/.config/yabai/profiles"
 PROFILE_SCRIPT="${PROFILES_DIR}/yabai-${PROFILE}.sh"
+CANONICAL_LABEL="com.asmvik.yabai"
+STALE_LABEL="com.koekeishiya.yabai"
+LAUNCHD_DOMAIN="gui/$(id -u)"
+
+loaded_yabai_labels() {
+  launchctl list 2>/dev/null | awk '$3 ~ /yabai/ { print $3 }'
+}
+
+available_profiles() {
+  find "$PROFILES_DIR" -maxdepth 1 -type f -name 'yabai-*.sh' -print 2>/dev/null \
+    | sed 's|.*/yabai-||;s|\.sh$||' \
+    | sort \
+    | tr '\n' ' '
+}
+
+ensure_single_yabai_service() {
+  local labels extras
+
+  labels="$(loaded_yabai_labels)"
+  if printf '%s\n' "$labels" | grep -Fxq "$STALE_LABEL"; then
+    echo "yabai-restart: booting stale launch agent ${STALE_LABEL}" >&2
+    launchctl bootout "${LAUNCHD_DOMAIN}/${STALE_LABEL}" 2>/dev/null || true
+  fi
+
+  labels="$(loaded_yabai_labels)"
+  extras="$(printf '%s\n' "$labels" | awk -v canonical="$CANONICAL_LABEL" 'NF && $0 != canonical { print }')"
+  if [[ -n "$extras" ]]; then
+    echo "error: unexpected yabai LaunchAgent(s) loaded:" >&2
+    while IFS= read -r label; do
+      printf '  %s\n' "$label" >&2
+    done <<<"$extras"
+    echo "expected only: ${CANONICAL_LABEL}" >&2
+    exit 1
+  fi
+}
 
 # ── Validate Profile ────────────────────────────────────────────
 if [[ ! -f "$PROFILE_SCRIPT" ]]; then
   echo "error: unknown profile '${PROFILE}'" >&2
-  echo "available: $(ls "${PROFILES_DIR}"/yabai-*.sh 2>/dev/null | sed 's|.*/yabai-||;s|\.sh||' | tr '\n' ' ')" >&2
+  echo "available: $(available_profiles)" >&2
   exit 1
 fi
+
+# ── LaunchAgent Hygiene ─────────────────────────────────────────
+# WHY: Duplicate yabai LaunchAgents fight over the same Accessibility/window
+# events. Keep exactly one owner before restarting the service.
+ensure_single_yabai_service
 
 # ── Restart Service ─────────────────────────────────────────────
 # WHY --restart-service: Atomic stop+start handled by launchd.
@@ -41,6 +81,8 @@ if ! yabai -m query --displays &>/dev/null 2>&1; then
   echo "check: tail -f /tmp/yabai_${USER}.err.log" >&2
   exit 1
 fi
+
+ensure_single_yabai_service
 
 # ── Apply Profile ───────────────────────────────────────────────
 bash "$PROFILE_SCRIPT"
