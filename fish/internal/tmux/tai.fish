@@ -23,10 +23,15 @@ function __tai_spawn
     end
 
     set -l parts $agent
+    if test "$agent" = codex
+        set parts codex --model-audit
+    else if test "$agent" = cc
+        set parts cc --model-sonnet
+    end
     for arg in $argv[3..-1]
         set -a parts (string escape -- $arg)
     end
-    set -l commandline (string join ' ' $parts)
+    set -l commandline (string join ' ' -- $parts)
 
     set -l pane (tmux new-window -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" "$fish_bin -l")
     or return $status
