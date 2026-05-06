@@ -1,27 +1,43 @@
 # path: fish/internal/claude/cc.fish
-function cc --description '[claude]: plan-first with bypass permissions; --model-46/--model-47 repins settings.json first'
-    argparse --ignore-unknown 'model-46' 'model-47' -- $argv
-    or return
+function cc --description '[claude]: plan-first with bypass; --model-{opus-46,opus-47,sonnet}'
+    set -l role ""
+    set -l passthrough
 
-    set -l pin_to
-    set -q _flag_model_46; and set pin_to "claude-opus-4-6[1m]"
-    set -q _flag_model_47; and set pin_to "claude-opus-4-7[1m]"
-
-    if test -n "$pin_to"
-        if not command -q jq
-            echo "cc: jq required to pin model (brew install jq)" >&2
-            return 1
-        end
-        set -l settings ~/.claude/settings.json
-        set -l tmp (mktemp)
-        if jq --arg m $pin_to '.model = $m' $settings >$tmp
-            mv $tmp $settings
-            echo "cc: model -> $pin_to"
-        else
-            rm -f $tmp
-            return 1
+    for arg in $argv
+        switch $arg
+            case --model-opus-46
+                if test -n "$role"
+                    echo "cc: only one --model-* flag" >&2
+                    return 2
+                end
+                set role opus-46
+            case --model-opus-47
+                if test -n "$role"
+                    echo "cc: only one --model-* flag" >&2
+                    return 2
+                end
+                set role opus-47
+            case --model-sonnet
+                if test -n "$role"
+                    echo "cc: only one --model-* flag" >&2
+                    return 2
+                end
+                set role sonnet
+            case '*'
+                set -a passthrough $arg
         end
     end
 
-    claude --permission-mode plan --allow-dangerously-skip-permissions $argv
+    switch $role
+        case opus-46
+            claude --model 'claude-opus-4-6[1m]' --permission-mode plan --allow-dangerously-skip-permissions $passthrough
+        case opus-47
+            claude --model 'claude-opus-4-7[1m]' --permission-mode plan --allow-dangerously-skip-permissions $passthrough
+        case sonnet
+            set -lx CLAUDE_CODE_EFFORT_LEVEL low
+            set -lx MAX_THINKING_TOKENS 4000
+            claude --model claude-sonnet-4-6 --dangerously-skip-permissions $passthrough
+        case '*'
+            claude --permission-mode plan --allow-dangerously-skip-permissions $passthrough
+    end
 end
