@@ -26,7 +26,7 @@ font-thicken = true
 # font-feature = -dlig
 
 # ── Transparency ─────────────────────────────────────────────────────────────
-# 70% opacity - see your desktop through the terminal
+# Fully opaque (set < 1 for transparency, re-enable blur if so)
 background-opacity = 1
 
 # Blur only matters when opacity < 1; at opacity=1 it's wasted GPU work
