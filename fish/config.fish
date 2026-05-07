@@ -41,11 +41,12 @@ set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
 # ~~~ END ALT ~~~
 
 
-# Autoload functions from internal/* subdirs
+# Autoload functions from internal/* subdirs (glob, no subprocess)
 set -l _root "$HOME/.config/fish/internal"
 if test -d "$_root"
-    for dir in (find "$_root" -type d)
-        if not contains -- "$dir" $fish_function_path
+    for dir in $_root/**/
+        set dir (string trim -r -c / -- $dir)
+        if not contains -- $dir $fish_function_path
             set -g fish_function_path $dir $fish_function_path
         end
     end
@@ -74,12 +75,7 @@ if status is-interactive
         fnm env --use-on-cd | source
     end
 
-    # pyenv (Python)
-    if type -q pyenv
-        # Prefer -gx over -Ux to avoid writing universal vars every launch
-        set -gx PYENV_ROOT "$HOME/.pyenv"
-        pyenv init --no-rehash - | source
-    end
+    # pyenv (Python) — lazy-init via internal/python/ stubs (75ms deferred to first use)
 
     # direnv
     if type -q direnv

@@ -29,8 +29,8 @@ font-thicken = true
 # 70% opacity - see your desktop through the terminal
 background-opacity = 1
 
-# No blur (set to true or a number like 20 if you want frosted glass effect) | true | false | 0~20
-background-blur = true
+# Blur only matters when opacity < 1; at opacity=1 it's wasted GPU work
+background-blur = false
 # Apply opacity to cells with explicit background colors too (e.g., Neovim themes)
 # Set to true if you want full transparency even in TUI apps
 background-opacity-cells = false
@@ -109,8 +109,8 @@ quick-terminal-autohide = true
 # VSync on for stability (macOS 14.4+ can kernel panic without it)
 window-vsync = true
 
-# Large scrollback - M4 Max has plenty of RAM
-scrollback-limit = 10000000
+# 500k lines is ~2 years of heavy use before wrap; 10M was wasting RAM
+scrollback-limit = 500000
 
 # ── Keybindings ──────────────────────────────────────────────────────────────
 # Philosophy: Ghostty is a window. Tmux handles splits/sessions. Yabai handles tiling. |  No tabs. No splits. Just windows.
