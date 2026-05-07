@@ -66,7 +66,7 @@ if status is-interactive
 
     # jenv (Java)
     set -gx JENV_ROOT "$HOME/.jenv"
-    if test -d "$JENV_ROOT"; and not contains "$JENV_ROOT/shims" $PATH
+    if test -d "$JENV_ROOT"; and type -q jenv; and not contains "$JENV_ROOT/shims" $PATH
         jenv init - | source
     end
 
