@@ -2,10 +2,10 @@
 
 # ---- Globals / env that should exist in ALL shells --------------------------
 set -gx STARSHIP_CONFIG "$HOME/.config/starship/starship.toml"
-set -Ux EZA_CONFIG_DIR ~/.config/eza
+set -gx EZA_CONFIG_DIR ~/.config/eza
 
-# Homebrew (path first so tools resolve correctly in scripts too)
-if test -d /opt/homebrew
+# Homebrew (skip re-eval in nested shells — saves 24ms per nest)
+if test -d /opt/homebrew; and not set -q HOMEBREW_PREFIX
     eval (/opt/homebrew/bin/brew shellenv)
 end
 
@@ -19,8 +19,27 @@ set -g fish_greeting ""
 # internal/notes..
 set -gx NOTES_DIR "$HOME/notes"
 
-# Claude Code
+# ~~~ ORIGINAL ~~~
+# Claude Code — "force 4.6 to think" stack (bypasses settings.json clamp on 4.6)
+# EFFORT_LEVEL: settings.json max is silently clamped to high on 4.6; env var is the
+# only way to get true max. Empirical check (2026-04-23): 11/1369 subagent sessions
+# use thinking mode, so the stack does not amplify subagent costs.
+# Risks to monitor: (1) Opus quota exhaustion → Sonnet fallback inherits max;
+# (2) any `claude --model sonnet` invocation; (3) Ghostty env snapshot (Cmd+Q after edits).
+# set -gx CLAUDE_CODE_EFFORT_LEVEL high
+# set -gx CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING 1
+# set -gx MAX_THINKING_TOKENS 31999
+# set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
+# ~~~ END ~~~
+
+
+# ~~~ ALT (testing) ~~~
+# Adaptive ON, high effort, 16k cap, sonnet subagents
+set -gx CLAUDE_CODE_EFFORT_LEVEL max
+set -gx MAX_THINKING_TOKENS 16000
 set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
+# ~~~ END ALT ~~~
+
 
 # Autoload functions from internal/* subdirs
 set -l _root "$HOME/.config/fish/internal"
@@ -32,6 +51,12 @@ if test -d "$_root"
     end
 end
 
+# Define Codex wrapper eagerly so model and approval flags do not fall through
+# to the raw binary before Fish autoload has resolved the function.
+if test -f "$HOME/.config/fish/internal/codex/codex.fish"
+    source "$HOME/.config/fish/internal/codex/codex.fish"
+end
+
 # ---- Interactive-only stuff -------------------------------------------------
 if status is-interactive
     # Prompt
@@ -40,8 +65,7 @@ if status is-interactive
 
     # jenv (Java)
     set -gx JENV_ROOT "$HOME/.jenv"
-    if test -d "$JENV_ROOT"
-        fish_add_path "$JENV_ROOT/bin"
+    if test -d "$JENV_ROOT"; and not contains "$JENV_ROOT/shims" $PATH
         jenv init - | source
     end
 
@@ -54,8 +78,7 @@ if status is-interactive
     if type -q pyenv
         # Prefer -gx over -Ux to avoid writing universal vars every launch
         set -gx PYENV_ROOT "$HOME/.pyenv"
-        fish_add_path "$PYENV_ROOT/bin"
-        pyenv init - | source
+        pyenv init --no-rehash - | source
     end
 
     # direnv
@@ -93,6 +116,3 @@ if status is-interactive
 
 
 end
-
-# Nuke CC effort override — must never be set as env var (settings.json governs)
-set -e CLAUDE_CODE_EFFORT_LEVEL
