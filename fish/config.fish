@@ -64,10 +64,42 @@ if status is-interactive
     starship init fish | source
     source ~/.config/fish/themes/gruvbox.fish
 
-    # jenv (Java)
+    # jenv (Java) -- shims first, lazy shell integration on first jenv call
     set -gx JENV_ROOT "$HOME/.jenv"
-    if test -d "$JENV_ROOT"; and type -q jenv; and not contains "$JENV_ROOT/shims" $PATH
-        jenv init - | source
+    if test -d "$JENV_ROOT/shims"
+        while set -l _idx (contains -i -- "$JENV_ROOT/shims" $PATH)
+            set -e PATH[$_idx]
+        end
+        set -gx PATH "$JENV_ROOT/shims" $PATH
+    end
+
+    function __jenv_lazy_init
+        functions -e jenv __jenv_lazy_init
+        if not command -q jenv
+            return 127
+        end
+        set -gx JENV_SHELL fish
+        set -gx JENV_LOADED 1
+        set -e JAVA_HOME
+        set -e JDK_HOME
+        function jenv --wraps jenv
+            set -l command $argv[1]
+            set -e argv[1]
+            switch "$command"
+                case enable-plugin rehash shell shell-options
+                    command jenv "sh-$command" $argv | source
+                case '*'
+                    command jenv "$command" $argv
+            end
+        end
+        for _script in (command jenv hooks init fish 2>/dev/null)
+            source "$_script"
+        end
+    end
+
+    function jenv --wraps jenv
+        __jenv_lazy_init; or return $status
+        jenv $argv
     end
 
     # fnm (Node)
