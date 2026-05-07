@@ -4,41 +4,32 @@
 
 set -euo pipefail
 
-TOP=/usr/bin/top
+PS=/bin/ps
 VMSTAT=/usr/bin/vm_stat
 SYSCTL=/usr/sbin/sysctl
 AWK=/usr/bin/awk
 
-# ----- CPU: user% + sys% from `top` (matches Activity Monitor) -----
-cpu_pct="$($TOP -l 1 -n 0 | $AWK '/CPU usage/ {
-  n=0;
-  for (i=1; i<=NF; i++) {
-    if ($i ~ /%$/) { gsub("%","",$i); vals[++n]=$i; }
-  }
-  # vals[1] = user, vals[2] = sys
-  printf("%.0f", (n>=2 ? vals[1] + vals[2] : 0));
-  exit
-}')"
+# ----- CPU: normalized ps sum (10ms, reacts to load; iostat -c 1 is since-boot avg) -----
+cpu_count="${STAGE_CPU_COUNT:-$($SYSCTL -n hw.logicalcpu)}"
+cpu_pct="$($PS -A -o %cpu= | $AWK -v n="$cpu_count" '
+  {s+=$1} END {p=s/n; if(p>100)p=100; printf "%.0f", p}
+')"
 
 # ----- RAM: Total − (Free + Cached Files) -----
 # Cached Files ≈ File-backed + Speculative pages
-eval "$($VMSTAT | $AWK '
+# hw.memsize never changes; honour a pre-exported STAGE_MEM_TOTAL to skip the sysctl fork.
+total_bytes="${STAGE_MEM_TOTAL:-$($SYSCTL -n hw.memsize)}"
+
+read -r used_g total_g < <($VMSTAT | $AWK -v total="$total_bytes" '
   /page size of/        {ps=$8}
   /Pages free/          {gsub("\\.","",$3); fr=$3}
   /File-backed pages/   {gsub("\\.","",$3); fb=$3}
   /Pages speculative/   {gsub("\\.","",$3); sp=$3}
   END {
     if (fb=="") fb=0; if (sp=="") sp=0;
-    printf "pagesize=%s; free=%s; fileback=%s; speculative=%s;\n", ps, fr, fb, sp
+    used = total - (fr + fb + sp) * ps
+    printf "%.1f %.1f\n", used/1073741824, total/1073741824
   }
-')"
-
-total_bytes="$($SYSCTL -n hw.memsize)"
-cached_pages=$(( fileback + speculative ))
-used_bytes=$(( total_bytes - (free + cached_pages) * pagesize ))
-
-# GiB with 1 decimal
-used_g=$(printf '%.1f' "$(echo "$used_bytes / 1073741824" | bc -l)")
-total_g=$(printf '%.1f' "$(echo "$total_bytes / 1073741824" | bc -l)")
+')
 
 printf 'CPU %s%% · RAM %sG/%sG\n' "$cpu_pct" "$used_g" "$total_g"
