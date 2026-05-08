@@ -32,6 +32,7 @@ function cc --description '[claude]: plan-first with bypass; --model-{opus-46,op
         case opus-46
             claude --model 'claude-opus-4-6[1m]' --permission-mode plan --allow-dangerously-skip-permissions $passthrough
         case opus-47
+            set -lx CLAUDE_CODE_EFFORT_LEVEL xhigh
             claude --model 'claude-opus-4-7[1m]' --permission-mode plan --allow-dangerously-skip-permissions $passthrough
         case sonnet
             set -lx CLAUDE_CODE_EFFORT_LEVEL low
