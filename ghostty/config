@@ -130,7 +130,7 @@ keybind = cmd+a=select_all
 
 
 # ── Screen ──
-keybind = cmd+k=text:clear\n
+keybind = cmd+k=clear_screen
 
 # ── Font Size ──
 keybind = cmd+equal=increase_font_size:1
