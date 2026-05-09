@@ -1,5 +1,5 @@
 # path: fish/internal/claude/cc.fish
-function cc --description '[claude]: plan-first with bypass; --model-{opus-46,opus-47,sonnet,haiku-swarm,swarm}'
+function cc --description '[claude]: roles --model-{opus-46,opus-47,sonnet}; opus=plan-first, sonnet=immediate-bypass'
     set -l role ""
     set -l passthrough
 
@@ -23,22 +23,18 @@ function cc --description '[claude]: plan-first with bypass; --model-{opus-46,op
                     return 2
                 end
                 set role sonnet
-            case --model-haiku-swarm
-                if test -n "$role"
-                    echo "cc: only one --model-* flag" >&2
-                    return 2
-                end
-                set role haiku-swarm
-            case --model-swarm
-                if test -n "$role"
-                    echo "cc: only one --model-* flag" >&2
-                    return 2
-                end
-                set role swarm
+            case '--model-*'
+                echo "cc: unknown --model-* role; use --model-opus-46, --model-opus-47, or --model-sonnet" >&2
+                return 2
+            case --model '--model=*' -m '-m=*' '-m*'
+                echo "cc: raw --model/-m not allowed; use --model-opus-46, --model-opus-47, or --model-sonnet" >&2
+                return 2
             case '*'
                 set -a passthrough $arg
         end
     end
+
+    set -lx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
 
     switch $role
         case opus-46
@@ -48,18 +44,7 @@ function cc --description '[claude]: plan-first with bypass; --model-{opus-46,op
             claude --model 'claude-opus-4-7[1m]' --permission-mode plan --allow-dangerously-skip-permissions $passthrough
         case sonnet
             set -lx CLAUDE_CODE_EFFORT_LEVEL low
-            set -lx MAX_THINKING_TOKENS 4000
             claude --model claude-sonnet-4-6 --dangerously-skip-permissions $passthrough
-        case haiku-swarm
-            set -lx CLAUDE_CODE_SUBAGENT_MODEL claude-haiku-4-5-20251001
-            set -lx CLAUDE_CODE_EFFORT_LEVEL low
-            set -lx MAX_THINKING_TOKENS 4000
-            claude --model claude-sonnet-4-6 --dangerously-skip-permissions $passthrough
-        case swarm
-            set -lx CLAUDE_CODE_SUBAGENT_MODEL claude-haiku-4-5-20251001
-            set -lx CLAUDE_CODE_EFFORT_LEVEL low
-            set -lx MAX_THINKING_TOKENS 4000
-            claude --model claude-haiku-4-5-20251001 --dangerously-skip-permissions $passthrough
         case '*'
             claude --permission-mode plan --allow-dangerously-skip-permissions $passthrough
     end
