@@ -42,10 +42,10 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
         echo "openrouter: model flag required" >&2
         echo "" >&2
         echo "Usage:" >&2
-        echo "  openrouter --model-qwen-coder         | qwen/qwen3-coder-plus    (paid, code-tuned)" >&2
-        echo "  openrouter --model-qwen-plus          | qwen/qwen3.6-plus        (paid, newest gen)" >&2
-        echo "  openrouter --model-qwen-max           | qwen/qwen3.6-max-preview (paid, heaviest)" >&2
-        echo "  openrouter --model-glm                | z-ai/glm-4.5-air:free    (free)" >&2
+        echo "  openrouter --model-qwen-coder  | qwen/qwen3-coder-plus     |  (paid, code-tuned)" >&2
+        echo "  openrouter --model-qwen-plus   | qwen/qwen3.6-plus         |  (paid, newest gen)" >&2
+        echo "  openrouter --model-qwen-max    | qwen/qwen3.6-max-preview  |  (paid, heaviest)" >&2
+        echo "  openrouter --model-glm         | z-ai/glm-4.5-air:free     |  (free)" >&2
         return 2
     end
 
