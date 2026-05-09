@@ -29,10 +29,10 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
             case '--model-*'
                 echo "openrouter: unknown wrapper model flag; use exactly one listed --model-{name} flag" >&2
                 return 2
-            case --model '--model=*' -m '-m=*'
+            case --model '--model=*' -m '-m=*' '-m*'
                 echo "openrouter: raw --model/-m not allowed (cost-safety); use --model-{name} flags only" >&2
                 return 2
-            case --openai-base-url '--openai-base-url=*' --openai-api-key '--openai-api-key=*' --auth-type '--auth-type=*'
+            case --openai-base-url '--openai-base-url=*' --openai-api-key '--openai-api-key=*' --auth-type '--auth-type=*' --openaiBaseUrl '--openaiBaseUrl=*' --openaiApiKey '--openaiApiKey=*' --authType '--authType=*'
                 echo "openrouter: raw OpenAI/OpenRouter auth routing flags are not allowed; wrapper owns auth and base URL" >&2
                 return 2
         end
