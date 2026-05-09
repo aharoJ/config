@@ -19,26 +19,13 @@ set -g fish_greeting ""
 # internal/notes..
 set -gx NOTES_DIR "$HOME/notes"
 
-# ~~~ ORIGINAL ~~~
-# Claude Code — "force 4.6 to think" stack (bypasses settings.json clamp on 4.6)
-# EFFORT_LEVEL: settings.json max is silently clamped to high on 4.6; env var is the
-# only way to get true max. Empirical check (2026-04-23): 11/1369 subagent sessions
-# use thinking mode, so the stack does not amplify subagent costs.
-# Risks to monitor: (1) Opus quota exhaustion → Sonnet fallback inherits max;
-# (2) any `claude --model sonnet` invocation; (3) Ghostty env snapshot (Cmd+Q after edits).
-# set -gx CLAUDE_CODE_EFFORT_LEVEL high
+# ~~~ OPUS 4.6 ~~~
+# set -gx CLAUDE_CODE_EFFORT_LEVEL max
 # set -gx CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING 1
 # set -gx MAX_THINKING_TOKENS 31999
 # set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
 # ~~~ END ~~~
 
-
-# ~~~ ALT (testing) ~~~
-# Adaptive ON, high effort, 16k cap, sonnet subagents
-set -gx CLAUDE_CODE_EFFORT_LEVEL max
-set -gx MAX_THINKING_TOKENS 16000
-set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
-# ~~~ END ALT ~~~
 
 
 # Autoload functions from internal/* subdirs (glob, no subprocess)
