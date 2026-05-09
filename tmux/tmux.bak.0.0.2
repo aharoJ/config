@@ -1,0 +1,212 @@
+
+# ████████╗███╗   ███╗██╗   ██╗██╗  ██╗
+# ╚══██╔══╝████╗ ████║██║   ██║╚██╗██╔╝
+#    ██║   ██╔████╔██║██║   ██║ ╚███╔╝            ~/.config/tmux/tmux.conf
+#    ██║   ██║╚██╔╝██║██║   ██║ ██╔██╗ 
+#    ██║   ██║ ╚═╝ ██║╚██████╔╝██╔╝ ██╗
+#    ╚═╝   ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                    INDEXING / HISTORY / SESSION MANAGEMENT                   │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+set -g base-index 1                  # Start window indexing at 1 (not 0).
+setw -g pane-base-index 1
+set -g detach-on-destroy off         # Keep server alive when last session closes.
+set -g escape-time 0                 # Make Escape instantaneous for vi-like flows.
+set -g history-limit 1000000         # Large scrollback history per pane.
+set -g mouse on                      # Mouse: select panes, resize, scroll.
+set -g renumber-windows on           # Compact/renumber windows when some close.
+set -g set-clipboard on              # Integrate with system clipboard when possible.
+set -g status-interval 3             # Status line refresh cadence (seconds).
+set -g aggressive-resize on          # Allow windows to resize to the active client.
+
+
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                            TERMINAL / SHELL SETUP                            │
+# ╰──────────────────────────────────────────────────────────────────────────────╯
+set -g default-terminal "tmux-256color" # IMPORTANT
+set -ga terminal-overrides ",xterm-256color:Tc" # IMPORTANT
+set-option -g default-shell /opt/homebrew/bin/fish
+# Propagate terminal focus in/out events to applications that support them.
+set-option -g focus-events on
+
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                               STATUS BAR / UI (THEMING)                      │
+# ╰────────────────────────────────────────────────────────────────────────────╯
+
+# ── Terminal / Truecolor ────────────────────────────────────────────────────────
+# Advertise 24-bit color and enable truecolor overrides for common TERM entries.
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",alacritty:Tc,xterm-256color:Tc,screen-256color:Tc"
+
+# ── Status Bar: Frame / Layout ─────────────────────────────────────────────────
+# Transparent status line, pinned to top, refreshed every 60s, left-justified.
+set-option -g status-style bg=default,fg=default
+set -g status-position top                # top | bottom
+set -g status-interval 60
+set -g status-justify left                # left | centre | right
+
+# ── Pane / Border Styles ───────────────────────────────────────────────────────
+# Inactive vs. active pane borders and pane index overlay colors.
+set -g pane-border-style "fg=#87a1ee"
+set -g pane-active-border-style "fg=#7aa2f7,bold"
+set -g display-panes-colour "#414868"                                          # cmd+w no-active-pane
+set -g display-panes-active-colour "#87a1ee"                                   # cmd+w active-pane
+set -g pane-border-status off                                                    # (line placement): top | bottom | off 
+set -g pane-active-border-style 'fg=#87a1ee'                                     # (border line) color
+set -g pane-border-format '#[bold]#{}#[default]'                                     #  information displayed (none)
+
+
+# ── Messages / Modes / Alerts ─────────────────────────────────────────────────
+# Message area, command-prompt, copy/scroll mode look, clock, bell, and activity.
+set-option -g message-style bg=#000000,fg=#7aa2f7,bold
+set-option -g message-command-style bg=#000000,fg=#7aa2f7,bold
+setw -g mode-style "bg=#565f89,fg=#c0caf5,italics"
+set-window-option -g clock-mode-colour "#bb9af7"
+set-window-option -g window-status-bell-style bg=#f7768e,fg=#1a1b26,bold
+set-window-option -g window-status-activity-style bg=#414868,fg=#9ece6a
+
+# ── Window Tabs / Titles ───────────────────────────────────────────────────────
+# Separator and titles for current vs. inactive windows (using pane path labels).
+setw -g window-status-separator "#[fg=#to_do] "                            # Suggested glyphs:  |    ┊    󱁐
+setw -g window-status-current-format "#[fg=#87a1ee, bold] (#{b:pane_current_path})"     # Active window
+setw -g window-status-format        "#[fg=#737373](#{b:pane_current_path})"       # Inactive window
+
+# ── Status: Left Segment ───────────────────────────────────────────────────────
+# Session badge with conditional indicators: prefix, zoom, and pane sync.
+set -g status-left-length 120
+set-option -g status-left "#[fg=#87a1ee]#{?client_prefix,#[fg=#0bce98#,bold],} 󰘍 #S ┊#{?client_prefix, [prefix mode],}#[fg=#ffffff]#{?window_zoomed_flag,  zoom,} #{?pane_synchronized, 󱓷,}"
+
+# ── Status: Right Segment ──────────────────────────────────────────────────────
+# System metrics script + time/date (wide right segment for breathing room).
+set -g status-right-length 120 
+set -g status-right '#[fg=#87a1ee]#($HOME/.config/tmux/scripts/mem-cpu.sh) #[fg=#87a1ee]┊ #[fg=#87a1ee]%I:%M%p %B %d, %Y'
+
+
+
+
+
+
+
+
+
+
+
+# ── Keybindings ─────────────────────────────────────────────────────────
+# ── Reload config ──
+bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded"
+
+# ── Pane Splitting ──
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+unbind %
+
+# ── New Window in Current Path ──
+unbind t
+bind t new-window -c "#{pane_current_path}"
+
+# ── Seamless Navigation: Neovim Splits ↔ tmux Panes ──
+# WHY: The most important keybinding decision in the entire PDE.
+# <C-hjkl> means "move focus in that direction" EVERYWHERE.
+# This detects if the active pane is running Neovim and forwards the key
+# to Neovim if so, otherwise does tmux pane navigation.
+#
+# REQUIRES: Neovim plugin (vim-tmux-navigator or equivalent) in Phase 2.
+# Until then, <C-hjkl> does tmux pane navigation only.
+#
+# Pattern: christoomey/vim-tmux-navigator (battle-tested, universal)
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
+  | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
+
+bind-key -n C-h if-shell "$is_vim" "send-keys C-h" "select-pane -L"
+bind-key -n C-j if-shell "$is_vim" "send-keys C-j" "select-pane -D"
+bind-key -n C-k if-shell "$is_vim" "send-keys C-k" "select-pane -U"
+bind-key -n C-l if-shell "$is_vim" "send-keys C-l" "select-pane -R"
+
+# ── Pane Resizing ──
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# ── Window Navigation ──
+unbind [
+bind [ previous-window
+unbind ]
+bind ] next-window
+bind -r < swap-window -t -1\; select-window -t -1
+bind -r > swap-window -t +1\; select-window -t +1
+
+# ── Session Navigation ──
+bind -r ( switch-client -p    # Previous session
+bind -r ) switch-client -n    # Next session
+
+# ── Pane Management ──
+unbind c
+unbind x                      # Remove default kill-pane — c handles this
+bind c kill-pane
+
+bind z resize-pane -Z         # Toggle zoom (already default, explicit for clarity)
+
+# ── Session Rename ──
+unbind ','
+bind , command-prompt -p "Rename session to:" "rename-session '%%'"
+
+# ── Copy Mode (vi-style) ──
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+bind-key -T copy-mode-vi Escape send-keys -X cancel
+
+# WHY: Enter copy mode with prefix+v (v for visual/view).
+bind v copy-mode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ╭──────────────────────────────────────────────────────────────────────────────╮
+# │                                    PLUGINS                                  │
+# ╰────────────────────────────────────────────────────────────────────────────╯
+# TPM + system metrics plugin (expects tmux-mem-cpu-load binary/script available).
+set -g @plugin 'tmux-plugins/tpm'
+
+set -g @plugin 'tmux-plugins/tmux-resurrect'        # Plugin for restoring tmux sessions
+set -g @plugin 'tmux-plugins/tmux-continuum'        # Continuum plugin for session management
+
+# set -g @plugin 'thewtex/tmux-mem-cpu-load'
+
+run '~/.config/tmux/plugins/tpm/tpm'
