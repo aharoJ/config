@@ -96,7 +96,7 @@ hammerspoon/
 
 ## tmux (`tmux/`)
 
-Config in `tmux.conf`. Plugins managed by TPM: tmux-resurrect, tmux-continuum, vim-tmux-navigator. Vi copy-mode with `y` → pbcopy.
+Config in `tmux.conf`. Plugins managed by TPM: tmux-resurrect (manual save/restore only), vim-tmux-navigator. Vi copy-mode with `y` → pbcopy.
 
 ## Pre-commit Hook
 
