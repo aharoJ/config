@@ -126,12 +126,12 @@ modern_csv = [
 [open]
 rules = [
 
-  { name = "*.csv", use = ["modern_csv", "nvim", "code", "open"] },
+  { url = "*.csv", use = ["modern_csv", "nvim", "code", "open"] },
 
 
   # Text/code gets both terminal and GUI choices:
   { mime = "text/*", use = ["nvim", "code", "open", "edit"] },
-  { name = "*.md", use = ["nvim", "code", "open", "edit"] },
+  { url = "*.md", use = ["nvim", "code", "open", "edit"] },
 
   # { mime = "text/*",       use = "edit" },
   { mime = "video/*", use = "play" },
@@ -140,11 +140,11 @@ rules = [
   { mime = "application/pdf", use = "open" },
 
   # Handy name-based rules
-  { name = "*.json", use = "edit" },
-  { name = "*.html", use = ["open", "edit", "nvim", "code"] },
+  { url = "*.json", use = "edit" },
+  { url = "*.html", use = ["open", "edit", "nvim", "code"] },
 
   # Final fallback
-  { name = "*", use = "open" },
+  { url = "*", use = "open" },
 ]
 
 # ───────────────────────────────────────────────────────────────────────────────

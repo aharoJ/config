@@ -3,8 +3,6 @@
 # date: 2026-02-09
 # CHANGELOG: 2026-02-09 | Ground-up rewrite: delta-only architecture | ROLLBACK: Restore full keymap.toml from git
 
-"$schema" = "https://yazi-rs.github.io/schemas/keymap.json"
-
 # ═══════════════════════════════════════════════════════════════════
 # [mgr] — file list pane
 # ═══════════════════════════════════════════════════════════════════
