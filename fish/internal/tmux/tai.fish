@@ -27,6 +27,8 @@ function __tai_spawn
         set parts codex --model-audit
     else if test "$agent" = cc
         set parts cc --model-sonnet
+    else if test "$agent" = gemini
+        set parts gemini -y
     end
     for arg in $argv[3..-1]
         set -a parts (string escape -- $arg)
