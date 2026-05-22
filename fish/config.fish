@@ -9,6 +9,34 @@ if test -d /opt/homebrew; and not set -q HOMEBREW_PREFIX
     eval (/opt/homebrew/bin/brew shellenv)
 end
 
+# pyenv (Python) — eager PATH prepend so non-interactive shells
+# (Claude Code Bash tool, scripts, IDEs spawning bash -c) resolve `python3`
+# via pyenv shims instead of falling through to /usr/bin/python3 = 3.9.
+# Why eager: bash -c does not source ~/.bashrc, so the pyenv-prepend block
+# in ~/.bashrc never runs for tool-spawned bash; that bash inherits PATH
+# from its parent (Claude Code), which inherited from this fish process.
+# The lazy fish function stubs in internal/python/ remain in place for
+# interactive use (completions, rehash hooks via `pyenv init`).
+if test -d "$HOME/.pyenv/shims"
+    set -gx PYENV_ROOT "$HOME/.pyenv"
+    # Remove any existing entry, then prepend, so nested fish sessions that
+    # inherited PATH with shims at a later position (e.g., from Claude Code
+    # parent) get re-promoted to position 1. Mirrors the jenv pattern below.
+    while set -l _idx (contains -i -- "$PYENV_ROOT/shims" $PATH)
+        set -e PATH[$_idx]
+    end
+    set -gx PATH "$PYENV_ROOT/shims" $PATH
+end
+
+# BASH_ENV: forces non-interactive bash (`bash -c`) to source ~/.bashrc.
+# Without this, bash spawned with `bash -c` from fish (LLM Bash tools,
+# scripts, IDEs) skips ~/.bashrc entirely and inherits PATH from parent.
+# When the parent's PATH happens to be wrong, python3 falls through to
+# /usr/bin/python3 = 3.9. Setting BASH_ENV makes bash always re-apply the
+# pyenv remove-then-prepend in ~/.bashrc, self-correcting any inherited
+# PATH ordering. Idempotent because ~/.bashrc uses remove-then-prepend.
+set -gx BASH_ENV "$HOME/.bashrc"
+
 # Editors
 set -gx EDITOR nvim
 set -gx VISUAL nvim
