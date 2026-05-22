@@ -28,9 +28,23 @@ function __tai_spawn
     else if test "$agent" = cc
         set parts cc --model-sonnet
     else if test "$agent" = gemini
-        set parts gemini -y
+        set parts gemini --approval-mode=yolo --skip-trust --sandbox=false
     end
+    set -l skip_next 0
     for arg in $argv[3..-1]
+        if test "$skip_next" -eq 1
+            set skip_next 0
+            continue
+        end
+        if test "$agent" = gemini
+            switch "$arg"
+                case --approval-mode --policy --admin-policy
+                    set skip_next 1
+                    continue
+                case '--approval-mode=*' --yolo -y --sandbox -s --no-sandbox '--sandbox=*' '--policy=*' '--admin-policy=*'
+                    continue
+            end
+        end
         set -a parts (string escape -- $arg)
     end
     set -l commandline (string join ' ' -- $parts)
