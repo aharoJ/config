@@ -11,6 +11,7 @@
 
 return {
 	"MeanderingProgrammer/render-markdown.nvim",
+	enabled = false, -- DISABLED 2026-05-27: prefer raw markdown, no conceal/UI rendering. Flip to true to restore.
 	ft = { "markdown" },
 	dependencies = { "nvim-treesitter/nvim-treesitter" },
 	cmd = { "RenderMarkdown" },

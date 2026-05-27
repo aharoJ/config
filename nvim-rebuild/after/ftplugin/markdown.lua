@@ -31,7 +31,7 @@ end
 vim.opt_local.wrap = true
 vim.opt_local.linebreak = true
 vim.opt_local.breakindent = true
-vim.opt_local.conceallevel = 2            -- Required for render-markdown.nvim (conceal raw syntax chars)
+vim.opt_local.conceallevel = 0            -- 2026-05-27: raw markdown, no conceal (render-markdown.nvim disabled)
 
 -- ── Visual Line Navigation ────────────────────────────────────────────
 -- WHY: With wrap ON, a single long paragraph is one "real" line that
