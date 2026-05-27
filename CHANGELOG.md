@@ -7,7 +7,9 @@ Re-added two Xiaomi MiMo model flags to `fish/internal/claude/openrouter.fish`. 
 - `--mimo-v2-flash` → `xiaomi/mimo-v2-flash` (paid, fast)
 - `--mimo-v2.5-pro` → `xiaomi/mimo-v2.5-pro` (paid, heavy)
 
-Restored across all four flag-list sites (model resolver, allow-guard, usage text, strip loop). Single-model-flag enforcement and cost-safety guards unchanged. YOLO/approval mode intentionally left opt-in — qwen's `--yolo` / `--approval-mode` pass through the wrapper unmodified.
+Restored across all four flag-list sites (model resolver, allow-guard, usage text, strip loop). Single-model-flag enforcement and cost-safety guards unchanged.
+
+**Follow-up (same day):** wrapper now **defaults to `--approval-mode yolo`** (auto-approve every tool, no prompts) — the bare prompt-on-everything default made the agents unusable. The default is skipped when the caller passes their own `-y` / `--yolo` / `--approval-mode ...`, so per-call override (e.g. `--approval-mode plan`) still works.
 
 ## v1.9 — Phase 8 Guest WiFi Implementation + Cross-Review Hardening (2026-03-29)
 

@@ -81,8 +81,19 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
     set -lx OPENAI_API_KEY $key
     set -lx OPENAI_BASE_URL "https://openrouter.ai/api/v1"
 
+    # Default to YOLO (auto-approve every tool, no prompts) unless the caller
+    # already set their own approval mode (-y/--yolo/--approval-mode ...).
+    set -l approval --approval-mode yolo
+    for arg in $argv_clean
+        switch $arg
+            case -y --yolo --approval-mode '--approval-mode=*'
+                set approval
+        end
+    end
+
     command qwen \
         --auth-type openai \
         --openai-base-url "https://openrouter.ai/api/v1" \
+        $approval \
         --model $model $argv_clean
 end
