@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-27 — Restore mimo flags in openrouter wrapper
+
+Re-added two Xiaomi MiMo model flags to `fish/internal/claude/openrouter.fish`. They had only ever existed as uncommitted local edits (git history confirms `mimo` was never committed to the file), so they were lost when the wrapper was rewritten — same failure mode as the earlier `tai` restore. Recovered the exact model IDs from `~/.qwen` telemetry (both returned HTTP 200 the same day):
+
+- `--mimo-v2-flash` → `xiaomi/mimo-v2-flash` (paid, fast)
+- `--mimo-v2.5-pro` → `xiaomi/mimo-v2.5-pro` (paid, heavy)
+
+Restored across all four flag-list sites (model resolver, allow-guard, usage text, strip loop). Single-model-flag enforcement and cost-safety guards unchanged. YOLO/approval mode intentionally left opt-in — qwen's `--yolo` / `--approval-mode` pass through the wrapper unmodified.
+
 ## v1.9 — Phase 8 Guest WiFi Implementation + Cross-Review Hardening (2026-03-29)
 
 Phase 8: Guest WiFi with bandwidth priority for family visitors. 5-round adversarial multi-model review (3 research + 2 code audit rounds, 5 LLMs each, 25 total reviews). 2 code bugs found and fixed. Research finding rate: converged R3. Code audit finding rate: 2 → 0. Gotchas #66-#67 added.
