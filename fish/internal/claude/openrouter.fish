@@ -16,12 +16,18 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
             case --model-glm
                 set model "z-ai/glm-4.5-air:free"
                 set flag_count (math $flag_count + 1)
+            case --mimo-v2-flash
+                set model "xiaomi/mimo-v2-flash"
+                set flag_count (math $flag_count + 1)
+            case --mimo-v2.5-pro
+                set model "xiaomi/mimo-v2.5-pro"
+                set flag_count (math $flag_count + 1)
         end
     end
 
     for arg in $argv
         switch $arg
-            case --model-qwen-coder --model-qwen-plus --model-qwen-max --model-glm
+            case --model-qwen-coder --model-qwen-plus --model-qwen-max --model-glm --mimo-v2-flash --mimo-v2.5-pro
                 # allowed wrapper model flag
             case --model-qwen-coder-plus --model-qwen-3-6-plus
                 echo "openrouter: legacy model flag renamed; use --model-qwen-coder or --model-qwen-plus" >&2
@@ -46,6 +52,8 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
         echo "  openrouter --model-qwen-plus   |  qwen/qwen3.6-plus         |  (paid, newest gen)" >&2
         echo "  openrouter --model-qwen-max    |  qwen/qwen3.6-max-preview  |  (paid, heaviest)" >&2
         echo "  openrouter --model-glm         |  z-ai/glm-4.5-air:free     |  (free)" >&2
+        echo "  openrouter --mimo-v2-flash     |  xiaomi/mimo-v2-flash      |  (paid, fast)" >&2
+        echo "  openrouter --mimo-v2.5-pro     |  xiaomi/mimo-v2.5-pro      |  (paid, heavy)" >&2
         return 2
     end
 
@@ -57,7 +65,7 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
     set -l argv_clean
     for arg in $argv
         switch $arg
-            case --model-qwen-coder --model-qwen-plus --model-qwen-max --model-glm
+            case --model-qwen-coder --model-qwen-plus --model-qwen-max --model-glm --mimo-v2-flash --mimo-v2.5-pro
                 # strip wrapper-only flag
             case '*'
                 set -a argv_clean $arg

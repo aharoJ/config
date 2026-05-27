@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-27 — Restore mimo flags in openrouter wrapper
+
+Re-added two Xiaomi MiMo model flags to `fish/internal/claude/openrouter.fish`. They had only ever existed as uncommitted local edits (git history confirms `mimo` was never committed to the file), so they were lost when the wrapper was rewritten — same failure mode as the earlier `tai` restore. Recovered the exact model IDs from `~/.qwen` telemetry (both returned HTTP 200 the same day):
+
+- `--mimo-v2-flash` → `xiaomi/mimo-v2-flash` (paid, fast)
+- `--mimo-v2.5-pro` → `xiaomi/mimo-v2.5-pro` (paid, heavy)
+
+Restored across all four flag-list sites (model resolver, allow-guard, usage text, strip loop). Single-model-flag enforcement and cost-safety guards unchanged. YOLO/approval mode intentionally left opt-in — qwen's `--yolo` / `--approval-mode` pass through the wrapper unmodified.
+
 ## 2026-03-19 — Hammerspoon Nuke & Rebuild + Claude Code Keybindings
 
 Nuked the old GPT/Grok-built stackline (~2,500 lines) and rebuilt Hammerspoon from scratch (~150 lines). Moved config into dotfiles repo. Also tweaked Claude Code keybindings and default modes.
