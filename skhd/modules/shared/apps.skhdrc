@@ -10,19 +10,21 @@
 # before any app sees it, so it never conflicts with in-app shortcuts.
 # This is muscle memory — the binding-to-key mapping is stable across rebuilds.
 #
-# Using `open -a` for apps that handle single-instance gracefully (Finder, Discord).
-# Using `open -na` with --args for apps that support new-window launching (Chrome).
-# Using direct binary path for apps that need a fresh process (Ghostty).
+# All launches go through `open` (Launch Services → launchd) to avoid
+# coalition inheritance from skhd. Direct binary paths cause descendants
+# (fish, claude, codex, etc.) to be TCC-attributed to skhd, generating
+# spurious "skhd would like to access data" prompts.
+# `open -a`  = focus existing or launch.   `open -na` = always new instance.
 
 
 # ── Browsers ─────────────────────────────────────────────────────────────
 rshift - g : open -na "Google Chrome" --args --new-window "https://www.google.com/"
-rshift - v : /Applications/Vivaldi.app/Contents/MacOS/Vivaldi
+rshift - v : open -na "Vivaldi"
 
 # ── Utilities ────────────────────────────────────────────────────────────
 rshift - f : open -a "Finder"
 rshift - d : open -a "Discord"
 
 # ── Terminal ─────────────────────────────────────────────────────────────
-# rshift - a : open -na "Ghostty"
-rshift - a : /Applications/Ghostty.app/Contents/MacOS/ghostty
+rshift - a : open -na "Ghostty"
+# rshift - a : /Applications/Ghostty.app/Contents/MacOS/ghostty
