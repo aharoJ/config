@@ -26,18 +26,31 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
     set -lx CLAUDE_CODE_EFFORT_LEVEL                   "max"
     set -lx API_TIMEOUT_MS                             600000
 
-    # CC 2.1.154 injects the skills list as a `role: system` message inside the
-    # messages[] array. DeepSeek's strict Anthropic-compat deserializer rejects
-    # any role other than user/assistant -> `messages[1].role: unknown variant
-    # system` 400 on EVERY request (2.1.153 did not do this -> CC regression).
-    # Dropping the Skill tool removes that message. Scoped to this wrapper, not
-    # global settings.json, so the real-Claude `cc` roles keep their skills.
+    # CC 2.1.154 REGRESSION: it injects `role: system` messages into messages[]
+    # -- the skills list (messages[1]) AND live system-reminders mid-session (the
+    # "task tools haven't been used" nudge, etc.) AND subagent sidechain
+    # artifacts. DeepSeek's strict Anthropic-compat deserializer rejects any role
+    # != user/assistant -> `messages[N].role: unknown variant system` 400. There
+    # is NO CC config that disables reminder injection (verified: --bare,
+    # --disallowedTools, and every relevant env var do not stop it). --disallow
+    # Skill only killed messages[1], so long/agentic sessions still broke.
     #
-    # Thinking stays ON: DeepSeek reasons and its signed thinking blocks replay
-    # fine. The one failure mode is pressing ESC mid-thinking -- CC persists the
-    # partial reasoning as an UNSIGNED thinking block that wedges the session on
-    # replay (sticky 400 on every later message). If that happens: /clear, don't
-    # keep typing. To harden against it entirely, uncomment the next line:
+    # 2.1.153 is the last version that injects ZERO role:system messages (verified
+    # by capturing both versions' request bodies). So the DeepSeek path is PINNED
+    # to 2.1.153. The real-Claude `cc` roles keep using the current binary on
+    # PATH. Re-test newer CC periodically; drop this pin once the regression is
+    # fixed upstream. Reinstall the pin with:
+    #   npm install --prefix ~/.local/cc-pinned-2.1.153 @anthropic-ai/claude-code@2.1.153
+    #
+    # Thinking stays ON (DeepSeek reasons; signed blocks replay fine). Only ESC
+    # mid-thinking can wedge a session (CC saves an unsigned thinking block) -- if
+    # that happens, /clear; don't keep typing. Hard-disable via:
     # set -lx CLAUDE_CODE_DISABLE_THINKING 1
-    claude --dangerously-skip-permissions --disallowedTools Skill $argv
+    set -l cc_pinned "$HOME/.local/cc-pinned-2.1.153/node_modules/.bin/claude"
+    if not test -x "$cc_pinned"
+        echo "deepseek: pinned CC 2.1.153 not found at $cc_pinned" >&2
+        echo "          reinstall: npm install --prefix ~/.local/cc-pinned-2.1.153 @anthropic-ai/claude-code@2.1.153" >&2
+        return 1
+    end
+    $cc_pinned --dangerously-skip-permissions $argv
 end
