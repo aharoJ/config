@@ -26,5 +26,18 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
     set -lx CLAUDE_CODE_EFFORT_LEVEL                   "max"
     set -lx API_TIMEOUT_MS                             600000
 
-    claude --dangerously-skip-permissions $argv
+    # CC 2.1.154 injects the skills list as a `role: system` message inside the
+    # messages[] array. DeepSeek's strict Anthropic-compat deserializer rejects
+    # any role other than user/assistant -> `messages[1].role: unknown variant
+    # system` 400 on EVERY request (2.1.153 did not do this -> CC regression).
+    # Dropping the Skill tool removes that message. Scoped to this wrapper, not
+    # global settings.json, so the real-Claude `cc` roles keep their skills.
+    #
+    # Thinking stays ON: DeepSeek reasons and its signed thinking blocks replay
+    # fine. The one failure mode is pressing ESC mid-thinking -- CC persists the
+    # partial reasoning as an UNSIGNED thinking block that wedges the session on
+    # replay (sticky 400 on every later message). If that happens: /clear, don't
+    # keep typing. To harden against it entirely, uncomment the next line:
+    # set -lx CLAUDE_CODE_DISABLE_THINKING 1
+    claude --dangerously-skip-permissions --disallowedTools Skill $argv
 end
