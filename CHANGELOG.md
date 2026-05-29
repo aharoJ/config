@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-28 — Add mimo target to `tai`
+
+`tai` now accepts `mimo` as a first-class agent (`fish/internal/tmux/tai.fish`). Unlike the other agents, `mimo` isn't its own binary — it rides the `openrouter` wrapper, so the spawn maps to `openrouter --mimo-v2-flash` (→ `xiaomi/mimo-v2-flash`, the fast/paid model; wrapper defaults to `--approval-mode yolo`).
+
+- New `__tai_command` helper resolves an agent label to its backing fish command (`mimo` → `openrouter`, everything else → itself) so the availability check tests the real command.
+- Added `mimo` to the `all` set, the target `switch`, the usage line, and the completion list.
+
+Note: `tai all` now spawns **5** windows including the paid-per-token mimo window. To keep mimo out of `all` while still allowing `tai mimo`, drop `mimo` from the `set -l agents …` line.
+
 ## 2026-05-27 — Restore mimo flags in openrouter wrapper
 
 Re-added two Xiaomi MiMo model flags to `fish/internal/claude/openrouter.fish`. They had only ever existed as uncommitted local edits (git history confirms `mimo` was never committed to the file), so they were lost when the wrapper was rewritten — same failure mode as the earlier `tai` restore. Recovered the exact model IDs from `~/.qwen` telemetry (both returned HTTP 200 the same day):

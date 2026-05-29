@@ -2,13 +2,24 @@
 # description: Spawn AI agent tmux windows in the current directory.
 
 function __tai_usage
-    echo "usage: tai [codex|gemini|cc|deepseek|all] [agent args...]"
+    echo "usage: tai [codex|gemini|cc|deepseek|mimo|all] [agent args...]"
     echo "       tai        # same as: tai all"
 end
 
 function __tai_window_name
     set -l agent $argv[1]
     echo "$agent"
+end
+
+# Resolve an agent label to the fish command that backs it. Most agents are
+# their own command; mimo runs through the openrouter wrapper.
+function __tai_command
+    switch $argv[1]
+        case mimo
+            echo openrouter
+        case '*'
+            echo $argv[1]
+    end
 end
 
 function __tai_spawn
@@ -29,6 +40,8 @@ function __tai_spawn
         set parts cc --model-sonnet
     else if test "$agent" = gemini
         set parts gemini --approval-mode=yolo --skip-trust --sandbox=false
+    else if test "$agent" = mimo
+        set parts openrouter --mimo-v2-flash
     end
     set -l skip_next 0
     for arg in $argv[3..-1]
@@ -62,7 +75,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         return 1
     end
 
-    set -l agents gemini codex cc deepseek
+    set -l agents gemini codex cc deepseek mimo
 
     if test (count $argv) -eq 0
         set argv all
@@ -79,7 +92,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
                 return 2
             end
             set targets $agents
-        case codex gemini cc deepseek
+        case codex gemini cc deepseek mimo
             set targets $target
         case '*'
             echo "tai: unknown agent '$target'" >&2
@@ -90,7 +103,8 @@ function tai --description 'tmux: spawn AI agent window in current directory'
     set -l launch_dir (pwd)
 
     for agent in $targets
-        if not fish -lc "type -q $agent"
+        set -l cmd (__tai_command $agent)
+        if not fish -lc "type -q $cmd"
             echo "tai: '$agent' is not available in fish" >&2
             return 1
         end
@@ -103,4 +117,4 @@ function tai --description 'tmux: spawn AI agent window in current directory'
 end
 
 complete -c tai -f
-complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek all" -a "codex gemini cc deepseek all"
+complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo all" -a "codex gemini cc deepseek mimo all"
