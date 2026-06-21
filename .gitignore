@@ -225,6 +225,9 @@ net/socat.err
 # Local secrets (sourced by fish conf.d but never committed)
 fish/conf.d/*.local.fish
 
+# Machine-local fish universal variables (absolute, per-machine paths)
+fish/fish_variables
+
 # Tool caches that land in $XDG_CONFIG_HOME (== this repo root)
 # e.g. qwen-code's update-notifier writes configstore/update-notifier-@qwen-code/
 configstore/
