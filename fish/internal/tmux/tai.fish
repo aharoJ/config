@@ -12,11 +12,14 @@ function __tai_window_name
 end
 
 # Resolve an agent label to the fish command that backs it. Most agents are
-# their own command; mimo runs through the openrouter wrapper.
+# their own command; mimo runs through the openrouter wrapper, and gemini now
+# runs through agy (Antigravity CLI) since gemini-cli was discontinued.
 function __tai_command
     switch $argv[1]
         case mimo
             echo openrouter
+        case gemini
+            echo agy
         case '*'
             echo $argv[1]
     end
@@ -39,7 +42,7 @@ function __tai_spawn
     else if test "$agent" = cc
         set parts cc --model-sonnet
     else if test "$agent" = gemini
-        set parts gemini --approval-mode=yolo --skip-trust --sandbox=false
+        set parts agy --dangerously-skip-permissions
     else if test "$agent" = mimo
         set parts openrouter --mimo-v2.5
     end
@@ -50,11 +53,14 @@ function __tai_spawn
             continue
         end
         if test "$agent" = gemini
+            # Drop stale gemini-cli flags (agy rejects them) and any user dupe of
+            # the forced bypass. --sandbox stays stripped to keep this slot
+            # YOLO/no-sandbox by design; --model passes through for overrides.
             switch "$arg"
                 case --approval-mode --policy --admin-policy
                     set skip_next 1
                     continue
-                case '--approval-mode=*' --yolo -y --sandbox -s --no-sandbox '--sandbox=*' '--policy=*' '--admin-policy=*'
+                case '--approval-mode=*' --yolo -y --skip-trust --sandbox -s --no-sandbox '--sandbox=*' '--policy=*' '--admin-policy=*' --dangerously-skip-permissions
                     continue
             end
         end
