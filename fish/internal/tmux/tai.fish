@@ -41,7 +41,7 @@ function __tai_spawn
     else if test "$agent" = gemini
         set parts gemini --approval-mode=yolo --skip-trust --sandbox=false
     else if test "$agent" = mimo
-        set parts openrouter --mimo-v2-flash
+        set parts openrouter --mimo-v2.5
     end
     set -l skip_next 0
     for arg in $argv[3..-1]
