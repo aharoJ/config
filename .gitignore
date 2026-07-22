@@ -217,6 +217,9 @@ scripts/generate-intake.sh
 # WireGuard private keys
 wireguard/
 
+# rclone config (Google Drive OAuth token — cloud credentials, never commit)
+rclone/
+
 # Network monitoring (MAC addresses = device fingerprints)
 net/known-devices.conf
 net/router.log
