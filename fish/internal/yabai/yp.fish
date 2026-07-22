@@ -36,14 +36,27 @@ function yp --description "yabai + skhd: switch profile (no restart)"
     # ── Swap skhd modules symlink ──────────────────────────────────
     # Only swap if skhd has a matching profile directory.
     # Float mode has no dedicated skhd profile — keeps current bindings.
-    if _swap_skhd_profile "$profile"
-        skhd -r 2>/dev/null
-        set_color yellow
-        echo "yp: yabai=$profile  skhd=$profile"
-        set_color normal
-    else
-        set_color yellow
-        echo "yp: yabai=$profile  skhd=unchanged (no skhd profile for '$profile')"
-        set_color normal
+    _swap_skhd_profile "$profile"
+    switch $status
+        case 0
+            if skhd -r 2>/dev/null
+                set_color yellow
+                echo "yp: yabai=$profile  skhd=$profile"
+                set_color normal
+            else
+                set_color red
+                echo "yp: yabai=$profile  but skhd reload FAILED — bindings may be stale" >&2
+                set_color normal
+                return 1
+            end
+        case 2
+            set_color yellow
+            echo "yp: yabai=$profile  skhd=unchanged (no skhd profile for '$profile')"
+            set_color normal
+        case '*'
+            set_color red
+            echo "yp: yabai=$profile applied but skhd profile swap FAILED for '$profile'" >&2
+            set_color normal
+            return 1
     end
 end

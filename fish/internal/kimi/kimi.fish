@@ -9,9 +9,9 @@ function __kimi_yolo_args
         end
 
         switch $arg
-            case --yolo --yes --dangerously-allow-all -y --afk
+            case --yolo --yes --dangerously-allow-all -y
                 continue
-            case '--yolo=*' '--yes=*' '--dangerously-allow-all=*' '--afk=*'
+            case '--yolo=*' '--yes=*' '--dangerously-allow-all=*'
                 continue
             case --config --config-file
                 set skip_next 1
@@ -28,7 +28,7 @@ function __kimi_yolo_args
     end
 end
 
-function kimi --wraps kimi --description "Kimi CLI in YOLO afk mode"
+function kimi --wraps kimi --description "Kimi CLI in YOLO mode"
     set -l cleaned (__kimi_yolo_args $argv)
-    command kimi --yolo --afk $cleaned
+    command kimi --yolo $cleaned
 end

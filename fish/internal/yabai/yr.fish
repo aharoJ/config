@@ -74,24 +74,39 @@ function yr --description "yabai + skhd: restart + apply profile"
     end
 
     # ── Swap skhd modules symlink ───────────────────────────────
-    if _swap_skhd_profile "$profile"
-        skhd --restart-service 2>/dev/null
-    else
-        # No skhd profile for this layout (e.g., float) — restart skhd
-        # with current bindings intact.
-        skhd --restart-service 2>/dev/null
-        set_color yellow
-        echo "yr: no skhd profile for '$profile' — keybindings unchanged"
-        set_color normal
+    set -l skhd_ok 1
+    _swap_skhd_profile "$profile"
+    switch $status
+        case 0
+            skhd --restart-service 2>/dev/null; or set skhd_ok 0
+        case 2
+            # No skhd profile for this layout (e.g., float) — restart skhd
+            # with current bindings intact.
+            skhd --restart-service 2>/dev/null; or set skhd_ok 0
+            set_color yellow
+            echo "yr: no skhd profile for '$profile' — keybindings unchanged"
+            set_color normal
+        case '*'
+            set_color red
+            echo "yr: skhd profile swap FAILED for '$profile'" >&2
+            set_color normal
+            set skhd_ok 0
     end
-
     # ── Confirm ─────────────────────────────────────────────────
-    set_color yellow
-    echo ""
     set -l active (readlink "$HOME/.config/skhd/modules/active" 2>/dev/null | sed 's|.*/||')
-    echo "yr: yabai=$profile  skhd=$active  (restarted)"
     set -l layout (yabai -m query --spaces --space 2>/dev/null | jq -r '.type' 2>/dev/null)
     set -l gap (yabai -m config window_gap 2>/dev/null)
-    echo "    layout=$layout  gap=$gap"
-    set_color normal
+    echo ""
+    if test $skhd_ok -eq 1
+        set_color yellow
+        echo "yr: yabai=$profile  skhd=$active  (restarted)"
+        echo "    layout=$layout  gap=$gap"
+        set_color normal
+    else
+        set_color red
+        echo "yr: yabai=$profile restarted, but skhd did NOT restart cleanly — hotkeys may be down (skhd=$active)" >&2
+        echo "    layout=$layout  gap=$gap" >&2
+        set_color normal
+        return 1
+    end
 end

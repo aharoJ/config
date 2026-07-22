@@ -44,9 +44,6 @@ set -gx VISUAL nvim
 # (Optional) Silence the greeting
 set -g fish_greeting ""
 
-# internal/notes..
-set -gx NOTES_DIR "$HOME/notes"
-
 # ~~~ OPUS 4.6 ~~~
 # set -gx CLAUDE_CODE_EFFORT_LEVEL max
 # set -gx CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING 1
@@ -75,9 +72,13 @@ end
 
 # ---- Interactive-only stuff -------------------------------------------------
 if status is-interactive
-    # Prompt
-    starship init fish | source
-    source ~/.config/fish/themes/gruvbox.fish
+    # Prompt (guarded — fall back to fish's default prompt/theme if missing)
+    if command -q starship
+        starship init fish | source
+    end
+    if test -r ~/.config/fish/themes/gruvbox.fish
+        source ~/.config/fish/themes/gruvbox.fish
+    end
 
     # jenv (Java) -- shims first, lazy shell integration on first jenv call
     set -gx JENV_ROOT "$HOME/.jenv"
@@ -117,8 +118,14 @@ if status is-interactive
         jenv $argv
     end
 
-    # fnm (Node)
+    # fnm (Node) — strip any prior multishell dirs first so re-source and
+    # nested shells don't leak duplicate PATH entries (idempotent reload)
     if type -q fnm
+        set -l _clean
+        for _e in $PATH
+            string match -q '*/fnm_multishells/*' -- $_e; or set -a _clean $_e
+        end
+        set -gx PATH $_clean
         fnm env --use-on-cd | source
     end
 
@@ -136,12 +143,14 @@ if status is-interactive
     # alias lS="eza -l --sort=size"
     # alias lt2="eza -T --level=2"
 
-    alias ls="eza --group-directories-first --color=always --icons"
-    alias la="eza -a --group-directories-first --color=always --icons"
-    alias ll="eza -l -a -h --no-filesize --group-directories-first --color=always --icons"
-    alias ld="eza -a -l --header --created --accessed --changed --no-user --no-filesize --time-style=relative --icons"
-    alias lr="eza -R -a -h --group-directories-first --color=always --icons"
-    alias lt="eza -T --color=always --icons"
+    if command -q eza
+        alias ls="eza --group-directories-first --color=always --icons"
+        alias la="eza -a --group-directories-first --color=always --icons"
+        alias ll="eza -l -a -h --no-filesize --group-directories-first --color=always --icons"
+        alias ld="eza -a -l --header --created --accessed --changed --no-user --no-filesize --time-style=relative --icons"
+        alias lr="eza -R -a -h --group-directories-first --color=always --icons"
+        alias lt="eza -T --color=always --icons"
+    end
 
     abbr .. "cd .."
     abbr ... "cd ../.."
@@ -159,3 +168,20 @@ if status is-interactive
 
 
 end
+
+# kimi-code
+if test -d "$HOME/.kimi-code/bin"
+    fish_add_path -g "$HOME/.kimi-code/bin"
+end
+
+# Antigravity CLI (.local/bin) — remove-then-prepend so reloads don't duplicate
+if test -d "$HOME/.local/bin"
+    while set -l _idx (contains -i -- "$HOME/.local/bin" $PATH)
+        set -e PATH[$_idx]
+    end
+    set -gx PATH "$HOME/.local/bin" $PATH
+end
+
+# Guarantee a success status for `source config.fish` — fish_add_path and other
+# idempotent no-ops above can leave $status at 1 even on a clean reload.
+true
