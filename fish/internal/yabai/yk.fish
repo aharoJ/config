@@ -3,6 +3,10 @@
 # date: 2026-02-07
 
 function yk --description "yabai: stop service"
-    yabai --stop-service
-    echo "yabai: service stopped"
+    if yabai --stop-service
+        echo "yabai: service stopped"
+    else
+        echo "yk: yabai stop failed" >&2
+        return 1
+    end
 end
