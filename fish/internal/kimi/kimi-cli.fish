@@ -30,5 +30,5 @@ end
 
 function kimi-cli --wraps kimi-cli --description "Kimi CLI in YOLO afk mode"
     set -l cleaned (__kimi_cli_yolo_args $argv)
-    command kimi-cli --yolo --afk $cleaned
+    _agent_limit kimi-cli --yolo --afk $cleaned
 end
