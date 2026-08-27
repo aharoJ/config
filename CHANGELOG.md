@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-26 — Cap AI-agent process trees with `RLIMIT_NPROC`
+
+Wired into every launcher: `claude.fish`, `deepseek.fish` (pinned 2.1.153 absolute path), `openrouter.fish` (→ qwen), `codex/codex.fish` (all three role branches), `kimi/kimi.fish`, `kimi/kimi-cli.fish`. New wrappers `agy.fish`, `gemini.fish`, `qwen.fish` cover three binaries that previously had **no** fish wrapper at all (fish history shows 7 `gemini`, 5 `qwen`, 2 `agy` real invocations). `cc.fish` needs no change — every role already funnels through the `claude` function. `tai` is covered for free: its tmux-created panes run these same functions.
+
+Three design constraints, each of which broke a simpler version of this:
+
+- **The limit must live in a disposable child, never the launcher's own shell.** Fish functions run in the interactive shell's process and hard limits are one-way, so `ulimit -H` in a function permanently caps that pane — verified, including `Permission denied` on restore. The helper instead runs `fish --no-config -c '…; exec $argv'` so the parent is untouched and `exec` collapses the child, leaving no extra process.
+- **`--no-config` is load-bearing, not an optimization.** With config sourced, the child would populate `fish_function_path` and `exec claude` would resolve back to the *fish function* — infinite recursion. The helper also resolves `$argv[1]` to a real executable first (absolute path, else `command -s`).
+- **Never put agent helpers in a new `internal/` subdirectory.** `fish_function_path` is a startup snapshot; running shells cannot see a directory created afterward, so edited launchers would call an unresolvable `_agent_limit` and every live pane's agent launch would break. Everything therefore lives in the already-listed `internal/claude/`.
+
+`RLIMIT_NPROC` is compared against the **uid-wide** process count, not a per-tree quota — so this is a shared tripwire, not 2000 processes per agent. It works purely by asymmetry: agent trees sit at 2000 while interactive shells stay at 6000/9000, so when agents fill the table the operator's shell can still fork to diagnose and kill. For that reason it must never be applied in `config.fish` or any all-shells location. Baseline is ~577 uid processes, leaving ~1423 slots; a conservative 16-pane build model peaks near 1029.
+
+Behaviour is otherwise unchanged: TTY, Ctrl+C/Ctrl+Z, exit status and argument passing are identical to unwrapped (verified in an isolated tmux server, including `--model claude-opus-4-6[1m]` and codex's `-c model_reasoning_effort="xhigh"`). The helper **fails open** — if the cap cannot be applied the agent still launches, so a platform quirk can never block work; the cost is that an unexpected loss of containment is silent. Tune with `AGENT_NPROC_CAP` (validated `^[0-9]+$`, so it cannot inject).
+
+Rollout is staged and needs no action: new shells get full coverage; existing panes' autoloaded launchers reload "after a while" per fish's documented behaviour (not synchronously — do not promise next-invocation); `codex.fish` is *sourced* by `config.fish` so existing shells keep the old definition until re-source or replacement. Running agents are never affected — only future launches. **Do not restart tmux or re-source live panes to accelerate this.**
+
+Known latent hole, not addressed here: tmux-resurrect snapshots raw agent command lines (`node <fnm>/codex …`, `claude --resume <uuid>`). It does not restore them today because `@resurrect-processes` is unset and the default allowlist excludes them — setting it to `:all:` would create an uncapped, wrapper-bypassing launch path from the tmux server.
+
 ## 2026-08-26 — Guard `yabaiQuery` against fork exhaustion
 
 - `pcall(hs.execute, cmd)` catches the throw; the `status` check is kept **separately** because it catches a different failure — a yabai non-zero exit still returns normally (verified: `pcall(hs.execute, "exit 3")` → `ran=true, status=nil`, so `pcall` alone would silently swallow it).

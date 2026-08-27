@@ -10,5 +10,5 @@ function claude --description 'Claude Code with subagent-routing safety hint'
         echo 'cc warn: CLAUDE_CODE_SUBAGENT_MODEL unset; subagents inherit parent tier' >&2
         echo '         use a cc role, or `set -gx CLAUDE_CODE_SUBAGENT_MODEL <model>` ad-hoc' >&2
     end
-    command claude $argv
+    _agent_limit claude $argv
 end

@@ -4,6 +4,11 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
         return 1
     end
 
+    if contains -- -v4-pro $argv
+        echo "deepseek: unknown flag -v4-pro (did you mean --v4-pro?)" >&2
+        return 1
+    end
+
     set -l model "deepseek-v4-flash"
     if contains -- --v4-pro $argv
         set model "deepseek-v4-pro"
@@ -52,5 +57,5 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
         echo "          reinstall: npm install --prefix ~/.local/cc-pinned-2.1.153 @anthropic-ai/claude-code@2.1.153" >&2
         return 1
     end
-    $cc_pinned --dangerously-skip-permissions $argv
+    _agent_limit $cc_pinned --dangerously-skip-permissions $argv
 end

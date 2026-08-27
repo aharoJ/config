@@ -30,5 +30,5 @@ end
 
 function kimi --wraps kimi --description "Kimi CLI in YOLO mode"
     set -l cleaned (__kimi_yolo_args $argv)
-    command kimi --yolo $cleaned
+    _agent_limit kimi --yolo $cleaned
 end

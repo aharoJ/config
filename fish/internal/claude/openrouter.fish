@@ -94,7 +94,7 @@ function openrouter --description "Qwen Code via OpenRouter (requires exactly on
         end
     end
 
-    command qwen \
+    _agent_limit qwen \
         --auth-type openai \
         --openai-base-url "https://openrouter.ai/api/v1" \
         $approval \

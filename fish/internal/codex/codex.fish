@@ -23,10 +23,10 @@ function codex --description "Codex CLI with role shortcuts: --model-lead (5.5 x
 
     switch $role
         case lead
-            command codex -m gpt-5.5 -c model_reasoning_effort='"xhigh"' --dangerously-bypass-approvals-and-sandbox $passthrough
+            _agent_limit codex -m gpt-5.5 -c model_reasoning_effort='"xhigh"' --dangerously-bypass-approvals-and-sandbox $passthrough
         case audit
-            command codex -m gpt-5.3-codex -c model_reasoning_effort='"xhigh"' --dangerously-bypass-approvals-and-sandbox $passthrough
+            _agent_limit codex -m gpt-5.3-codex -c model_reasoning_effort='"xhigh"' --dangerously-bypass-approvals-and-sandbox $passthrough
         case '*'
-            command codex --dangerously-bypass-approvals-and-sandbox $passthrough
+            _agent_limit codex --dangerously-bypass-approvals-and-sandbox $passthrough
     end
 end
