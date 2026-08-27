@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-26 — Guard `yabaiQuery` against fork exhaustion
+
+`hammerspoon/modules/utils.lua` now wraps `hs.execute` in `pcall`. The old `if not status` check was **unreachable** in the failure mode it was written for: Hammerspoon's own `hs.execute` (`_coresetup.lua:250-260`) calls `io.popen` and immediately does `f:read('*a')` with no nil check, so when process creation fails it *throws* instead of returning a status. During the 2026-08-26 process-table incident this surfaced as `attempt to index a nil value (local 'f')` and took out `getStacks` → `draw` → the stack indicators, plus the debounce timer callback, once per window/space event.
+
+- `pcall(hs.execute, cmd)` catches the throw; the `status` check is kept **separately** because it catches a different failure — a yabai non-zero exit still returns normally (verified: `pcall(hs.execute, "exit 3")` → `ran=true, status=nil`, so `pcall` alone would silently swallow it).
+- Failures are latched: the first one logs via `hs.printf`, repeats are suppressed until a successful query re-arms it. Silence was rejected — the original diagnosis was needlessly forensic precisely because the failure left no breadcrumb. Verified 4 failures → exactly 2 log lines across a re-arm.
+- `stack-indicators.lua` needed no change: `getStacks()` returns nil, `draw()` already calls `cleanup()` before its `if not stack then return end`, so the degraded state is "pills disappear, watchers stay alive, next event redraws".
+
+Root cause of the incident itself was not Hammerspoon: a headless Firefox spawned by an agent leaked 5,443 unreaped children and filled uid 501's process table (`kern.maxprocperuid` = 6000), after which every `fork`/`posix_spawn` by the user failed with `EAGAIN` (errno 35) — fish couldn't launch `brew`/`starship`/`git`, Hammerspoon couldn't launch yabai, and the agents couldn't launch their own helpers. Recovery was `kill <firefox-pid>`: the zombies reparent to launchd and are reaped (6,320 procs → 855). Containment for the underlying class is a separate change.
+
 ## 2026-05-28 — Add mimo target to `tai`
 
 `tai` now accepts `mimo` as a first-class agent (`fish/internal/tmux/tai.fish`). Unlike the other agents, `mimo` isn't its own binary — it rides the `openrouter` wrapper, so the spawn maps to `openrouter --mimo-v2-flash` (→ `xiaomi/mimo-v2-flash`, the fast/paid model; wrapper defaults to `--approval-mode yolo`).
