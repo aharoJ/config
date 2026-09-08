@@ -1,14 +1,20 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
 
-function __tai_usage
-    echo "usage: tai [codex|gemini|cc|deepseek|mimo|all] [agent args...]"
-    echo "       tai        # same as: tai all"
+# tai all: slot | exact command. Comment a row to disable only that panel slot.
+function __tai_panel
+    printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort high'
+    printf '%s\n' 'codex|codex -m gpt-5.6-luna -c model_reasoning_effort="high"'
+    printf '%s\n' 'cc|cc --model-sonnet --effort low'
+    printf '%s\n' 'deepseek|deepseek --effort low'
+    # printf '%s\n' 'kimi|kimi --auto'
+    # printf '%s\n' 'mimo|openrouter --mimo-v2.5'
 end
+# Kimi exposes no native effort flag. Its wrapper must use --auto, not --yolo.
 
-function __tai_window_name
-    set -l agent $argv[1]
-    echo "$agent"
+function __tai_usage
+    echo "usage: tai [codex|gemini|cc|deepseek|mimo|kimi|all] [agent args...]"
+    echo "       tai        # same as: tai all"
 end
 
 # Resolve an agent label to the fish command that backs it. Most agents are
@@ -25,10 +31,62 @@ function __tai_command
     end
 end
 
+# Wrappers own bypass; agy needs tai's flag. Native CLIs own their other policy
+# flags for Claude/Kimi. Codex/agy policy precedence is unproved: reject their
+# installed native policy options. OpenRouter yields to caller approval flags.
+function __tai_validate
+    set -l agent $argv[1]
+    set -e argv[1]
+    set -l approvals 0
+    set -l separator 0
+    while set -q argv[1]
+        set -l arg "$argv[1]"
+        set -e argv[1]
+        # OpenRouter's existing wrapper scans even after --.
+        if test "$arg" = --; and test "$agent" != mimo
+            break
+        end
+        test "$arg" = --; and set separator 1
+        switch "$agent:$arg"
+            case 'codex:--dangerously-bypass-approvals-and-sandbox' 'gemini:--dangerously-skip-permissions' 'gemini:--dangerously-skip-permissions=*'
+                echo "tai: bypass/YOLO is already enabled for '$agent'; omit '$arg'" >&2
+                return 2
+            case 'codex:--ask-for-approval' 'codex:--ask-for-approval=*' 'codex:-a' 'codex:-a=*' 'codex:-anever' 'codex:-aon-request' 'codex:--sandbox' 'codex:--sandbox=*' 'codex:-s' 'codex:-s=*' 'codex:-sread-only' 'codex:-sworkspace-write' 'codex:-sdanger-full-access' 'codex:--approve-for-me' 'gemini:--sandbox' 'gemini:--sandbox=*' 'gemini:--mode' 'gemini:--mode=*'
+                echo "tai: '$arg' has unverified precedence against '$agent' bypass; launch the wrapper directly to choose another policy" >&2
+                return 2
+            case 'codex:-c*' 'codex:--config' 'codex:--config=*'
+                set -l value (string replace -r -- '^(-c=?|--config=)' '' "$arg")
+                if contains -- "$arg" -c --config
+                    set value "$argv[1]"
+                end
+                set -l key (string split -m 1 = -- "$value")[1]
+                set key (string replace -ar -- '["[:space:]]' '' "$key")
+                if string match -qr '^(approval_policy|sandbox_mode|sandbox_permissions|permission_profile|default_permissions|permissions)(\.|$)' -- "$key"
+                    echo "tai: Codex policy config '$key' has unverified precedence against bypass" >&2
+                    return 2
+                end
+            case 'mimo:--approval-mode' 'mimo:--approval-mode=*' 'mimo:--yolo' 'mimo:-y'
+                set approvals (math $approvals + 1)
+                set -l mode yolo
+                if test "$arg" = --approval-mode
+                    set mode "$argv[1]"
+                    set -e argv[1]
+                else if string match -q -- '--approval-mode=*' "$arg"
+                    set mode (string replace -- '--approval-mode=' '' "$arg")
+                end
+                if test "$mode" != yolo; or test $approvals -gt 1; or test $separator -eq 1
+                    echo "tai: Mimo requires one YOLO approval mode; omit '$arg' and use the wrapper default" >&2
+                    return 2
+                end
+        end
+    end
+    return 0
+end
+
 function __tai_spawn
     set -l agent $argv[1]
     set -l launch_dir $argv[2]
-    set -l window_name (__tai_window_name "$agent" "$launch_dir")
+    set -l window_name "$agent"
     set -l fish_bin (command -s fish)
 
     if test -z "$fish_bin"
@@ -36,35 +94,9 @@ function __tai_spawn
         return 1
     end
 
-    set -l parts $agent
-    if test "$agent" = codex
-        set parts codex --model-audit
-    else if test "$agent" = cc
-        set parts cc --model-sonnet
-    else if test "$agent" = gemini
-        set parts agy --dangerously-skip-permissions
-    else if test "$agent" = mimo
-        set parts openrouter --mimo-v2.5
-    end
-    set -l skip_next 0
+    set -l parts
     for arg in $argv[3..-1]
-        if test "$skip_next" -eq 1
-            set skip_next 0
-            continue
-        end
-        if test "$agent" = gemini
-            # Drop stale gemini-cli flags (agy rejects them) and any user dupe of
-            # the forced bypass. --sandbox stays stripped to keep this slot
-            # YOLO/no-sandbox by design; --model passes through for overrides.
-            switch "$arg"
-                case --approval-mode --policy --admin-policy
-                    set skip_next 1
-                    continue
-                case '--approval-mode=*' --yolo -y --skip-trust --sandbox -s --no-sandbox '--sandbox=*' '--policy=*' '--admin-policy=*' --dangerously-skip-permissions
-                    continue
-            end
-        end
-        set -a parts (string escape -- $arg)
+        set -a parts (string escape -- "$arg")
     end
     set -l commandline (string join ' ' -- $parts)
 
@@ -81,7 +113,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         return 1
     end
 
-    set -l agents gemini codex cc deepseek mimo
+    set -l panel (__tai_panel)
 
     if test (count $argv) -eq 0
         set argv all
@@ -97,8 +129,10 @@ function tai --description 'tmux: spawn AI agent window in current directory'
                 echo "tai: 'all' does not accept extra agent args" >&2
                 return 2
             end
-            set targets $agents
-        case codex gemini cc deepseek mimo
+            for row in $panel
+                set -a targets (string split -m 1 '|' -- "$row")[1]
+            end
+        case codex gemini cc deepseek mimo kimi
             set targets $target
         case '*'
             echo "tai: unknown agent '$target'" >&2
@@ -108,6 +142,9 @@ function tai --description 'tmux: spawn AI agent window in current directory'
 
     set -l launch_dir (pwd)
 
+    __tai_validate "$target" $argv
+    or return $status
+
     for agent in $targets
         set -l cmd (__tai_command $agent)
         if not fish -lc "type -q $cmd"
@@ -116,11 +153,23 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         end
     end
 
-    for agent in $targets
-        __tai_spawn "$agent" "$launch_dir" $argv
+    if test "$target" = all
+        for row in $panel
+            set -l fields (string split -m 1 '|' -- "$row")
+            __tai_spawn "$fields[1]" "$launch_dir" (string split ' ' -- "$fields[2]")
+            or return $status
+        end
+    else
+        set -l parts (__tai_command "$target")
+        switch "$target"
+            case gemini
+                set -a parts --dangerously-skip-permissions
+        end
+        __tai_spawn "$target" "$launch_dir" $parts $argv
         or return $status
     end
 end
 
+complete -c tai -e
 complete -c tai -f
-complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo all" -a "codex gemini cc deepseek mimo all"
+complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo kimi all" -a "codex gemini cc deepseek mimo kimi all"

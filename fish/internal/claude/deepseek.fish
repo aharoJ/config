@@ -4,20 +4,38 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
         return 1
     end
 
-    if contains -- -v4-pro $argv
-        echo "deepseek: unknown flag -v4-pro (did you mean --v4-pro?)" >&2
-        return 1
-    end
-
     set -l model "deepseek-v4-flash"
-    if contains -- --v4-pro $argv
-        set model "deepseek-v4-pro"
-        set -l argv_clean
-        for arg in $argv
-            test "$arg" != "--v4-pro"; and set -a argv_clean $arg
+    set -l argv_clean
+    set -l options 1
+    set -l raw_model 0
+    for arg in $argv
+        if test $options -eq 0
+            set -a argv_clean "$arg"
+            continue
         end
-        set argv $argv_clean
+        switch $arg
+            case --
+                set options 0
+                set -a argv_clean "$arg"
+            case --dangerously-skip-permissions
+                # The wrapper supplies this once below.
+            case -v4-pro
+                echo "deepseek: unknown flag -v4-pro (did you mean --v4-pro?)" >&2
+                return 1
+            case --v4-pro
+                set model "deepseek-v4-pro"
+            case --model '--model=*' -m '-m*'
+                set raw_model 1
+                set -a argv_clean "$arg"
+            case '*'
+                set -a argv_clean "$arg"
+        end
     end
+    if test "$model" = deepseek-v4-pro; and test $raw_model -eq 1
+        echo "deepseek: raw --model/-m cannot be combined with --v4-pro" >&2
+        return 2
+    end
+    set argv $argv_clean
 
     set -lx ANTHROPIC_BASE_URL                        "https://api.deepseek.com/anthropic"
     set -lx ANTHROPIC_AUTH_TOKEN                       $DEEPSEEK_API_KEY
@@ -28,8 +46,6 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
     set -lx CLAUDE_CODE_SUBAGENT_MODEL                 $model
     set -lx CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC   1
     set -lx CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK  1
-    set -lx CLAUDE_CODE_EFFORT_LEVEL                   "max"
-    set -lx API_TIMEOUT_MS                             600000
 
     # CC 2.1.154 REGRESSION: it injects `role: system` messages into messages[]
     # -- the skills list (messages[1]) AND live system-reminders mid-session (the

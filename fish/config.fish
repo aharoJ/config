@@ -44,12 +44,6 @@ set -gx VISUAL nvim
 # (Optional) Silence the greeting
 set -g fish_greeting ""
 
-# ~~~ OPUS 4.6 ~~~
-# set -gx CLAUDE_CODE_EFFORT_LEVEL max
-# set -gx CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING 1
-# set -gx MAX_THINKING_TOKENS 31999
-# set -gx CLAUDE_CODE_SUBAGENT_MODEL claude-sonnet-4-6
-# ~~~ END ~~~
 
 
 
