@@ -35,8 +35,14 @@ function _agent_limit --description 'run an AI agent under a reduced hard RLIMIT
     end
 
     set -l cap 2000
-    if set -q AGENT_NPROC_CAP; and string match -qr '^[0-9]+$' -- "$AGENT_NPROC_CAP"
-        set cap $AGENT_NPROC_CAP
+    if set -q AGENT_NPROC_CAP
+        # Bound the override to a portable signed integer; overflow must not
+        # silently bypass both ulimit calls and leave an agent uncapped.
+        if string match -qr '^[0-9]*[1-9][0-9]*$' -- "$AGENT_NPROC_CAP"; and test "$AGENT_NPROC_CAP" -le 2147483647 2>/dev/null
+            set cap $AGENT_NPROC_CAP
+        else
+            echo "_agent_limit: AGENT_NPROC_CAP must be a positive integer <= 2147483647; using 2000" >&2
+        end
     end
 
     # Resolve to a real executable so the child never re-enters a fish function.

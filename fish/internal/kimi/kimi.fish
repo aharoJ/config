@@ -9,9 +9,12 @@ function __kimi_yolo_args
         end
 
         switch $arg
-            case --yolo --yes --dangerously-allow-all -y
+            case --yolo '--yolo=*' -y
+                echo "kimi: --yolo/-y contradicts never-ask mode; use --auto (already enabled)" >&2
+                return 2
+            case --yes --dangerously-allow-all
                 continue
-            case '--yolo=*' '--yes=*' '--dangerously-allow-all=*'
+            case '--yes=*' '--dangerously-allow-all=*'
                 continue
             case --config --config-file
                 set skip_next 1
@@ -28,7 +31,8 @@ function __kimi_yolo_args
     end
 end
 
-function kimi --wraps kimi --description "Kimi CLI in YOLO mode"
+function kimi --wraps kimi --description "Kimi CLI in never-ask mode"
     set -l cleaned (__kimi_yolo_args $argv)
-    _agent_limit kimi --yolo $cleaned
+    or return $status
+    _agent_limit kimi --auto (string match -v -- --auto $cleaned)
 end
