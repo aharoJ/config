@@ -1,11 +1,11 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
 
-# tai all: slot | exact command. Comment a row to disable only that panel slot.
+# tai all: window name | exact command. Comment a row to disable only that panel slot.
 function __tai_panel
     printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort high'
-    printf '%s\n' 'codex|codex -m gpt-5.6-luna -c model_reasoning_effort="high"'
-    printf '%s\n' 'cc|cc --model-sonnet --effort low'
+    printf '%s\n' 'astra|codex -m gpt-5.6-luna -c model_reasoning_effort="high"'
+    printf '%s\n' 'fable|cc --model-sonnet --effort low'
     printf '%s\n' 'deepseek|deepseek --effort low'
     # printf '%s\n' 'kimi|kimi --auto'
     # printf '%s\n' 'mimo|openrouter --mimo-v2.5'
@@ -84,9 +84,8 @@ function __tai_validate
 end
 
 function __tai_spawn
-    set -l agent $argv[1]
+    set -l window_name $argv[1]
     set -l launch_dir $argv[2]
-    set -l window_name "$agent"
     set -l fish_bin (command -s fish)
 
     if test -z "$fish_bin"
@@ -130,7 +129,8 @@ function tai --description 'tmux: spawn AI agent window in current directory'
                 return 2
             end
             for row in $panel
-                set -a targets (string split -m 1 '|' -- "$row")[1]
+                set -l fields (string split -m 1 '|' -- "$row")
+                set -a targets (string split -m 1 ' ' -- "$fields[2]")[1]
             end
         case codex gemini cc deepseek mimo kimi
             set targets $target
@@ -161,11 +161,16 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         end
     else
         set -l parts (__tai_command "$target")
+        set -l window_name "$target"
         switch "$target"
+            case codex
+                set window_name astra
+            case cc
+                set window_name fable
             case gemini
                 set -a parts --dangerously-skip-permissions
         end
-        __tai_spawn "$target" "$launch_dir" $parts $argv
+        __tai_spawn "$window_name" "$launch_dir" $parts $argv
         or return $status
     end
 end
