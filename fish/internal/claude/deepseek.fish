@@ -1,13 +1,14 @@
-function deepseek --description "Claude Code backed by DeepSeek (V4 Flash default, --v4-pro to escalate)"
+function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash default)"
     if not set -q DEEPSEEK_API_KEY
         echo "DEEPSEEK_API_KEY not set"
         return 1
     end
 
-    set -l model "deepseek-v4-flash"
+    set -l model "deepseek-flash"
     set -l argv_clean
     set -l options 1
     set -l raw_model 0
+    set -l v4_pro 0
     for arg in $argv
         if test $options -eq 0
             set -a argv_clean "$arg"
@@ -23,7 +24,7 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
                 echo "deepseek: unknown flag -v4-pro (did you mean --v4-pro?)" >&2
                 return 1
             case --v4-pro
-                set model "deepseek-v4-pro"
+                set v4_pro 1
             case --model '--model=*' -m '-m*'
                 set raw_model 1
                 set -a argv_clean "$arg"
@@ -31,9 +32,13 @@ function deepseek --description "Claude Code backed by DeepSeek (V4 Flash defaul
                 set -a argv_clean "$arg"
         end
     end
-    if test "$model" = deepseek-v4-pro; and test $raw_model -eq 1
-        echo "deepseek: raw --model/-m cannot be combined with --v4-pro" >&2
-        return 2
+    if test $v4_pro -eq 1
+        if test $raw_model -eq 1
+            echo "deepseek: raw --model/-m cannot be combined with --v4-pro" >&2
+            return 2
+        end
+        echo "deepseek: --v4-pro is unavailable until DeepSeek V4.1 Pro exists" >&2
+        return 1
     end
     set argv $argv_clean
 
