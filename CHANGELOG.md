@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-14 — Add tmux freeze capture and guided loop recovery
+
+Added autoloaded fish functions `tfreeze` and `trescue` plus the narrow `tmux-loop-rescue --observe` interface. `tfreeze` captures new read-only evidence for the literal production socket without starting a missing server. `trescue` captures, observes, displays the fresh PID/build/count evidence, requires `RESCUE`, then leaves the exact PID confirmation to the rescue tool. It carries the fresh observed count forward automatically; there is no manual count prompt or maximum fallback.
+
+The rescue write path now sets a fresh breakpoint and validates the stopped process, pinned executable identity, socket/process identity, breakpoint stop, selected frame, instruction, and current bounded counter immediately before any `w20` write. A failed final check skips the write and detaches where possible. This is only for the supported identity-matching cursor-down loop, not general tmux recovery.
+
 ## 2026-08-26 — Cap AI-agent process trees with `RLIMIT_NPROC`
 
 Wired into every launcher: `claude.fish`, `deepseek.fish` (pinned 2.1.153 absolute path), `openrouter.fish` (→ qwen), `codex/codex.fish` (all three role branches), `kimi/kimi.fish`, `kimi/kimi-cli.fish`. New wrappers `agy.fish`, `gemini.fish`, `qwen.fish` cover three binaries that previously had **no** fish wrapper at all (fish history shows 7 `gemini`, 5 `qwen`, 2 `agy` real invocations). `cc.fish` needs no change — every role already funnels through the `claude` function. `tai` is covered for free: its tmux-created panes run these same functions.
