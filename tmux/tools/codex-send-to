@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+fail() { printf 'REFUSE: %s\n' "$1" >&2; exit 1; }
+refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was sent\n' "$1" >&2; exit 2; }
+unresponsive() { printf 'REFUSE: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
+partial() { printf 'UNVERIFIED: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
+busy() { printf 'UNVERIFIED: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
+
+TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
+TMUX_BIN="${TMUX_BIN:-tmux}"
+TMUX_TIMEOUT_SECONDS="${TMUX_TIMEOUT_SECONDS:-1}"
+TMUX_TIMEOUT_KILL_AFTER="${TMUX_TIMEOUT_KILL_AFTER:-1}"
+RELAY_LOCK_ROOT="${TMUX_RELAY_LOCK_ROOT:-/private/tmp/tmux-$(id -u)/relay-locks}"
+LOCK_BIN="${TMUX_RELAY_LOCK_BIN:-/usr/bin/shlock}"
+relay_lock=
+[ -n "$TIMEOUT_BIN" ] || fail 'timeout or gtimeout is required'
+[ -x "$LOCK_BIN" ] || fail 'shlock is required'
+
+release_relay_lock() {
+  [ -n "$relay_lock" ] || return 0
+  rm -f "$relay_lock"
+  relay_lock=
+}
+
+acquire_relay_lock() {
+  local socket identity key
+  socket="${TMUX%%,*}"
+  identity="$(stat -f '%d:%i' "$socket" 2>/dev/null || printf '%s' "$socket")"
+  key="$(printf '%s' "$identity:$pane" | shasum -a 256 | awk '{print $1}')" || return 1
+  umask 077
+  mkdir -p "$RELAY_LOCK_ROOT" || return 1
+  relay_lock="$RELAY_LOCK_ROOT/$key"
+  "$LOCK_BIN" -f "$relay_lock" -p "$$" >/dev/null 2>&1 || { relay_lock=; return 1; }
+}
+
+trap release_relay_lock EXIT
+
+request() {
+  "$TIMEOUT_BIN" -k "$TMUX_TIMEOUT_KILL_AFTER" "$TMUX_TIMEOUT_SECONDS" "$TMUX_BIN" "$@"
+  local code=$?
+  case "$code" in
+    124|137|143) return 75 ;;
+    *) return "$code" ;;
+  esac
+}
+
+octal_literal() {
+  LC_ALL=C printf '%s' "$1" | od -An -v -tu1 | awk '
+    BEGIN { printf "\"" }
+    { for (i = 1; i <= NF; i++) printf "\\%03o", $i }
+    END { printf "\"" }
+  '
+}
+
+atomic_text() {
+  local payload=$1 encoded blocked deliver receipt code cleanup_code payload_file= payload_buffer= bytes
+  bytes="$(LC_ALL=C printf '%s' "$payload" | wc -c | tr -d ' ')"
+  if [ "$bytes" -gt 3000 ]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-to-payload.XXXXXX")" || return 1
+    payload_buffer="codex-send-to-$(basename "$payload_file")"
+    LC_ALL=C printf '%s' "$payload" > "$payload_file" || { rm -f "$payload_file"; return 1; }
+    if request load-buffer -b "$payload_buffer" "$payload_file"; then
+      :
+    else
+      code=$?
+      rm -f "$payload_file"
+      return "$code"
+    fi
+    deliver="paste-buffer -d -t $pane -b $payload_buffer ; display-message -p -t $pane __CODEX_SEND_TO_DELIVERED__"
+  else
+    encoded="$(octal_literal "$payload")" || return 1
+    deliver="send-keys -t $pane -l -- $encoded ; display-message -p -t $pane __CODEX_SEND_TO_DELIVERED__"
+  fi
+  blocked="display-message -p -t $pane __CODEX_SEND_TO_REFUSED_COPY_MODE__"
+  if receipt="$(request if-shell -F -t "$pane" '#{pane_in_mode}' "$blocked" "$deliver")"; then
+    code=0
+  else
+    code=$?
+  fi
+  if [ -n "$payload_buffer" ]; then
+    if request delete-buffer -b "$payload_buffer" >/dev/null 2>&1; then
+      cleanup_code=0
+    else
+      cleanup_code=$?
+    fi
+    rm -f "$payload_file"
+    [ "$cleanup_code" = 75 ] && code=75
+  fi
+  [ "$code" = 75 ] && return 75
+  [ "$code" = 0 ] || return 1
+  [ "$receipt" = __CODEX_SEND_TO_DELIVERED__ ] && return 0
+  [ "$receipt" = __CODEX_SEND_TO_REFUSED_COPY_MODE__ ] && return 2
+  return 1
+}
+
+atomic_enter() {
+  local blocked deliver receipt code
+  blocked="display-message -p -t $pane __CODEX_SEND_TO_REFUSED_COPY_MODE__"
+  deliver="send-keys -t $pane Enter ; display-message -p -t $pane __CODEX_SEND_TO_DELIVERED__"
+  if receipt="$(request if-shell -F -t "$pane" '#{pane_in_mode}' "$blocked" "$deliver")"; then
+    code=0
+  else
+    code=$?
+  fi
+  [ "$code" = 75 ] && return 75
+  [ "$code" = 0 ] || return 1
+  [ "$receipt" = __CODEX_SEND_TO_DELIVERED__ ] && return 0
+  [ "$receipt" = __CODEX_SEND_TO_REFUSED_COPY_MODE__ ] && return 2
+  return 1
+}
+
+[ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: codex-send-to <window-name> <text>\n' >&2; exit 1; }
+window_name=$1
+message="$(printf '%s' "$2" | tr '\n\r\t' '   ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')"
+[ -n "$message" ] || fail 'empty message'
+[ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] || fail 'TMUX/TMUX_PANE is not set'
+
+list_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-to-list.XXXXXX")" || fail 'scratch file unavailable'
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name}' > "$list_file"; then
+  :
+else
+  code=$?
+  rm -f "$list_file"
+  [ "$code" = 75 ] && unresponsive
+  fail 'cannot query tmux panes'
+fi
+session="$(awk -v own="$TMUX_PANE" '$1 == own { n++; value=$2 } END { if (n == 1) print value }' "$list_file")"
+[ -n "$session" ] || { rm -f "$list_file"; fail "own session not resolved from TMUX_PANE=$TMUX_PANE"; }
+pane="$(awk -v session="$session" -v window="$window_name" '$2 == session && $3 == window { n++; value=$1 } END { if (n == 1) print value }' "$list_file")"
+rm -f "$list_file"
+[ -n "$pane" ] || fail "window $window_name not unique in $session"
+
+acquire_relay_lock || busy
+
+if atomic_text "$message"; then
+  :
+else
+  code=$?
+  case "$code" in
+    2) refuse_copy "$pane" ;;
+    75) unresponsive ;;
+    *) partial "literal delivery outcome is unknown for $pane" ;;
+  esac
+fi
+sleep 1
+if atomic_enter; then
+  :
+else
+  code=$?
+  case "$code" in
+    2) partial "target $pane entered copy mode after literal delivery; Enter was not sent" ;;
+    75) unresponsive ;;
+    *) partial "Enter delivery outcome is unknown for $pane" ;;
+  esac
+fi
+sleep 2
+capture_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-to-capture.XXXXXX")" || partial 'delivery verification scratch file unavailable'
+if request capture-pane -p -t "$pane" -S -6 > "$capture_file"; then
+  :
+else
+  code=$?
+  rm -f "$capture_file"
+  [ "$code" = 75 ] && unresponsive
+  partial "cannot verify delivery for $pane"
+fi
+if grep -q 'Ask Codex to do anything' "$capture_file"; then
+  rm -f "$capture_file"
+  printf 'SENT ok (%s %s)\n' "$window_name" "$pane"
+  exit 0
+fi
+rm -f "$capture_file"
+capture_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-to-capture.XXXXXX")" || partial 'delivery verification scratch file unavailable'
+if request capture-pane -p -t "$pane" -S -8 > "$capture_file"; then
+  :
+else
+  code=$?
+  rm -f "$capture_file"
+  [ "$code" = 75 ] && unresponsive
+  partial "cannot verify delivery for $pane"
+fi
+if grep -qE 'Working|esc to interrupt' "$capture_file"; then
+  rm -f "$capture_file"
+  printf 'SENT ok, codex busy (%s %s)\n' "$window_name" "$pane"
+  exit 0
+fi
+rm -f "$capture_file"
+partial "text may still sit in the composer ($window_name $pane)"

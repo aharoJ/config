@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-14 — Add tmux freeze capture and guided loop recovery
+
+Added autoloaded fish functions `tfreeze` and `trescue` plus the narrow `tmux-loop-rescue --observe` interface. `tfreeze` captures new read-only evidence for the literal production socket without starting a missing server. `trescue` captures, observes, displays the fresh PID/build/count evidence, requires `RESCUE`, then leaves the exact PID confirmation to the rescue tool. It carries the fresh observed count forward automatically; there is no manual count prompt or maximum fallback.
+
+The rescue write path now sets a fresh breakpoint and validates the stopped process, pinned executable identity, socket/process identity, breakpoint stop, selected frame, instruction, and current bounded counter immediately before any `w20` write. A failed final check skips the write and detaches where possible. This is only for the supported identity-matching cursor-down loop, not general tmux recovery.
+
+The functions refuse when invoked from the target tmux server by socket inode or server PID, including socket aliases; plain terminals and a genuinely separate rescue server remain allowed. Candidate and installed paths passed isolated success, refusal, cancellation, final-check, and rollback matrices. No production tmux request, debugger attachment, restart, reload, or pane input occurred. The full evidence and rollback map are in `tmux/incidents/2026-09-13-freeze/fixes/`.
+
 ## 2026-08-26 — Cap AI-agent process trees with `RLIMIT_NPROC`
 
 New `fish/internal/claude/_agent_limit.fish` runs every supported agent under a reduced hard `RLIMIT_NPROC` (2000, vs uid 501's `kern.maxprocperuid` of 6000). Motivated by the same-day incident where a headless Firefox spawned by an agent leaked 5,443 unreaped children, filled the process table, and made every `fork`/`posix_spawn` by the user fail with `EAGAIN` — fish, Hammerspoon and the agents all died at once while the machine itself stayed healthy.
