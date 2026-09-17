@@ -182,12 +182,21 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 ├── scripts/<subject>/           Angel's scripts; scripts a config invokes stay next to that config
 ├── repos/<subject>/             cvmapp · stage · infra · gwt · review-protocol · … (harness output stays in repos/<x>/notes)
 ├── playground/<subject>/        the warzone; disposable by contract
+├── incidents/<subject>/<YYYY-MM-DD>-<kind>/   every breakage, one home; tools capture straight into it
 ├── archive/<type>/<subject>/    retired material moves here, never a parked marker in place
 └── family/                      protected media; backup policy, not git
 ```
 
 **Decided:**
 
+- `incidents` is the seventh type (decided 2026-09-16, CC + Codex + Angel). Today incident material sits in 11 places (~630 MB): the tmux dossier in the public config repo, September audit residue in `$HOME` and `.westernu`, memory backups, six incident write-ups in agent memory. Rules:
+  - Grammar: `incidents/<subject>/<YYYY-MM-DD>-<kind>/`. Subject is whatever broke: `tmux`, `yabai`, `host`, `cvmapp`. No pre-made subject folders; one appears the day it is needed.
+  - Every case gets the same skeleton from `incidents/_template/`: `CASE.md`, `timeline.md`, `recovery.md`, `decisions.md`, `evidence/`, `fixes/`. `incidents/INDEX.md` lists cases.
+  - Tools capture straight into it: `tfreeze` writes its next capture to `desk/incidents/tmux/<date>-freeze/`, no promotion step.
+  - Closed incidents stay put, marked `STATE: CLOSED` in `CASE.md`. This is the one exception to archive-by-move: past incidents are reference, and `ls incidents/tmux/` must always show history.
+  - Branch-bound audit outputs and fixes stay in their project worktree when parallel review isolation matters; the case links to the commit or run instead of becoming a second source of truth.
+  - Apple's `~/Library/Logs/DiagnosticReports/` is never relocated; the specific report is copied or referenced into the case.
+  - First landing: `~/.config/tmux/incidents/2026-09-13-freeze/` (555 MB, only copy, unbacked) becomes `desk/incidents/tmux/2026-09-13-freeze/`. The six incident memory files and `tfreeze`/`trescue` output paths are bindings to update.
 - `research` is not a type; it is notes.
 - Personal, no-project material is `notes/personal/`.
 - Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
@@ -199,17 +208,18 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 
 **Where today's roots land:**
 
-| Today                                                   | Lands in                                                                                             |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `~/.notes`                                              | `notes/` (projects split into subjects; personal into `notes/personal/`; `secret/` stays local-only) |
-| `~/.scripts`                                            | `scripts/<subject>/`                                                                                 |
-| `~/.repository/*`                                       | `repos/<x>`                                                                                          |
-| `~/.westernu/cvmapp`, `notes`, audits                   | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/`                                        |
-| `~/.skills/review-protocol`                             | `repos/review-protocol`                                                                              |
-| `~/.archive`                                            | `archive/`                                                                                           |
-| `~/desk/.family`                                        | `family/`                                                                                            |
-| `~/desk/playground`                                     | stays                                                                                                |
-| `~/.config*`, `~/.ssh`, `~/.claude`, every tool dot-dir | stay at `$HOME`                                                                                      |
+| Today                                                                                                                                                | Lands in                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `~/.notes`                                                                                                                                           | `notes/` (projects split into subjects; personal into `notes/personal/`; `secret/` stays local-only) |
+| `~/.scripts`                                                                                                                                         | `scripts/<subject>/`                                                                                 |
+| `~/.repository/*`                                                                                                                                    | `repos/<x>`                                                                                          |
+| `~/.westernu/cvmapp`, `notes`, audits                                                                                                                | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/`                                        |
+| `~/.skills/review-protocol`                                                                                                                          | `repos/review-protocol`                                                                              |
+| `~/.archive`                                                                                                                                         | `archive/`                                                                                           |
+| `~/desk/.family`                                                                                                                                     | `family/`                                                                                            |
+| `~/desk/playground`                                                                                                                                  | stays                                                                                                |
+| `~/.config/tmux/incidents`, `.westernu/audit-*`, `~/.audit-scratch-*`, `.da-r6-audit`, `.r7-audit-scratch`, `.review-catch`, `.cc-review-harness-v2` | `incidents/<subject>/<date>-<kind>/` after a per-case look                                           |
+| `~/.config*`, `~/.ssh`, `~/.claude`, every tool dot-dir                                                                                              | stay at `$HOME`                                                                                      |
 
 **Why this exists — the sprawl it kills:** today "where is the note about X" has no answer: `~/.notes/tooling/fish`, `~/.notes/projects/wifi/{reviews,templates,generated,tmp}`, `~/.westernu/notes/{database,infra,deploy,old,scratch}`, 179 `notes` dirs across `$HOME`. After: `desk/notes/<subject>` is the only answer for notes Angel owns personally.
 
@@ -257,3 +267,4 @@ Sequenced after Part 1 lanes unless Angel reorders.
 | 2026-09-16 | —    | $HOME cleanup (separate from lanes): .NET retired, 25 dead caches trashed, ~/.hammerspoon retired via MJConfigFile; 98 → 74 entries. Reports in ~/.notes/tmp/config-next-2026-09-16 |
 | 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                               |
 | 2026-09-16 | P2   | Decided: notes/ without git, restic snapshots instead; secrets to a password manager first; family/ is media only; desk name retained                                               |
+| 2026-09-16 | P2   | `incidents` added as the seventh type: one home for every breakage, tools capture straight in, closed cases stay put; tmux dossier is the first landing                             |
