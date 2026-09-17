@@ -182,23 +182,24 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 ├── scripts/<subject>/           Angel's scripts; scripts a config invokes stay next to that config
 ├── repos/<subject>/             cvmapp · stage · infra · gwt · review-protocol · … (harness output stays in repos/<x>/notes)
 ├── playground/<subject>/        the warzone; disposable by contract
-├── cases/<subject>/<YYYY-MM-DD>-<kind>/       every investigation, incident or audit; tools capture straight into it
+├── audits/<subject>/<YYYY-MM-DD>-<kind>/      planned proof: audit rounds, harness runs, model comparisons, tai panels
+├── incidents/<subject>/<YYYY-MM-DD>-<kind>/   breakages: freezes, crashes, storms; tools capture straight into it
 ├── archive/<type>/<subject>/    retired material moves here, never a parked marker in place
 └── family/                      protected media; backup policy, not git
 ```
 
 **Decided:**
 
-- `cases` is the seventh type (decided 2026-09-16, CC + Codex + Angel; first named `incidents`, then merged with `audits` the same day because both are date-stamped, subject-scoped evidence kept forever). A case is an incident (something broke) or an audit (something proved); the `<kind>` says which. Today incident material sits in 11 places (~630 MB): the tmux dossier in the public config repo, September audit residue in `$HOME` and `.westernu`, memory backups, six incident write-ups in agent memory. Rules:
-  - Grammar: `cases/<subject>/<YYYY-MM-DD>-<kind>/`. Subject is whatever broke: `tmux`, `yabai`, `host`, `cvmapp`. No pre-made subject folders; one appears the day it is needed.
-  - Every case gets the same skeleton from `cases/_template/`: `CASE.md`, `timeline.md`, `recovery.md`, `decisions.md`, `evidence/`, `fixes/`. `cases/INDEX.md` lists cases.
-  - Tools capture straight into it: `tfreeze` writes its next capture to `desk/cases/tmux/<date>-freeze/`, no promotion step.
-  - Closed incidents stay put, marked `STATE: CLOSED` in `CASE.md`. This is the one exception to archive-by-move: past incidents are reference, and `ls cases/tmux/` must always show history.
+- `audits` and `incidents` are two types (Angel's decision 2026-09-16, after CC briefly merged them into `cases` on an inferred agreement; reverted the same day). Same case skeleton, same lifecycle, different intent: an audit is something Angel set out to prove, an incident is something that happened to him. Eight types total. Today incident material sits in 11 places (~630 MB): the tmux dossier in the public config repo, September audit residue in `$HOME` and `.westernu`, memory backups, six incident write-ups in agent memory. Rules:
+  - Grammar: `audits/<subject>/<YYYY-MM-DD>-<kind>/` and `incidents/<subject>/<YYYY-MM-DD>-<kind>/`. Subject is whatever broke: `tmux`, `yabai`, `host`, `cvmapp`. No pre-made subject folders; one appears the day it is needed.
+  - Every case gets the same skeleton from `<type>/_template/`: `CASE.md`, `timeline.md`, `recovery.md`, `decisions.md`, `evidence/`, `fixes/`. each type's `INDEX.md` lists its cases.
+  - Tools capture straight into it: `tfreeze` writes its next capture to `desk/incidents/tmux/<date>-freeze/`, no promotion step.
+  - Closed incidents stay put, marked `STATE: CLOSED` in `CASE.md`. This is the one exception to archive-by-move: past incidents are reference, and `ls incidents/tmux/` must always show history.
   - Branch-bound audit outputs and fixes stay in their project worktree when parallel review isolation matters; the case links to the commit or run instead of becoming a second source of truth.
   - Apple's `~/Library/Logs/DiagnosticReports/` is never relocated; the specific report is copied or referenced into the case.
-  - The `/review` harness's own output paths are untouched and out of scope; `cases/` holds only what the harness never owned: tai panels, ad-hoc audits, bug logs, hand-built verifiers, incident dossiers.
+  - The `/review` harness's own output paths are untouched and out of scope; `audits/` and `incidents/` hold only what the harness never owned: tai panels, ad-hoc audits, bug logs, hand-built verifiers, incident dossiers.
   - Kind test for any path: what kind of thing is this? If not a note, it is not under `notes/`. `notes/audits/` and `notes/incidents/` are the mistake this rule exists to prevent.
-  - First landing: `~/.config/tmux/incidents/2026-09-13-freeze/` (555 MB, only copy, unbacked) becomes `desk/cases/tmux/2026-09-13-freeze/`. The six incident memory files and `tfreeze`/`trescue` output paths are bindings to update.
+  - First landing: `~/.config/tmux/incidents/2026-09-13-freeze/` (555 MB, only copy, unbacked) becomes `desk/incidents/tmux/2026-09-13-freeze/`. The six incident memory files and `tfreeze`/`trescue` output paths are bindings to update.
 - `research` is not a type; it is notes.
 - Personal, no-project material is `notes/personal/`.
 - Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
