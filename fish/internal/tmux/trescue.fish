@@ -5,7 +5,7 @@ function trescue --description 'tmux: capture, observe, and guide loop recovery'
     end
 
     set -l target /private/tmp/tmux-501/default
-    set -l output_root $HOME/Desktop
+    set -l output_root $HOME/desk/incidents/tmux
     set -l capture $HOME/.config/tmux/tools/tmux-freeze-capture.fish
     set -l rescue $HOME/.config/tmux/tools/tmux-loop-rescue
     set -l lab 0

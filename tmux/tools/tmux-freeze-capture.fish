@@ -9,7 +9,7 @@ set -l tmux_seconds (string trim -- ""$TMUX_FREEZE_CAPTURE_TMUX_TIMEOUT_SECONDS)
 set -l lsof_seconds (string trim -- ""$TMUX_FREEZE_CAPTURE_LSOF_TIMEOUT_SECONDS)
 set -l sample_seconds (string trim -- ""$TMUX_FREEZE_CAPTURE_SAMPLE_TIMEOUT_SECONDS)
 test -n "$socket"; or set socket /private/tmp/tmux-501/default
-test -n "$output_root"; or set output_root "$HOME/Desktop"
+test -n "$output_root"; or set output_root "$HOME/desk/incidents/tmux"
 test -n "$tmux_bin"; or set tmux_bin (command -s tmux)
 test -n "$timeout_bin"; or set timeout_bin (command -s timeout)
 test -n "$timeout_bin"; or set timeout_bin (command -s gtimeout)
