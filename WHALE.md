@@ -10,32 +10,32 @@ The old tree is a museum: read it, never copy it. Live `~/.config` keeps running
 
 ## ▶ NOW
 
-| Field       | Value                                                                  |
-| ----------- | ---------------------------------------------------------------------- |
-| Lane        | 1 · Ghostty                                                            |
-| Status      | ⏸ waiting on Angel                                                     |
+| Field       | Value                                                                    |
+| ----------- | ------------------------------------------------------------------------ |
+| Lane        | 1 · Ghostty                                                              |
+| Status      | ⏸ waiting on Angel                                                      |
 | Next action | Angel says what a fresh Ghostty should feel like; then preview preflight |
-| Blocked by  | Angel                                                                  |
+| Blocked by  | Angel                                                                    |
 
 ---
 
 ## 📋 QUEUE — first to last
 
-| #   | Lane                     | Built from scratch in `~/.config-next`                                            | Status | Done looks like                                                                                   |
-| --- | ------------------------ | --------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
-| 0   | Foundation               | tag + worktree + empty workshop                                                   | ✅     | tag `dotfiles-before-redesign-2026-09-15`; workshop holds only this file                          |
-| 0.5 | 🐟 Fish break list       | read-only audit of what calls into fish                                           | ✅     | BREAK LIST below: what dies the moment fish is empty                                              |
-| 1   | Ghostty                  | `ghostty/`                                                                        | ⏸      | _Angel defines_                                                                                   |
-| 2   | Alacritty decision       | `alacritty/`                                                                      | ⏳     | rebuilt from zero, or left dead                                                                   |
-| 3   | Starship                 | `starship/`                                                                       | ⏳     | _Angel defines_                                                                                   |
-| 4   | Yazi                     | `yazi/` + its fish entry points                                                   | ⏳     | _Angel defines_                                                                                   |
-| 5   | eza + git                | `eza/` `git/` + its fish entry points                                             | ⏳     | _Angel defines_                                                                                   |
-| 6   | 🐟 Fish core             | `fish/` minus what other lanes claim                                              | ⏳     | _Angel defines_                                                                                   |
-| 7   | tmux                     | `tmux.conf` from zero; `tmux/tools/` survives untouched                           | ⏳     | _Angel defines_                                                                                   |
-| 8   | Hammerspoon              | `hammerspoon/`                                                                    | ⏳     | _Angel defines_                                                                                   |
-| 9   | yabai + skhd + Karabiner | `yabai/` `skhd/` `karabiner/` + their fish entry points                           | ⏳     | _Angel defines_                                                                                   |
-| 10  | Root sweep               | repo root and docs                                                                | ⏳     | root holds only what belongs; README/CLAUDE.md describe the new house                             |
-| 11  | 🐋 Neovim                | `nvim/` + its fish entry points                                                   | 🔒     | separate 2026–27 project; locked until then                                                       |
+| #   | Lane                     | Built from scratch in `~/.config-next`                  | Status | Done looks like                                                          |
+| --- | ------------------------ | ------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| 0   | Foundation               | tag + worktree + empty workshop                         | ✅     | tag `dotfiles-before-redesign-2026-09-15`; workshop holds only this file |
+| 0.5 | 🐟 Fish break list       | read-only audit of what calls into fish                 | ✅     | BREAK LIST below: what dies the moment fish is empty                     |
+| 1   | Ghostty                  | `ghostty/`                                              | ⏸     | _Angel defines_                                                          |
+| 2   | Alacritty decision       | `alacritty/`                                            | ⏳     | rebuilt from zero, or left dead                                          |
+| 3   | Starship                 | `starship/`                                             | ⏳     | _Angel defines_                                                          |
+| 4   | Yazi                     | `yazi/` + its fish entry points                         | ⏳     | _Angel defines_                                                          |
+| 5   | eza + git                | `eza/` `git/` + its fish entry points                   | ⏳     | _Angel defines_                                                          |
+| 6   | 🐟 Fish core             | `fish/` minus what other lanes claim                    | ⏳     | _Angel defines_                                                          |
+| 7   | tmux                     | `tmux.conf` from zero; `tmux/tools/` survives untouched | ⏳     | _Angel defines_                                                          |
+| 8   | Hammerspoon              | `hammerspoon/`                                          | ⏳     | _Angel defines_                                                          |
+| 9   | yabai + skhd + Karabiner | `yabai/` `skhd/` `karabiner/` + their fish entry points | ⏳     | _Angel defines_                                                          |
+| 10  | Root sweep               | repo root and docs                                      | ⏳     | root holds only what belongs; README/CLAUDE.md describe the new house    |
+| 11  | 🐋 Neovim                | `nvim/` + its fish entry points                         | 🔒     | separate 2026–27 project; locked until then                              |
 
 Status: ✅ done · ▶ in progress · ⏸ waiting on Angel · ⏳ queued · 🔒 locked
 
@@ -80,12 +80,12 @@ Status: ✅ done · ▶ in progress · ⏸ waiting on Angel · ⏳ queued · �
 
 ## 🏛 MUSEUM — the old tree, read-only
 
-| Need                    | Command                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| List the old files      | `git -C ~/.config ls-tree -r --name-only dotfiles-before-redesign-2026-09-15`   |
-| Read one old file       | `git -C ~/.config show dotfiles-before-redesign-2026-09-15:ghostty/config`      |
-| See a setting's history | `git -C ~/.config log -p --all -- <path>`                                        |
-| The live copy           | still running in `~/.config` until that lane is promoted                        |
+| Need                    | Command                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| List the old files      | `git -C ~/.config ls-tree -r --name-only dotfiles-before-redesign-2026-09-15` |
+| Read one old file       | `git -C ~/.config show dotfiles-before-redesign-2026-09-15:ghostty/config`    |
+| See a setting's history | `git -C ~/.config log -p --all -- <path>`                                     |
+| The live copy           | still running in `~/.config` until that lane is promoted                      |
 
 ---
 
@@ -114,58 +114,58 @@ From the lane 0.5 read-only audit. Line references point at the live tree and th
 
 ### Startup chain — static only
 
-| Order | Contract | Evidence |
-| --- | --- | --- |
-| 0 | Fish runtime handling of universal variables and `conf.d` precedes this file only by Fish semantics; exact order is **UNVERIFIED** because this audit did not start Fish. | `fish/fish_variables:1-14`; `fish/conf.d/fzf.fish:1-14`; `fish/conf.d/rustup.fish:1`; `fish/conf.d/sponge.fish:1-52`; `fish/conf.d/z.fish:1-46` |
-| 1 | Global startup exports `STARSHIP_CONFIG`, `EZA_CONFIG_DIR`, `PYENV_ROOT`, `BASH_ENV`, `EDITOR`, and `VISUAL`; Homebrew and pyenv mutate `PATH`. | `fish/config.fish:4-42` |
-| 2 | `config.fish` prepends every `internal/*/` directory to `fish_function_path`, then eagerly sources the Codex wrapper. | `fish/config.fish:50-65` |
-| 3 | Interactive shells initialize Starship, source the Gruvbox theme, lazily integrate jenv, initialize fnm, hook direnv, define eza aliases/abbrs/binding, and keep `n`/`nvim-v3` aliases. | `fish/config.fish:68-159` |
-| 4 | All shells add Kimi and local-bin paths after the interactive block. `fish_plugins` is a Fisher manifest, not a startup install command. | `fish/config.fish:166-180`; `fish/fish_plugins:1-4`; `fish/functions/fisher.fish:1` |
+| Order | Contract                                                                                                                                                                                | Evidence                                                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Fish runtime handling of universal variables and `conf.d` precedes this file only by Fish semantics; exact order is **UNVERIFIED** because this audit did not start Fish.               | `fish/fish_variables:1-14`; `fish/conf.d/fzf.fish:1-14`; `fish/conf.d/rustup.fish:1`; `fish/conf.d/sponge.fish:1-52`; `fish/conf.d/z.fish:1-46` |
+| 1     | Global startup exports `STARSHIP_CONFIG`, `EZA_CONFIG_DIR`, `PYENV_ROOT`, `BASH_ENV`, `EDITOR`, and `VISUAL`; Homebrew and pyenv mutate `PATH`.                                         | `fish/config.fish:4-42`                                                                                                                         |
+| 2     | `config.fish` prepends every `internal/*/` directory to `fish_function_path`, then eagerly sources the Codex wrapper.                                                                   | `fish/config.fish:50-65`                                                                                                                        |
+| 3     | Interactive shells initialize Starship, source the Gruvbox theme, lazily integrate jenv, initialize fnm, hook direnv, define eza aliases/abbrs/binding, and keep `n`/`nvim-v3` aliases. | `fish/config.fish:68-159`                                                                                                                       |
+| 4     | All shells add Kimi and local-bin paths after the interactive block. `fish_plugins` is a Fisher manifest, not a startup install command.                                                | `fish/config.fish:166-180`; `fish/fish_plugins:1-4`; `fish/functions/fisher.fish:1`                                                             |
 
 ### Per-lane break contract
 
-| Lane | Fish surface and entry points | Must keep working, or die on purpose | Evidence |
-| --- | --- | --- | --- |
-| 1 Ghostty | No Fish-owned file. Ghostty detects shell integration but does not statically select Fish. | `SHELL`/login-shell route **UNKNOWN**; a new Ghostty terminal must reach the expected interactive Fish prompt. | `ghostty/config:90-99` |
-| 2 Alacritty | Alacritty directly starts Fish. | `/opt/homebrew/bin/fish` remains executable; a new Alacritty window starts cleanly. | `alacritty/alacritty.toml:104-105` |
-| 3 Starship | Fish exports `STARSHIP_CONFIG` and pipes `starship init fish` into `source`. | `STARSHIP_CONFIG`; interactive prompt and theme render. | `fish/config.fish:4,68-75` |
-| 4 Yazi | `yazi` preserves cwd through a temp file; `lf` starts Neovim's current rebuild with Yazi. | `NVIM_APPNAME`; `yazi` returns to selected cwd and `lf` opens the expected editor route. | `fish/functions/yazi.fish:2-12`; `fish/internal/yazi/lf.fish:2-4` |
-| 5 eza + git | eza aliases are `ls la ll ld lr lt`; `set-eza-theme` reads and writes the eza theme link. No Git-owned Fish entry point was found. | `EZA_CONFIG_DIR`; aliases and selector work; Git-oriented fzf helpers remain available. | `fish/config.fish:5,140-147`; `fish/internal/eza/set-eza-theme.fish:1-22`; `fish/functions/_fzf_search_git_status.fish:1` |
-| 6 Fish core | Owns everything below not claimed by another lane; detailed ledger follows. | Preserve noninteractive and interactive startup. | `fish/config.fish:4-180` |
-| 7 tmux | `t`, `tn`, `tK`, `tai`, `tfreeze`, `trescue`; `tai` launches a login Fish in new agent panes. | `TMUX`, `TMUX_FREEZE_CAPTURE_*`, `TMUX_SHORTCUTS_LAB_*`; emergency safeguards remain intact. | `fish/internal/tmux/t.fish:1-8`; `fish/internal/tmux/tai.fish:86-109`; `fish/internal/tmux/tfreeze.fish:1-69`; `fish/internal/tmux/trescue.fish:1-75` |
-| 8 Hammerspoon | No Fish-owned surface or static direct caller found. | Runtime coupling **UNKNOWN**; do not infer a safe change from static absence. | `UNKNOWN (static scan: hammerspoon/)` |
-| 9 yabai + skhd + Karabiner | `ys yk yp yr _swap_skhd_profile sk skr`; skhd invokes `fish -c` for `yr` and `yp`. | `HOME`, `PATH`; service and profile hotkeys still resolve Fish and their functions. | `fish/internal/yabai/yp.fish:13-62`; `fish/internal/yabai/yr.fish:13-111`; `fish/internal/skhd/sk.fish:3-10`; `skhd/skhdrc:45-67`; `skhd/modules/shared/services.skhdrc:6-25` |
-| 10 Root sweep | No Fish surface is owned; docs retain a manual source instruction. | External callers stay inventory-only. | `CLAUDE.md:13,41-45` |
-| 11 Neovim 🔒 | Locked: `v`, `vim`, plus `n` and `nvim-v3` aliases; Neovim itself selects Fish as shell. | `NVIM_APPNAME`; plain `nvim`, `n`, `v`, and `vim` retain their current routes until lane 11. | `fish/internal/nvim/v.fish:2-9`; `fish/internal/nvim/vim.fish:2-9`; `fish/config.fish:158-159`; `nvim-rebuild/lua/core/options.lua:75` |
+| Lane                       | Fish surface and entry points                                                                                                      | Must keep working, or die on purpose                                                                           | Evidence                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Ghostty                  | No Fish-owned file. Ghostty detects shell integration but does not statically select Fish.                                         | `SHELL`/login-shell route **UNKNOWN**; a new Ghostty terminal must reach the expected interactive Fish prompt. | `ghostty/config:90-99`                                                                                                                                                        |
+| 2 Alacritty                | Alacritty directly starts Fish.                                                                                                    | `/opt/homebrew/bin/fish` remains executable; a new Alacritty window starts cleanly.                            | `alacritty/alacritty.toml:104-105`                                                                                                                                            |
+| 3 Starship                 | Fish exports `STARSHIP_CONFIG` and pipes `starship init fish` into `source`.                                                       | `STARSHIP_CONFIG`; interactive prompt and theme render.                                                        | `fish/config.fish:4,68-75`                                                                                                                                                    |
+| 4 Yazi                     | `yazi` preserves cwd through a temp file; `lf` starts Neovim's current rebuild with Yazi.                                          | `NVIM_APPNAME`; `yazi` returns to selected cwd and `lf` opens the expected editor route.                       | `fish/functions/yazi.fish:2-12`; `fish/internal/yazi/lf.fish:2-4`                                                                                                             |
+| 5 eza + git                | eza aliases are `ls la ll ld lr lt`; `set-eza-theme` reads and writes the eza theme link. No Git-owned Fish entry point was found. | `EZA_CONFIG_DIR`; aliases and selector work; Git-oriented fzf helpers remain available.                        | `fish/config.fish:5,140-147`; `fish/internal/eza/set-eza-theme.fish:1-22`; `fish/functions/_fzf_search_git_status.fish:1`                                                     |
+| 6 Fish core                | Owns everything below not claimed by another lane; detailed ledger follows.                                                        | Preserve noninteractive and interactive startup.                                                               | `fish/config.fish:4-180`                                                                                                                                                      |
+| 7 tmux                     | `t`, `tn`, `tK`, `tai`, `tfreeze`, `trescue`; `tai` launches a login Fish in new agent panes.                                      | `TMUX`, `TMUX_FREEZE_CAPTURE_*`, `TMUX_SHORTCUTS_LAB_*`; emergency safeguards remain intact.                   | `fish/internal/tmux/t.fish:1-8`; `fish/internal/tmux/tai.fish:86-109`; `fish/internal/tmux/tfreeze.fish:1-69`; `fish/internal/tmux/trescue.fish:1-75`                         |
+| 8 Hammerspoon              | No Fish-owned surface or static direct caller found.                                                                               | Runtime coupling **UNKNOWN**; do not infer a safe change from static absence.                                  | `UNKNOWN (static scan: hammerspoon/)`                                                                                                                                         |
+| 9 yabai + skhd + Karabiner | `ys yk yp yr _swap_skhd_profile sk skr`; skhd invokes `fish -c` for `yr` and `yp`.                                                 | `HOME`, `PATH`; service and profile hotkeys still resolve Fish and their functions.                            | `fish/internal/yabai/yp.fish:13-62`; `fish/internal/yabai/yr.fish:13-111`; `fish/internal/skhd/sk.fish:3-10`; `skhd/skhdrc:45-67`; `skhd/modules/shared/services.skhdrc:6-25` |
+| 10 Root sweep              | No Fish surface is owned; docs retain a manual source instruction.                                                                 | External callers stay inventory-only.                                                                          | `CLAUDE.md:13,41-45`                                                                                                                                                          |
+| 11 Neovim 🔒               | Locked: `v`, `vim`, plus `n` and `nvim-v3` aliases; Neovim itself selects Fish as shell.                                           | `NVIM_APPNAME`; plain `nvim`, `n`, `v`, and `vim` retain their current routes until lane 11.                   | `fish/internal/nvim/v.fish:2-9`; `fish/internal/nvim/vim.fish:2-9`; `fish/config.fish:158-159`; `nvim-rebuild/lua/core/options.lua:75`                                        |
 
 ### Lane 6 core ledger
 
-| Area | Owned contract | Evidence |
-| --- | --- | --- |
+| Area           | Owned contract                                                                                                                                                                                                                                                                                                                                                               | Evidence                                                                                                                                                                                                                                                                                           |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Agent boundary | `_agent_limit` caps child agent trees; wrappers are `claude cc cu agy gemini qwen deepseek openrouter codex kimi kimi-cli`. Preserve `AGENT_NPROC_CAP`. Credential and routing variables are referenced by family only: the DeepSeek and OpenAI provider key variables, the Anthropic variable family, the OpenAI base-URL variable, and the Claude subagent-model variable. | `fish/internal/claude/_agent_limit.fish:31-64`; `fish/internal/claude/claude.fish:8-14`; `fish/internal/claude/cc.fish:2-58`; `fish/internal/claude/deepseek.fish:1-53`; `fish/internal/claude/openrouter.fish:1-101`; `fish/internal/codex/codex.fish:1-48`; `fish/internal/kimi/kimi.fish:34-38` |
-| System helpers | `bu`; `net`; Python/pyenv wrappers; `freeport sbr sbt sr st`; `trash-pick`; tracked dormant `vscode/c.txt`; project worktree helpers `cvmapp-wt* cwt rp-wt* rwt stage-wt* swt swt-close`. Home-level tool roots and `PATH` are dependencies. | `fish/internal/brew/bu.fish:1-2`; `fish/internal/net/net.fish:46-52,323,528`; `fish/internal/python/_pyenv_lazy_init.fish:1-4`; `fish/internal/spring-boot/freeport.fish:1-13`; `fish/internal/worktree/stage/stage-wt.fish:1` |
-| Interactive UX | Fisher-managed `fzf`, `sponge`, and `z` functions/conf.d, generic completions, Gruvbox theme, `..`/`...`, and Ctrl-D binding belong here; `yazi.fish` is lane 4. Variables: `Z_DATA`, `Z_DATA_DIR`, `Z_CMD`, `ZO_CMD`, `Z_EXCLUDE`, `sponge_*`, `fish_key_bindings`. | `fish/conf.d/fzf.fish:1-21`; `fish/conf.d/sponge.fish:1-52`; `fish/conf.d/z.fish:1-46`; `fish/config.fish:73-75,149-155`; `fish/fish_plugins:1-4` |
+| System helpers | `bu`; `net`; Python/pyenv wrappers; `freeport sbr sbt sr st`; `trash-pick`; tracked dormant `vscode/c.txt`; project worktree helpers `cvmapp-wt* cwt rp-wt* rwt stage-wt* swt swt-close`. Home-level tool roots and `PATH` are dependencies.                                                                                                                                 | `fish/internal/brew/bu.fish:1-2`; `fish/internal/net/net.fish:46-52,323,528`; `fish/internal/python/_pyenv_lazy_init.fish:1-4`; `fish/internal/spring-boot/freeport.fish:1-13`; `fish/internal/worktree/stage/stage-wt.fish:1`                                                                     |
+| Interactive UX | Fisher-managed `fzf`, `sponge`, and `z` functions/conf.d, generic completions, Gruvbox theme, `..`/`...`, and Ctrl-D binding belong here; `yazi.fish` is lane 4. Variables: `Z_DATA`, `Z_DATA_DIR`, `Z_CMD`, `ZO_CMD`, `Z_EXCLUDE`, `sponge_*`, `fish_key_bindings`.                                                                                                         | `fish/conf.d/fzf.fish:1-21`; `fish/conf.d/sponge.fish:1-52`; `fish/conf.d/z.fish:1-46`; `fish/config.fish:73-75,149-155`; `fish/fish_plugins:1-4`                                                                                                                                                  |
 
 ### External caller ledger
 
-| Caller | Contract | Evidence |
-| --- | --- | --- |
-| Alacritty | Directly execs Fish, so every Fish startup regression is an Alacritty regression. | `alacritty/alacritty.toml:104-105` |
-| skhd | Root uses Bash, shared service bindings explicitly run `fish -c "yr"` and `fish -c "yp …"`; changing autoload/path breaks hotkeys. | `skhd/skhdrc:45-61`; `skhd/modules/shared/services.skhdrc:6-25` |
-| Neovim | Sets its shell to Fish; shell commands depend on Fish startup. | `nvim-rebuild/lua/core/options.lua:75` |
-| tmux emergency path | Fish functions call the Fish capture script through absolute tmux-tool paths. | `fish/internal/tmux/tfreeze.fish:7-10,62-69`; `fish/internal/tmux/trescue.fish:7-10,64-75`; `tmux/tools/tmux-freeze-capture.fish:1,53` |
-| External repair script | `~/.scripts/fix-effort.sh` invokes Fish and mutates live Fish state/source; it is outside this repo but must be inventoried before any variable or path redesign. | `~/.scripts/fix-effort.sh:6,10,14-15,22-23` |
-| Scan boundary | No static direct invocation was found in `hammerspoon/`, `yabai/`, `karabiner/`, `yazi/`, active `tmux/tmux.conf`, `git/`, `~/.local/bin`, LaunchAgents, or current Claude/Codex settings/statusline files; runtime/system callers remain **UNKNOWN**. | `UNKNOWN (static search only)` |
+| Caller                 | Contract                                                                                                                                                                                                                                               | Evidence                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Alacritty              | Directly execs Fish, so every Fish startup regression is an Alacritty regression.                                                                                                                                                                      | `alacritty/alacritty.toml:104-105`                                                                                                     |
+| skhd                   | Root uses Bash, shared service bindings explicitly run `fish -c "yr"` and `fish -c "yp …"`; changing autoload/path breaks hotkeys.                                                                                                                     | `skhd/skhdrc:45-61`; `skhd/modules/shared/services.skhdrc:6-25`                                                                        |
+| Neovim                 | Sets its shell to Fish; shell commands depend on Fish startup.                                                                                                                                                                                         | `nvim-rebuild/lua/core/options.lua:75`                                                                                                 |
+| tmux emergency path    | Fish functions call the Fish capture script through absolute tmux-tool paths.                                                                                                                                                                          | `fish/internal/tmux/tfreeze.fish:7-10,62-69`; `fish/internal/tmux/trescue.fish:7-10,64-75`; `tmux/tools/tmux-freeze-capture.fish:1,53` |
+| External repair script | `~/.scripts/fix-effort.sh` invokes Fish and mutates live Fish state/source; it is outside this repo but must be inventoried before any variable or path redesign.                                                                                      | `~/.scripts/fix-effort.sh:6,10,14-15,22-23`                                                                                            |
+| Scan boundary          | No static direct invocation was found in `hammerspoon/`, `yabai/`, `karabiner/`, `yazi/`, active `tmux/tmux.conf`, `git/`, `~/.local/bin`, LaunchAgents, or current Claude/Codex settings/statusline files; runtime/system callers remain **UNKNOWN**. | `UNKNOWN (static search only)`                                                                                                         |
 
 ### Preview hazards and live-only state
 
-| Item | Hazard | Evidence |
-| --- | --- | --- |
-| Live-root leaks | The old config hardcodes the live Fish internal root, Codex source, theme, Starship, and eza paths; an XDG-only preview would load live behavior. A fresh fish must resolve its own root. | `fish/config.fish:4-5,50-65,73-75` |
-| Home-level tools | pyenv, `BASH_ENV`, jenv, fnm, direnv, Cargo, Kimi, and local-bin are live-home dependencies; changing XDG directories does not isolate them. | `fish/config.fish:20-38,77-131,166-176`; `fish/conf.d/rustup.fish:1` |
-| Runtime writes | `z` creates `Z_DATA` and `sponge` sets universal variables; a preview must isolate both before it starts. | `fish/conf.d/z.fish:1-15`; `fish/conf.d/sponge.fish:5-31` |
-| Live-only secrets overlay | `fish/conf.d/secrets.local.fish` exists in live only, is git-ignored, and every `conf.d` load sources it. It survives promotion (verified: `git restore` deletes tracked files and leaves untracked ones). Never copy it into the workshop or read its values. | `.gitignore:227-228`; `fish/conf.d/secrets.local.fish:1` |
-| Generated/local state | `fish_variables` is ignored runtime state; `completions/copilot.fish` is untracked generated output; `.DS_Store` files are ignored metadata. | `.gitignore:14,232`; `fish/fish_variables:1-14`; `fish/completions/copilot.fish:1-2` |
+| Item                      | Hazard                                                                                                                                                                                                                                                         | Evidence                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Live-root leaks           | The old config hardcodes the live Fish internal root, Codex source, theme, Starship, and eza paths; an XDG-only preview would load live behavior. A fresh fish must resolve its own root.                                                                      | `fish/config.fish:4-5,50-65,73-75`                                                   |
+| Home-level tools          | pyenv, `BASH_ENV`, jenv, fnm, direnv, Cargo, Kimi, and local-bin are live-home dependencies; changing XDG directories does not isolate them.                                                                                                                   | `fish/config.fish:20-38,77-131,166-176`; `fish/conf.d/rustup.fish:1`                 |
+| Runtime writes            | `z` creates `Z_DATA` and `sponge` sets universal variables; a preview must isolate both before it starts.                                                                                                                                                      | `fish/conf.d/z.fish:1-15`; `fish/conf.d/sponge.fish:5-31`                            |
+| Live-only secrets overlay | `fish/conf.d/secrets.local.fish` exists in live only, is git-ignored, and every `conf.d` load sources it. It survives promotion (verified: `git restore` deletes tracked files and leaves untracked ones). Never copy it into the workshop or read its values. | `.gitignore:227-228`; `fish/conf.d/secrets.local.fish:1`                             |
+| Generated/local state     | `fish_variables` is ignored runtime state; `completions/copilot.fish` is untracked generated output; `.DS_Store` files are ignored metadata.                                                                                                                   | `.gitignore:14,232`; `fish/fish_variables:1-14`; `fish/completions/copilot.fish:1-2` |
 
 ---
 
@@ -187,25 +187,29 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 ```
 
 **Decided:**
+
 - `research` is not a type; it is notes.
 - Personal, no-project material is `notes/personal/`.
 - Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
 - Inactive things move to `archive/`, they do not get marked in place.
-- Git is per type: `notes/` and `scripts/` are private repos; each `repos/<x>` is its own; `family/` and `archive/` are not git.
+- Git only where branches matter: each `repos/<x>` is its own repo. `notes/` has NO git (decided 2026-09-16, CC + Codex + Angel): plain files, write freely, versioned and backed up by restic encrypted snapshots instead. `scripts/` may be a private repo. `family/` and `archive/` are never git.
+- Secrets never live in files: every credential value goes to a password manager; a note holds a pointer only. First move of Part 2, before any backup runs: the credential `.md` files currently under `desk/.family/me/vps/` (token, recovery key, ssh) go to the password manager.
+- `desk/family/` holds protected media only (yaretzy, dad, mom, anthony). Notes about family are `notes/family/<person>`. The current `desk/.family/me/` is 29 markdown notes misfiled under media; they land in `notes/personal/…`, `notes/vps`, `notes/startup`, `notes/danny`.
+- Sequencing rule, non-negotiable: restic running against `desk/`, one snapshot taken, one test note restored, before the `.git` comes out of notes. Never a moment where notes are one copy on one SSD.
 
 **Where today's roots land:**
 
-| Today | Lands in |
-| --- | --- |
-| `~/.notes` | `notes/` (projects split into subjects; personal into `notes/personal/`; `secret/` stays local-only) |
-| `~/.scripts` | `scripts/<subject>/` |
-| `~/.repository/*` | `repos/<x>` |
-| `~/.westernu/cvmapp`, `notes`, audits | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/` |
-| `~/.skills/review-protocol` | `repos/review-protocol` |
-| `~/.archive` | `archive/` |
-| `~/desk/.family` | `family/` |
-| `~/desk/playground` | stays |
-| `~/.config*`, `~/.ssh`, `~/.claude`, every tool dot-dir | stay at `$HOME` |
+| Today                                                   | Lands in                                                                                             |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `~/.notes`                                              | `notes/` (projects split into subjects; personal into `notes/personal/`; `secret/` stays local-only) |
+| `~/.scripts`                                            | `scripts/<subject>/`                                                                                 |
+| `~/.repository/*`                                       | `repos/<x>`                                                                                          |
+| `~/.westernu/cvmapp`, `notes`, audits                   | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/`                                        |
+| `~/.skills/review-protocol`                             | `repos/review-protocol`                                                                              |
+| `~/.archive`                                            | `archive/`                                                                                           |
+| `~/desk/.family`                                        | `family/`                                                                                            |
+| `~/desk/playground`                                     | stays                                                                                                |
+| `~/.config*`, `~/.ssh`, `~/.claude`, every tool dot-dir | stay at `$HOME`                                                                                      |
 
 **Why this exists — the sprawl it kills:** today "where is the note about X" has no answer: `~/.notes/tooling/fish`, `~/.notes/projects/wifi/{reviews,templates,generated,tmp}`, `~/.westernu/notes/{database,infra,deploy,old,scratch}`, 179 `notes` dirs across `$HOME`. After: `desk/notes/<subject>` is the only answer for notes Angel owns personally.
 
@@ -221,6 +225,7 @@ For a heavy harness project like stage the second line may stay empty. For confi
 **tmux is the front door.** Every day starts: boot → Ghostty → tmux → pick a session. Sessions are subjects, except that one session can span several: `config` covers fish, tmux, ghostty, starship. The tree does not bend for that, no `notes/config/`; the launcher carries a small session → subjects map (`CVMAPP → cvmapp`, `config → fish tmux ghostty …`). The tree must make `session → desk/*/<subject>` trivial; a session launcher is lane 7 work, carried here so Part 2 never designs against it.
 
 **Before a single move:**
+
 1. Path-binding map: 37 memory dirs keyed by absolute path, 39 worktree gitdir pointers, 50 tmux-resurrect saves, fish functions, symlinks, agent configs, launchd, Obsidian vault registration. Each with its repair command.
 2. Backup tool chosen and running against the root: restic or Time Machine to an external disk. Not iCloud; it rewrites `.git` and symlinks and is sync, not backup.
 3. Then one move sitting, one repair, verify, done. No symlink bridges.
@@ -240,14 +245,15 @@ Sequenced after Part 1 lanes unless Angel reorders.
 
 ## 📜 LOG
 
-| Date       | Lane | Entry                                                                                                                                                                          |
-| ---------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-15 | 0    | Tag + `~/.config-next` worktree created                                                                                                                                        |
-| 2026-09-15 | —    | CC roadmap canonical, Codex principle layered; tracker created                                                                                                                 |
-| 2026-09-15 | —    | Codex review: bounded promotion sets, retirement-candidate inventory, Ghostty version-specific preview preflight, no-force promotion, and Neovim archive protection clarified  |
-| 2026-09-15 | —    | Tracker committed on `rebuild/dotfiles` as the first checkpoint                                                                                                                 |
-| 2026-09-15 | 0.5  | Angel adopted Codex's order: read-only fish contract audit first, fish core at lane 6, each tool's fish glue moves with its lane; lane 0.5 started                              |
-| 2026-09-15 | 0.5  | Codex completed static Fish contract: startup, lane ownership, callers, preview leaks, and runtime-data boundaries mapped                                                       |
-| 2026-09-15 | 0    | **Blank slate.** Angel nuked the workshop: 415 files deleted, only WHALE.md remains. Nothing is ported; the audit became the BREAK LIST; museum access via the baseline tag     |
+| Date       | Lane | Entry                                                                                                                                                                               |
+| ---------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-15 | 0    | Tag + `~/.config-next` worktree created                                                                                                                                             |
+| 2026-09-15 | —    | CC roadmap canonical, Codex principle layered; tracker created                                                                                                                      |
+| 2026-09-15 | —    | Codex review: bounded promotion sets, retirement-candidate inventory, Ghostty version-specific preview preflight, no-force promotion, and Neovim archive protection clarified       |
+| 2026-09-15 | —    | Tracker committed on `rebuild/dotfiles` as the first checkpoint                                                                                                                     |
+| 2026-09-15 | 0.5  | Angel adopted Codex's order: read-only fish contract audit first, fish core at lane 6, each tool's fish glue moves with its lane; lane 0.5 started                                  |
+| 2026-09-15 | 0.5  | Codex completed static Fish contract: startup, lane ownership, callers, preview leaks, and runtime-data boundaries mapped                                                           |
+| 2026-09-15 | 0    | **Blank slate.** Angel nuked the workshop: 415 files deleted, only WHALE.md remains. Nothing is ported; the audit became the BREAK LIST; museum access via the baseline tag         |
 | 2026-09-16 | —    | $HOME cleanup (separate from lanes): .NET retired, 25 dead caches trashed, ~/.hammerspoon retired via MJConfigFile; 98 → 74 entries. Reports in ~/.notes/tmp/config-next-2026-09-16 |
-| 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                             |
+| 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                               |
+| 2026-09-16 | P2   | Decided: notes/ without git, restic snapshots instead; secrets to a password manager first; family/ is media only; desk name retained                                               |
