@@ -169,6 +169,64 @@ From the lane 0.5 read-only audit. Line references point at the live tree and th
 
 ---
 
+## 🏠 PART 2 · THE ROOT — designed 2026-09-16, nothing moved
+
+One visible root holds every possession, so one backup covers it. Dotfiles and tool-owned dot-dirs stay at `$HOME`; they are rebuildable and never move.
+
+**Grammar:** `root / <type> / <subject>`. First folder is what kind of thing, second is what it is about. Never the other way round, not even for work. A tmux session is a subject; the types are directories, so `CVMAPP` lands on `repos/cvmapp` and its notes and scripts are one `cd` away.
+
+```
+~/desk/                          name retained 2026-09-16
+├── notes/<subject>/             everything Angel writes: tool notes, project notes, research, personal
+│   └── personal/                journal · learning · career · life admin
+├── scripts/<subject>/           Angel's scripts; scripts a config invokes stay next to that config
+├── repos/<subject>/             cvmapp · stage · infra · gwt · review-protocol · … (harness output stays in repos/<x>/notes)
+├── playground/<subject>/        the warzone; disposable by contract
+├── archive/<type>/<subject>/    retired material moves here, never a parked marker in place
+└── family/                      protected media; backup policy, not git
+```
+
+**Decided:**
+- `research` is not a type; it is notes.
+- Personal, no-project material is `notes/personal/`.
+- Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
+- Inactive things move to `archive/`, they do not get marked in place.
+- Git is per type: `notes/` and `scripts/` are private repos; each `repos/<x>` is its own; `family/` and `archive/` are not git.
+
+**Where today's roots land:**
+
+| Today | Lands in |
+| --- | --- |
+| `~/.notes` | `notes/` (projects split into subjects; personal into `notes/personal/`; `secret/` stays local-only) |
+| `~/.scripts` | `scripts/<subject>/` |
+| `~/.repository/*` | `repos/<x>` |
+| `~/.westernu/cvmapp`, `notes`, audits | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/` |
+| `~/.skills/review-protocol` | `repos/review-protocol` |
+| `~/.archive` | `archive/` |
+| `~/desk/.family` | `family/` |
+| `~/desk/playground` | stays |
+| `~/.config*`, `~/.ssh`, `~/.claude`, every tool dot-dir | stay at `$HOME` |
+
+**Why this exists — the sprawl it kills:** today "where is the note about X" has no answer: `~/.notes/tooling/fish`, `~/.notes/projects/wifi/{reviews,templates,generated,tmp}`, `~/.westernu/notes/{database,infra,deploy,old,scratch}`, 179 `notes` dirs across `$HOME`. After: `desk/notes/<subject>` is the only answer for notes Angel owns personally.
+
+**Ownership rule (learned the hard way with `gwt`):** a project's knowledge lives in `repos/<x>/notes/`, versioned with the code, one copy per worktree, so parallel review rounds never write over each other. That includes human-written plans, decisions, runbooks and onboarding, not just harness receipts; moving them out of the repo separates instructions from the version they describe. Two lines, both true:
+
+```
+repos/<x>/notes/     anything that can go stale against a commit: plans, review rounds, decisions in flight, runbooks tied to a version
+desk/notes/<x>/      anything that must survive the repo: notes for a public repo (config), post-mortems, the layer you would want if the project were deleted tomorrow
+```
+
+For a heavy harness project like stage the second line may stay empty. For config it is the only line, because the repo is public.
+
+**tmux is the front door.** Every day starts: boot → Ghostty → tmux → pick a session. Sessions are subjects, except that one session can span several: `config` covers fish, tmux, ghostty, starship. The tree does not bend for that, no `notes/config/`; the launcher carries a small session → subjects map (`CVMAPP → cvmapp`, `config → fish tmux ghostty …`). The tree must make `session → desk/*/<subject>` trivial; a session launcher is lane 7 work, carried here so Part 2 never designs against it.
+
+**Before a single move:**
+1. Path-binding map: 37 memory dirs keyed by absolute path, 39 worktree gitdir pointers, 50 tmux-resurrect saves, fish functions, symlinks, agent configs, launchd, Obsidian vault registration. Each with its repair command.
+2. Backup tool chosen and running against the root: restic or Time Machine to an external disk. Not iCloud; it rewrites `.git` and symlinks and is sync, not backup.
+3. Then one move sitting, one repair, verify, done. No symlink bridges.
+
+Sequenced after Part 1 lanes unless Angel reorders.
+
 ## 🅿 PARKED — real, but not the Whale. Do not start from here.
 
 - tmux: review latest `tmux-loop-rescue` delta (SHA `94daaa4f…`)
@@ -191,3 +249,5 @@ From the lane 0.5 read-only audit. Line references point at the live tree and th
 | 2026-09-15 | 0.5  | Angel adopted Codex's order: read-only fish contract audit first, fish core at lane 6, each tool's fish glue moves with its lane; lane 0.5 started                              |
 | 2026-09-15 | 0.5  | Codex completed static Fish contract: startup, lane ownership, callers, preview leaks, and runtime-data boundaries mapped                                                       |
 | 2026-09-15 | 0    | **Blank slate.** Angel nuked the workshop: 415 files deleted, only WHALE.md remains. Nothing is ported; the audit became the BREAK LIST; museum access via the baseline tag     |
+| 2026-09-16 | —    | $HOME cleanup (separate from lanes): .NET retired, 25 dead caches trashed, ~/.hammerspoon retired via MJConfigFile; 98 → 74 entries. Reports in ~/.notes/tmp/config-next-2026-09-16 |
+| 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                             |
