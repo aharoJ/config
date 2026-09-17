@@ -199,7 +199,7 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
   - Apple's `~/Library/Logs/DiagnosticReports/` is never relocated; the specific report is copied or referenced into the case.
   - The `/review` harness's own output paths are untouched and out of scope; `audits/` and `incidents/` hold only what the harness never owned: tai panels, ad-hoc audits, bug logs, hand-built verifiers, incident dossiers.
   - Kind test for any path: what kind of thing is this? If not a note, it is not under `notes/`. `notes/audits/` and `notes/incidents/` are the mistake this rule exists to prevent.
-  - First landing: `~/.config/tmux/incidents/2026-09-13-freeze/` (555 MB, only copy, unbacked) becomes `desk/incidents/tmux/2026-09-13-freeze/`. The six incident memory files and `tfreeze`/`trescue` output paths are bindings to update.
+  - First landing done 2026-09-17: `desk/incidents/tmux/2026-09-13-freeze/`. Capture tools repointed to `desk/incidents/tmux`; memory files updated.
 - `research` is not a type; it is notes.
 - Personal, no-project material is `notes/personal/`.
 - Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
@@ -258,16 +258,18 @@ Sequenced after Part 1 lanes unless Angel reorders.
 
 ## 📜 LOG
 
-| Date       | Lane | Entry                                                                                                                                                                               |
-| ---------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-15 | 0    | Tag + `~/.config-next` worktree created                                                                                                                                             |
-| 2026-09-15 | —    | CC roadmap canonical, Codex principle layered; tracker created                                                                                                                      |
-| 2026-09-15 | —    | Codex review: bounded promotion sets, retirement-candidate inventory, Ghostty version-specific preview preflight, no-force promotion, and Neovim archive protection clarified       |
-| 2026-09-15 | —    | Tracker committed on `rebuild/dotfiles` as the first checkpoint                                                                                                                     |
-| 2026-09-15 | 0.5  | Angel adopted Codex's order: read-only fish contract audit first, fish core at lane 6, each tool's fish glue moves with its lane; lane 0.5 started                                  |
-| 2026-09-15 | 0.5  | Codex completed static Fish contract: startup, lane ownership, callers, preview leaks, and runtime-data boundaries mapped                                                           |
-| 2026-09-15 | 0    | **Blank slate.** Angel nuked the workshop: 415 files deleted, only WHALE.md remains. Nothing is ported; the audit became the BREAK LIST; museum access via the baseline tag         |
-| 2026-09-16 | —    | $HOME cleanup (separate from lanes): .NET retired, 25 dead caches trashed, ~/.hammerspoon retired via MJConfigFile; 98 → 74 entries. Reports in ~/.notes/tmp/config-next-2026-09-16 |
-| 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                               |
-| 2026-09-16 | P2   | Decided: notes/ without git, restic snapshots instead; secrets to a password manager first; family/ is media only; desk name retained                                               |
-| 2026-09-16 | P2   | `incidents` added as the seventh type: one home for every breakage, tools capture straight in, closed cases stay put; tmux dossier is the first landing                             |
+| Date       | Lane | Entry                                                                                                                                                                                                        |
+| ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-09-15 | 0    | Tag + `~/.config-next` worktree created                                                                                                                                                                      |
+| 2026-09-15 | —    | CC roadmap canonical, Codex principle layered; tracker created                                                                                                                                               |
+| 2026-09-15 | —    | Codex review: bounded promotion sets, retirement-candidate inventory, Ghostty version-specific preview preflight, no-force promotion, and Neovim archive protection clarified                                |
+| 2026-09-15 | —    | Tracker committed on `rebuild/dotfiles` as the first checkpoint                                                                                                                                              |
+| 2026-09-15 | 0.5  | Angel adopted Codex's order: read-only fish contract audit first, fish core at lane 6, each tool's fish glue moves with its lane; lane 0.5 started                                                           |
+| 2026-09-15 | 0.5  | Codex completed static Fish contract: startup, lane ownership, callers, preview leaks, and runtime-data boundaries mapped                                                                                    |
+| 2026-09-15 | 0    | **Blank slate.** Angel nuked the workshop: 415 files deleted, only WHALE.md remains. Nothing is ported; the audit became the BREAK LIST; museum access via the baseline tag                                  |
+| 2026-09-16 | —    | $HOME cleanup (separate from lanes): .NET retired, 25 dead caches trashed, ~/.hammerspoon retired via MJConfigFile; 98 → 74 entries. Reports in ~/.notes/tmp/config-next-2026-09-16                          |
+| 2026-09-16 | P2   | PART 2 designed with Codex: one root, type/subject grammar, research folded into notes, work unwalled, archive by move. Nothing moved                                                                        |
+| 2026-09-16 | P2   | Decided: notes/ without git, restic snapshots instead; secrets to a password manager first; family/ is media only; desk name retained                                                                        |
+| 2026-09-16 | P2   | `incidents` added as the seventh type: one home for every breakage, tools capture straight in, closed cases stay put; tmux dossier is the first landing                                                      |
+| 2026-09-16 | P2   | `incidents` + `audits` briefly merged into `cases` on CC's inference; Angel reverted to two types the same day. Five audit dirs out of `$HOME` into `desk/audits/`; harness paths off limits                 |
+| 2026-09-17 | P2   | tmux freeze dossier moved to `desk/incidents/tmux/2026-09-13-freeze/` (27,991 files manifest-verified); capture tools default to `desk/incidents/tmux`; four more audits from playground into `desk/audits/` |
