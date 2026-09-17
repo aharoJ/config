@@ -185,7 +185,7 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 ├── audits/<subject>/<YYYY-MM-DD>-<kind>/      planned proof: audit rounds, harness runs, model comparisons, tai panels
 ├── incidents/<subject>/<YYYY-MM-DD>-<kind>/   breakages: freezes, crashes, storms; tools capture straight into it
 ├── backups/<subject>/           copies of something that lives elsewhere: VPS dumps, git bundles, service exports; never a copy of desk itself
-├── archive/<type>/<subject>/    retired material moves here, never a parked marker in place
+├── idle/<subject>/              stuff Angel does not care about now but might want back; renamed from `archive` 2026-09-17 because a backup has intent and an archive does not
 └── family/                      protected media; backup policy, not git
 ```
 
@@ -196,7 +196,7 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
   - Grammar: `audits/<subject>/<YYYY-MM-DD>-<kind>/` and `incidents/<subject>/<YYYY-MM-DD>-<kind>/`. Subject is whatever broke: `tmux`, `yabai`, `host`, `cvmapp`. No pre-made subject folders; one appears the day it is needed.
   - Every case gets the same skeleton from `<type>/_template/`: `CASE.md`, `timeline.md`, `recovery.md`, `decisions.md`, `evidence/`, `fixes/`. each type's `INDEX.md` lists its cases.
   - Tools capture straight into it: `tfreeze` writes its next capture to `desk/incidents/tmux/<date>-freeze/`, no promotion step.
-  - Closed incidents stay put, marked `STATE: CLOSED` in `CASE.md`. This is the one exception to archive-by-move: past incidents are reference, and `ls incidents/tmux/` must always show history.
+  - Closed incidents stay put, marked `STATE: CLOSED` in `CASE.md`. This is the one exception to idle-by-move: past incidents are reference, and `ls incidents/tmux/` must always show history.
   - Branch-bound audit outputs and fixes stay in their project worktree when parallel review isolation matters; the case links to the commit or run instead of becoming a second source of truth.
   - Apple's `~/Library/Logs/DiagnosticReports/` is never relocated; the specific report is copied or referenced into the case.
   - The `/review` harness's own output paths are untouched and out of scope; `audits/` and `incidents/` hold only what the harness never owned: tai panels, ad-hoc audits, bug logs, hand-built verifiers, incident dossiers.
@@ -205,7 +205,7 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 - `research` is not a type; it is notes.
 - Personal, no-project material is `notes/personal/`.
 - Work is not walled: `cvmapp` is a subject like `stage`; `westernu` appears only when the employer itself is the subject. Liftable later with one `mv desk/*/cvmapp`.
-- Inactive things move to `archive/`, they do not get marked in place.
+- Inactive things move to `idle/`, they do not get marked in place. (`archive` was renamed to `idle` on 2026-09-17: Angel does not use the word archive; `backups` has a clear intent, `idle` is simply what he is not using.)
 - Git only where branches matter: each `repos/<x>` is its own repo. `notes/` has NO git (decided 2026-09-16, CC + Codex + Angel): plain files, write freely, versioned and backed up by restic encrypted snapshots instead. `scripts/` may be a private repo. `family/` and `archive/` are never git.
 - Secrets never live in files: every credential value goes to a password manager; a note holds a pointer only. First move of Part 2, before any backup runs: the credential `.md` files currently under `desk/.family/me/vps/` (token, recovery key, ssh) go to the password manager.
 - `desk/family/` holds protected media only (yaretzy, dad, mom, anthony). Notes about family are `notes/family/<person>`. The current `desk/.family/me/` is 29 markdown notes misfiled under media; they land in `notes/personal/…`, `notes/vps`, `notes/startup`, `notes/danny`.
@@ -220,7 +220,7 @@ One visible root holds every possession, so one backup covers it. Dotfiles and t
 | `~/.repository/*`                                                                                                                                    | `repos/<x>`                                                                                          |
 | `~/.westernu/cvmapp`, `notes`, audits                                                                                                                | `repos/cvmapp`, `notes/westernu`, `playground/` or `archive/`                                        |
 | `~/.skills/review-protocol`                                                                                                                          | `repos/review-protocol`                                                                              |
-| `~/.archive`                                                                                                                                         | `archive/`                                                                                           |
+| `~/.archive`                                                                                                                                         | `idle/`                                                                                              |
 | `~/desk/.family`                                                                                                                                     | `family/`                                                                                            |
 | `~/desk/playground`                                                                                                                                  | stays                                                                                                |
 | `~/.config/tmux/incidents`, `.westernu/audit-*`, `~/.audit-scratch-*`, `.da-r6-audit`, `.r7-audit-scratch`, `.review-catch`, `.cc-review-harness-v2` | `incidents/<subject>/<date>-<kind>/` after a per-case look                                           |
