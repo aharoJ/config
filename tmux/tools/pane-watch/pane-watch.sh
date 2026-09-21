@@ -17,7 +17,7 @@ usage: pane-watch --pane <tmux-target> --ui <grammar> [--hot-file FILE] [--ack-c
   --hot-file    Optional. Newline-separated extended regexes for the advisory HOT channel.
                 Advisory only: never affects state, acknowledgment, coverage, or exit status.
   --ack-current Treat the turn on screen at arm time as already seen.
-  --replace     Take over from an existing watcher on the same pane.
+  --replace     Take over from a verified existing watcher on the same pane.
 
 Exit codes: 0 clean, 1 refused to arm, 2 watch coverage lost, 3 capture failure.
 U
@@ -45,13 +45,15 @@ done
 case "$UI" in
   codex)
     G_COMPOSER='Ask Codex to do anything'
-    G_PROMPT_ROW='^[[:space:]]*›[[:space:]]*Ask Codex to do anything[[:space:]]*$'
+    # Codex CLI 0.155.1 renders U+00BB (») while older versions rendered U+203A (›).
+    # Keep both until captures establish that one variant is no longer in use.
+    G_PROMPT_ROW='^[[:space:]]*[›»][[:space:]]*Ask Codex to do anything[[:space:]]*$'
     G_FOOTER='^[[:space:]]*Fast (on|off) [·-] '
-    G_OPGLYPH='^›'
+    G_OPGLYPH='^[›»]'
     G_QUEUE='Messages to be submitted after next tool call'
     G_BUSY='Working \(|esc to interrupt'
     G_MODAL_ROWS=('No action is required' 'Codex will keep waiting' 'Retry with a faster model' 'Dismiss and keep waiting' 'thinking a bit more about this request')
-    G_MODAL_MENU='^[[:space:]]*(›[[:space:]]*)?[123]\.[[:space:]]'
+    G_MODAL_MENU='^[[:space:]]*([›»][[:space:]]*)?[123]\.[[:space:]]'
     G_ASK='HALT|Halted|halting|approval|approve|May I|may I|permission|authoriz|confirm|should I|Should I|do you want|Do you want|would you like|shall I|Shall I|let me know|waiting on you|waiting for you|exception request|proceed|OK to |Ok to |okay to |sign off|your call|need a decision|which do you|or should|[Ss]elect one|[Cc]hoose|[Pp]ick one|yes or no'
     G_HOT_DEFAULT='Traceback|FAILED|REFUSE|cyber_policy|Conversation interrupted|rate limit|usage limit|git (commit|reset|clean|checkout|push|add -A)|Divergence|hard-cap'
     ;;
@@ -83,14 +85,65 @@ read -r P_DEAD P_CMD P_SESS P_WIN P_PATH <<<"$(tmuxq display-message -p -t "$PAN
 
 LOCKROOT="${TMPDIR:-/tmp}/pane-watch-locks"; mkdir -p "$LOCKROOT"
 LOCK="$LOCKROOT/$(printf '%s' "$PANE" | tr -d '%')"
+process_start() { ps -p "$1" -o lstart= 2>/dev/null | awk '{$1=$1; print}'; }
+LOCK_START="$(process_start "$$")"
+[ -n "$LOCK_START" ] || { echo "REFUSE: cannot identify the watcher process for a safe lock handoff." >&2; exit 1; }
+
+# A lock must belong to this exact process before its owner may remove it. This prevents an
+# interrupted replaced watcher from deleting the replacement's lock during its EXIT trap.
+release_lock() {
+  local held_pid held_start
+  [ -d "$LOCK" ] || return 0
+  held_pid="$(cat "$LOCK/pid" 2>/dev/null || true)"
+  held_start="$(cat "$LOCK/start" 2>/dev/null || true)"
+  [ "$held_pid" = "$$" ] && [ "$held_start" = "$LOCK_START" ] || return 0
+  rm -f "$LOCK/pid" "$LOCK/start"
+  rmdir "$LOCK" 2>/dev/null || true
+}
+
+# --replace is allowed to stop only a live pane-watch process whose PID has not been reused.
+# Unknown or legacy live locks fail closed; a caller can stop that watcher directly instead.
+lock_owner_is_current_watcher() {
+  local owner_pid=$1 owner_start=$2 owner_cmd
+  [ -n "$owner_start" ] && [ "$owner_start" = "$(process_start "$owner_pid")" ] || return 1
+  owner_cmd="$(ps -p "$owner_pid" -o command= 2>/dev/null || true)"
+  case "$owner_cmd" in
+    *'/pane-watch.sh'*|*' pane-watch '*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 if ! mkdir "$LOCK" 2>/dev/null; then
-  if [ "$REPLACE" = "1" ]; then rm -rf "$LOCK"; mkdir "$LOCK" 2>/dev/null || { echo "REFUSE: cannot take the lock for $PANE." >&2; exit 1; }
-  else echo "REFUSE: another watcher already holds $PANE (lock: $LOCK). Use --replace to take over." >&2; exit 1; fi
+  [ "$REPLACE" = "1" ] || { echo "REFUSE: another watcher already holds $PANE (lock: $LOCK). Use --replace to take over." >&2; exit 1; }
+  owner_pid="$(cat "$LOCK/pid" 2>/dev/null || true)"
+  case "$owner_pid" in
+    ''|*[!0-9]*) echo "REFUSE: $LOCK has no valid owner PID; inspect it before replacing." >&2; exit 1 ;;
+  esac
+  if ps -p "$owner_pid" >/dev/null 2>&1; then
+    owner_start="$(cat "$LOCK/start" 2>/dev/null || true)"
+    lock_owner_is_current_watcher "$owner_pid" "$owner_start" || {
+      echo "REFUSE: $LOCK belongs to a live process that cannot be verified as this watcher; stop it directly before replacing." >&2
+      exit 1
+    }
+    echo "NOTICE: requesting a safe handoff from watcher PID $owner_pid for $PANE"
+    kill -TERM "$owner_pid" 2>/dev/null || { echo "REFUSE: cannot stop existing watcher PID $owner_pid." >&2; exit 1; }
+    handoff_tries=0
+    while [ -d "$LOCK" ] && [ "$handoff_tries" -lt 50 ]; do
+      sleep 0.1
+      handoff_tries=$((handoff_tries+1))
+    done
+    [ ! -d "$LOCK" ] || { echo "REFUSE: existing watcher PID $owner_pid did not release $LOCK; no replacement was started." >&2; exit 1; }
+  else
+    rm -f "$LOCK/pid" "$LOCK/start"
+    rmdir "$LOCK" 2>/dev/null || { echo "REFUSE: stale lock $LOCK contains unexpected files; inspect it before replacing." >&2; exit 1; }
+  fi
+  mkdir "$LOCK" 2>/dev/null || { echo "REFUSE: cannot take the lock for $PANE; another watcher won the handoff." >&2; exit 1; }
 fi
-echo "$$" > "$LOCK/pid"
-W=$(mktemp -d "${TMPDIR:-/tmp}/pane-watch.XXXXXX") || { rm -rf "$LOCK"; echo "REFUSE: cannot create a work directory." >&2; exit 1; }
+printf '%s\n' "$$" > "$LOCK/pid" || { rmdir "$LOCK" 2>/dev/null || true; echo "REFUSE: cannot record lock ownership for $PANE." >&2; exit 1; }
+printf '%s\n' "$LOCK_START" > "$LOCK/start" || { rm -f "$LOCK/pid"; rmdir "$LOCK" 2>/dev/null || true; echo "REFUSE: cannot record lock identity for $PANE." >&2; exit 1; }
+W=$(mktemp -d "${TMPDIR:-/tmp}/pane-watch.XXXXXX") || { release_lock; echo "REFUSE: cannot create a work directory." >&2; exit 1; }
 CAP="$W/cap"; LIVE="$W/live"
-cleanup() { rm -rf "$W" "$LOCK"; }
+cleanup() { rm -rf "$W"; release_lock; }
 # A signal handler that does not exit lets bash RESUME the loop with its workdir deleted.
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
