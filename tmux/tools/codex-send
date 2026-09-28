@@ -6,6 +6,7 @@ refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was s
 unresponsive() { printf 'REFUSE: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'UNVERIFIED: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'UNVERIFIED: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
+refuse_draft() { printf 'REFUSE: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
 
 TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
 TMUX_BIN="${TMUX_BIN:-tmux}"
@@ -43,6 +44,23 @@ request() {
     124|137|143) return 75 ;;
     *) return "$code" ;;
   esac
+}
+
+require_empty_codex_input() {
+  local capture input_line code
+  if capture="$(request capture-pane -p -t "$pane" -S -8)"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot capture target input for $pane"
+  fi
+  input_line="$(printf '%s\n' "$capture" | awk '/^[[:blank:]]*›/ { line=$0 } END { print line }')"
+  [ -n "$input_line" ] || fail "cannot find Codex prompt in target $pane"
+  if printf '%s\n' "$input_line" | grep -Eq '^[[:blank:]]*›[[:blank:]]*Ask Codex to do anything[[:blank:]]*$'; then
+    return 0
+  fi
+  refuse_draft "$pane"
 }
 
 octal_literal() {
@@ -111,12 +129,20 @@ atomic_enter() {
 }
 
 [ -n "${1:-}" ] || { printf 'usage: codex-send <text>\n' >&2; exit 1; }
-[ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] || fail 'TMUX/TMUX_PANE is not set'
+[ -n "${TMUX:-}" ] || fail 'TMUX is not set'
 message="$(printf '%s' "$1" | tr '\n\r\t' '   ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')"
 [ -n "$message" ] || fail 'empty message'
+target_session="${CODEX_SEND_SESSION:-}"
+target_window="${CODEX_SEND_WINDOW:-codex}"
+case "$target_session" in
+  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
+case "$target_window" in
+  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_WINDOW may contain only letters, digits, underscores, or hyphens' ;;
+esac
 
 list_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-list.XXXXXX")" || fail 'scratch file unavailable'
-if request list-panes -a -F '#{pane_id} #{session_name} #{window_name}' > "$list_file"; then
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
   :
 else
   code=$?
@@ -124,13 +150,21 @@ else
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes'
 fi
-session="$(awk -v own="$TMUX_PANE" '$1 == own { n++; value=$2 } END { if (n == 1) print value }' "$list_file")"
-[ -n "$session" ] || { rm -f "$list_file"; fail "own session not resolved from TMUX_PANE=$TMUX_PANE"; }
-pane="$(awk -v session="$session" '$2 == session && $3 == "codex" { n++; value=$1 } END { if (n == 1) print value }' "$list_file")"
+target_count="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
+pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
+command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 rm -f "$list_file"
-[ -n "$pane" ] || fail "codex pane not unique in $session"
+case "$target_count" in
+  0) fail "no target window $target_session:$target_window" ;;
+  1) ;;
+  *) fail "target window $target_session:$target_window is ambiguous" ;;
+esac
+case "$command_name" in
+  fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Codex; refuse" ;;
+esac
 
 acquire_relay_lock || busy
+require_empty_codex_input
 
 if atomic_text "$message"; then
   :
@@ -165,7 +199,7 @@ else
 fi
 if grep -q 'Ask Codex to do anything' "$capture_file"; then
   rm -f "$capture_file"
-  printf 'SENT ok (%s)\n' "$pane"
+  printf 'SENT ok (%s:%s %s)\n' "$target_session" "$target_window" "$pane"
   exit 0
 fi
 rm -f "$capture_file"
@@ -180,7 +214,7 @@ else
 fi
 if grep -qE 'Working|esc to interrupt' "$capture_file"; then
   rm -f "$capture_file"
-  printf 'SENT ok, codex busy (%s)\n' "$pane"
+  printf 'SENT ok, codex busy (%s:%s %s)\n' "$target_session" "$target_window" "$pane"
   exit 0
 fi
 rm -f "$capture_file"

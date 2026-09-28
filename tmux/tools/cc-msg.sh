@@ -6,6 +6,7 @@ refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was s
 unresponsive() { printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'cc-msg: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'cc-msg: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
+refuse_draft() { printf 'cc-msg: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
 
 TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
 TMUX_BIN="${TMUX_BIN:-tmux}"
@@ -43,6 +44,23 @@ request() {
     124|137|143) return 75 ;;
     *) return "$code" ;;
   esac
+}
+
+require_empty_cc_input() {
+  local capture prompt code
+  if capture="$(request capture-pane -p -t "$pane" -S -8)"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot capture target input for $pane"
+  fi
+  prompt="$(printf '%s\n' "$capture" | awk '/^[[:blank:]]*❯/ { line=$0 } END { print line }')"
+  [ -n "$prompt" ] || fail "cannot find CC prompt in target $pane"
+  if printf '%s\n' "$prompt" | perl -pe 's/\xc2\xa0/ /g' | grep -Eq '^[[:blank:]]*❯[[:blank:]]*$'; then
+    return 0
+  fi
+  refuse_draft "$pane"
 }
 
 octal_literal() {
@@ -111,14 +129,22 @@ atomic_enter() {
 }
 
 FROM="${CC_MSG_FROM:-codex}"
+target_session="${CC_MSG_SESSION:-}"
+target_window="${CC_MSG_WINDOW:-}"
+case "$target_session" in
+  ''|*[!A-Za-z0-9_-]*) fail 'CC_MSG_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
+case "$target_window" in
+  ''|*[!A-Za-z0-9_-]*) fail 'CC_MSG_WINDOW is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
 msg="$*"
 [ -n "$msg" ] || msg="$(cat)"
 msg="$(printf '%s' "$msg" | tr '\n\r\t' '   ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')"
 [ -n "$msg" ] || fail 'empty message; refuse'
-[ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] || fail 'not in tmux; refuse'
+[ -n "${TMUX:-}" ] || fail 'TMUX is not set; refuse'
 
 list_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
-if request list-panes -a -F '#{pane_id} #{session_id}' > "$list_file"; then
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
   :
 else
   code=$?
@@ -126,30 +152,21 @@ else
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes; refuse'
 fi
-sid="$(awk -v pane="$TMUX_PANE" '$1 == pane { n++; value=$2 } END { if (n == 1) print value }' "$list_file")"
+target_count="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
+pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
+command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 rm -f "$list_file"
-[ -n "$sid" ] || fail 'cannot resolve my own session from $TMUX_PANE; refuse'
-
-target_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-target.XXXXXX")" || fail 'cannot create request scratch file'
-if request list-panes -t "${sid}:=claude" -f '#{==:#{pane_index},1}' -F '#{pane_id} #{pane_current_command}' > "$target_file" 2>/dev/null; then
-  :
-else
-  code=$?
-  rm -f "$target_file"
-  [ "$code" = 75 ] && unresponsive
-  fail "no 'claude' window in my session; refuse"
-fi
-target="$(<"$target_file")"
-rm -f "$target_file"
-[ -n "$target" ] || fail "no 'claude' window in my session; refuse"
-pane="${target%% *}"
-command_name="${target#* }"
-[ "$pane" != "$TMUX_PANE" ] || fail 'target pane is myself; refuse'
+case "$target_count" in
+  0) fail "no target window $target_session:$target_window; refuse" ;;
+  1) ;;
+  *) fail "target window $target_session:$target_window is ambiguous; refuse" ;;
+esac
 case "$command_name" in
   fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Claude Code; refuse" ;;
 esac
 
 acquire_relay_lock || busy
+require_empty_cc_input
 
 if atomic_text "$FROM: $msg"; then
   :
@@ -183,4 +200,4 @@ else
     *) partial 'guard Enter delivery outcome is unknown' ;;
   esac
 fi
-printf 'cc-msg: delivered to %s (%s:=claude)\n' "$pane" "$sid"
+printf 'cc-msg: delivered to %s (%s:%s)\n' "$pane" "$target_session" "$target_window"
