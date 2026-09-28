@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-28 — Codex renders inline so tmux scrollback works
+
+Codex 0.157.1 defaults to `tui.fullscreen_transcript = true`, which enters the alternate screen and captures the mouse, so tmux wheel scrolling and copy mode could not reach its history. The fix is `tui.alternate_screen = "never"` in `~/.codex/config.toml` (outside this repo). It applies to every launch path: the fish wrapper, `command codex`, raw binary paths, other shells, and raw tmux commands. The interim `--no-alt-screen` wrapper flags in `fish/internal/codex/codex.fish` were reverted and the stray zsh alias removed. Verified in disposable tmux windows through `#{alternate_on}` and `#{mouse_any_flag}`: the default gives 1/1, and `alternate_screen = "never"`, `--no-alt-screen` or `fullscreen_transcript = false` each give 0/0. The composer and footer rows that pane-watch parses are unchanged, and the pane-watch regression suite passes. `codex --strict-config` accepts arbitrary values for this key, so it proves nothing about the setting.
+
 ## 2026-09-14 — Add tmux freeze capture and guided loop recovery
 
 Added autoloaded fish functions `tfreeze` and `trescue` plus the narrow `tmux-loop-rescue --observe` interface. `tfreeze` captures new read-only evidence for the literal production socket without starting a missing server. `trescue` captures, observes, displays the fresh PID/build/count evidence, requires `RESCUE`, then leaves the exact PID confirmation to the rescue tool. It carries the fresh observed count forward automatically; there is no manual count prompt or maximum fallback.
