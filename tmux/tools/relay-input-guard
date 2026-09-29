@@ -1,0 +1,229 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use Encode qw(decode FB_CROAK);
+
+binmode STDIN,  ':encoding(UTF-8)';
+binmode STDOUT, ':encoding(UTF-8)';
+binmode STDERR, ':encoding(UTF-8)';
+
+# Exit status is deliberately narrow:
+#   0 = the composer is visibly empty, or its entire visible value is dim
+#       placeholder/suggestion text;
+#   1 = a draft or any ambiguous non-empty composer;
+#   2 = the current composer cannot be found.
+my ($glyph, $cursor_x, $cursor_y) = @ARGV;
+exit 2 if @ARGV != 3 || !defined($glyph) || !defined($cursor_x) || !defined($cursor_y);
+eval { $glyph = decode('UTF-8', $glyph, FB_CROAK); 1 } or exit 2;
+exit 2 if length($glyph) == 0;
+exit 2 if $cursor_x !~ /\A[0-9]+\z/ || $cursor_y !~ /\A[0-9]+\z/;
+
+my @rows = <STDIN>;
+
+sub visible_row {
+    my ($row) = @_;
+    # tmux -e preserves SGR and may preserve OSC-8 hyperlinks.  Remove those
+    # sequences only to locate the row; the raw row is inspected below.
+    $row =~ s/\e\[[0-?]*[ -\/]*[@-~]//g;
+    $row =~ s/\e\][^\e\a]*(?:\a|\e\\)//g;
+    return $row;
+}
+
+# capture-pane without -S/-E is exactly the current screen, so tmux's
+# zero-based cursor_y selects the one row that can be a live composer.  Do
+# not let a prompt-looking historical row above it make a stale transcript
+# look like an empty current input.
+my @prompt_rows;
+for my $index (0 .. $#rows) {
+    my $visible = visible_row($rows[$index]);
+    push @prompt_rows, $index if $visible =~ /^\h*\Q$glyph\E/;
+}
+exit 2 if $cursor_y > $#rows;
+my $prompt_index = $cursor_y;
+my $cursor_visible = visible_row($rows[$prompt_index]);
+if ($cursor_visible !~ /^\h*\Q$glyph\E/) {
+    # A real wrapped value leaves the cursor on a continuation row.  It is
+    # not safe to send in that state; report it as a draft when a composer
+    # is visible, otherwise as an unknown UI state.
+    exit(@prompt_rows ? 1 : 2);
+}
+
+sub expected_empty_cursor_x {
+    my ($visible, $glyph) = @_;
+    $visible =~ s/[\r\n]+\z//;
+
+    # We deliberately accept only the one blank cell that both clients put
+    # after their glyph.  Counting arbitrary trailing blanks would make a
+    # draft made solely of spaces indistinguishable from terminal padding.
+    return undef if $visible !~ /^([ \x{a0}]*)\Q$glyph\E(.*)\z/s;
+    my ($leading, $after) = ($1, $2);
+    my $column = length($leading) + 1; # Both known prompt glyphs are one cell.
+    if (length($after) && (substr($after, 0, 1) eq ' ' || substr($after, 0, 1) eq "\x{a0}")) {
+        $column++;
+    }
+    return $column;
+}
+
+my $empty_cursor_x = expected_empty_cursor_x($cursor_visible, $glyph);
+# This is independent of colour.  A rendered suggestion leaves the terminal
+# cursor immediately after the prompt spacer, while every ordinary typed
+# value (including one space, CJK, or emoji) advances it.  An unfamiliar
+# prompt geometry is refused rather than guessed.
+exit 1 if !defined($empty_cursor_x) || $cursor_x != $empty_cursor_x;
+
+sub apply_sgr {
+    my ($parameters, $dim_ref) = @_;
+    my $set_dim = 0;
+    my @parameters = length($parameters) ? split(/;/, $parameters, -1) : (0);
+    for (my $index = 0; $index <= $#parameters; $index++) {
+        my $parameter = $parameters[$index];
+        # SGR colour subparameters can be colon-separated.  Only the leading
+        # attribute number changes intensity.
+        my ($code) = split(/:/, $parameter, 2);
+        $code = 0 if !defined($code) || $code eq '';
+        if ($code eq '38' || $code eq '48' || $code eq '58') {
+            # In semicolon-form extended colours, the next number is a mode
+            # (5 or 2), not an intensity attribute.  In particular, the "2"
+            # in 48;2;R;G;B must not be mistaken for dim.
+            my ($colour_mode) = split(/:/, $parameters[$index + 1] // '', 2);
+            if (defined($colour_mode) && $colour_mode eq '5') {
+                $index += 2;
+            } elsif (defined($colour_mode) && $colour_mode eq '2') {
+                $index += 4;
+            } else {
+                $index++;
+            }
+            next;
+        }
+        if ($code eq '0') {
+            $$dim_ref = 0;
+        } elsif ($code eq '2') {
+            $$dim_ref = 1;
+            $set_dim = 1;
+        } elsif ($code eq '22') {
+            $$dim_ref = 0;
+        }
+    }
+    return $set_dim;
+}
+
+sub row_is_dim_or_blank {
+    my ($raw, $dim_ref) = @_;
+    while (length $raw) {
+        if ($raw =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
+            return 0 if $2 ne 'm';
+            apply_sgr($1, $dim_ref);
+            next;
+        }
+        # A placeholder never needs an OSC/control sequence.  Treat one as
+        # ambiguity rather than risking a typed value hidden by formatting.
+        return 0 if $raw =~ s/^\e\][^\e\a]*(?:\a|\e\\)//;
+        return 0 if $raw =~ s/^\e//;
+
+        my $character = substr($raw, 0, 1, '');
+        next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}" || $character eq "\r" || $character eq "\n";
+        return 0 if !$$dim_ref;
+    }
+    return 1;
+}
+
+sub composer_has_safe_tail {
+    my ($rows_ref, $start, $glyph, $dim_ref) = @_;
+    for my $index ($start + 1 .. $#$rows_ref) {
+        my $raw = $rows_ref->[$index];
+        my $visible = visible_row($raw);
+        $visible =~ s/[\r\n]+\z//;
+
+        # Claude ends its composer with a divider.  Anything visible before
+        # it is either a wrapped value or an unknown UI state, so refuse.
+        if ($glyph eq '❯' && $visible =~ /^\h*─{20,}\h*\z/) {
+            return 1;
+        }
+
+        # Codex's footer begins only after the composer background resets.
+        # A following input background means it is still composer content.
+        if ($glyph eq '›') {
+            my $reset_at = index($raw, "\e[49m");
+            if ($reset_at >= 0) {
+                my $after_reset = substr($raw, $reset_at + length("\e[49m"));
+                return 1 if $after_reset !~ /\e\[48(?:;|:)/;
+            }
+
+            # With NO_COLOR and some 256-colour terminals, Codex omits the
+            # input background/reset.  Its normal status footer remains
+            # rendered as a coloured, structured "Fast … · … Context …"
+            # row.  Keep this deliberately strict: an unfamiliar footer is
+            # not treated as a boundary and therefore refuses the send.
+            if ($raw =~ /\e\[38(?:;|:)/
+                && $visible =~ /^\h{2,}Fast\h+\S+\h*·/
+                && $visible =~ /\bContext\b/) {
+                return 1;
+            }
+        }
+
+        return 0 if !row_is_dim_or_blank($raw, $dim_ref);
+    }
+    # A cropped or unfamiliar composer has no trustworthy boundary.
+    return 0;
+}
+
+my $raw = $rows[$prompt_index];
+chomp $raw;
+my $at_input = 0;
+my $dim = 0;
+my $saw_explicit_dim_after_glyph = 0;
+my $has_visible_input = 0;
+my $unknown_control_after_glyph = 0;
+
+while (length $raw) {
+    if ($raw =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
+        my ($parameters, $final) = ($1, $2);
+        if ($final ne 'm') {
+            $unknown_control_after_glyph ||= $at_input;
+            next;
+        }
+
+        my $set_dim = apply_sgr($parameters, \$dim);
+        $saw_explicit_dim_after_glyph = 1 if $at_input && $set_dim;
+        next;
+    }
+
+    if ($raw =~ s/^\e\][^\e\a]*(?:\a|\e\\)//) {
+        $unknown_control_after_glyph ||= $at_input;
+        next;
+    }
+
+    if ($raw =~ s/^\e//) {
+        $unknown_control_after_glyph ||= $at_input;
+        next;
+    }
+
+    if (!$at_input && index($raw, $glyph) == 0) {
+        substr($raw, 0, length($glyph), '');
+        $at_input = 1;
+        next;
+    }
+
+    my $character = substr($raw, 0, 1, '');
+    if (!$at_input) {
+        # The selected row was visibly anchored at the glyph.  Anything else
+        # here means an escape sequence made that conclusion unreliable.
+        next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
+        exit 2;
+    }
+
+    # tmux pads rows with spaces and Claude's blank composer uses NBSP.
+    next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
+
+    $has_visible_input = 1;
+    exit 1 if !$dim;
+}
+
+exit 1 if !$at_input || $unknown_control_after_glyph;
+exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph, \$dim);
+exit 0 if !$has_visible_input;
+
+# Do not trust inherited styling: a non-empty value is safe only when tmux
+# showed an explicit dim transition after the prompt glyph on this row.
+exit($saw_explicit_dim_after_glyph ? 0 : 1);

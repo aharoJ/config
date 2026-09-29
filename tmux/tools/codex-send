@@ -18,6 +18,19 @@ relay_lock=
 [ -n "$TIMEOUT_BIN" ] || fail 'timeout or gtimeout is required'
 [ -x "$LOCK_BIN" ] || fail 'shlock is required'
 
+relay_script="${BASH_SOURCE[0]}"
+while [ -L "$relay_script" ]; do
+  relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+  relay_link="$(readlink "$relay_script")" || fail 'cannot resolve relay tool path'
+  case "$relay_link" in
+    /*) relay_script="$relay_link" ;;
+    *) relay_script="$relay_script_dir/$relay_link" ;;
+  esac
+done
+relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
+[ -x "$RELAY_INPUT_GUARD" ] || fail 'relay input guard is required'
+
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
   rm -f "$relay_lock"
@@ -47,20 +60,49 @@ request() {
 }
 
 require_empty_codex_input() {
-  local capture input_line code
-  if capture="$(request capture-pane -p -t "$pane" -S -8)"; then
+  local capture state state_after code cursor_x cursor_y in_mode
+  if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot query target input state for $pane"
+  fi
+  if [[ "$state" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+    in_mode="${BASH_REMATCH[1]}"
+    cursor_x="${BASH_REMATCH[2]}"
+    cursor_y="${BASH_REMATCH[3]}"
+  else
+    fail "cannot determine target input state for $pane"
+  fi
+  [ "$in_mode" = 0 ] || refuse_copy "$pane"
+  if capture="$(request capture-pane -p -e -t "$pane")"; then
     :
   else
     code=$?
     [ "$code" = 75 ] && unresponsive
     fail "cannot capture target input for $pane"
   fi
-  input_line="$(printf '%s\n' "$capture" | awk '/^[[:blank:]]*›/ { line=$0 } END { print line }')"
-  [ -n "$input_line" ] || fail "cannot find Codex prompt in target $pane"
-  if printf '%s\n' "$input_line" | grep -Eq '^[[:blank:]]*›[[:blank:]]*Ask Codex to do anything[[:blank:]]*$'; then
-    return 0
+  if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot recheck target input state for $pane"
   fi
-  refuse_draft "$pane"
+  if [[ "$state_after" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+    [ "${BASH_REMATCH[1]}" = 0 ] || refuse_copy "$pane"
+  else
+    fail "cannot recheck target input state for $pane"
+  fi
+  [ "$state_after" = "$state" ] || refuse_draft "$pane"
+  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '›' "$cursor_x" "$cursor_y"
+  code=$?
+  case "$code" in
+    0) return 0 ;;
+    1) refuse_draft "$pane" ;;
+    *) fail "cannot find Codex prompt in target $pane" ;;
+  esac
 }
 
 octal_literal() {
@@ -189,7 +231,22 @@ else
 fi
 sleep 2
 capture_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-capture.XXXXXX")" || partial 'delivery verification scratch file unavailable'
-if request capture-pane -p -t "$pane" -S -6 > "$capture_file"; then
+if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+  :
+else
+  code=$?
+  rm -f "$capture_file"
+  [ "$code" = 75 ] && unresponsive
+  partial "cannot query delivery state for $pane"
+fi
+if [[ "$state" =~ ^0:([0-9]+):([0-9]+)$ ]]; then
+  cursor_x="${BASH_REMATCH[1]}"
+  cursor_y="${BASH_REMATCH[2]}"
+else
+  rm -f "$capture_file"
+  partial "cannot verify delivery while $pane is in an unknown input state"
+fi
+if request capture-pane -p -e -t "$pane" > "$capture_file"; then
   :
 else
   code=$?
@@ -197,7 +254,7 @@ else
   [ "$code" = 75 ] && unresponsive
   partial "cannot verify delivery for $pane"
 fi
-if grep -q 'Ask Codex to do anything' "$capture_file"; then
+if "$RELAY_INPUT_GUARD" '›' "$cursor_x" "$cursor_y" < "$capture_file"; then
   rm -f "$capture_file"
   printf 'SENT ok (%s:%s %s)\n' "$target_session" "$target_window" "$pane"
   exit 0

@@ -7,6 +7,20 @@ unresponsive() { printf 'cc-msg: tmux server is unresponsive; delivery state is 
 partial() { printf 'cc-msg: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'cc-msg: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
 refuse_draft() { printf 'cc-msg: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
+usage() {
+  cat >&2 <<'EOF'
+usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] cc-msg.sh <text>
+
+CC_MSG_PANE is optional.  When a named window has multiple panes, set it to
+one numeric tmux pane id (for example %46).  The id must still belong to the
+declared CC_MSG_SESSION and CC_MSG_WINDOW; it never bypasses that binding.
+EOF
+}
+
+if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
+  usage
+  exit 0
+fi
 
 TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
 TMUX_BIN="${TMUX_BIN:-tmux}"
@@ -17,6 +31,19 @@ LOCK_BIN="${TMUX_RELAY_LOCK_BIN:-/usr/bin/shlock}"
 relay_lock=
 [ -n "$TIMEOUT_BIN" ] || fail 'timeout or gtimeout is required'
 [ -x "$LOCK_BIN" ] || fail 'shlock is required'
+
+relay_script="${BASH_SOURCE[0]}"
+while [ -L "$relay_script" ]; do
+  relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+  relay_link="$(readlink "$relay_script")" || fail 'cannot resolve relay tool path'
+  case "$relay_link" in
+    /*) relay_script="$relay_link" ;;
+    *) relay_script="$relay_script_dir/$relay_link" ;;
+  esac
+done
+relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
+[ -x "$RELAY_INPUT_GUARD" ] || fail 'relay input guard is required'
 
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
@@ -47,20 +74,49 @@ request() {
 }
 
 require_empty_cc_input() {
-  local capture prompt code
-  if capture="$(request capture-pane -p -t "$pane" -S -8)"; then
+  local capture state state_after code cursor_x cursor_y in_mode
+  if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot query target input state for $pane"
+  fi
+  if [[ "$state" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+    in_mode="${BASH_REMATCH[1]}"
+    cursor_x="${BASH_REMATCH[2]}"
+    cursor_y="${BASH_REMATCH[3]}"
+  else
+    fail "cannot determine target input state for $pane"
+  fi
+  [ "$in_mode" = 0 ] || refuse_copy "$pane"
+  if capture="$(request capture-pane -p -e -t "$pane")"; then
     :
   else
     code=$?
     [ "$code" = 75 ] && unresponsive
     fail "cannot capture target input for $pane"
   fi
-  prompt="$(printf '%s\n' "$capture" | awk '/^[[:blank:]]*❯/ { line=$0 } END { print line }')"
-  [ -n "$prompt" ] || fail "cannot find CC prompt in target $pane"
-  if printf '%s\n' "$prompt" | perl -pe 's/\xc2\xa0/ /g' | grep -Eq '^[[:blank:]]*❯[[:blank:]]*$'; then
-    return 0
+  if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail "cannot recheck target input state for $pane"
   fi
-  refuse_draft "$pane"
+  if [[ "$state_after" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+    [ "${BASH_REMATCH[1]}" = 0 ] || refuse_copy "$pane"
+  else
+    fail "cannot recheck target input state for $pane"
+  fi
+  [ "$state_after" = "$state" ] || refuse_draft "$pane"
+  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y"
+  code=$?
+  case "$code" in
+    0) return 0 ;;
+    1) refuse_draft "$pane" ;;
+    *) fail "cannot find CC prompt in target $pane" ;;
+  esac
 }
 
 octal_literal() {
@@ -131,11 +187,23 @@ atomic_enter() {
 FROM="${CC_MSG_FROM:-codex}"
 target_session="${CC_MSG_SESSION:-}"
 target_window="${CC_MSG_WINDOW:-}"
+target_pane="${CC_MSG_PANE:-}"
 case "$target_session" in
   ''|*[!A-Za-z0-9_-]*) fail 'CC_MSG_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
 esac
 case "$target_window" in
   ''|*[!A-Za-z0-9_-]*) fail 'CC_MSG_WINDOW is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
+# A pane selector is deliberately only a disambiguator: selection below also
+# requires that it belongs to this exact, named session and window.
+case "$target_pane" in
+  '') ;;
+  %*)
+    case "${target_pane#%}" in
+      ''|*[!0-9]*) fail 'CC_MSG_PANE, when set, must be a numeric tmux pane id such as %46' ;;
+    esac
+    ;;
+  *) fail 'CC_MSG_PANE, when set, must be a numeric tmux pane id such as %46' ;;
 esac
 msg="$*"
 [ -n "$msg" ] || msg="$(cat)"
@@ -152,14 +220,25 @@ else
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes; refuse'
 fi
-target_count="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
-pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
-command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
+if [ -n "$target_pane" ]; then
+  target_count="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
+  pane="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { print $1 }' "$list_file")"
+  command_name="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { print $4 }' "$list_file")"
+else
+  target_count="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
+  pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
+  command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
+fi
 rm -f "$list_file"
 case "$target_count" in
-  0) fail "no target window $target_session:$target_window; refuse" ;;
+  0)
+    if [ -n "$target_pane" ]; then
+      fail "target pane $target_pane is not in $target_session:$target_window; refuse"
+    fi
+    fail "no target window $target_session:$target_window; refuse"
+    ;;
   1) ;;
-  *) fail "target window $target_session:$target_window is ambiguous; refuse" ;;
+  *) fail "target window $target_session:$target_window is ambiguous; set CC_MSG_PANE to one pane id in that window; refuse" ;;
 esac
 case "$command_name" in
   fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Claude Code; refuse" ;;
