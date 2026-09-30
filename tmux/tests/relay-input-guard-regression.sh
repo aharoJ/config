@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/tests/relay-input-guard-regression.sh
+# description: Check draft refusal, explicit routing, and verified public relay delivery.
+# patched: supply safe target dimensions and trash test scratch files
+# date: 2026-09-30
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -50,7 +54,7 @@ expect_delivery() {
 }
 
 tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/relay-input-guard.XXXXXX")"
-trap 'rm -rf "$tmpdir"' EXIT
+trap 'trash "$tmpdir"' EXIT
 
 # Captures reproduce the SGR classes observed in live Codex and Claude panes.
 codex_placeholder=$'\e[1m\e[38;2;248;183;90m›\e[0m\e[48;2;57;57;71m \e[2mAsk Codex to do anything\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off'

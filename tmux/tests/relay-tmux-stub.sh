@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/tests/relay-tmux-stub.sh
+# description: Emulate relay routing, bracketed payload delivery, and composer captures.
+# patched: model actual landed text instead of treating command receipts as verification
+# date: 2026-09-30
 set -euo pipefail
 
 : "${RELAY_TEST_CAPTURE:?}"
@@ -16,9 +20,32 @@ case "${1:-}" in
     printf '%s\n' "$RELAY_TEST_PANES"
     ;;
   capture-pane)
-    printf '%s\n' "$RELAY_TEST_CAPTURE"
+    if [ -s "$RELAY_TEST_LOG.payload" ]; then
+      payload="$(cat "$RELAY_TEST_LOG.payload")"
+      if [[ "$RELAY_TEST_PANES" = *claude* ]]; then
+        printf '────────────────────\n❯ %s\n────────────────────\n' "$payload"
+      else
+        printf '› %s\n\033[49m  Fast off\n' "$payload"
+      fi
+    else
+      printf '%s\n' "$RELAY_TEST_CAPTURE"
+    fi
     ;;
   display-message)
+    format="${!#}"
+    if [[ "$format" = '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}' ]]; then
+      printf '192:51:0:relaytest:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")"
+      exit 0
+    fi
+    if [ -s "$RELAY_TEST_LOG.payload" ]; then
+      column=$(($(wc -c < "$RELAY_TEST_LOG.payload") + 2))
+      row=0
+      [[ "$RELAY_TEST_PANES" = *claude* ]] && row=1
+      suffix=
+      [[ "$format" = *pane_width* ]] && suffix=:192:51
+      printf '0:%s:%s:0:relaytest:%s%s\n' "$column" "$row" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$suffix"
+      exit 0
+    fi
     state_count_file="${RELAY_TEST_STATE_COUNT_FILE:-${RELAY_TEST_LOG}.state-count}"
     state_count=0
     [ -f "$state_count_file" ] && state_count="$(< "$state_count_file")"
@@ -33,8 +60,15 @@ case "${1:-}" in
     fi
     ;;
   if-shell)
+    if [[ "$*" = *paste-buffer* ]]; then
+      cat "$RELAY_TEST_LOG.buffer" >> "$RELAY_TEST_LOG.payload"
+    fi
     case "${RELAY_TEST_RECEIPT_MODE:-delivered}" in
       copy)
+        if [[ "$*" = *__RELAY_REFUSED__* ]]; then
+          printf '__RELAY_REFUSED__:1:0:relaytest:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")"
+          exit 0
+        fi
         case " $* " in
           *__CODEX_SEND_TO_REFUSED_COPY_MODE__*) printf '%s\n' '__CODEX_SEND_TO_REFUSED_COPY_MODE__' ;;
           *__CODEX_SEND_REFUSED_COPY_MODE__*) printf '%s\n' '__CODEX_SEND_REFUSED_COPY_MODE__' ;;
@@ -49,11 +83,15 @@ case "${1:-}" in
         ;;
     esac
     case " $* " in
+      *__RELAY_DELIVERED__*) printf '%s\n' '__RELAY_DELIVERED__' ;;
       *__CODEX_SEND_TO_DELIVERED__*) printf '%s\n' '__CODEX_SEND_TO_DELIVERED__' ;;
       *__CODEX_SEND_DELIVERED__*) printf '%s\n' '__CODEX_SEND_DELIVERED__' ;;
       *__CC_MSG_DELIVERED__*) printf '%s\n' '__CC_MSG_DELIVERED__' ;;
       *) exit 1 ;;
     esac
+    ;;
+  load-buffer)
+    cat "${!#}" > "$RELAY_TEST_LOG.buffer"
     ;;
   *)
     exit 0

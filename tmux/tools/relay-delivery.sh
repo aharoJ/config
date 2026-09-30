@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# path: ~/.config/tmux/tools/relay-delivery.sh
+# description: Bracketed relay transport with complete composer verification before submission.
+# patched: replace unverified literal delivery and duplicate Enter with exact payload checks
+# date: 2026-09-30
+
+relay_payload_file=
+relay_payload_dir=
+relay_payload_buffer=
+relay_server_unresponsive=0
+relay_payload_guard="$relay_script_dir/relay-payload-guard"
+[ -x "$relay_payload_guard" ] || fail 'relay payload guard is required'
+command -v trash >/dev/null 2>&1 || fail 'trash is required for relay scratch cleanup'
+
+relay_cleanup() {
+  local code=0
+  if [ -n "$relay_payload_buffer" ] && [ "$relay_server_unresponsive" = 0 ]; then
+    request delete-buffer -b "$relay_payload_buffer" >/dev/null 2>&1 || code=$?
+  fi
+  if [ -n "$relay_payload_dir" ]; then
+    trash "$relay_payload_dir" >/dev/null 2>&1 || true
+  fi
+  release_relay_lock
+  [ "$code" = 75 ] && unresponsive
+  return 0
+}
+trap relay_cleanup EXIT
+
+prepare_payload() {
+  local dimensions code bytes width height
+  relay_payload_dir="$(mktemp -d "${TMPDIR:-/tmp}/relay-payload.XXXXXX")" || fail 'cannot create payload scratch directory'
+  relay_payload_file="$relay_payload_dir/payload"
+  printf '%s' "$1" > "$relay_payload_file" || fail 'cannot write payload scratch file'
+  "$relay_payload_guard" validate "$relay_payload_file" || fail 'payload must be printable UTF-8 without control or format characters'
+  if dimensions="$(request display-message -p -t "$pane" '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}')"; then
+    :
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    fail 'cannot validate target identity and dimensions'
+  fi
+  [[ "$dimensions" =~ ^([0-9]+):([0-9]+):0:$target_session:$relay_target_window$ ]] || fail 'target identity changed or target pane is dead'
+  width="${BASH_REMATCH[1]}"
+  height="${BASH_REMATCH[2]}"
+  relay_verify_width="$width"
+  relay_verify_height="$height"
+  bytes="$(LC_ALL=C wc -c < "$relay_payload_file" | tr -d ' ')"
+  [ "$width" -gt 4 ] && [ "$height" -gt 6 ] || fail 'target pane is too small to verify delivery'
+  [ "$bytes" -le "$(((width - 2) * (height - 6)))" ] || fail 'payload exceeds visible verification capacity; send a short file reference instead'
+  "$relay_payload_guard" capacity "$relay_payload_file" "$width" || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
+}
+
+relay_atomic() {
+  local deliver=$1 blocked receipt code identity guarded
+  blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
+  identity="#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{==:#{pane_dead},0}}}"
+  guarded="#{&&:$identity,#{==:#{pane_in_mode},0}}"
+  if receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"; then
+    code=0
+  else
+    code=$?
+  fi
+  [ "$code" = 75 ] && return 75
+  [ "$code" = 0 ] || return 1
+  [ "$receipt" = __RELAY_DELIVERED__ ] && return 0
+  [ "$receipt" = "__RELAY_REFUSED__:1:0:$target_session:$relay_target_window" ] && return 2
+  printf 'relay: unexpected tmux delivery receipt: %s\n' "$receipt" >&2
+  return 1
+}
+
+atomic_text() {
+  local chunk_file code attempted=0
+  "$relay_payload_guard" chunks "$relay_payload_file" || return 1
+  relay_payload_buffer="relay-$$-$(basename "$relay_payload_dir")"
+  for chunk_file in "$relay_payload_dir"/chunk-*; do
+    if request load-buffer -b "$relay_payload_buffer" "$chunk_file"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && return 75
+      return 1
+    fi
+    if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane __RELAY_DELIVERED__"; then
+      attempted=1
+    else
+      code=$?
+      [ "$code" = 2 ] && [ "$attempted" = 1 ] && return 1
+      return "$code"
+    fi
+    sleep 0.1
+  done
+}
+
+verify_payload() {
+  local state state_after capture code cursor_x cursor_y previous='' stable=0 attempts=0
+  while [ "$attempts" -lt 10 ]; do
+    attempts=$((attempts + 1))
+    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      partial 'cannot query composer for payload verification'
+    fi
+    [[ "$state" =~ ^0:([0-9]+):([0-9]+):0:$target_session:$relay_target_window:$relay_verify_width:$relay_verify_height$ ]] || partial "target identity, dimensions, or input mode changed during verification ($state)"
+    cursor_x="${BASH_REMATCH[1]}"
+    cursor_y="${BASH_REMATCH[2]}"
+    if capture="$(request capture-pane -p -e -t "$pane")"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      partial 'cannot capture composer for payload verification'
+    fi
+    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      partial 'cannot recheck composer for payload verification'
+    fi
+    if [ "$state" = "$state_after" ] && printf '%s\n' "$capture" | "$relay_payload_guard" compare "$relay_glyph" "$cursor_x" "$cursor_y" "$relay_payload_file" "$relay_verify_width"; then
+      if [ "$previous" = "$state" ]; then
+        stable=$((stable + 1))
+      else
+        stable=1
+      fi
+      previous="$state"
+      [ "$stable" -ge 2 ] && return 0
+    else
+      stable=0
+      previous=
+    fi
+    sleep 0.1
+  done
+  partial 'complete composer does not match sent payload; Enter was not sent'
+}
+
+atomic_enter() {
+  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__"
+}

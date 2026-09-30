@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/relay-payload-guard
+# description: Validate relay payloads and compare the complete active composer with sent text.
+# patched: fail closed on truncated, hidden, or altered payloads
+# date: 2026-09-30
+import pathlib
+import re
+import sys
+import unicodedata
+
+
+def main():
+    mode, *args = sys.argv[1:]
+    if mode == "normalize":
+        text = sys.stdin.buffer.read().decode("utf-8", errors="strict")
+        if any(unicodedata.category(c) in ("Cc", "Cf", "Cs", "Zl", "Zp") and c not in "\n\r\t" for c in text):
+            return 1
+        text = re.sub(" +", " ", text.replace("\n", " ").replace("\r", " ").replace("\t", " ")).strip(" ")
+        sys.stdout.write(text)
+        return 0
+    if mode == "validate":
+        text = pathlib.Path(args[0]).read_bytes().decode("utf-8", errors="strict")
+        if not text or any(unicodedata.category(c) in ("Cc", "Cf", "Cs", "Zl", "Zp") for c in text):
+            return 1
+        return 0
+    if mode == "chunks":
+        payload = pathlib.Path(args[0])
+        text = payload.read_text(encoding="utf-8")
+        for index, offset in enumerate(range(0, len(text), 200)):
+            payload.with_name(f"chunk-{index:06d}").write_text(text[offset:offset + 200], encoding="utf-8")
+        return 0
+    if mode == "capacity":
+        text = pathlib.Path(args[0]).read_text(encoding="utf-8")
+        width = int(args[1])
+        size = sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+        return 0 if size <= width - 2 else 1
+    if mode != "compare" or len(args) != 5:
+        return 2
+    glyph, cursor_x, cursor_y, payload_path, width = args
+    width = int(width)
+    expected = pathlib.Path(payload_path).read_text(encoding="utf-8")
+    cursor_x, cursor_y = int(cursor_x), int(cursor_y)
+    raw = sys.stdin.buffer.read().decode("utf-8", errors="strict").splitlines()
+    rows = [re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", row) for row in raw]
+    if not 0 <= cursor_y < len(rows) or cursor_x < 2:
+        return 1
+    prompt = re.compile(r"^ *" + re.escape(glyph) + r"[ \u00a0]")
+    starts = [i for i in range(cursor_y + 1) if prompt.match(rows[i])]
+    if not starts:
+        return 1
+    start = starts[-1]
+    if start != cursor_y:
+        return 1
+    if glyph == "❯":
+        if start == 0 or not re.fullmatch("─{20,}", rows[start - 1]):
+            return 1
+        ends = [i for i in range(cursor_y + 1, len(rows)) if re.fullmatch("─{20,}", rows[i])]
+    elif glyph == "›":
+        ends = [i for i in range(cursor_y + 1, len(rows))
+                if ("\x1b[49m" in raw[i] and not re.search(r"\x1b\[48[;:]", raw[i].split("\x1b[49m", 1)[1]))
+                or (re.match(r"  +Fast\s+\S+\s*·", rows[i]) and "Context" in rows[i]
+                    and re.search(r"\x1b\[38[;:]", raw[i]))]
+    else:
+        return 2
+    if not ends:
+        return 1
+    end = ends[-1]
+    if (glyph == "❯" and end != cursor_y + 1) or (glyph == "›" and end > cursor_y + 2):
+        return 1
+    if any(row.strip(" ") for row in rows[cursor_y + 1:end]):
+        return 1
+    value = prompt.sub("", rows[start], count=1).rstrip(" ")
+    if "\x1b" in value or value != expected:
+        return 1
+    prefix_size = prompt.match(rows[start]).end()
+    size = sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in expected)
+    return 0 if cursor_x == prefix_size + size else 1
+
+
+try:
+    sys.exit(main())
+except (ValueError, OSError, UnicodeError, IndexError):
+    sys.exit(2)

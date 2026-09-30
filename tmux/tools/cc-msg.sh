@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/tools/cc-msg.sh
+# description: Deliver text to an explicitly selected agent with fail-closed payload verification.
+# patched: bracketed chunks and complete composer comparison before a single Enter
+# date: 2026-09-30
 set -uo pipefail
 
 fail() { printf 'cc-msg: %s\n' "$1" >&2; exit 1; }
 refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was sent\n' "$1" >&2; exit 2; }
-unresponsive() { printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
+unresponsive() { relay_server_unresponsive=1; printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'cc-msg: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'cc-msg: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
 refuse_draft() { printf 'cc-msg: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
@@ -47,14 +51,14 @@ RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
 
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
-  rm -f "$relay_lock"
+  trash "$relay_lock"
   relay_lock=
 }
 
 acquire_relay_lock() {
   local socket identity key
   socket="${TMUX%%,*}"
-  identity="$(stat -f '%d:%i' "$socket" 2>/dev/null || printf '%s' "$socket")"
+  identity="$(stat -Lf '%d:%i' "$socket" 2>/dev/null || printf '%s' "$socket")"
   key="$(printf '%s' "$identity:$pane" | shasum -a 256 | awk '{print $1}')" || return 1
   umask 077
   mkdir -p "$RELAY_LOCK_ROOT" || return 1
@@ -119,70 +123,7 @@ require_empty_cc_input() {
   esac
 }
 
-octal_literal() {
-  LC_ALL=C printf '%s' "$1" | od -An -v -tu1 | awk '
-    BEGIN { printf "\"" }
-    { for (i = 1; i <= NF; i++) printf "\\%03o", $i }
-    END { printf "\"" }
-  '
-}
-
-atomic_text() {
-  local payload=$1 encoded blocked deliver receipt code cleanup_code payload_file= payload_buffer= bytes
-  bytes="$(LC_ALL=C printf '%s' "$payload" | wc -c | tr -d ' ')"
-  if [ "$bytes" -gt 3000 ]; then
-    payload_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-payload.XXXXXX")" || return 1
-    payload_buffer="cc-msg-$(basename "$payload_file")"
-    LC_ALL=C printf '%s' "$payload" > "$payload_file" || { rm -f "$payload_file"; return 1; }
-    if request load-buffer -b "$payload_buffer" "$payload_file"; then
-      :
-    else
-      code=$?
-      rm -f "$payload_file"
-      return "$code"
-    fi
-    deliver="paste-buffer -d -t $pane -b $payload_buffer ; display-message -p -t $pane __CC_MSG_DELIVERED__"
-  else
-    encoded="$(octal_literal "$payload")" || return 1
-    deliver="send-keys -t $pane -l -- $encoded ; display-message -p -t $pane __CC_MSG_DELIVERED__"
-  fi
-  blocked="display-message -p -t $pane __CC_MSG_REFUSED_COPY_MODE__"
-  if receipt="$(request if-shell -F -t "$pane" '#{pane_in_mode}' "$blocked" "$deliver")"; then
-    code=0
-  else
-    code=$?
-  fi
-  if [ -n "$payload_buffer" ]; then
-    if request delete-buffer -b "$payload_buffer" >/dev/null 2>&1; then
-      cleanup_code=0
-    else
-      cleanup_code=$?
-    fi
-    rm -f "$payload_file"
-    [ "$cleanup_code" = 75 ] && code=75
-  fi
-  [ "$code" = 75 ] && return 75
-  [ "$code" = 0 ] || return 1
-  [ "$receipt" = __CC_MSG_DELIVERED__ ] && return 0
-  [ "$receipt" = __CC_MSG_REFUSED_COPY_MODE__ ] && return 2
-  return 1
-}
-
-atomic_enter() {
-  local blocked deliver receipt code
-  blocked="display-message -p -t $pane __CC_MSG_REFUSED_COPY_MODE__"
-  deliver="send-keys -t $pane Enter ; display-message -p -t $pane __CC_MSG_DELIVERED__"
-  if receipt="$(request if-shell -F -t "$pane" '#{pane_in_mode}' "$blocked" "$deliver")"; then
-    code=0
-  else
-    code=$?
-  fi
-  [ "$code" = 75 ] && return 75
-  [ "$code" = 0 ] || return 1
-  [ "$receipt" = __CC_MSG_DELIVERED__ ] && return 0
-  [ "$receipt" = __CC_MSG_REFUSED_COPY_MODE__ ] && return 2
-  return 1
-}
+source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
 FROM="${CC_MSG_FROM:-codex}"
 target_session="${CC_MSG_SESSION:-}"
@@ -194,8 +135,6 @@ esac
 case "$target_window" in
   ''|*[!A-Za-z0-9_-]*) fail 'CC_MSG_WINDOW is required and may contain only letters, digits, underscores, or hyphens' ;;
 esac
-# A pane selector is deliberately only a disambiguator: selection below also
-# requires that it belongs to this exact, named session and window.
 case "$target_pane" in
   '') ;;
   %*)
@@ -205,9 +144,11 @@ case "$target_pane" in
     ;;
   *) fail 'CC_MSG_PANE, when set, must be a numeric tmux pane id such as %46' ;;
 esac
-msg="$*"
-[ -n "$msg" ] || msg="$(cat)"
-msg="$(printf '%s' "$msg" | tr '\n\r\t' '   ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')"
+if [ "$#" -gt 0 ]; then
+  msg="$(printf '%s' "$*" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
+else
+  msg="$("$relay_payload_guard" normalize)" || fail 'invalid stdin message; printable UTF-8 is required'
+fi
 [ -n "$msg" ] || fail 'empty message; refuse'
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set; refuse'
 
@@ -216,7 +157,7 @@ if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_cu
   :
 else
   code=$?
-  rm -f "$list_file"
+  trash "$list_file"
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes; refuse'
 fi
@@ -229,7 +170,7 @@ else
   pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
   command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 fi
-rm -f "$list_file"
+trash "$list_file"
 case "$target_count" in
   0)
     if [ -n "$target_pane" ]; then
@@ -244,7 +185,10 @@ case "$command_name" in
   fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Claude Code; refuse" ;;
 esac
 
+relay_target_window="$target_window"
+relay_glyph="❯"
 acquire_relay_lock || busy
+prepare_payload "$FROM: $msg"
 require_empty_cc_input
 
 if atomic_text "$FROM: $msg"; then
@@ -257,7 +201,7 @@ else
     *) partial 'literal delivery outcome is unknown' ;;
   esac
 fi
-sleep 1
+verify_payload
 if atomic_enter; then
   :
 else
@@ -268,15 +212,4 @@ else
     *) partial 'Enter delivery outcome is unknown' ;;
   esac
 fi
-sleep 2
-if atomic_enter; then
-  :
-else
-  code=$?
-  case "$code" in
-    2) partial "target $pane entered copy mode after earlier delivery; guard Enter was not sent" ;;
-    75) unresponsive ;;
-    *) partial 'guard Enter delivery outcome is unknown' ;;
-  esac
-fi
-printf 'cc-msg: delivered to %s (%s:%s)\n' "$pane" "$target_session" "$target_window"
+printf 'cc-msg: delivered to %s (%s:%s); complete composer verified (not an acknowledgment)\n' "$pane" "$target_session" "$target_window"
