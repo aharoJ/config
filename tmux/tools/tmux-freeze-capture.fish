@@ -1,4 +1,8 @@
 #!/usr/bin/env fish
+# path: ~/.config/tmux/tools/tmux-freeze-capture.fish
+# description: Capture bounded read-only tmux incident evidence.
+# patched: restrict incident evidence permissions
+# date: 2026-10-01
 set -l socket (string trim -- ""$TMUX_FREEZE_CAPTURE_SOCKET)
 set -l output_root (string trim -- ""$TMUX_FREEZE_CAPTURE_OUTPUT_ROOT)
 set -l tmux_bin (string trim -- ""$TMUX_FREEZE_CAPTURE_TMUX_BIN)
@@ -51,6 +55,7 @@ function epoch_ms
 end
 set -l stamp (date -u +%Y%m%dT%H%M%SZ)
 set -l out "$output_root/tmux-freeze-capture-$stamp-$fish_pid"
+umask 077
 if not mkdir -p -- "$out"
     echo "STOP: cannot create evidence directory: $out" >&2
     exit 73
@@ -81,6 +86,7 @@ function run_tmux --argument-names label
     set -l status_code $status
     set -l ended (epoch_ms)
     record_status "$label" "$status_code" "$started" "$ended"
+
 end
 printf 'utc=%s\nsocket=%s\ntmux=%s\ntimeout=%s\ntmux_timeout_seconds=%s\nlsof_timeout_seconds=%s\nreadonly=true\n' "$stamp" "$socket" "$tmux_bin" "$timeout_bin" "$tmux_seconds" "$lsof_seconds" > "$out/manifest.txt"
 if test -n "$lsof_bin"; and test -x "$lsof_bin"

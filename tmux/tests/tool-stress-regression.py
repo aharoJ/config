@@ -383,6 +383,12 @@ PY''')
                 "TMUX_FREEZE_CAPTURE_SAMPLE_BIN": unavailable, "STRESS_TMUX_LOG": str(log)}, log
 
 
+    def test_capture_private_permissions(self):
+        extra, log = self.capture_env(0)
+        code, output = self.run_tool("tmux-freeze-capture.fish", extra=extra, timeout=8, umask=0)
+        self.assertEqual(code, 0, output)
+        for path in (self.directory / "evidence").rglob("*"):
+            self.assertEqual(path.stat().st_mode & 0o077, 0, str(path))
 
 
     def test_rescue_missing_settings(self):
