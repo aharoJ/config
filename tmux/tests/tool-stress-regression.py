@@ -303,6 +303,17 @@ relay_cleanup
         self.assertEqual(code, 1, output)
         self.assertIn("outside declared lab root", output)
 
+    def test_rescue_production_loop_overrides(self):
+        for setting in ("FRAME", "FUNCTION", "PC_OFFSET", "INSTRUCTION_BYTES"):
+            with self.subTest(setting=setting):
+                code, output = self.run_tool("tmux-loop-rescue", "--production", "--verify", extra={
+                    "TMUX_LOOP_RESCUE_SOCKET": "/private/tmp/tmux-501/default", "TMUX_LOOP_RESCUE_PID": "1",
+                    "TMUX_LOOP_RESCUE_COUNT": "1", "TMUX_LOOP_RESCUE_PRODUCTION_ACK": "I-ACK-PRODUCTION-ATTACH",
+                    "TMUX_LOOP_RESCUE_EVIDENCE_ROOT": str(self.directory),
+                    "TMUX_LOOP_RESCUE_EXPECTED_" + setting: "unexpected",
+                })
+                self.assertEqual(code, 1, output)
+                self.assertIn("production loop overrides are forbidden", output)
 
     def rescue_env(self, quoted=False):
         sock = self.socket("rescue.sock")
