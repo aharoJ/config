@@ -103,6 +103,19 @@ class ToolStress(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertFalse(marker.exists())
 
+    def test_fixture_runner_removes_state(self):
+        source = ROOT / "tools/pane-watch/tests"
+        clone = self.directory / "runner"
+        clone.mkdir()
+        shutil.copyfile(source / "run", clone / "run")
+        shutil.copytree(source / "fakebin", clone / "fakebin")
+        shutil.copytree(source / "fx/real_geometry", clone / "fx/real_geometry")
+        result = subprocess.run(["bash", str(clone / "run"), str(ROOT / "tools/pane-watch/pane-watch.sh"), "real_geometry", "--ack-current"],
+                                env=self.env, capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("ARMED codex", result.stdout)
+        self.assertFalse((clone / ".tmp").exists())
+        self.assertFalse(list(self.directory.glob("pane-watch-fixture.*")))
 
     def test_delivery_harness_cleans_after_failure(self):
         spec = importlib.util.spec_from_file_location("delivery_cleanup", ROOT / "tests/relay-delivery-regression.py")
