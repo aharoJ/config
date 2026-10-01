@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-tmux-stub.sh
 # description: Emulate relay routing, bracketed payload delivery, and composer captures.
-# patched: model structured footer boundaries
+# patched: model receiver identity during composer verification
 # date: 2026-10-01
 set -euo pipefail
 
@@ -33,8 +33,8 @@ case "${1:-}" in
     ;;
   display-message)
     format="${!#}"
-    if [[ "$format" = '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}' ]]; then
-      printf '192:51:0:relaytest:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")"
+    if [[ "$format" = '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_pid}:#{pane_current_command}' ]]; then
+      printf '192:51:0:relaytest:%s:100:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
       exit 0
     fi
     if [ -s "$RELAY_TEST_LOG.payload" ]; then
@@ -42,7 +42,7 @@ case "${1:-}" in
       row=0
       [[ "$RELAY_TEST_PANES" = *claude* ]] && row=1
       suffix=
-      [[ "$format" = *pane_width* ]] && suffix=:192:51
+      [[ "$format" = *pane_width* ]] && suffix=":192:51:100:$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
       printf '0:%s:%s:0:relaytest:%s%s\n' "$column" "$row" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$suffix"
       exit 0
     fi

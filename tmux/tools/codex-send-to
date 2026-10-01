@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bracketed chunks and complete composer comparison before a single Enter
-# date: 2026-09-30
+# patched: bind the verified empty composer cursor to guarded paste
+# date: 2026-10-01
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s\n' "$1" >&2; exit 1; }
@@ -103,7 +103,7 @@ require_empty_codex_input() {
   printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '›' "$cursor_x" "$cursor_y"
   code=$?
   case "$code" in
-    0) return 0 ;;
+    0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
     1) refuse_draft "$pane" ;;
     *) fail "cannot find Codex prompt in target $pane" ;;
   esac
@@ -123,8 +123,7 @@ esac
 case "$window_name" in
   ''|*[!A-Za-z0-9_-]*) fail 'window name may contain only letters, digits, underscores, or hyphens' ;;
 esac
-
-list_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-to-list.XXXXXX")" || fail 'scratch file unavailable'
+"$(mktemp "${TMPDIR:-/tmp}/codex-send-to-list.XXXXXX")" || fail 'scratch file unavailable'
 if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
   :
 else

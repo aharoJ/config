@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: derive sender labels from fresh process ancestry and verified pane identity
-# date: 2026-09-30
+# patched: bind the verified empty composer cursor to guarded paste
+# date: 2026-10-01
 set -uo pipefail
 
 fail() { printf 'cc-msg: %s\n' "$1" >&2; exit 1; }
@@ -119,7 +119,7 @@ require_empty_cc_input() {
   printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y"
   code=$?
   case "$code" in
-    0) return 0 ;;
+    0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
     1) refuse_draft "$pane" ;;
     *) fail "cannot find CC prompt in target $pane" ;;
   esac
@@ -169,8 +169,7 @@ else
 fi
 [ -n "$msg" ] || fail 'empty message; refuse'
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set; refuse'
-
-list_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
+"$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
 if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$list_file"; then
   :
 else

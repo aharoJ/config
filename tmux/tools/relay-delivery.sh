@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: replace unverified literal delivery and duplicate Enter with exact payload checks
-# date: 2026-09-30
+# patched: bind paste and Enter to verified receiver, cursor, and dimensions
+# date: 2026-10-01
 
 relay_payload_file=
 relay_payload_dir=
@@ -26,22 +26,26 @@ relay_cleanup() {
 }
 trap relay_cleanup EXIT
 
+
 prepare_payload() {
   local dimensions code bytes width height
   relay_payload_dir="$(mktemp -d "${TMPDIR:-/tmp}/relay-payload.XXXXXX")" || fail 'cannot create payload scratch directory'
   relay_payload_file="$relay_payload_dir/payload"
   printf '%s' "$1" > "$relay_payload_file" || fail 'cannot write payload scratch file'
   "$relay_payload_guard" validate "$relay_payload_file" || fail 'payload must be printable UTF-8 without control or format characters'
-  if dimensions="$(request display-message -p -t "$pane" '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}')"; then
+  if dimensions="$(request display-message -p -t "$pane" '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_pid}:#{pane_current_command}')"; then
     :
   else
     code=$?
     [ "$code" = 75 ] && unresponsive
     fail 'cannot validate target identity and dimensions'
   fi
-  [[ "$dimensions" =~ ^([0-9]+):([0-9]+):0:$target_session:$relay_target_window$ ]] || fail 'target identity changed or target pane is dead'
+  [[ "$dimensions" =~ ^([0-9]+):([0-9]+):0:$target_session:$relay_target_window:([0-9]+):([A-Za-z0-9_.+-]+)$ ]] || fail 'target identity changed or target pane is dead'
+  [ "${BASH_REMATCH[4]}" = "$command_name" ] || fail 'target process changed during resolution'
   width="${BASH_REMATCH[1]}"
   height="${BASH_REMATCH[2]}"
+  relay_target_pid="${BASH_REMATCH[3]}"
+  relay_target_command="${BASH_REMATCH[4]}"
   relay_verify_width="$width"
   relay_verify_height="$height"
   bytes="$(LC_ALL=C wc -c < "$relay_payload_file" | tr -d ' ')"
@@ -53,8 +57,12 @@ prepare_payload() {
 relay_atomic() {
   local deliver=$1 blocked receipt code identity guarded
   blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
-  identity="#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{==:#{pane_dead},0}}}"
+  identity="#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{==:#{pane_current_command},$relay_target_command}}}}}"
   guarded="#{&&:$identity,#{==:#{pane_in_mode},0}}"
+  guarded="#{&&:$guarded,#{&&:#{==:#{pane_width},$relay_verify_width},#{==:#{pane_height},$relay_verify_height}}}"
+  if [ -n "${2:-}" ]; then
+    guarded="#{&&:$guarded,#{&&:#{==:#{cursor_x},$2},#{==:#{cursor_y},$3}}}"
+  fi
   if receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"; then
     code=0
   else
@@ -69,7 +77,7 @@ relay_atomic() {
 }
 
 atomic_text() {
-  local chunk_file code attempted=0
+  local chunk_file code attempted=0 expected_x expected_y
   "$relay_payload_guard" chunks "$relay_payload_file" || return 1
   relay_payload_buffer="relay-$$-$(basename "$relay_payload_dir")"
   for chunk_file in "$relay_payload_dir"/chunk-*; do
@@ -80,7 +88,9 @@ atomic_text() {
       [ "$code" = 75 ] && return 75
       return 1
     fi
-    if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane __RELAY_DELIVERED__"; then
+    expected_x=; expected_y=
+    [ "$attempted" = 0 ] && { expected_x="$relay_empty_cursor_x"; expected_y="$relay_empty_cursor_y"; }
+    if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane __RELAY_DELIVERED__" "$expected_x" "$expected_y"; then
       attempted=1
     else
       code=$?
@@ -95,14 +105,15 @@ verify_payload() {
   local state state_after capture code cursor_x cursor_y previous='' stable=0 attempts=0
   while [ "$attempts" -lt 10 ]; do
     attempts=$((attempts + 1))
-    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}')"; then
+    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
     else
       code=$?
       [ "$code" = 75 ] && unresponsive
       partial 'cannot query composer for payload verification'
     fi
-    [[ "$state" =~ ^0:([0-9]+):([0-9]+):0:$target_session:$relay_target_window:$relay_verify_width:$relay_verify_height$ ]] || partial "target identity, dimensions, or input mode changed during verification ($state)"
+    [[ "$state" =~ ^0:([0-9]+):([0-9]+):0:$target_session:$relay_target_window:$relay_verify_width:$relay_verify_height:$relay_target_pid:([A-Za-z0-9_.+-]+)$ ]] || partial "target identity, dimensions, or input mode changed during verification ($state)"
+    [ "${BASH_REMATCH[3]}" = "$relay_target_command" ] || partial 'target process changed during verification'
     cursor_x="${BASH_REMATCH[1]}"
     cursor_y="${BASH_REMATCH[2]}"
     if capture="$(request capture-pane -p -e -t "$pane")"; then
@@ -112,7 +123,7 @@ verify_payload() {
       [ "$code" = 75 ] && unresponsive
       partial 'cannot capture composer for payload verification'
     fi
-    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}')"; then
+    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
     else
       code=$?
@@ -126,7 +137,11 @@ verify_payload() {
         stable=1
       fi
       previous="$state"
-      [ "$stable" -ge 2 ] && return 0
+      if [ "$stable" -ge 2 ]; then
+        relay_verified_cursor_x="$cursor_x"
+        relay_verified_cursor_y="$cursor_y"
+        return 0
+      fi
     else
       stable=0
       previous=
@@ -137,5 +152,5 @@ verify_payload() {
 }
 
 atomic_enter() {
-  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__"
+  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$relay_verified_cursor_x" "$relay_verified_cursor_y"
 }
