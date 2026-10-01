@@ -218,6 +218,14 @@ class StateMatrix(delivery.Matrix):
                 for stage in ("list", "load", "paste", "compare", "enter"):
                     for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGPIPE):
                         self.interrupted(relay, stage, signum)
+            if group in ("all", "invocation"):
+                for shell in ("bash", "fish", "zsh"):
+                    self.invocation(relay, shell)
+                if relay != "cc-msg.sh":
+                    self.extra_arguments(relay)
+                self.case(relay, "missing-TMUX", code=1, extra={"TMUX": ""})
+                for action in ("slow-request", "server-death"):
+                    self.degraded(relay, action)
         failures = sum(not row["passed"] for row in self.results)
         print(f"{len(self.results)} cases; {failures} failures; evidence: {self.output}")
         return int(bool(failures))

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bind the verified empty composer cursor to guarded paste
+# patched: refuse surplus message arguments before target input
 # date: 2026-10-01
 set -uo pipefail
 
@@ -111,7 +111,7 @@ require_empty_codex_input() {
 
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-[ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: codex-send-to <window-name> <text>\n' >&2; exit 1; }
+[ "$#" = 2 ] && [ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: codex-send-to <window-name> <text>\n' >&2; exit 1; }
 window_name=$1
 message="$(printf '%s' "$2" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
