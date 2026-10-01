@@ -61,6 +61,11 @@ class ToolStress(unittest.TestCase):
         server.bind(str(path))
         return path
 
+    def test_watcher_missing_values(self):
+        for flag in ("--pane", "--ui", "--hot-file"):
+            with self.subTest(flag=flag):
+                code, output = self.run_tool("pane-watch/pane-watch.sh", flag, timeout=0.5)
+                self.assertEqual(code, 64, output)
 
     def test_default_server_is_never_forwarded(self):
         calls = self.directory / "backend-calls"
@@ -132,6 +137,10 @@ class ToolStress(unittest.TestCase):
         self.assertFalse(sock.exists())
         self.assertTrue((matrix.output / "cleanup.json").exists())
 
+    def test_watcher_flag_as_value(self):
+        code, output = self.run_tool("pane-watch/pane-watch.sh", "--pane", "--ui", "codex")
+        self.assertEqual(code, 64, output)
+        self.assertIn("requires a value", output)
 
     def watcher_stub(self):
         self.executable("tmux", '''case "$1" in

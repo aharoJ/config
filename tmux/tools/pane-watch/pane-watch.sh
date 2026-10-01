@@ -1,4 +1,8 @@
 #!/bin/bash
+# path: ~/.config/tmux/tools/pane-watch/pane-watch.sh
+# description: Alert on agent waits and lost observation coverage.
+# patched: refuse missing option values before shifting arguments
+# date: 2026-10-01
 # pane-watch: tell the operator, loudly, when an agent in a tmux pane is waiting on them.
 #
 # Design notes and the eight-round adversarial audit trail that produced the parser live in
@@ -26,6 +30,11 @@ U
 
 TARGET=""; UI=""; HOTFILE=""; ACK_CURRENT=0; REPLACE=0
 while [ $# -gt 0 ]; do
+  case "$1" in
+    --pane|--ui|--hot-file)
+      [ "$#" -ge 2 ] && [ -n "$2" ] && [[ "$2" != --* ]] || { echo "REFUSE: $1 requires a value." >&2; usage; }
+      ;;
+  esac
   case "$1" in
     --pane) TARGET="${2:-}"; shift 2 ;;
     --ui) UI="${2:-}"; shift 2 ;;
@@ -82,7 +91,6 @@ n=$(tmuxq list-panes -a -F '#{pane_id}' 2>/dev/null | grep -cx -- "$PANE")
 read -r P_DEAD P_CMD P_SESS P_WIN P_PATH <<<"$(tmuxq display-message -p -t "$PANE" \
   '#{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}' 2>/dev/null)"
 [ "${P_DEAD:-1}" = "0" ] || { echo "REFUSE: pane $PANE is dead." >&2; exit 1; }
-
 LOCKROOT="${TMPDIR:-/tmp}/pane-watch-locks"; mkdir -p "$LOCKROOT"
 LOCK="$LOCKROOT/$(printf '%s' "$PANE" | tr -d '%')"
 process_start() { ps -p "$1" -o lstart= 2>/dev/null | awk '{$1=$1; print}'; }
