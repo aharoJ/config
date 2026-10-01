@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-tmux-stub.sh
 # description: Emulate relay routing, bracketed payload delivery, and composer captures.
-# patched: model actual landed text instead of treating command receipts as verification
-# date: 2026-09-30
+# patched: model structured footer boundaries
+# date: 2026-10-01
 set -euo pipefail
 
 : "${RELAY_TEST_CAPTURE:?}"
@@ -25,7 +25,7 @@ case "${1:-}" in
       if [[ "$RELAY_TEST_PANES" = *claude* ]]; then
         printf '────────────────────\n❯ %s\n────────────────────\n' "$payload"
       else
-        printf '› %s\n\033[49m  Fast off\n' "$payload"
+        printf '› %s\n\033[49m  Fast off · test · Context 0%% used\n' "$payload"
       fi
     else
       printf '%s\n' "$RELAY_TEST_CAPTURE"

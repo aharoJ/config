@@ -159,6 +159,17 @@ esac''')
 
 
 
+    def test_guards_reject_unstructured_styled_boundaries(self):
+        payload = self.directory / "payload"
+        payload.write_text("relay payload")
+        for footer in ("\x1b[49m  hidden draft", "\x1b[38;5;215m  Fast unknown · Draft Context", "\x1b[49m  Fast off"):
+            with self.subTest(footer=footer):
+                result = subprocess.run([str(ROOT / "tools/relay-input-guard"), "›", "2", "0"],
+                                        input="› \n" + footer + "\n", capture_output=True, text=True, timeout=2)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                result = subprocess.run([str(ROOT / "tools/relay-payload-guard"), "compare", "›", "15", "0", str(payload), "80"],
+                                        input="› relay payload\n" + footer + "\n", capture_output=True, text=True, timeout=2)
+                self.assertEqual(result.returncode, 1, result.stderr)
 
 
 

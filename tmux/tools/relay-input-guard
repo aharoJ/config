@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: recognize the framed Codex 0.159.2 plain status footer without relaxing cursor checks
-# date: 2026-09-30
+# patched: require structured styled footer boundaries
+# date: 2026-10-01
 use strict;
 use warnings;
 use utf8;
@@ -161,10 +161,11 @@ sub composer_has_safe_tail {
         # A following input background means it is still composer content.
         if ($glyph eq '›') {
             return 1 if codex_plain_footer($rows_ref, $start, $index);
+            my $structured = $visible =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\z/;
             my $reset_at = index($raw, "\e[49m");
             if ($reset_at >= 0) {
                 my $after_reset = substr($raw, $reset_at + length("\e[49m"));
-                return 1 if $after_reset !~ /\e\[48(?:;|:)/;
+                return 1 if $structured && $after_reset !~ /\e\[48(?:;|:)/ && $after_reset !~ /\e\]/;
             }
 
             # With NO_COLOR and some 256-colour terminals, Codex omits the
@@ -172,9 +173,7 @@ sub composer_has_safe_tail {
             # rendered as a coloured, structured "Fast … · … Context …"
             # row.  Keep this deliberately strict: an unfamiliar footer is
             # not treated as a boundary and therefore refuses the send.
-            if ($raw =~ /\e\[38(?:;|:)/
-                && $visible =~ /^\h{2,}Fast\h+\S+\h*·/
-                && $visible =~ /\bContext\b/) {
+            if ($structured && $raw =~ /\e\[38(?:;|:)/ && $raw !~ /\e\[48(?:;|:)|\e\]/) {
                 return 1;
             }
         }

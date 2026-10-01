@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-payload-guard
 # description: Validate relay payloads and compare the complete active composer with sent text.
-# patched: recognize captured plain status and busy queue footers while retaining exact payload equality
-# date: 2026-09-30
+# patched: require structured styled footer boundaries
+# date: 2026-10-01
 import pathlib
 import re
 import sys
@@ -18,6 +18,16 @@ def codex_plain_footer(raw, start, index):
         return False
     return (re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *", footer) is not None
             or re.fullmatch(r"  tab to queue message {2,}(?:100|[0-9]{1,2})% context left *", footer) is not None)
+
+
+def codex_styled_footer(raw, visible):
+    if re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *", visible) is None:
+        return False
+    if "\x1b]" in raw:
+        return False
+    if "\x1b[49m" in raw:
+        return re.search(r"\x1b\[48[;:]", raw.split("\x1b[49m", 1)[1]) is None
+    return re.search(r"\x1b\[38[;:]", raw) is not None and re.search(r"\x1b\[48[;:]", raw) is None
 
 
 def main():
@@ -69,9 +79,7 @@ def main():
     elif glyph == "›":
         ends = [i for i in range(cursor_y + 1, len(rows))
                 if codex_plain_footer(raw, start, i)
-                or ("\x1b[49m" in raw[i] and not re.search(r"\x1b\[48[;:]", raw[i].split("\x1b[49m", 1)[1]))
-                or (re.match(r"  +Fast\s+\S+\s*·", rows[i]) and "Context" in rows[i]
-                    and re.search(r"\x1b\[38[;:]", raw[i]))]
+                or codex_styled_footer(raw[i], rows[i])]
     else:
         return 2
     if not ends:

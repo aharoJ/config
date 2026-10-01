@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: verify real Codex 0.159.2 captures and reject footer lookalikes, drafts, and payload changes
-# date: 2026-09-30
+# patched: pin structured footer suggestions
+# date: 2026-10-01
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -57,16 +57,16 @@ tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/relay-input-guard.XXXXXX")"
 trap 'trash "$tmpdir"' EXIT
 
 # Captures reproduce the SGR classes observed in live Codex and Claude panes.
-codex_placeholder=$'\e[1m\e[38;2;248;183;90m›\e[0m\e[48;2;57;57;71m \e[2mAsk Codex to do anything\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off'
-codex_suggestion=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mContinue the unresolved tmux capture investigation\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off'
-codex_wrapped_suggestion=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mContinue the unresolved\n  tmux capture investigation\e[0m\n\e[49m  Fast off'
+codex_placeholder=$'\e[1m\e[38;2;248;183;90m›\e[0m\e[48;2;57;57;71m \e[2mAsk Codex to do anything\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off · test · Context 0% used'
+codex_suggestion=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mContinue the unresolved tmux capture investigation\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off · test · Context 0% used'
+codex_wrapped_suggestion=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mContinue the unresolved\n  tmux capture investigation\e[0m\n\e[49m  Fast off · test · Context 0% used'
 codex_no_color_suggestion=$'\e[1m\e[38;2;255;178;66m›\e[0m \e[2mContinue the unresolved tmux capture investigation\e[0m\n\n  \e[38;2;200;169;238mFast off\e[39m · \e[38;2;246;226;183mGPT-5.6-Terra\e[39m · \e[38;2;242;181;144mContext 0% used'
 codex_256_suggestion=$'\e[1m\e[38;5;215m›\e[0m \e[2mContinue the unresolved tmux capture investigation\e[0m\n\n  \e[38;5;183mFast off\e[39m · \e[38;5;223mGPT-5.6-Terra\e[39m · \e[38;5;216mContext 0% used'
 codex_dumb_suggestion=$'\e[1m›\e[0m \e[2mContinue the unresolved tmux capture investigation\e[0m\n\n  Fast off · GPT-5.6-Terra · Context 0% used'
 codex_draft=$'\e[1;2m› \e[0m\e[48;2;66;66;79mreal user draft'
 codex_rgb_draft=$'\e[1m›\e[0m\e[48;2;66;66;79mreal user draft'
-codex_dim_typed=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mtyped but dim\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off'
-codex_multiline_draft=$'\e[1m›\e[0m\e[48;2;66;66;79m \n  real user draft\n\e[49m  Fast off'
+codex_dim_typed=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mtyped but dim\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off · test · Context 0% used'
+codex_multiline_draft=$'\e[1m›\e[0m\e[48;2;66;66;79m \n  real user draft\n\e[49m  Fast off · test · Context 0% used'
 codex_choice=$'\e[1m\e[38;2;0;0;46m\e[48;2;99;168;248m› 1. Trust and continue'
 cc_empty=$'\e[39m❯\302\240\n\e[38;5;244m────────────────────'
 cc_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util logging.py that…"\e[0m\n\e[38;5;244m────────────────────'
