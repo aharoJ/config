@@ -277,7 +277,31 @@ relay_cleanup
                                 input=capture, capture_output=True, text=True, timeout=2)
         self.assertEqual(result.returncode, 1, result.stderr)
 
+    def test_rescue_symlink_escape(self):
+        outside = self.socket("outside.sock")
+        lab = self.directory / "lab"
+        lab.mkdir()
+        alias = lab / "alias.sock"
+        alias.symlink_to(outside)
+        code, output = self.run_tool("tmux-loop-rescue", "--verify", extra={
+            "TMUX_LOOP_RESCUE_SOCKET": str(alias), "TMUX_LOOP_RESCUE_LAB_ROOT": str(lab),
+            "TMUX_LOOP_RESCUE_LAB": "1", "TMUX_LOOP_RESCUE_PID": "1", "TMUX_LOOP_RESCUE_COUNT": "1",
+            "TMUX_LOOP_RESCUE_TMUX_BIN": str(self.directory / "missing"),
+        })
+        self.assertEqual(code, 1, output)
+        self.assertIn("outside declared lab root", output)
 
+    def test_rescue_parent_traversal(self):
+        outside = self.socket("outside.sock")
+        lab = self.directory / "lab"
+        lab.mkdir()
+        code, output = self.run_tool("tmux-loop-rescue", "--verify", extra={
+            "TMUX_LOOP_RESCUE_SOCKET": str(lab) + "/../" + outside.name, "TMUX_LOOP_RESCUE_LAB_ROOT": str(lab),
+            "TMUX_LOOP_RESCUE_LAB": "1", "TMUX_LOOP_RESCUE_PID": "1", "TMUX_LOOP_RESCUE_COUNT": "1",
+            "TMUX_LOOP_RESCUE_TMUX_BIN": str(self.directory / "missing"),
+        })
+        self.assertEqual(code, 1, output)
+        self.assertIn("outside declared lab root", output)
 
 
     def rescue_env(self, quoted=False):
@@ -327,6 +351,10 @@ PY''')
 
 
 
+    def test_rescue_missing_settings(self):
+        code, output = self.run_tool("tmux-loop-rescue", "--verify", extra={"TMUX_LOOP_RESCUE_SOCKET": ""})
+        self.assertEqual(code, 1, output)
+        self.assertIn("SOCKET is required", output)
 
 
 

@@ -1,4 +1,8 @@
 #!/bin/sh
+# path: ~/.config/tmux/tools/tmux-loop-rescue
+# description: Verify and recover the supported tmux copy-mode loop behind explicit gates.
+# patched: canonicalize lab socket paths before the containment gate
+# date: 2026-10-01
 set -u
 
 refuse() { printf 'REFUSED: %s\n' "$1" >&2; exit 1; }
@@ -47,6 +51,8 @@ fi
 if [ "$mode" = lab ]; then
   [ "${TMUX_LOOP_RESCUE_LAB:-}" = 1 ] || refuse 'set TMUX_LOOP_RESCUE_LAB=1 for an explicit lab rehearsal'
   [ -n "$lab_root" ] || refuse 'TMUX_LOOP_RESCUE_LAB_ROOT is required'
+  lab_root=$(realpath "$lab_root" 2>/dev/null) || refuse 'cannot resolve declared lab root'
+  socket=$(realpath "$socket" 2>/dev/null) || refuse 'cannot resolve lab socket'
   case "$socket" in
     /private/tmp/tmux-501/default|/private/tmp/tmux-501/default/*) refuse 'production socket is forbidden in lab mode' ;;
     "$lab_root"/*) : ;;
