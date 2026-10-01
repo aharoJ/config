@@ -1,7 +1,7 @@
 #!/bin/sh
 # path: ~/.config/tmux/tools/tmux-loop-rescue
 # description: Verify and recover the supported tmux copy-mode loop behind explicit gates.
-# patched: reject future-dated rescue observations
+# patched: canonicalize lab sockets and validate production gates, freshness, and debugger paths
 # date: 2026-10-01
 set -u
 
@@ -524,10 +524,10 @@ printf '%s\n' \
   '        uncertain("register-write-exception:" + type(error).__name__)' \
   '    else:' \
   '        refuse("debugger-check-error:" + type(error).__name__)' > "$final_script"
-printf '%s\n' "process attach -p $pid" 'script import lldb, os; target = lldb.debugger.GetSelectedTarget(); breakpoint = target.BreakpointCreateByAddress(int(os.environ["TMUX_LOOP_FINAL_PC"], 0)); open(os.environ["TMUX_LOOP_FINAL_BP_FILE"], "w").write(str(breakpoint.GetID())); print("TMUX_LOOP_BREAKPOINT=%d" % breakpoint.GetID())' 'process continue' "script exec(compile(open('$final_script').read(), '$final_script', 'exec'))" 'process detach' quit > "$out/lldb-rescue-command-file.txt"
+printf '%s\n' "process attach -p $pid" 'script import lldb, os; target = lldb.debugger.GetSelectedTarget(); breakpoint = target.BreakpointCreateByAddress(int(os.environ["TMUX_LOOP_FINAL_PC"], 0)); open(os.environ["TMUX_LOOP_FINAL_BP_FILE"], "w").write(str(breakpoint.GetID())); print("TMUX_LOOP_BREAKPOINT=%d" % breakpoint.GetID())' 'process continue' 'script exec(compile(open(os.environ["TMUX_LOOP_FINAL_SCRIPT"]).read(), os.environ["TMUX_LOOP_FINAL_SCRIPT"], "exec"))' 'process detach' quit > "$out/lldb-rescue-command-file.txt"
 attached=1
 write_state=UNKNOWN
-run_bounded lldb-rescue 20 env TMUX_LOOP_FINAL_PID="$pid" TMUX_LOOP_FINAL_PC="$runtime_pc" TMUX_LOOP_FINAL_BOUND="$final_bound" TMUX_LOOP_FINAL_DEADLINE="$final_deadline" TMUX_LOOP_FINAL_EXE="$actual_exe" TMUX_LOOP_FINAL_SHA256="$actual_sha" TMUX_LOOP_FINAL_UUID="$actual_uuid" TMUX_LOOP_FINAL_SOCKET="$socket" TMUX_LOOP_FINAL_SOCKET_IDENTITY="$socket_identity_value" TMUX_LOOP_FINAL_PROCESS_START="$server_start" TMUX_LOOP_FINAL_LSOF="$lsof_bin" TMUX_LOOP_FINAL_FUNCTION="$expected_function" TMUX_LOOP_FINAL_BYTES="$expected_bytes_hex" TMUX_LOOP_FINAL_BP_FILE="$final_bp_file" TMUX_LOOP_FINAL_WRITE_EXCEPTION="$lab_write_exception" "$lldb_bin" -b -s "$out/lldb-rescue-command-file.txt"
+run_bounded lldb-rescue 20 env TMUX_LOOP_FINAL_PID="$pid" TMUX_LOOP_FINAL_PC="$runtime_pc" TMUX_LOOP_FINAL_BOUND="$final_bound" TMUX_LOOP_FINAL_DEADLINE="$final_deadline" TMUX_LOOP_FINAL_EXE="$actual_exe" TMUX_LOOP_FINAL_SHA256="$actual_sha" TMUX_LOOP_FINAL_UUID="$actual_uuid" TMUX_LOOP_FINAL_SOCKET="$socket" TMUX_LOOP_FINAL_SOCKET_IDENTITY="$socket_identity_value" TMUX_LOOP_FINAL_PROCESS_START="$server_start" TMUX_LOOP_FINAL_LSOF="$lsof_bin" TMUX_LOOP_FINAL_FUNCTION="$expected_function" TMUX_LOOP_FINAL_BYTES="$expected_bytes_hex" TMUX_LOOP_FINAL_BP_FILE="$final_bp_file" TMUX_LOOP_FINAL_SCRIPT="$final_script" TMUX_LOOP_FINAL_WRITE_EXCEPTION="$lab_write_exception" "$lldb_bin" -b -s "$out/lldb-rescue-command-file.txt"
 if grep -q 'Process .* detached' "$out/lldb-rescue.stdout.txt"; then attached=0; fi
 if [ "$RUN_STATUS" = 0 ] && grep -q '^TMUX_LOOP_FINAL=PASS$' "$out/lldb-rescue.stdout.txt" && grep -q '^TMUX_LOOP_WRITE=ATTEMPTED$' "$out/lldb-rescue.stdout.txt" && [ "$attached" = 0 ]; then
   run_bounded post-rescue-response "$tmux_seconds" "$tmux_bin" -S "$socket" display-message -p '#{pid}'

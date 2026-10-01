@@ -365,6 +365,13 @@ PY''')
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("OBSERVATION=FAIL", result.stderr)
 
+    def test_rescue_quotes_evidence_path(self):
+        extra = self.rescue_env(quoted=True)
+        result = subprocess.run([str(ROOT / "tools/tmux-loop-rescue")], env={**self.env, **extra},
+                                input=extra["TMUX_LOOP_RESCUE_PID"] + "\n", capture_output=True, text=True, timeout=6)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("offline-test", result.stderr)
+        self.assertNotIn("completion was not established", result.stderr)
 
     def capture_env(self, status):
         path = self.socket("capture.sock")
