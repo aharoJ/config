@@ -1,0 +1,23 @@
+{
+  "description": "Styled Codex composer/footer excerpts captured 2026-10-01 from sessions after subagent use; viewport rows unrelated to the selected composer were removed and cursor_y was adjusted from the original capture.",
+  "cases": [
+    {
+      "name": "config-working-main-default-empty",
+      "source": "config_codex.cap",
+      "original_cursor_y": 48,
+      "capture": "\u001b[48;2;57;57;71m\n\u001b[1m›\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.config\u001b[38;2;135;140;164m · \u001b[38;2;242;181;144mContext 22% used\u001b[38;2;135;140;164m · Main [default] · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 2,
+      "cursor_y": 1,
+      "input_exit": 0
+    },
+    {
+      "name": "walker-idle-main-default-empty",
+      "source": "v3-51-walker_codex.cap",
+      "original_cursor_y": 48,
+      "capture": "\u001b[48;2;57;57;71m\n\u001b[1m›\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.skills/review-protocol-wt/v3.51-compiler-walker-budget\u001b[38;2;135;140;164m · \u001b[38;2;242;181;144mContext 19% used\u001b[38;2;135;140;164m · Main [default] · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 2,
+      "cursor_y": 1,
+      "input_exit": 0
+    }
+  ]
+}

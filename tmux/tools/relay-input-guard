@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: reject hidden and multiline drafts across styled boundaries and SGR resets
-# date: 2026-10-01
+# patched: recognize the observed Codex Main [default] footer without relaxing boundaries
+# date: 2026-10-01T12:38:34-0700
 use strict;
 use warnings;
 use utf8;
@@ -142,7 +142,7 @@ sub codex_plain_footer {
     my $footer = $rows_ref->[$index];
     return 0 if $footer =~ /\e\[48(?:;|:)/;
     $footer =~ s/\e\[[0-9;:]*m//g;
-    return $footer =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\r?\n?\z/;
+    return $footer =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\r?\n?\z/;
 }
 
 sub composer_has_safe_tail {
@@ -170,7 +170,7 @@ sub composer_has_safe_tail {
         # A following input background means it is still composer content.
         if ($glyph eq '›') {
             return 1 if codex_plain_footer($rows_ref, $start, $index);
-            my $structured = $visible =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\z/;
+            my $structured = $visible =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\z/;
             my $reset_at = index($raw, "\e[49m");
             if ($reset_at >= 0) {
                 my $after_reset = substr($raw, $reset_at + length("\e[49m"));

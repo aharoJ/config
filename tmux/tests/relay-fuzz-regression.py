@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-fuzz-regression.py
 # description: Seeded hostile payload, composer, footer, and ancestry properties.
-# patched: exercise exact normalization and refusal across randomized captures and sender identities
-# date: 2026-09-30
+# patched: exercise current Codex Main [default] footer variants and hostile boundaries
+# date: 2026-10-01T12:38:34-0700
 import argparse
 import json
 import os
@@ -73,12 +73,14 @@ def run(seed, iterations, output):
             check("payload", [guard, "capacity", str(payload), str(cells + 2)], b"", 0)
 
             footer = "\x1b[49m  Fast off · test · Context 0% used" if glyph == "›" else "─" * 80
+            if glyph == "›" and rng.randrange(2):
+                footer += " · Main [default]"
             placeholder = glyph + " \x1b[2m" + value + "\x1b[22m\n" + footer + "\n"
             check("input", [input_guard, glyph, "2", "0"], placeholder.encode(), 0)
             check("input", [input_guard, glyph, "3", "0"], placeholder.encode(), 1)
             check("input", [input_guard, glyph, "2", "0"], (glyph + " " + value + "\n" + footer + "\n").encode(), 1)
             if glyph == "›":
-                malformed = rng.choice(("\x1b[49m  continuation", "\x1b[38;5;215m  Fast unknown · Draft Context", "\x1b[49m  Fast off"))
+                malformed = rng.choice(("\x1b[49m  continuation", "\x1b[38;5;215m  Fast unknown · Draft Context", "\x1b[49m  Fast off", "\x1b[49m  Fast off · test · Context 0% used · Main [other]"))
                 check("input", [input_guard, glyph, "2", "0"], (glyph + " \n" + malformed + "\n").encode(), 1)
                 check("payload", [guard, "compare", glyph, str(cells + 2), "0", str(payload), "80"], (glyph + " " + value + "\n" + malformed + "\n").encode(), 1)
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: stub trash cleanup and remove private test scratch on exit
-# date: 2026-10-01T19:06:04Z
+# patched: cover captured Main [default] Codex footers and strict boundary refusals
+# date: 2026-10-01T12:44:23-0700
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -164,7 +164,7 @@ expect_relay 1 'cc-pane-outside-window' "$cc_placeholder" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
 
-python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" <<'PY'
+python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" <<'PY'
 import json
 import pathlib
 import re
@@ -172,8 +172,10 @@ import subprocess
 import sys
 import tempfile
 
-guard, payload_guard, fixture = sys.argv[1:]
+guard, payload_guard, fixture, main_fixture, live_fixture = sys.argv[1:]
 cases = json.loads(pathlib.Path(fixture).read_text())["cases"]
+main_cases = json.loads(pathlib.Path(main_fixture).read_text())["cases"]
+live_cases = json.loads(pathlib.Path(live_fixture).read_text())["cases"]
 scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-captured-159-"))
 payload_file = scratch / "payload"
 checks = 0
@@ -206,6 +208,22 @@ try:
             rows = case["capture"].splitlines()
             rows.insert(case["cursor_y"] + 1, "  hidden extra input")
             check_payload(case, 1, capture="\n".join(rows) + "\n")
+    for case in main_cases:
+        check_guard(case, case["input_exit"])
+        capture = case["capture"]
+        check_guard(case, 0, capture=capture.replace(" · Main [default]", ""))
+        check_guard(case, 0, capture=capture.replace("\x1b[1m›", "\x1b[1m\x1b[38;2;248;183;90m›", 1))
+        check_guard(case, 1, capture=capture.replace("Main [default]", "Main [other]"))
+        check_guard(case, 1, capture=capture.replace("Main [default]", "Main [default] · Main [default]"))
+        check_guard(case, 1, capture=capture.replace("for agents", "for agents arbitrary"))
+        check_guard(case, 1, capture=capture.replace("\x1b[49m", "\x1b[49m\x1b[48;2;57;57;71m", 1))
+        check_guard(case, 1, capture=capture.replace("Main [default]", "Main \x1b]8;;https://example.invalid\x1b\\[default]"))
+        rows = capture.splitlines()
+        rows.insert(case["cursor_y"] + 1, "  hidden draft continuation")
+        check_guard(case, 1, capture="\n".join(rows) + "\n")
+        check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
+    for case in live_cases:
+        check_guard(case, case["input_exit"])
     fresh = next(case for case in cases if case["name"] == "fresh-with-startup-tip")
     lines = fresh["capture"].splitlines()
     index = fresh["cursor_y"] + 2
