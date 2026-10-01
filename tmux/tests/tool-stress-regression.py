@@ -155,6 +155,16 @@ esac''')
 
 
 
+    def test_relays_reject_disabled_timeouts(self):
+        stub = self.executable("tmux-timeout", "exit 124")
+        for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
+            for setting in ("TMUX_TIMEOUT_SECONDS", "TMUX_TIMEOUT_KILL_AFTER"):
+                with self.subTest(relay=relay, setting=setting):
+                    args = ("lab-codex", "payload") if relay == "codex-send-to" else ("payload",)
+                    code, output = self.run_tool(relay, *args, extra={"TMUX": "/tmp/ccmsg-lab-private-12345,1,0", "TMUX_BIN": str(stub),
+                        "CC_MSG_SESSION": "lab-test", "CC_MSG_WINDOW": "lab-claude", "CODEX_SEND_SESSION": "lab-test", setting: "0"})
+                    self.assertEqual(code, 1, output)
+                    self.assertIn("positive", output)
 
 
 
