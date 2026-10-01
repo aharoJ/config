@@ -104,6 +104,20 @@ class ToolStress(unittest.TestCase):
         self.assertFalse(marker.exists())
 
 
+    def test_delivery_harness_cleans_after_failure(self):
+        spec = importlib.util.spec_from_file_location("delivery_cleanup", ROOT / "tests/relay-delivery-regression.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            self.addCleanup(signal.signal, signum, signal.getsignal(signum))
+        matrix = module.Matrix(self.directory / "matrix")
+        matrix.frozen = True
+        matrix.tmux_binary = self.executable("owned-private-tmux", 'case "$1" in kill-server) exit 0 ;; ls) exit 1 ;; esac')
+        sock = self.socket(matrix.socket)
+        matrix.server_address = str(sock) + ",123,0"
+        matrix.close()
+        self.assertFalse(sock.exists())
+        self.assertTrue((matrix.output / "cleanup.json").exists())
 
 
     def watcher_stub(self):

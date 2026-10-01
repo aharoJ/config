@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: isolate lab locks and evidence and register private server ownership
+# patched: remove owned lab sockets on exceptions and signals
 # date: 2026-10-01
 import argparse
 import codecs
@@ -167,6 +167,11 @@ class Matrix:
         self.tmux_binary.write_text("#!/usr/bin/env bash\nexec tmux -L " + shlex.quote(self.socket) + ' -f /dev/null "$@"\n')
         self.tmux_binary.chmod(0o755)
         self.server_address = ""
+        signal.signal(signal.SIGINT, self.interrupted)
+        signal.signal(signal.SIGTERM, self.interrupted)
+
+    def interrupted(self, signum, frame):
+        raise SystemExit(128 + signum)
 
     def tmux(self, *args):
         try:
@@ -273,6 +278,18 @@ class Matrix:
         for window in self.tmux("list-windows", "-t", "=" + session, "-F", "#{window_id}").splitlines():
             self.tmux("kill-window", "-t", window)
         self.sessions.discard(session)
+
+    def close(self):
+        if not self.frozen:
+            for session in self.sessions.copy():
+                self.cleanup_session(session)
+        killed = subprocess.run(["timeout", "2", str(self.tmux_binary), "kill-server"], capture_output=True, text=True, timeout=4)
+        gone = subprocess.run(["timeout", "2", str(self.tmux_binary), "ls"], capture_output=True, text=True, timeout=4)
+        path = pathlib.Path(self.server_address.split(",")[0]) if self.server_address else None
+        if gone.returncode == 1 and path is not None and path.name == self.socket and path.exists():
+            path.unlink()
+        (self.output / "cleanup.json").write_text(json.dumps({"socket": self.socket, "kill_exit": killed.returncode,
+                                                           "ls_exit": gone.returncode, "remaining": bool(path and path.exists())}))
 
     def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False):
         relay = "cc-msg.sh"
@@ -471,6 +488,4 @@ if __name__ == "__main__":
         try:
             sys.exit(matrix.run())
         finally:
-            if not matrix.frozen:
-                for session in matrix.sessions.copy():
-                    matrix.cleanup_session(session)
+            matrix.close()
