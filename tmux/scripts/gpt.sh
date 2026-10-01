@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/scripts/gpt.sh
+# description: Print macOS CPU and RAM usage with a vm_stat fallback.
+# patched: reach the fallback when memory_pressure fails and parse wired counts
+# date: 2026-10-01
 # Prints: CPU 12% · RAM 8.2G/36.0G  (macOS-safe)
 
 set -euo pipefail
@@ -16,7 +20,7 @@ cpu_pct=$(ps -A -o %cpu= | awk -v n="$ncpu" '
 
 # --- RAM (used/MAX in GiB) ---
 mem_bytes=$(sysctl -n hw.memsize)
-free_pct=$(memory_pressure -Q 2>/dev/null | awk -F': *' '/System-wide memory free percentage/ {gsub("%","",$2); print $2; exit}')
+free_pct=$(memory_pressure -Q 2>/dev/null | awk -F': *' '/System-wide memory free percentage/ {gsub("%","",$2); print $2; exit}' || true)
 
 if [[ -n "${free_pct:-}" ]]; then
   # Use memory_pressure when available (newer macOS)
@@ -25,7 +29,7 @@ else
   # Fallback: vm_stat
   pagesize=$(vm_stat | awk '/page size of/ {print $8}')
   # strip trailing dots in counts
-  parse() { vm_stat | awk -v k="$1" '$0 ~ k {gsub("\\.","",$3); print $3; exit}'; }
+  parse() { vm_stat | awk -v k="$1" '$0 ~ k {gsub("\\.","",$NF); print $NF; exit}'; }
   free=$(parse "Pages free")
   speculative=$(parse "Pages speculative")
   inactive=$(parse "Pages inactive")

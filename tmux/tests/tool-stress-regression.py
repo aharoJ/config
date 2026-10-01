@@ -406,6 +406,14 @@ PY''')
         self.assertEqual(code, 1, output)
         self.assertIn("SOCKET is required", output)
 
+    def test_status_memory_fallback(self):
+        self.executable("sysctl", 'case "$*" in *hw.ncpu*) echo 4 ;; *hw.memsize*) echo 8589934592 ;; esac')
+        self.executable("ps", "printf '20\\n20\\n'")
+        self.executable("memory_pressure", "exit 1")
+        self.executable("vm_stat", "printf '%s\\n' 'Mach Virtual Memory Statistics: (page size of 16384 bytes)' 'Pages free: 10.' 'Pages speculative: 20.' 'Pages inactive: 30.' 'Pages active: 40.' 'Pages wired down: 65536.'")
+        result = subprocess.run([str(ROOT / "scripts/gpt.sh")], env=self.env, capture_output=True, text=True, timeout=3)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "CPU 10% · RAM 1.0G/8.0G")
 
 
 
