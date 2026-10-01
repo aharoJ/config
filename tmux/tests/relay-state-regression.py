@@ -212,7 +212,7 @@ class StateMatrix(delivery.Matrix):
     def run_stress(self, group):
         for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
             if group in ("all", "races"):
-                for action in ("respawn-paste", "respawn-enter", "draft-paste", "draft-enter", "resize-enter"):
+                for action in ("respawn-paste", "respawn-enter", "draft-paste", "draft-enter", "same-draft-enter", "resize-enter"):
                     self.race(relay, action)
             if group in ("all", "signals"):
                 for stage in ("list", "load", "paste", "compare", "enter"):

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: remove owned payload scratch instead of retaining bytes in Trash
+# patched: bind delivery to the receiver and composer; remove scratch and report interruptions
 # date: 2026-10-01
 
 relay_payload_file=
@@ -68,7 +68,7 @@ prepare_payload() {
 }
 
 relay_atomic() {
-  local deliver=$1 blocked receipt code identity guarded
+  local deliver=$1 blocked receipt code identity guarded command_file
   blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
   identity="#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{==:#{pane_current_command},$relay_target_command}}}}}"
   guarded="#{&&:$identity,#{==:#{pane_in_mode},0}}"
@@ -76,7 +76,12 @@ relay_atomic() {
   if [ -n "${2:-}" ]; then
     guarded="#{&&:$guarded,#{&&:#{==:#{cursor_x},$2},#{==:#{cursor_y},$3}}}"
   fi
-  if receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"; then
+  if [ -n "${4:-}" ]; then
+    command_file="$relay_payload_dir/send-keys-Enter.tmux"
+    "$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked" > "$command_file" || return 1
+    receipt="$(request source-file "$command_file")"
+    code=$?
+  elif receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"; then
     code=0
   else
     code=$?
@@ -166,5 +171,5 @@ verify_payload() {
 }
 
 atomic_enter() {
-  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$relay_verified_cursor_x" "$relay_verified_cursor_y"
+  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$relay_verified_cursor_x" "$relay_verified_cursor_y" "$relay_payload_file"
 }

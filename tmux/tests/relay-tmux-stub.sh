@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-tmux-stub.sh
 # description: Emulate relay routing, bracketed payload delivery, and composer captures.
-# patched: model receiver identity during composer verification
+# patched: model structured footers and receiver process identity with landed text verification
 # date: 2026-10-01
 set -euo pipefail
 
@@ -59,7 +59,10 @@ case "${1:-}" in
       printf '%s\n' "${RELAY_TEST_STATE:-${RELAY_TEST_PANE_MODE:-0}:2:0}"
     fi
     ;;
-  if-shell)
+  if-shell|source-file)
+    if [ "$1" = source-file ]; then
+      set -- if-shell "$(cat "$2")"
+    fi
     if [[ "$*" = *paste-buffer* ]]; then
       cat "$RELAY_TEST_LOG.buffer" >> "$RELAY_TEST_LOG.payload"
     fi

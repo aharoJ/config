@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: remove owned lab sockets on exceptions and signals
+# patched: isolate locks, remove private sockets on failure, and model file-based guarded Enter
 # date: 2026-10-01
 import argparse
 import codecs
@@ -371,7 +371,7 @@ class Matrix:
                 "timeout-capture": f'if [ "$1" = capture-pane ] && [ -f {shlex.quote(str(trigger))} ]; then exit 124; fi\nif [ "$1" = if-shell ]; then touch {shlex.quote(str(trigger))}; fi',
                 "bad-receipt": 'if [ "$1" = if-shell ]; then printf "__UNKNOWN__\\n"; exit 0; fi',
                 "copy-before": f'if [ "$1" = if-shell ] && [ ! -f {shlex.quote(str(trigger))} ]; then {real} copy-mode -t {chosen}; touch {shlex.quote(str(trigger))}; fi',
-                "copy-after": f'if [ "$1" = if-shell ]; then if [ -f {shlex.quote(str(trigger))} ]; then {real} copy-mode -t {chosen}; else touch {shlex.quote(str(trigger))}; fi; fi',
+                "copy-after": f'if {{ [ "$1" = if-shell ] || [ "$1" = source-file ]; }}; then if [ -f {shlex.quote(str(trigger))} ]; then {real} copy-mode -t {chosen}; else touch {shlex.quote(str(trigger))}; fi; fi',
                 "rename-before": f'if [ "$1" = if-shell ]; then {real} rename-window -t {chosen} lab-changed; fi',
                 "rename-enter": f'if [[ "$*" = *send-keys*Enter* ]]; then {real} rename-window -t {chosen} lab-changed; fi',
                 "copy-enter": f'if [[ "$*" = *send-keys*Enter* ]]; then {real} copy-mode -t {chosen}; fi',
