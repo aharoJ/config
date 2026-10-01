@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bind the verified empty composer cursor to guarded paste
+# patched: remove owned relay scratch instead of retaining it in Trash
 # date: 2026-10-01
 set -uo pipefail
 
@@ -53,7 +53,7 @@ RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
 
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
-  trash "$relay_lock"
+  rm -f -- "$relay_lock"
   relay_lock=
 }
 
@@ -169,12 +169,14 @@ else
 fi
 [ -n "$msg" ] || fail 'empty message; refuse'
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set; refuse'
-"$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
+
+list_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
 if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$list_file"; then
   :
 else
   code=$?
-  trash "$list_file"
+  rm -f -- "$list_file"
+  list_file=
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes; refuse'
 fi
@@ -188,7 +190,8 @@ else
   command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 fi
 resolve_sender_label
-trash "$list_file"
+rm -f -- "$list_file"
+list_file=
 case "$target_count" in
   0)
     if [ -n "$target_pane" ]; then

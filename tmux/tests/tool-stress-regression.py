@@ -166,6 +166,26 @@ esac''')
                     self.assertEqual(code, 1, output)
                     self.assertIn("positive", output)
 
+    def test_relay_cleanup_does_not_retain_payload(self):
+        retained = self.directory / "retained"
+        self.executable("trash", 'mkdir -p "$RETAINED_ROOT"; [ ! -e "$1" ] || mv "$1" "$RETAINED_ROOT/"')
+        script = '''fail() { exit 1; }
+release_relay_lock() { :; }
+request() { :; }
+relay_script_dir="$TEST_TOOL_ROOT"
+TMUX_TIMEOUT_SECONDS=1
+TMUX_TIMEOUT_KILL_AFTER=1
+source "$relay_script_dir/relay-delivery.sh"
+relay_payload_dir="$(mktemp -d "$TMPDIR/relay-payload.XXXXXX")"
+relay_payload_file="$relay_payload_dir/payload"
+printf '%s' 'scratch-payload-residue-marker' > "$relay_payload_file"
+printf '%s' 'scratch-payload-residue-marker' > "$relay_payload_dir/chunk-000000"
+relay_cleanup
+'''
+        result = subprocess.run(["bash", "-c", script], env={**self.env, "TEST_TOOL_ROOT": str(ROOT / "tools"), "RETAINED_ROOT": str(retained)},
+                                capture_output=True, text=True, timeout=3)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(any(b"scratch-payload-residue-marker" in path.read_bytes() for path in self.directory.rglob("*") if path.is_file()))
 
 
     def test_input_guard_colon_color_preserves_intensity_reset(self):

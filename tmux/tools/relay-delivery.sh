@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: reject timeouts that disable request bounds
+# patched: remove owned payload scratch instead of retaining bytes in Trash
 # date: 2026-10-01
 
 relay_payload_file=
@@ -11,7 +11,6 @@ relay_server_unresponsive=0
 relay_input_attempted=0
 relay_payload_guard="$relay_script_dir/relay-payload-guard"
 [ -x "$relay_payload_guard" ] || fail 'relay payload guard is required'
-command -v trash >/dev/null 2>&1 || fail 'trash is required for relay scratch cleanup'
 for relay_timeout_value in "$TMUX_TIMEOUT_SECONDS" "$TMUX_TIMEOUT_KILL_AFTER"; do
   [[ "$relay_timeout_value" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v duration="$relay_timeout_value" 'BEGIN { exit !(duration > 0) }' || fail 'tmux timeouts must be positive numbers of seconds'
 done
@@ -22,8 +21,10 @@ relay_cleanup() {
     request delete-buffer -b "$relay_payload_buffer" >/dev/null 2>&1 || code=$?
   fi
   if [ -n "$relay_payload_dir" ]; then
-    trash "$relay_payload_dir" >/dev/null 2>&1 || true
+    rm -rf -- "$relay_payload_dir"
+    relay_payload_dir=
   fi
+  [ -z "${list_file:-}" ] || rm -f -- "$list_file"
   release_relay_lock
   [ "$code" = 75 ] && unresponsive
   return 0
