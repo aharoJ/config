@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: retain intensity resets after colon-form colors
+# patched: reject hidden and multiline drafts across styled boundaries and SGR resets
 # date: 2026-10-01
 use strict;
 use warnings;
@@ -147,6 +147,14 @@ sub codex_plain_footer {
 
 sub composer_has_safe_tail {
     my ($rows_ref, $start, $glyph, $dim_ref) = @_;
+    my $cc_end = -1;
+    if ($glyph eq '❯') {
+        for my $index ($start + 1 .. $#$rows_ref) {
+            my $visible = visible_row($rows_ref->[$index]);
+            $visible =~ s/[\r\n]+\z//;
+            $cc_end = $index if $visible =~ /^\h*─{20,}\h*\z/;
+        }
+    }
     for my $index ($start + 1 .. $#$rows_ref) {
         my $raw = $rows_ref->[$index];
         my $visible = visible_row($raw);
@@ -154,7 +162,7 @@ sub composer_has_safe_tail {
 
         # Claude ends its composer with a divider.  Anything visible before
         # it is either a wrapped value or an unknown UI state, so refuse.
-        if ($glyph eq '❯' && $visible =~ /^\h*─{20,}\h*\z/) {
+        if ($glyph eq '❯' && $index == $cc_end) {
             return 1;
         }
 

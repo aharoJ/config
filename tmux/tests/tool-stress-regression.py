@@ -176,6 +176,11 @@ esac''')
                                         input="› relay payload\n" + footer + "\n", capture_output=True, text=True, timeout=2)
                 self.assertEqual(result.returncode, 1, result.stderr)
 
+    def test_input_guard_divider_in_draft(self):
+        capture = "❯\u00a0\n" + "─" * 30 + "\n" + "─" * 80 + "\n"
+        result = subprocess.run([str(ROOT / "tools/relay-input-guard"), "❯", "2", "0"],
+                                input=capture, capture_output=True, text=True, timeout=2)
+        self.assertEqual(result.returncode, 1, result.stderr)
 
 
 
