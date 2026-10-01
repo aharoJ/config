@@ -1,0 +1,51 @@
+{
+  "description": "P0-C INFRA read-only footer excerpts. The two empty-placeholder rows are captured; payload and draft composer substitutions are constructed regressions around those exact footer rows.",
+  "cases": [
+    {
+      "name": "reconnected-main-default-empty",
+      "source": "P0-C INFRA:codex-sol read-only capture",
+      "capture": "\u001b[2m• \u001b[0mReconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused.\n\n\u001b[1m›\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.repository/infra\u001b[38;2;135;140;164m · \u001b[38;2;242;181;144mContext 57% used\u001b[38;2;135;140;164m · Main [default] · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 2,
+      "cursor_y": 2,
+      "input_exit": 0
+    },
+    {
+      "name": "reconnected-main-default-payload",
+      "source": "constructed exact-payload regression around the P0-C INFRA:codex-sol captured footer",
+      "capture": "\u001b[2m• \u001b[0mReconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused.\n\n\u001b[1m›\u001b[0m\u001b[48;2;66;66;79m P0C payload\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.repository/infra\u001b[38;2;135;140;164m · \u001b[38;2;242;181;144mContext 57% used\u001b[38;2;135;140;164m · Main [default] · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 13,
+      "cursor_y": 2,
+      "input_exit": 1,
+      "payload": "P0C payload",
+      "payload_exit": 0,
+      "width": 167
+    },
+    {
+      "name": "no-context-terra-empty",
+      "source": "P0-C INFRA:codex-terra-max read-only capture",
+      "capture": "\u001b[1m\u001b[38;2;248;183;90m›\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-5.6-Terra max\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.repository/infra\u001b[38;2;135;140;164m · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 2,
+      "cursor_y": 0,
+      "input_exit": 0
+    },
+    {
+      "name": "no-context-terra-payload",
+      "source": "constructed exact-payload regression around the P0-C INFRA:codex-terra-max captured footer",
+      "capture": "\u001b[1m›\u001b[0m\u001b[48;2;66;66;79m P0C payload\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-5.6-Terra max\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.repository/infra\u001b[38;2;135;140;164m · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 13,
+      "cursor_y": 0,
+      "input_exit": 1,
+      "payload": "P0C payload",
+      "payload_exit": 0,
+      "width": 167
+    },
+    {
+      "name": "no-context-terra-real-draft",
+      "source": "constructed unsent-draft regression around the P0-C INFRA:codex-terra-max captured footer",
+      "capture": "\u001b[1m›\u001b[0m\u001b[48;2;66;66;79m preserve this unsent draft\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m · \u001b[38;2;246;226;183mGPT-5.6-Terra max\u001b[38;2;135;140;164m · \u001b[38;2;171;223;167m~/.repository/infra\u001b[38;2;135;140;164m · \u001b[1m\u001b[38;2;205;214;244m←\u001b[0m\u001b[38;2;135;140;164m for agents\u001b[39m\n",
+      "cursor_x": 28,
+      "cursor_y": 0,
+      "input_exit": 1
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 # path: ~/.config/tmux/tests/relay-state-regression.py
 # description: Attack relay process, cursor, draft, and signal races on private tmux fixtures.
 # patched: reproduce changed receivers and interrupted delivery without contacting agent panes
-# date: 2026-09-30
+# date: 2026-10-01T23:02:00Z
 import argparse
 import codecs
 import importlib.util
@@ -40,7 +40,8 @@ def fixture(directory, glyph, mode):
             screen = "─" * width + "\r\n❯" + spacer + value + "\r\n" + "─" * width
             row = 2
         else:
-            screen = "›" + spacer + value + "\r\n\r\n  Fast off · GPT-6.1-Sol high · ~/lab · Context 0% used"
+            composer = "› " + value if value else "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m"
+            screen = composer + "\r\n\r\n  Fast off · GPT-6.1-Sol high · ~/lab · Context 0% used"
             row = 1
         sys.stdout.write("\x1b[?2004h\x1b[2J\x1b[H" + screen + f"\x1b[{row};{delivery.cells(value) + 3}H")
         sys.stdout.flush()

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-payload-guard
 # description: Validate relay payloads and compare the complete active composer with sent text.
-# patched: require structured footer boundaries and generate a literal guarded Enter command
-# date: 2026-10-01
+# patched: recognize verified Codex status variants with exact payload equality
+# date: 2026-10-01T23:02:00Z
 import pathlib
 import re
 import sys
@@ -14,15 +14,25 @@ def codex_plain_footer(raw, start, index):
     if index != start + 2 or re.search(r"\x1b\[48[;:]", raw[index]):
         return False
     separator = re.sub(r"\x1b\[[0-9;:]*m", "", raw[start + 1])
-    footer = re.sub(r"\x1b\[[0-9;:]*m", "", raw[index])
+    raw_footer = raw[index]
+    footer = re.sub(r"\x1b\[[0-9;:]*m", "", raw_footer)
     if re.fullmatch(" *", separator) is None:
         return False
-    return (re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *", footer) is not None
-            or re.fullmatch(r"  tab to queue message {2,}(?:100|[0-9]{1,2})% context left *", footer) is not None)
+    prefix = r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+) · "
+    context = r"Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *"
+    if re.fullmatch(prefix + context, footer) is not None:
+        return True
+    if re.fullmatch(r"  tab to queue message {2,}(?:100|[0-9]{1,2})% context left *", footer) is not None:
+        return True
+    return ("\x1b[49m" in raw_footer and re.search(r"\x1b\[38[;:]", raw_footer) is not None
+            and re.fullmatch(prefix + r"← for agents *", footer) is not None)
 
 
 def codex_styled_footer(raw, visible):
-    if re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *", visible) is None:
+    path = r"(?:~(?:/[^·\x00-\x1f\x7f]+)?|/[^·\x00-\x1f\x7f]+)"
+    prefix = r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · "
+    context = r"(?:" + path + r" · )?Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?"
+    if re.fullmatch(prefix + r"(?:" + context + r"|" + path + r" · ← for agents) *", visible) is None:
         return False
     if "\x1b]" in raw:
         return False

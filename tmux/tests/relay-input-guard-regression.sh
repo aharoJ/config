@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: reject footer-shaped lines inside Codex draft tails
-# date: 2026-10-01T14:12:00-0700
+# patched: use only provenance-verified Codex captures and Home-moved draft refusal
+# date: 2026-10-01T23:02:00Z
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -86,10 +86,10 @@ cc_multiline_draft=$'\e[39m❯\302\240\n\e[48;5;237m  real user draft\n\e[38;5;2
 mixed_style=$'\e[1m›\e[0m \e[2mplaceholder-looking \e[22mreal draft'
 
 expect_guard 0 '›' 'generic Codex placeholder' "$codex_placeholder" 2 0
-expect_guard 0 '›' 'dynamic Codex suggestion' "$codex_suggestion" 2 0
-expect_guard 0 '›' 'wrapped dynamic Codex suggestion' "$codex_wrapped_suggestion" 2 0
-expect_guard 0 '›' 'NO_COLOR Codex suggestion with structured footer' "$codex_no_color_suggestion" 2 0
-expect_guard 0 '›' '256-colour Codex suggestion with structured footer' "$codex_256_suggestion" 2 0
+expect_guard 1 '›' 'unverified dynamic Codex suggestion' "$codex_suggestion" 2 0
+expect_guard 1 '›' 'wrapped unverified Codex suggestion' "$codex_wrapped_suggestion" 2 0
+expect_guard 1 '›' 'NO_COLOR unverified Codex suggestion' "$codex_no_color_suggestion" 2 0
+expect_guard 1 '›' '256-colour unverified Codex suggestion' "$codex_256_suggestion" 2 0
 expect_guard 1 '›' 'TERM=dumb Codex suggestion without a trustworthy footer style' "$codex_dumb_suggestion" 2 0
 expect_guard 0 '❯' 'empty Claude composer with NBSP' "$cc_empty" 2 0
 expect_guard 0 '❯' 'dynamic Claude suggestion' "$cc_placeholder" 2 0
@@ -141,17 +141,17 @@ expect_relay 0 'codex-placeholder' "$codex_placeholder" '%relay relaytest codex 
   env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
 expect_delivery 'codex-placeholder'
 
-expect_relay 0 'codex-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
+expect_relay 5 'codex-unverified-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
-expect_delivery 'codex-suggestion'
+expect_no_delivery 'codex-unverified-suggestion'
 
 expect_relay 0 'codex-to-placeholder' "$codex_placeholder" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
 expect_delivery 'codex-to-placeholder'
 
-expect_relay 0 'codex-to-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
+expect_relay 5 'codex-to-unverified-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
-expect_delivery 'codex-to-suggestion'
+expect_no_delivery 'codex-to-unverified-suggestion'
 
 expect_relay 0 'cc-placeholder' "$cc_placeholder" '%relay relaytest claude 2.1.284' \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
@@ -168,7 +168,7 @@ expect_relay 1 'cc-pane-outside-window' "$cc_placeholder" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
 
-python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" <<'PY'
+python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" "$root/tests/fixtures/relay-codex-status-drift.json" "$root/tests/fixtures/relay-codex-home-drafts.json" <<'PY'
 import json
 import pathlib
 import re
@@ -176,11 +176,12 @@ import subprocess
 import sys
 import tempfile
 
-guard, payload_guard, fixture, main_fixture, live_fixture, cleared_fixture = sys.argv[1:]
-cases = json.loads(pathlib.Path(fixture).read_text())["cases"]
+guard, payload_guard, main_fixture, live_fixture, ambiguous_fixture, status_fixture, home_fixture = sys.argv[1:]
 main_cases = json.loads(pathlib.Path(main_fixture).read_text())["cases"]
 live_cases = json.loads(pathlib.Path(live_fixture).read_text())["cases"]
-cleared_cases = json.loads(pathlib.Path(cleared_fixture).read_text())["cases"]
+ambiguous_cases = json.loads(pathlib.Path(ambiguous_fixture).read_text())["cases"]
+status_cases = json.loads(pathlib.Path(status_fixture).read_text())["cases"]
+home_cases = json.loads(pathlib.Path(home_fixture).read_text())["cases"]
 scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-captured-159-"))
 payload_file = scratch / "payload"
 checks = 0
@@ -203,16 +204,6 @@ def check_payload(case, expected, capture=None, payload=None, cursor_x=None):
     checks += 1
 
 try:
-    for case in cases:
-        check_guard(case, case["input_exit"])
-        if case["payload"]:
-            check_payload(case, 0)
-            check_payload(case, 1, payload="X" + case["payload"][1:])
-            check_payload(case, 1, payload=case["payload"][:-1])
-            check_payload(case, 1, cursor_x=case["cursor_x"] + 1)
-            rows = case["capture"].splitlines()
-            rows.insert(case["cursor_y"] + 1, "  hidden extra input")
-            check_payload(case, 1, capture="\n".join(rows) + "\n")
     for case in main_cases:
         check_guard(case, case["input_exit"])
         capture = case["capture"]
@@ -229,15 +220,31 @@ try:
         check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
     for case in live_cases:
         check_guard(case, case["input_exit"])
-    for case in cleared_cases:
+    for case in ambiguous_cases:
         check_guard(case, case["input_exit"])
-        capture = case["capture"]
-        check_guard(case, 1, capture=capture.replace("\x1b[48;2;57;57;71m", ""))
-        check_guard(case, 1, capture=capture.replace("57;57;71", "66;66;79"))
-        check_guard(case, 1, capture=capture.replace("Main [default]", "Main [other]"))
         check_guard(case, 1, cursor_x=case["cursor_x"] - 1)
         check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
-    fresh = next(case for case in cases if case["name"] == "fresh-with-startup-tip")
+    for case in status_cases:
+        check_guard(case, case["input_exit"])
+        if case.get("payload"):
+            check_payload(case, case["payload_exit"])
+            check_payload(case, 1, payload="X" + case["payload"][1:])
+            check_payload(case, 1, cursor_x=case["cursor_x"] + 1)
+    for case in home_cases:
+        check_guard(case, case["input_exit"])
+    reconnected_payload = next(case for case in status_cases if case["name"] == "reconnected-main-default-payload")
+    check_payload(reconnected_payload, 1, capture=reconnected_payload["capture"].replace("Main [default]", "Main [other]"))
+    no_context_empty = next(case for case in status_cases if case["name"] == "no-context-terra-empty")
+    no_context_unstyled = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", no_context_empty["capture"])
+    check_guard(no_context_empty, 1, capture=no_context_unstyled)
+    check_guard(no_context_empty, 1, capture=no_context_empty["capture"].replace("for agents", "for agents arbitrary"))
+    check_guard(no_context_empty, 1, capture=no_context_empty["capture"].replace("for agents", "Main [default] · for agents"))
+    no_context_rows = no_context_empty["capture"].splitlines()
+    no_context_rows.insert(no_context_empty["cursor_y"] + 3, "  visible draft tail")
+    check_guard(no_context_empty, 1, capture="\n".join(no_context_rows) + "\n")
+    no_context_payload = next(case for case in status_cases if case["name"] == "no-context-terra-payload")
+    check_payload(no_context_payload, 1, capture=re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", no_context_payload["capture"]))
+    fresh = next(case for case in live_cases if case["name"] == "sol-fresh")
     lines = fresh["capture"].splitlines()
     index = fresh["cursor_y"] + 2
     footer = lines[index]
@@ -255,17 +262,17 @@ try:
     rows = lines.copy()
     del rows[fresh["cursor_y"] + 1]
     check_guard(fresh, 1, capture="\n".join(rows) + "\n")
-    draft = next(case for case in cases if case["name"] == "real-typed-draft")
+    draft = next(case for case in live_cases if case["name"] == "sol-single-line-draft")
     check_guard(draft, 1, cursor_x=2)
     rows = draft["capture"].splitlines()
     rows.insert(draft["cursor_y"] + 1, "  real wrapped draft")
     check_guard(draft, 1, capture="\n".join(rows) + "\n", cursor_x=6, cursor_y=draft["cursor_y"] + 1)
     check_guard(fresh, 1, cursor_x=3)
-    busy = next(case for case in cases if case["name"] == "busy-exact-payload")
+    busy = no_context_payload
     rows = busy["capture"].splitlines()
-    rows[busy["cursor_y"] + 2] = rows[busy["cursor_y"] + 2].replace("queue message", "unknown action")
+    rows[busy["cursor_y"] + 2] = rows[busy["cursor_y"] + 2].replace("for agents", "unknown action")
     check_payload(busy, 1, capture="\n".join(rows) + "\n")
-    print(f"captured Codex 0.159.2 guards: {checks} checks, PASS")
+    print(f"captured provenance-verified Codex guards: {checks} checks, PASS")
 finally:
     subprocess.run(["trash", str(scratch)], check=True)
 PY

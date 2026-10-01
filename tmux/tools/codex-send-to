@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: trash owned relay scratch and locks while preserving delivery guards
-# date: 2026-10-01T19:06:04Z
+# patched: tolerate transient Codex redraws while retaining fail-closed draft checks
+# date: 2026-10-01T23:02:00Z
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s\n' "$1" >&2; exit 1; }
@@ -66,49 +66,56 @@ request() {
 }
 
 require_empty_codex_input() {
-  local capture state state_after code cursor_x cursor_y in_mode
-  if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
-    :
-  else
+  local capture state state_after code cursor_x cursor_y in_mode attempts=0
+  while [ "$attempts" -lt 24 ]; do
+    attempts=$((attempts + 1))
+    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot query target input state for $pane"
+    fi
+    if [[ "$state" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+      in_mode="${BASH_REMATCH[1]}"
+      cursor_x="${BASH_REMATCH[2]}"
+      cursor_y="${BASH_REMATCH[3]}"
+    else
+      fail "cannot determine target input state for $pane"
+    fi
+    [ "$in_mode" = 0 ] || refuse_copy "$pane"
+    if capture="$(request capture-pane -p -e -t "$pane")"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot capture target input for $pane"
+    fi
+    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot recheck target input state for $pane"
+    fi
+    if [[ "$state_after" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+      [ "${BASH_REMATCH[1]}" = 0 ] || refuse_copy "$pane"
+    else
+      fail "cannot recheck target input state for $pane"
+    fi
+    if [ "$state_after" != "$state" ]; then
+      sleep 0.05
+      continue
+    fi
+    printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '›' "$cursor_x" "$cursor_y"
     code=$?
-    [ "$code" = 75 ] && unresponsive
-    fail "cannot query target input state for $pane"
-  fi
-  if [[ "$state" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
-    in_mode="${BASH_REMATCH[1]}"
-    cursor_x="${BASH_REMATCH[2]}"
-    cursor_y="${BASH_REMATCH[3]}"
-  else
-    fail "cannot determine target input state for $pane"
-  fi
-  [ "$in_mode" = 0 ] || refuse_copy "$pane"
-  if capture="$(request capture-pane -p -e -t "$pane")"; then
-    :
-  else
-    code=$?
-    [ "$code" = 75 ] && unresponsive
-    fail "cannot capture target input for $pane"
-  fi
-  if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
-    :
-  else
-    code=$?
-    [ "$code" = 75 ] && unresponsive
-    fail "cannot recheck target input state for $pane"
-  fi
-  if [[ "$state_after" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
-    [ "${BASH_REMATCH[1]}" = 0 ] || refuse_copy "$pane"
-  else
-    fail "cannot recheck target input state for $pane"
-  fi
-  [ "$state_after" = "$state" ] || refuse_draft "$pane"
-  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '›' "$cursor_x" "$cursor_y"
-  code=$?
-  case "$code" in
-    0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
-    1) refuse_draft "$pane" ;;
-    *) fail "cannot find Codex prompt in target $pane" ;;
-  esac
+    case "$code" in
+      0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
+      1) refuse_draft "$pane" ;;
+      *) fail "cannot find Codex prompt in target $pane" ;;
+    esac
+  done
+  fail "target composer kept redrawing during inspection; no target input was sent"
 }
 
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'

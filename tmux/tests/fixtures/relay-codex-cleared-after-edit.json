@@ -1,13 +1,13 @@
 {
-  "description": "Cursor-row/footer excerpt from the Tester-confirmed Codex v0.159.3 composer after a typed space was deleted; the retained input-background SGR distinguishes it from the captured one-space drafts.",
+  "description": "Supplied v3-51-walker Codex cursor-row/footer capture taken before Tester deleted a literal space; its ambiguous cx=3 geometry must refuse.",
   "cases": [
     {
-      "name": "confirmed-cleared-after-edit-main-default",
-      "source": "v3-51-walker_codex.after-efecb4f.cap",
+      "name": "ambiguous-cx3-main-default-must-refuse",
+      "source": "v3-51-walker_codex.13-14-33.cap",
       "capture": "\u001b[1m\u203a\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  \u001b[38;2;200;169;238mFast off\u001b[38;2;135;140;164m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[38;2;135;140;164m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[38;2;135;140;164m \u00b7 \u001b[38;2;242;181;144mContext 19% used\u001b[38;2;135;140;164m \u00b7 Main [default]\u001b[39m\n",
       "cursor_x": 3,
       "cursor_y": 0,
-      "input_exit": 0
+      "input_exit": 1
     }
   ]
 }

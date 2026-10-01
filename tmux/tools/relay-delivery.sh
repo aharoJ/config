@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: trash owned scratch while preserving receiver checks and interruption cleanup
-# date: 2026-10-01T19:06:04Z
+# patched: verify the current composer payload safely across transient Codex redraws
+# date: 2026-10-01T23:02:00Z
 
 relay_payload_file=
 relay_payload_dir=
@@ -126,8 +126,11 @@ atomic_text() {
 }
 
 verify_payload() {
-  local state state_after capture code cursor_x cursor_y previous='' stable=0 attempts=0
-  while [ "$attempts" -lt 10 ]; do
+  # One coherent observation proves the current composer; a second full-pane
+  # cycle converts harmless spinner/reconnect redraws into false exit 4s.
+  # atomic_enter still rechecks the expected row, identity, and cursor.
+  local state state_after capture code cursor_x cursor_y attempts=0 delay
+  while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
     if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
@@ -155,24 +158,15 @@ verify_payload() {
       partial 'cannot recheck composer for payload verification'
     fi
     if [ "$state" = "$state_after" ] && printf '%s\n' "$capture" | "$relay_payload_guard" compare "$relay_glyph" "$cursor_x" "$cursor_y" "$relay_payload_file" "$relay_verify_width"; then
-      if [ "$previous" = "$state" ]; then
-        stable=$((stable + 1))
-      else
-        stable=1
-      fi
-      previous="$state"
-      if [ "$stable" -ge 2 ]; then
-        relay_verified_cursor_x="$cursor_x"
-        relay_verified_cursor_y="$cursor_y"
-        return 0
-      fi
-    else
-      stable=0
-      previous=
+      relay_verified_cursor_x="$cursor_x"
+      relay_verified_cursor_y="$cursor_y"
+      return 0
     fi
-    sleep 0.1
+    # Briefly retry active redraws, then give a busy UI time to settle.
+    if [ "$attempts" -lt 8 ]; then delay=0.05; else delay=0.15; fi
+    sleep "$delay"
   done
-  partial 'complete composer does not match sent payload; Enter was not sent'
+  partial 'complete composer could not be verified; Enter was not sent'
 }
 
 atomic_enter() {

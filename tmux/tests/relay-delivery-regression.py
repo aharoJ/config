@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: isolate locks, remove private sockets on failure, and model file-based guarded Enter
-# date: 2026-10-01
+# patched: cover verified Codex status variants and redraw-tolerant delivery
+# date: 2026-10-01T23:02:00Z
 import argparse
 import codecs
 import json
@@ -45,13 +45,14 @@ def fixture(directory, glyph, mode):
     decoder = codecs.getincrementaldecoder("utf-8")()
     pastes, submissions = [], []
     width, height = os.get_terminal_size()
+    redraw_tick = 0
 
     def draw():
         visible = value
         if mode in ("hidden", "codex159-busy-hidden") and visible:
             visible = "[Pasted text #1]"
         lines = wrap(visible, width - 2)
-        top = 3
+        top = 3 + (redraw_tick % 2 if mode in ("codex159-redraw-payload", "codex159-redraw-input") else 0)
         if len(lines) > max(1, height - 7):
             lines = lines[-max(1, height - 7):]
             first = "  "
@@ -60,6 +61,8 @@ def fixture(directory, glyph, mode):
         output = "\x1b[?2004h\x1b[2J\x1b[H"
         if mode in ("startup-link", "codex159-startup-tip"):
             output += "\x1b]8;;https://chatgpt.com/codex\x1b\\Tip: Try Codex\x1b]8;;\x1b\\"
+        if mode == "codex159-reconnected-main-default":
+            output += "Reconnected. No input was resent. Review uncertain submissions before retrying; recovered queues remain paused."
         if mode == "codex159-model-change":
             output += "Model changed to GPT-6.1-Sol xhigh"
         if mode == "busy" or mode.startswith("codex159-busy"):
@@ -67,7 +70,8 @@ def fixture(directory, glyph, mode):
         if glyph == "❯":
             output += f"\x1b[{top};1H" + "─" * width
         modern = mode.startswith("codex159-")
-        if modern and not visible:
+        empty_codex = glyph == "›" and not visible
+        if empty_codex:
             first = "\x1b[1m›\x1b[0m "
             lines[0] = "\x1b[2mAsk Codex to do anything\x1b[0m"
         for index, line in enumerate(lines):
@@ -75,12 +79,19 @@ def fixture(directory, glyph, mode):
         if glyph == "❯":
             output += f"\x1b[{top + len(lines) + 1};1H" + "─" * width
         elif modern:
-            if mode.startswith("codex159-busy") and value:
+            if mode == "codex159-no-context":
+                footer = ("\x1b[49m  \x1b[38;2;200;169;238mFast off\x1b[38;2;135;140;164m · "
+                          "\x1b[38;2;246;226;183mGPT-5.6-Terra max\x1b[38;2;135;140;164m · "
+                          "\x1b[38;2;171;223;167m~/.config\x1b[38;2;135;140;164m · "
+                          "\x1b[1m\x1b[38;2;205;214;244m←\x1b[0m\x1b[38;2;135;140;164m for agents\x1b[39m")
+            elif mode.startswith("codex159-busy") and value:
                 footer = "  tab to queue message"
                 suffix = "98% context left"
                 footer += " " * max(2, width - cells(footer) - cells(suffix)) + suffix
             else:
                 footer = "  Fast off · GPT-6.1-Sol high · ~/.config · Context 0% used"
+                if mode in ("codex159-main-default", "codex159-reconnected-main-default"):
+                    footer += " · Main [default]"
                 if mode == "codex159-fresh":
                     suffix = "⚠ 1 warning · \x1b[1mf2\x1b[0m to view"
                     footer += " " * max(2, width - cells(footer) - cells("⚠ 1 warning · f2 to view")) + suffix
@@ -89,7 +100,7 @@ def fixture(directory, glyph, mode):
             output += f"\x1b[{top + len(lines) + 2};1H" + footer
         else:
             output += f"\x1b[{top + len(lines) + 1};1H\x1b[49m  \x1b[38;5;215mFast off · test · Context 0% used\x1b[39m"
-        cursor_size = cells(visible) if modern and not visible else cells(lines[-1])
+        cursor_size = cells(visible) if empty_codex else cells(lines[-1])
         output += f"\x1b[{top + len(lines)};{2 + cursor_size + 1}H"
         sys.stdout.write(output)
         sys.stdout.flush()
@@ -118,7 +129,11 @@ def fixture(directory, glyph, mode):
 
     draw()
     while True:
-        if not select.select([sys.stdin], [], [], 10)[0]:
+        timeout = 0.04 if mode == "codex159-redraw-payload" and value else 10
+        if not select.select([sys.stdin], [], [], timeout)[0]:
+            if mode == "codex159-redraw-payload" and value:
+                redraw_tick += 1
+                draw()
             continue
         data = os.read(sys.stdin.fileno(), 65536)
         if not data:
@@ -140,6 +155,9 @@ def fixture(directory, glyph, mode):
                 (directory / "submitted.json").write_text(json.dumps(submissions, ensure_ascii=False))
                 if mode != "ignore-enter":
                     value = ""
+                pending = pending[1:]
+            elif pending[:1] == b"\x0c" and mode == "codex159-redraw-input":
+                redraw_tick += 1
                 pending = pending[1:]
                 draw()
             elif b"\x1b[200~".startswith(pending):
@@ -250,6 +268,36 @@ class Matrix:
             normalized = re_normalize(payload)
             expected = ("relay: " if relay == "cc-msg.sh" else "") + normalized
             self.record(relay, name, result, code, directory, expected, code in (1, 2, 5))
+        finally:
+            if not self.frozen:
+                self.cleanup_session(session)
+
+    def redraw_payload(self, relay):
+        session, window, directory = self.start(relay, "codex159-redraw-payload", mode="codex159-redraw-payload")
+        try:
+            payload = "redraw-safe payload"
+            argv, env = self.command(relay, session, window, payload)
+            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
+            self.record(relay, "codex159-redraw-payload", result, 0, directory, payload)
+        finally:
+            if not self.frozen:
+                self.cleanup_session(session)
+
+    def redraw_input(self, relay):
+        session, window, directory = self.start(relay, "codex159-redraw-input", mode="codex159-redraw-input")
+        try:
+            target = "=" + session + ":=" + window
+            trigger = directory / "redraw-triggered"
+            proxy = directory / "tmux-redraw"
+            real = shlex.quote(str(self.tmux_binary))
+            proxy.write_text('#!/usr/bin/env bash\nif [ "$1" = capture-pane ] && [ ! -f ' + shlex.quote(str(trigger)) + ' ]; then '
+                             + real + ' send-keys -t ' + shlex.quote(target) + ' C-l; touch ' + shlex.quote(str(trigger))
+                             + '; /bin/sleep 0.05; fi\nexec ' + real + ' "$@"\n')
+            proxy.chmod(0o755)
+            payload = "redraw-safe payload"
+            argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
+            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
+            self.record(relay, "codex159-redraw-input", result, 0, directory, payload)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -389,8 +437,10 @@ class Matrix:
 
     def run(self):
         for relay in ("codex-send", "codex-send-to"):
-            for mode in ("fresh", "idle", "busy", "startup-tip", "model-change"):
+            for mode in ("fresh", "idle", "busy", "startup-tip", "model-change", "main-default", "reconnected-main-default", "no-context"):
                 self.case(relay, "codex159-" + mode, mode="codex159-" + mode)
+            self.redraw_payload(relay)
+            self.redraw_input(relay)
             self.case(relay, "codex159-real-draft", code=5, mode="codex159-draft")
             for mode in ("extra", "hidden"):
                 self.case(relay, "codex159-busy-" + mode, code=4, mode="codex159-busy-" + mode)
