@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: bind delivery to the receiver and composer; remove scratch and report interruptions
-# date: 2026-10-01
+# patched: trash owned scratch while preserving receiver checks and interruption cleanup
+# date: 2026-10-01T19:06:04Z
 
 relay_payload_file=
 relay_payload_dir=
@@ -11,6 +11,7 @@ relay_server_unresponsive=0
 relay_input_attempted=0
 relay_payload_guard="$relay_script_dir/relay-payload-guard"
 [ -x "$relay_payload_guard" ] || fail 'relay payload guard is required'
+command -v trash >/dev/null 2>&1 || fail 'trash is required for relay scratch cleanup'
 for relay_timeout_value in "$TMUX_TIMEOUT_SECONDS" "$TMUX_TIMEOUT_KILL_AFTER"; do
   [[ "$relay_timeout_value" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v duration="$relay_timeout_value" 'BEGIN { exit !(duration > 0) }' || fail 'tmux timeouts must be positive numbers of seconds'
 done
@@ -21,10 +22,14 @@ relay_cleanup() {
     request delete-buffer -b "$relay_payload_buffer" >/dev/null 2>&1 || code=$?
   fi
   if [ -n "$relay_payload_dir" ]; then
-    rm -rf -- "$relay_payload_dir"
+    trash "$relay_payload_dir" >/dev/null 2>&1 ||
+      printf 'relay: payload scratch cleanup is unconfirmed; may remain at %s\n' "$relay_payload_dir" >&2
     relay_payload_dir=
   fi
-  [ -z "${list_file:-}" ] || rm -f -- "$list_file"
+  if [ -n "${list_file:-}" ]; then
+    trash "$list_file" >/dev/null 2>&1 ||
+      printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
+  fi
   release_relay_lock
   [ "$code" = 75 ] && unresponsive
   return 0

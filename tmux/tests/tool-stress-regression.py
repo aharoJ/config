@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/tool-stress-regression.py
 # description: Attack watcher invocation, incident boundaries, and status fallbacks without live tmux.
-# patched: pin hostile invocation, socket escape, timeout, and permission behavior
-# date: 2026-10-01
+# patched: pin recoverable trash cleanup alongside existing safety refusals
+# date: 2026-10-01T19:06:04Z
 import os
 import pathlib
 import socket
@@ -29,6 +29,7 @@ class ToolStress(unittest.TestCase):
         self.env = {**os.environ, "TMPDIR": str(self.directory), "PATH": str(self.bin) + os.pathsep + os.environ["PATH"]}
         self.env.pop("TMUX", None)
         self.env.pop("TMUX_PANE", None)
+        self.executable("trash", 'rm -rf -- "$@"')
         for name in ("tmux", "lsof", "sample", "lldb", "llvm-objdump", "dwarfdump"):
             stub = self.executable(name, "exit 1")
             self.env["TMUX_LOOP_RESCUE_" + {"tmux": "TMUX", "lsof": "LSOF", "sample": "SAMPLE", "lldb": "LLDB", "llvm-objdump": "OBJDUMP", "dwarfdump": "DWARFDUMP"}[name] + "_BIN"] = str(stub)
@@ -218,11 +219,16 @@ esac''')
                     self.assertEqual(code, 1, output)
                     self.assertIn("positive", output)
 
-    def test_relay_cleanup_does_not_retain_payload(self):
-        retained = self.directory / "retained"
+    def test_relay_cleanup_retains_payload_in_trash(self):
         self.executable("trash", 'mkdir -p "$RETAINED_ROOT"; [ ! -e "$1" ] || mv "$1" "$RETAINED_ROOT/"')
-        script = '''fail() { exit 1; }
-release_relay_lock() { :; }
+        for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
+            with self.subTest(relay=relay):
+                retained = self.directory / ("retained-" + relay)
+                source = (ROOT / "tools" / relay).read_text()
+                start = source.index("release_relay_lock() {")
+                function = source[start:source.index("\n}", start) + 2]
+                script = function + '''
+fail() { exit 1; }
 request() { :; }
 relay_script_dir="$TEST_TOOL_ROOT"
 TMUX_TIMEOUT_SECONDS=1
@@ -232,12 +238,22 @@ relay_payload_dir="$(mktemp -d "$TMPDIR/relay-payload.XXXXXX")"
 relay_payload_file="$relay_payload_dir/payload"
 printf '%s' 'scratch-payload-residue-marker' > "$relay_payload_file"
 printf '%s' 'scratch-payload-residue-marker' > "$relay_payload_dir/chunk-000000"
+list_file="$(mktemp "$TMPDIR/relay-list.XXXXXX")"
+printf '%s' 'list-residue-marker' > "$list_file"
+relay_lock="$(mktemp "$TMPDIR/relay-lock.XXXXXX")"
+printf '%s\n' "$$" > "$relay_lock"
 relay_cleanup
 '''
-        result = subprocess.run(["bash", "-c", script], env={**self.env, "TEST_TOOL_ROOT": str(ROOT / "tools"), "RETAINED_ROOT": str(retained)},
-                                capture_output=True, text=True, timeout=3)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(any(b"scratch-payload-residue-marker" in path.read_bytes() for path in self.directory.rglob("*") if path.is_file()))
+                result = subprocess.run(["bash", "-c", script], env={**self.env, "TEST_TOOL_ROOT": str(ROOT / "tools"), "RETAINED_ROOT": str(retained)},
+                                        capture_output=True, text=True, timeout=3)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                payloads = [path for path in retained.rglob("*") if path.is_file() and path.read_bytes() == b"scratch-payload-residue-marker"]
+                self.assertEqual(len(payloads), 2)
+                self.assertEqual(len(list(retained.glob("relay-list.*"))), 1)
+                self.assertEqual(len(list(retained.glob("relay-lock.*"))), 1)
+                self.assertFalse(list(self.directory.glob("relay-payload.*")))
+                self.assertFalse(list(self.directory.glob("relay-list.*")))
+                self.assertFalse(list(self.directory.glob("relay-lock.*")))
 
     def test_relay_cleanup_preserves_replaced_lock(self):
         self.executable("trash", 'rm -f "$1"')
@@ -252,6 +268,51 @@ relay_cleanup
                                         env={**self.env, "LOCK_FILE": str(lock)}, capture_output=True, text=True, timeout=2)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertTrue(lock.exists())
+
+    def test_public_relays_report_failed_trash(self):
+        self.executable("trash", "exit 42")
+        self.executable("ps", "exit 1")
+        locker = self.executable("shlock", 'printf "%s\\n" "$4" > "$2"')
+        timer = self.executable("timeout", 'shift 3; exec "$@"')
+        proxy = self.executable("tmux", '''if [ "${TRASH_TEST_SIGNAL:-0}" = 1 ] && [ "$1" = load-buffer ]; then
+ kill -TERM "$PPID"
+ exit 0
+fi
+exec "$TRASH_TEST_STUB" "$@"''')
+        for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
+            for signal_stage in (False, True):
+                with self.subTest(relay=relay, signal=signal_stage):
+                    directory = self.directory / (relay + ("-signal" if signal_stage else "-delivered"))
+                    directory.mkdir()
+                    window = "claude" if relay == "cc-msg.sh" else "codex"
+                    command = "2.1.286" if relay == "cc-msg.sh" else "node"
+                    capture = "❯\u00a0\n────────────────────" if relay == "cc-msg.sh" else "› \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m  Fast off · test · Context 0% used"
+                    env = {**self.env, "TMPDIR": str(directory), "TMUX": str(directory / "socket") + ",0,0",
+                           "TMUX_BIN": str(proxy), "TIMEOUT_BIN": str(timer), "TMUX_RELAY_LOCK_BIN": str(locker),
+                           "TMUX_RELAY_LOCK_ROOT": str(directory / "locks"), "TRASH_TEST_SIGNAL": str(int(signal_stage)),
+                           "TRASH_TEST_STUB": str(ROOT / "tests/relay-tmux-stub.sh"),
+                           "RELAY_TEST_CAPTURE": capture, "RELAY_TEST_LOG": str(directory / "tmux.log"),
+                           "RELAY_TEST_PANES": f"%13 relaytest {window} {command} 100 0",
+                           "CC_MSG_SESSION": "relaytest", "CC_MSG_WINDOW": window, "CODEX_SEND_SESSION": "relaytest"}
+                    argv = [str(ROOT / "tools" / relay)]
+                    if relay == "codex-send-to":
+                        argv.append(window)
+                    argv.append("failed-trash-payload-marker")
+                    result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=4)
+                    self.assertEqual(result.returncode, 1 if signal_stage else 0, result.stderr)
+                    if signal_stage:
+                        self.assertIn("interrupted by SIGTERM", result.stderr)
+                    else:
+                        self.assertIn("complete composer verified", result.stdout)
+                    for artifact in ("payload scratch", "list scratch", "owned lock"):
+                        self.assertIn(artifact + " cleanup is unconfirmed", result.stderr)
+                    payloads = list(directory.glob("relay-payload.*"))
+                    self.assertEqual(len(payloads), 1)
+                    self.assertIn("failed-trash-payload-marker", (payloads[0] / "payload").read_text())
+                    self.assertTrue(list(payloads[0].glob("chunk-*")))
+                    self.assertEqual((payloads[0] / "send-keys-Enter.tmux").exists(), not signal_stage)
+                    self.assertTrue(list(directory.glob("*-list.*")))
+                    self.assertEqual(len(list((directory / "locks").iterdir())), 1)
 
     def test_input_guard_colon_color_preserves_intensity_reset(self):
         capture = "› \x1b[2mplaceholder\x1b[38:2::99:99:99;22mtyped\n\x1b[49m  Fast off · test · Context 0% used\n"

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bind the empty cursor and clean owned relay scratch and locks
-# date: 2026-10-01
+# patched: trash owned relay scratch and locks while preserving delivery guards
+# date: 2026-10-01T19:06:04Z
 set -uo pipefail
 
 fail() { printf 'cc-msg: %s\n' "$1" >&2; exit 1; }
@@ -54,7 +54,7 @@ RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
   if [ "$(cat "$relay_lock" 2>/dev/null)" = "$$" ]; then
-    rm -f -- "$relay_lock"
+    trash "$relay_lock" || printf 'relay: owned lock cleanup is unconfirmed; may remain at %s\n' "$relay_lock" >&2
   fi
   relay_lock=
 }
@@ -177,7 +177,7 @@ if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_cu
   :
 else
   code=$?
-  rm -f -- "$list_file"
+  trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
   list_file=
   [ "$code" = 75 ] && unresponsive
   fail 'cannot query tmux panes; refuse'
@@ -192,7 +192,7 @@ else
   command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 fi
 resolve_sender_label
-rm -f -- "$list_file"
+trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
 list_file=
 case "$target_count" in
   0)
