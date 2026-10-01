@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: recognize the observed Codex Main [default] footer without relaxing boundaries
-# date: 2026-10-01T12:38:34-0700
+# patched: recognize observed Codex Main [default] cleared-composer geometry
+# date: 2026-10-01T13:12:00-0700
 use strict;
 use warnings;
 use utf8;
@@ -69,12 +69,22 @@ sub expected_empty_cursor_x {
     return $column;
 }
 
+sub observed_cleared_codex_cursor {
+    my ($raw, $visible, $glyph, $cursor_x, $empty_cursor_x) = @_;
+    return 0 if $glyph ne '›' || !defined($empty_cursor_x);
+    return 0 if $cursor_x != $empty_cursor_x + 2;
+    return 0 if $visible !~ /\A\Q$glyph\E\r?\n?\z/;
+    return $raw =~ /\A\e\[1m\Q$glyph\E\e\[0m\e\[48;2;57;57;71m\r?\n?\z/;
+}
+
 my $empty_cursor_x = expected_empty_cursor_x($cursor_visible, $glyph);
-# This is independent of colour.  A rendered suggestion leaves the terminal
-# cursor immediately after the prompt spacer, while every ordinary typed
-# value (including one space, CJK, or emoji) advances it.  An unfamiliar
-# prompt geometry is refused rather than guessed.
-exit 1 if !defined($empty_cursor_x) || $cursor_x != $empty_cursor_x;
+my $cleared_codex_cursor = observed_cleared_codex_cursor(
+    $rows[$prompt_index], $cursor_visible, $glyph, $cursor_x, $empty_cursor_x,
+);
+# A rendered suggestion leaves the cursor after the prompt spacer; ordinary
+# typed values advance it.  The sole exception is the exact observed
+# background-preserving cleared state, which also requires Main [default].
+exit 1 if (!defined($empty_cursor_x) || $cursor_x != $empty_cursor_x) && !$cleared_codex_cursor;
 
 sub apply_sgr {
     my ($parameters, $dim_ref) = @_;
@@ -134,7 +144,7 @@ sub row_is_dim_or_blank {
 }
 
 sub codex_plain_footer {
-    my ($rows_ref, $start, $index) = @_;
+    my ($rows_ref, $start, $index, $require_main_default) = @_;
     return 0 if $index != $start + 2;
     my $separator = $rows_ref->[$start + 1];
     $separator =~ s/\e\[[0-9;:]*m//g;
@@ -142,7 +152,8 @@ sub codex_plain_footer {
     my $footer = $rows_ref->[$index];
     return 0 if $footer =~ /\e\[48(?:;|:)/;
     $footer =~ s/\e\[[0-9;:]*m//g;
-    return $footer =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\r?\n?\z/;
+    my $main_segment = $require_main_default ? ' · Main \[default\]' : '(?: · Main \[default\])?';
+    return $footer =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used$main_segment(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\r?\n?\z/;
 }
 
 sub composer_has_safe_tail {
@@ -247,6 +258,7 @@ while (length $raw) {
 
 exit 1 if !$at_input || $unknown_control_after_glyph;
 exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph, \$dim);
+exit 1 if $cleared_codex_cursor && !codex_plain_footer(\@rows, $prompt_index, $prompt_index + 2, 1);
 exit 0 if !$has_visible_input;
 
 # Do not trust inherited styling: a non-empty value is safe only when tmux

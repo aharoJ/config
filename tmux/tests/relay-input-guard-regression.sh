@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: cover captured Main [default] Codex footers and strict boundary refusals
-# date: 2026-10-01T12:44:23-0700
+# patched: cover Main [default] cleared Codex composer geometry
+# date: 2026-10-01T13:12:00-0700
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -164,7 +164,7 @@ expect_relay 1 'cc-pane-outside-window' "$cc_placeholder" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
 
-python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" <<'PY'
+python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" <<'PY'
 import json
 import pathlib
 import re
@@ -172,10 +172,11 @@ import subprocess
 import sys
 import tempfile
 
-guard, payload_guard, fixture, main_fixture, live_fixture = sys.argv[1:]
+guard, payload_guard, fixture, main_fixture, live_fixture, cleared_fixture = sys.argv[1:]
 cases = json.loads(pathlib.Path(fixture).read_text())["cases"]
 main_cases = json.loads(pathlib.Path(main_fixture).read_text())["cases"]
 live_cases = json.loads(pathlib.Path(live_fixture).read_text())["cases"]
+cleared_cases = json.loads(pathlib.Path(cleared_fixture).read_text())["cases"]
 scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-captured-159-"))
 payload_file = scratch / "payload"
 checks = 0
@@ -224,6 +225,14 @@ try:
         check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
     for case in live_cases:
         check_guard(case, case["input_exit"])
+    for case in cleared_cases:
+        check_guard(case, case["input_exit"])
+        capture = case["capture"]
+        check_guard(case, 1, capture=capture.replace("\x1b[48;2;57;57;71m", ""))
+        check_guard(case, 1, capture=capture.replace("57;57;71", "66;66;79"))
+        check_guard(case, 1, capture=capture.replace("Main [default]", "Main [other]"))
+        check_guard(case, 1, cursor_x=case["cursor_x"] - 1)
+        check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
     fresh = next(case for case in cases if case["name"] == "fresh-with-startup-tip")
     lines = fresh["capture"].splitlines()
     index = fresh["cursor_y"] + 2
