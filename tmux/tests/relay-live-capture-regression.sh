@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/tests/relay-live-capture-regression.sh
+# description: Verify guards against explicitly routed Codex and Claude terminal captures.
+# patched: bind all capture requests to an explicitly private lab server
+# date: 2026-10-01
 set -euo pipefail
 
 fail() { printf 'relay live capture regression: %s\n' "$1" >&2; exit 1; }
@@ -10,21 +14,25 @@ strip_ansi() { perl -pe 's/\e\[[0-?]*[ -\/]*[@-~]//g'; }
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 guard="$root/tools/relay-input-guard"
 [ -x "$guard" ] || fail 'relay input guard is not executable'
+socket="${TMUX:-}"
+socket="${socket%%,*}"
+[[ "${socket##*/}" =~ ^ccmsg-lab-private-[0-9]+$ ]] || fail 'an explicitly private lab TMUX context is required'
+lab_tmux() { tmux -L "${socket##*/}" -f /dev/null "$@"; }
 
 codex_target="${1:-config:=tmux-codex}"
 cc_target="${2:-libSZ:=claude}"
-codex_state="$(tmux display-message -p -t "$codex_target" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')" || fail "cannot query $codex_target cursor"
-cc_state="$(tmux display-message -p -t "$cc_target" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')" || fail "cannot query $cc_target cursor"
+codex_state="$(lab_tmux display-message -p -t "$codex_target" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')" || fail "cannot query $codex_target cursor"
+cc_state="$(lab_tmux display-message -p -t "$cc_target" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')" || fail "cannot query $cc_target cursor"
 [[ "$codex_state" =~ ^0:([0-9]+):([0-9]+)$ ]] || fail "Codex is not in a normal composer state: $codex_state"
 codex_cursor_x="${BASH_REMATCH[1]}"
 codex_cursor_y="${BASH_REMATCH[2]}"
 [[ "$cc_state" =~ ^0:([0-9]+):([0-9]+)$ ]] || fail "CC is not in a normal composer state: $cc_state"
 cc_cursor_x="${BASH_REMATCH[1]}"
 cc_cursor_y="${BASH_REMATCH[2]}"
-codex_styled="$(tmux capture-pane -p -e -t "$codex_target")" || fail "cannot capture $codex_target"
-codex_plain="$(tmux capture-pane -p -t "$codex_target")" || fail "cannot capture $codex_target"
-cc_styled="$(tmux capture-pane -p -e -t "$cc_target")" || fail "cannot capture $cc_target"
-cc_plain="$(tmux capture-pane -p -t "$cc_target")" || fail "cannot capture $cc_target"
+codex_styled="$(lab_tmux capture-pane -p -e -t "$codex_target")" || fail "cannot capture $codex_target"
+codex_plain="$(lab_tmux capture-pane -p -t "$codex_target")" || fail "cannot capture $codex_target"
+cc_styled="$(lab_tmux capture-pane -p -e -t "$cc_target")" || fail "cannot capture $cc_target"
+cc_plain="$(lab_tmux capture-pane -p -t "$cc_target")" || fail "cannot capture $cc_target"
 
 has_ansi "$codex_styled" || fail "Codex styled capture has no ANSI sequence"
 has_ansi "$cc_styled" || fail "CC styled capture has no ANSI sequence"

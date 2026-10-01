@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: cover captured Codex 0.159.2 plain and busy footer layouts with draft and payload refusal
-# date: 2026-09-30
+# patched: isolate lab locks and evidence and register private server ownership
+# date: 2026-10-01
 import argparse
 import codecs
 import json
@@ -11,6 +11,7 @@ import pathlib
 import select
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -154,7 +155,8 @@ def fixture(directory, glyph, mode):
 
 class Matrix:
     def __init__(self, output):
-        self.output = pathlib.Path(output)
+        os.umask(0o077)
+        self.output = pathlib.Path(output).resolve()
         self.output.mkdir(parents=True, exist_ok=True)
         self.results = []
         self.sessions = set()
@@ -189,6 +191,7 @@ class Matrix:
         self.tmux("new-session", "-d", "-s", session, "-n", window, "-x", str(width), "-y", str(height), command)
         self.sessions.add(session)
         self.server_address = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{socket_path},#{pid},0")
+        (self.output / "server.json").write_text(json.dumps({"pid": int(self.server_address.split(",")[1]), "socket": self.socket}))
         self.tmux("set-option", "-w", "-t", "=" + session + ":=" + window, "automatic-rename", "off")
         for _ in range(100):
             if (directory / "ready").exists():
@@ -201,7 +204,8 @@ class Matrix:
     def command(self, relay, session, window, payload, extra=None):
         env = {**os.environ, "CC_MSG_SESSION": session, "CC_MSG_WINDOW": window,
                "CODEX_SEND_SESSION": session, "CODEX_SEND_WINDOW": window,
-               "TMUX": self.server_address, "TMUX_BIN": str(self.tmux_binary)}
+               "TMUX": self.server_address, "TMUX_BIN": str(self.tmux_binary),
+               "TMUX_RELAY_LOCK_ROOT": str(self.output / "relay-locks")}
         if extra:
             env.update(extra)
         argv = [str(ROOT / "tools" / relay)]

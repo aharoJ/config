@@ -1,9 +1,10 @@
 #!/bin/bash
 # path: ~/.config/tmux/tools/pane-watch/tests/run
 # description: Replay one watcher fixture using mandatory offline dependencies.
-# patched: track complete offline fixture dependencies
+# patched: refuse missing offline dependencies before any watcher invocation
 # date: 2026-10-01
 HERE="$(cd "$(dirname "$0")" && pwd)"
+[ -x "$HERE/fakebin/tmux" ] && [ -x "$HERE/fakebin/sleep" ] || { echo 'missing offline watcher dependencies' >&2; exit 1; }
 S="$1"; c="$2"; shift 2
 mkdir -p "$HERE/.tmp"; rm -f "$HERE/.tmp/$c.counter"
 PATH="$HERE/fakebin:$PATH" PW_POLL=0 TMPDIR="$HERE/.tmp" \
