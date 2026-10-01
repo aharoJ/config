@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: supply safe target dimensions and trash test scratch files
+# patched: verify real Codex 0.159.2 captures and reject footer lookalikes, drafts, and payload changes
 # date: 2026-09-30
 set -euo pipefail
 
@@ -156,5 +156,80 @@ expect_delivery 'cc-explicit-pane'
 expect_relay 1 'cc-pane-outside-window' "$cc_placeholder" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
+
+python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-159.json" <<'PY'
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+
+guard, payload_guard, fixture = sys.argv[1:]
+cases = json.loads(pathlib.Path(fixture).read_text())["cases"]
+scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-captured-159-"))
+payload_file = scratch / "payload"
+checks = 0
+
+def check_guard(case, expected, capture=None, cursor_x=None, cursor_y=None):
+    global checks
+    result = subprocess.run([guard, "›", str(case["cursor_x"] if cursor_x is None else cursor_x),
+                             str(case["cursor_y"] if cursor_y is None else cursor_y)],
+                            input=case["capture"] if capture is None else capture, text=True, capture_output=True)
+    assert result.returncode == expected, (case["name"], result.returncode, expected, result.stderr)
+    checks += 1
+
+def check_payload(case, expected, capture=None, payload=None, cursor_x=None):
+    global checks
+    payload_file.write_text(case["payload"] if payload is None else payload)
+    result = subprocess.run([payload_guard, "compare", "›", str(case["cursor_x"] if cursor_x is None else cursor_x),
+                             str(case["cursor_y"]), str(payload_file), str(case["width"])],
+                            input=case["capture"] if capture is None else capture, text=True, capture_output=True)
+    assert result.returncode == expected, (case["name"], result.returncode, expected, result.stderr)
+    checks += 1
+
+try:
+    for case in cases:
+        check_guard(case, case["input_exit"])
+        if case["payload"]:
+            check_payload(case, 0)
+            check_payload(case, 1, payload="X" + case["payload"][1:])
+            check_payload(case, 1, payload=case["payload"][:-1])
+            check_payload(case, 1, cursor_x=case["cursor_x"] + 1)
+            rows = case["capture"].splitlines()
+            rows.insert(case["cursor_y"] + 1, "  hidden extra input")
+            check_payload(case, 1, capture="\n".join(rows) + "\n")
+    fresh = next(case for case in cases if case["name"] == "fresh-with-startup-tip")
+    lines = fresh["capture"].splitlines()
+    index = fresh["cursor_y"] + 2
+    footer = lines[index]
+    mutations = [footer.replace(" · ~/.config", ""), footer.replace("Context 0%", "Context 101%"),
+                 footer + " arbitrary", "\x1b[48;5;237m" + footer,
+                 footer + "\x1b]8;;https://example.invalid\x1b\\", footer.replace("Fast off", "Fast unknown")]
+    for mutated in mutations:
+        rows = lines.copy()
+        rows[index] = mutated
+        check_guard(fresh, 1, capture="\n".join(rows) + "\n")
+    for middle in ("  undimmed draft continuation", ""):
+        rows = lines.copy()
+        rows.insert(fresh["cursor_y"] + 1, middle)
+        check_guard(fresh, 1, capture="\n".join(rows) + "\n")
+    rows = lines.copy()
+    del rows[fresh["cursor_y"] + 1]
+    check_guard(fresh, 1, capture="\n".join(rows) + "\n")
+    draft = next(case for case in cases if case["name"] == "real-typed-draft")
+    check_guard(draft, 1, cursor_x=2)
+    rows = draft["capture"].splitlines()
+    rows.insert(draft["cursor_y"] + 1, "  real wrapped draft")
+    check_guard(draft, 1, capture="\n".join(rows) + "\n", cursor_x=6, cursor_y=draft["cursor_y"] + 1)
+    check_guard(fresh, 1, cursor_x=3)
+    busy = next(case for case in cases if case["name"] == "busy-exact-payload")
+    rows = busy["capture"].splitlines()
+    rows[busy["cursor_y"] + 2] = rows[busy["cursor_y"] + 2].replace("queue message", "unknown action")
+    check_payload(busy, 1, capture="\n".join(rows) + "\n")
+    print(f"captured Codex 0.159.2 guards: {checks} checks, PASS")
+finally:
+    subprocess.run(["trash", str(scratch)], check=True)
+PY
 
 printf 'relay input guard regression: PASS\n'

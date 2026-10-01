@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: cover fresh sender identity, neutral fallback, and prefix-inclusive capacity
+# patched: cover captured Codex 0.159.2 plain and busy footer layouts with draft and payload refusal
 # date: 2026-09-30
 import argparse
 import codecs
@@ -39,7 +39,7 @@ def wrap(text, width):
 def fixture(directory, glyph, mode):
     tty.setraw(sys.stdin.fileno())
     directory = pathlib.Path(directory)
-    value = "user draft" if mode == "draft" else ""
+    value = "user draft" if mode in ("draft", "codex159-draft") else ""
     pending = b""
     decoder = codecs.getincrementaldecoder("utf-8")()
     pastes, submissions = [], []
@@ -47,7 +47,7 @@ def fixture(directory, glyph, mode):
 
     def draw():
         visible = value
-        if mode == "hidden" and visible:
+        if mode in ("hidden", "codex159-busy-hidden") and visible:
             visible = "[Pasted text #1]"
         lines = wrap(visible, width - 2)
         top = 3
@@ -57,19 +57,39 @@ def fixture(directory, glyph, mode):
         else:
             first = glyph + (" " if visible else "\u00a0")
         output = "\x1b[?2004h\x1b[2J\x1b[H"
-        if mode == "startup-link":
+        if mode in ("startup-link", "codex159-startup-tip"):
             output += "\x1b]8;;https://chatgpt.com/codex\x1b\\Tip: Try Codex\x1b]8;;\x1b\\"
-        if mode == "busy":
+        if mode == "codex159-model-change":
+            output += "Model changed to GPT-6.1-Sol xhigh"
+        if mode == "busy" or mode.startswith("codex159-busy"):
             output += "Working (1s · esc to interrupt)"
         if glyph == "❯":
             output += f"\x1b[{top};1H" + "─" * width
+        modern = mode.startswith("codex159-")
+        if modern and not visible:
+            first = "\x1b[1m›\x1b[0m "
+            lines[0] = "\x1b[2mAsk Codex to do anything\x1b[0m"
         for index, line in enumerate(lines):
             output += f"\x1b[{top + 1 + index};1H" + (first if index == 0 else "  ") + line
         if glyph == "❯":
             output += f"\x1b[{top + len(lines) + 1};1H" + "─" * width
+        elif modern:
+            if mode.startswith("codex159-busy") and value:
+                footer = "  tab to queue message"
+                suffix = "98% context left"
+                footer += " " * max(2, width - cells(footer) - cells(suffix)) + suffix
+            else:
+                footer = "  Fast off · GPT-6.1-Sol high · ~/.config · Context 0% used"
+                if mode == "codex159-fresh":
+                    suffix = "⚠ 1 warning · \x1b[1mf2\x1b[0m to view"
+                    footer += " " * max(2, width - cells(footer) - cells("⚠ 1 warning · f2 to view")) + suffix
+                else:
+                    footer += " · \x1b[1m←\x1b[0m for agents"
+            output += f"\x1b[{top + len(lines) + 2};1H" + footer
         else:
             output += f"\x1b[{top + len(lines) + 1};1H\x1b[49m  \x1b[38;5;215mFast off · test · Context 0% used\x1b[39m"
-        output += f"\x1b[{top + len(lines)};{2 + cells(lines[-1]) + 1}H"
+        cursor_size = cells(visible) if modern and not visible else cells(lines[-1])
+        output += f"\x1b[{top + len(lines)};{2 + cursor_size + 1}H"
         sys.stdout.write(output)
         sys.stdout.flush()
         (directory / "ready").touch()
@@ -86,7 +106,7 @@ def fixture(directory, glyph, mode):
         elif mode == "tail-only":
             value = ""
             text = text[-30:]
-        elif mode == "extra" and not pastes:
+        elif mode in ("extra", "codex159-busy-extra") and not pastes:
             text += "unexpected"
         elif mode == "mutate":
             text = text.replace("a", "b")
@@ -347,6 +367,12 @@ class Matrix:
                 self.cleanup_session(session)
 
     def run(self):
+        for relay in ("codex-send", "codex-send-to"):
+            for mode in ("fresh", "idle", "busy", "startup-tip", "model-change"):
+                self.case(relay, "codex159-" + mode, mode="codex159-" + mode)
+            self.case(relay, "codex159-real-draft", code=5, mode="codex159-draft")
+            for mode in ("extra", "hidden"):
+                self.case(relay, "codex159-busy-" + mode, code=4, mode="codex159-busy-" + mode)
         self.sender_case("cc-sender-stale-pane-and-override", "claude")
         self.sender_case("codex-sender-stale-pane-and-override", "codex")
         self.sender_case("node-cc-sender", "claude", node=True)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-30 — Relays recognize Codex 0.159.2 status and busy footers
+
+Codex 0.159.2 renders its status footer without the foreground/background color sequences that both relay guards previously required. An empty composer therefore exited 5 as a false draft, and a typed payload could exit 4 without Enter. The guards now recognize the captured footer's complete Fast/model/directory/context fields, optional agent or warning controls, and its position after one blank row below the composer. Cursor advancement and real draft detection remain unchanged.
+
+Busy Codex also replaces the status line with `tab to queue message` and the remaining context count after text is pasted. Exact payload verification now recognizes that captured boundary; it still requires the complete text, cursor, target identity, and dimensions to agree twice before one Enter. Altered, hidden, wrapped, cropped, or unfamiliar input still fails closed. Real Codex 0.159.2 startup, idle, draft, busy, and session-only model-change captures are committed as regression fixtures. Both public Codex relays exercise these layouts and hostile busy receivers in the expanded private-server matrix, with Codex 0.157.1 compatibility retained.
+
 ## 2026-09-30 — Claude relay labels identify the calling agent and pane
 
 `cc-msg.sh` previously prefixed every message with `codex:`, including messages sent by Claude Code. It now matches the caller's live process ancestry to tmux's pane process, identifies native Claude/Codex binaries and their Node entry points, repeats the process check, and rechecks the pane's session, window, process, and live state before using labels such as `claude (INFRA:claude):`. Inherited `TMUX_PANE` and `CC_MSG_FROM` values cannot supply the identity. Unknown, ambiguous, changed, or untraceable origins use a neutral `relay` label; a shared Codex daemon without ancestry back to a pane remains neutral.

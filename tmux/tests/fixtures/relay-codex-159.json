@@ -1,0 +1,82 @@
+{
+  "description": "Actual private-server Codex 0.159.2 composer rows captured 2026-09-30; only rows outside the recorded excerpt were removed.",
+  "cases": [
+    {
+      "name": "fresh-with-startup-tip",
+      "version": "0.159.2",
+      "source": "lab-codex-fresh-before.txt",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.2)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\u001b[2m  permissions: \u001b[0mYOLO mode\n\n  What’s the latest from your side of the keyboard?\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol high · ~/.config · Context 0% used                                                                                                                    ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 2,
+      "cursor_y": 10,
+      "width": 200,
+      "input_exit": 0,
+      "payload": null
+    },
+    {
+      "name": "idle",
+      "version": "0.159.2",
+      "source": "idle-159-before-model.txt",
+      "capture": "\u001b[2m  Worked for 3s • 5:24 PM\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol high · ~/.config · Context 1% used                                                                                                                    ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 2,
+      "cursor_y": 3,
+      "width": 200,
+      "input_exit": 0,
+      "payload": null
+    },
+    {
+      "name": "after-model-change",
+      "version": "0.159.2",
+      "source": "model-changed-159.txt",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.2)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\u001b[2m  permissions: \u001b[0mYOLO mode\n\n  What’s the latest from your side of the keyboard?\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m› \u001b[0m[fix2 fresh] Reply ACK only; do not run tools.\n\n\n\u001b[2m• \u001b[0mACK\n\n\u001b[2m  Worked for 3s • 5:24 PM\u001b[0m\n\n\n\u001b[1;2m› \u001b[0m[fix2 idle] Reply ACK only; do not run tools.\n\n\n\u001b[2m• \u001b[0mACK\n\n\u001b[2m  Worked for 2s • 5:27 PM\u001b[0m\n\n\u001b[2m• \u001b[0mModel changed to gpt-6.1-sol xhigh for this session only\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol xhigh · ~/.config · Context 1% used                                                                                                                   ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 2,
+      "cursor_y": 28,
+      "width": 200,
+      "input_exit": 0,
+      "payload": null
+    },
+    {
+      "name": "busy-empty",
+      "version": "0.159.2",
+      "source": "busy159fixed-empty.txt",
+      "capture": "\u001b[2m◦\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(8s • \u001b[0;1mesc\u001b[0;2m to interrupt) · 1 background terminal running · /ps to view · /stop to close\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol high · ~/.config · Context 1% used                                                                                                                    ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 2,
+      "cursor_y": 3,
+      "width": 200,
+      "input_exit": 0,
+      "payload": null
+    },
+    {
+      "name": "real-typed-draft",
+      "version": "0.159.2",
+      "source": "real-159-draft-after.txt",
+      "capture": "  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b]8;;\u001b\\\n\u001b[0m\n\n\u001b[1m›\u001b[0m real typed draft\n\n  Fast off · GPT-6.1-Sol high · ~/.config · Context 0% used                                                                                                                    ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 18,
+      "cursor_y": 3,
+      "width": 200,
+      "input_exit": 1,
+      "payload": null
+    },
+    {
+      "name": "fresh-exact-payload",
+      "version": "0.159.2",
+      "source": "fresh-trace/1790814258781264000.json",
+      "capture": "  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1m›\u001b[0m [fix2 fresh] Reply ACK only; do not run tools.\n\n  Fast off · GPT-6.1-Sol high · ~/.config · Context 0% used                                                                                                                    ⚠ 1 warning · \u001b[1mf2\u001b[0m to view\n",
+      "cursor_x": 48,
+      "cursor_y": 3,
+      "width": 200,
+      "input_exit": 1,
+      "payload": "[fix2 fresh] Reply ACK only; do not run tools."
+    },
+    {
+      "name": "busy-exact-payload",
+      "version": "0.159.2",
+      "source": "busy159b-trace/1790814403188718000.json",
+      "capture": "\u001b[2m◦\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(9s • \u001b[0;1mesc\u001b[0;2m to interrupt) · 1 background terminal running · /ps to view · /stop to close\u001b[0m\n\n\n\u001b[1m›\u001b[0m [fix2 busy159b] Reply ACK only; do not run tools.\n\n  \u001b[1mtab\u001b[0m to queue message                                                                                                                                                                98% context left\n",
+      "cursor_x": 51,
+      "cursor_y": 3,
+      "width": 200,
+      "input_exit": 1,
+      "payload": "[fix2 busy159b] Reply ACK only; do not run tools."
+    }
+  ]
+}
