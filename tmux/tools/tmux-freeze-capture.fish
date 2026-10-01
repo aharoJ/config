@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 # path: ~/.config/tmux/tools/tmux-freeze-capture.fish
 # description: Capture bounded read-only tmux incident evidence.
-# patched: restrict incident evidence permissions
+# patched: stop tmux requests after a timeout and restrict evidence permissions
 # date: 2026-10-01
 set -l socket (string trim -- ""$TMUX_FREEZE_CAPTURE_SOCKET)
 set -l output_root (string trim -- ""$TMUX_FREEZE_CAPTURE_OUTPUT_ROOT)
@@ -86,7 +86,10 @@ function run_tmux --argument-names label
     set -l status_code $status
     set -l ended (epoch_ms)
     record_status "$label" "$status_code" "$started" "$ended"
-
+    if contains -- "$status_code" 124 137 143
+        echo "STOP: tmux request timed out; capture stopped. Evidence: $capture_out" >&2
+        exit 1
+    end
 end
 printf 'utc=%s\nsocket=%s\ntmux=%s\ntimeout=%s\ntmux_timeout_seconds=%s\nlsof_timeout_seconds=%s\nreadonly=true\n' "$stamp" "$socket" "$tmux_bin" "$timeout_bin" "$tmux_seconds" "$lsof_seconds" > "$out/manifest.txt"
 if test -n "$lsof_bin"; and test -x "$lsof_bin"

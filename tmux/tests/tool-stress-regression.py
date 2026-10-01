@@ -382,6 +382,12 @@ PY''')
                 "TMUX_FREEZE_CAPTURE_TMUX_BIN": str(tmux), "TMUX_FREEZE_CAPTURE_LSOF_BIN": unavailable,
                 "TMUX_FREEZE_CAPTURE_SAMPLE_BIN": unavailable, "STRESS_TMUX_LOG": str(log)}, log
 
+    def test_capture_stops_after_timeout(self):
+        extra, log = self.capture_env(124)
+        code, output = self.run_tool("tmux-freeze-capture.fish", extra=extra, timeout=8)
+        self.assertEqual(code, 1, output)
+        self.assertEqual(len(log.read_text().splitlines()), 1)
+        self.assertIn("stopped", output.lower())
 
     def test_capture_private_permissions(self):
         extra, log = self.capture_env(0)
@@ -390,6 +396,10 @@ PY''')
         for path in (self.directory / "evidence").rglob("*"):
             self.assertEqual(path.stat().st_mode & 0o077, 0, str(path))
 
+    def test_capture_invalid_timeout(self):
+        for value in ("0", "11", "-1", "garbage", "1;touch nope"):
+            code, output = self.run_tool("tmux-freeze-capture.fish", extra={"TMUX_FREEZE_CAPTURE_TMUX_TIMEOUT_SECONDS": value})
+            self.assertEqual(code, 64, output)
 
     def test_rescue_missing_settings(self):
         code, output = self.run_tool("tmux-loop-rescue", "--verify", extra={"TMUX_LOOP_RESCUE_SOCKET": ""})
