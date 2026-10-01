@@ -1,0 +1,6 @@
+#!/bin/bash
+# path: ~/.config/tmux/tools/pane-watch/tests/fakebin/sleep
+# description: Advance offline watcher fixture time without real polling delays.
+# patched: retain the bounded fixture clock in clean checkouts
+# date: 2026-10-01
+exit 0
