@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-live-capture-regression.sh
 # description: Verify guards against explicitly routed Codex and Claude terminal captures.
-# patched: bind all capture requests to an explicitly private lab server
+# patched: accept Claude's verified empty composer with a visible dim suggestion
 # date: 2026-10-01
 set -euo pipefail
 
@@ -46,7 +46,6 @@ cc_styled_prompt="$(printf '%s\n' "$cc_styled" | strip_ansi | last_cc_prompt)"
 printf '%s\n' "$cc_prompt" | perl -ne '$found ||= /\xc2\xa0/; END { exit($found ? 0 : 1) }' || fail "CC empty prompt has no NBSP"
 cc_normalized="$(printf '%s\n' "$cc_prompt" | perl -pe 's/\xc2\xa0/ /g')"
 [ "$cc_styled_prompt" = "$cc_prompt" ] || fail "CC styled prompt did not normalize to the plain capture"
-printf '%s\n' "$cc_normalized" | grep -Eq '^[[:blank:]]*❯[[:blank:]]*$' || fail "CC empty prompt was not recognized"
 printf '%s\n' "$cc_styled" | "$guard" '❯' "$cc_cursor_x" "$cc_cursor_y" || fail "CC empty composer was not accepted"
 cc_prompt_position="$(printf '%s\n' "$cc_plain" | awk '/^[[:blank:]]*❯/ { position=NR } END { print position + 0 }')"
 [ "$cc_prompt_position" -gt 0 ] || fail "CC prompt position was not found"
