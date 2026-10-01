@@ -1,7 +1,7 @@
 #!/bin/bash
 # path: ~/.config/tmux/tools/pane-watch/pane-watch.sh
 # description: Alert on agent waits and lost observation coverage.
-# patched: refuse missing option values before shifting arguments
+# patched: reject invalid polling and heartbeat intervals
 # date: 2026-10-01
 # pane-watch: tell the operator, loudly, when an agent in a tmux pane is waiting on them.
 #
@@ -71,6 +71,9 @@ esac
 
 POLL="${PW_POLL:-3}"; STABLE_IDLE=2; MAXFAIL=5; MAXUNKNOWN=4; STATIC_MAX=3
 NOREPLY_MAX="${PW_NOREPLY:-60}"; HEARTBEAT="${PW_HEARTBEAT:-1800}"; SCROLL=400
+for interval in "$POLL" "$NOREPLY_MAX" "$HEARTBEAT"; do
+  [[ "$interval" =~ ^(0|[1-9][0-9]*)$ ]] || { echo 'REFUSE: watcher intervals must be nonnegative decimal integers.' >&2; exit 64; }
+done
 BACKOFF=(0 120 300 600)
 TMUX_TIMEOUT="${PW_TMUX_TIMEOUT:-2}"
 case "$TMUX_TIMEOUT" in

@@ -161,6 +161,14 @@ capture-pane) printf '%s\\n' '› operation' '• Finished.' '› Ask Codex to d
 *) exit 1 ;;
 esac''')
 
+    def test_watcher_invalid_intervals(self):
+        self.watcher_stub()
+        for setting in ("PW_POLL", "PW_NOREPLY", "PW_HEARTBEAT"):
+            for value in ("bad", "-1", "0.5", "08"):
+                with self.subTest(setting=setting, value=value):
+                    code, output = self.run_tool("pane-watch/pane-watch.sh", "--pane", "%13", "--ui", "codex",
+                                                 extra={setting: value}, timeout=0.5)
+                    self.assertEqual(code, 64, output)
 
 
 
