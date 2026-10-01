@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: cover Main [default] cleared Codex composer geometry
-# date: 2026-10-01T13:12:00-0700
+# patched: reject footer-shaped lines inside Codex draft tails
+# date: 2026-10-01T14:12:00-0700
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -74,6 +74,8 @@ codex_draft=$'\e[1;2m› \e[0m\e[48;2;66;66;79mreal user draft'
 codex_rgb_draft=$'\e[1m›\e[0m\e[48;2;66;66;79mreal user draft'
 codex_dim_typed=$'\e[1m›\e[0m\e[48;2;57;57;71m \e[2mtyped but dim\e[0m\e[48;2;57;57;71m\n\e[49m  Fast off · test · Context 0% used'
 codex_multiline_draft=$'\e[1m›\e[0m\e[48;2;66;66;79m \n  real user draft\n\e[49m  Fast off · test · Context 0% used'
+codex_footer_lookalike_draft=$'› \n\n  Fast off · model · ~/repo · Context 0% used\n  REAL USER DRAFT\n\e[49m  Fast off · model · ~/repo · Context 0% used'
+codex_colored_footer_lookalike_draft=$'› \n\n  \e[38;5;183mFast off · model · Context 0% used\n  REAL USER DRAFT\n\e[49m  Fast off · model · Context 0% used'
 codex_choice=$'\e[1m\e[38;2;0;0;46m\e[48;2;99;168;248m› 1. Trust and continue'
 cc_empty=$'\e[39m❯\302\240\n\e[38;5;244m────────────────────'
 cc_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util logging.py that…"\e[0m\n\e[38;5;244m────────────────────'
@@ -96,6 +98,8 @@ expect_guard 1 '›' 'typed Codex draft' "$codex_draft" 3 0
 expect_guard 1 '›' 'RGB-background Codex draft' "$codex_rgb_draft" 3 0
 expect_guard 1 '›' 'typed but dim Codex draft advances cursor' "$codex_dim_typed" 3 0
 expect_guard 1 '›' 'multiline Codex draft' "$codex_multiline_draft" 4 1
+expect_guard 1 '›' 'plain Codex footer lookalike before draft content' "$codex_footer_lookalike_draft" 2 0
+expect_guard 1 '›' 'colored Codex footer lookalike before draft content' "$codex_colored_footer_lookalike_draft" 2 0
 expect_guard 1 '›' 'Codex choice row' "$codex_choice" 2 0
 expect_guard 1 '❯' 'typed Claude draft' "$cc_draft" 3 0
 expect_guard 1 '❯' 'grey Claude draft' "$cc_grey_draft" 3 0

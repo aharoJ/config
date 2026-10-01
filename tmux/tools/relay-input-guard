@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: recognize observed Codex Main [default] cleared-composer geometry
-# date: 2026-10-01T13:12:00-0700
+# patched: reject footer-shaped lines followed by visible draft content
+# date: 2026-10-01T14:12:00-0700
 use strict;
 use warnings;
 use utf8;
@@ -156,6 +156,15 @@ sub codex_plain_footer {
     return $footer =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · Context (?:100|[0-9]{1,2})% used$main_segment(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\r?\n?\z/;
 }
 
+sub blank_tail_after_boundary {
+    my ($rows_ref, $boundary) = @_;
+    for my $index ($boundary + 1 .. $#$rows_ref) {
+        my $tail_dim = 0;
+        return 0 if !row_is_dim_or_blank($rows_ref->[$index], \$tail_dim);
+    }
+    return 1;
+}
+
 sub composer_has_safe_tail {
     my ($rows_ref, $start, $glyph, $dim_ref) = @_;
     my $cc_end = -1;
@@ -180,12 +189,12 @@ sub composer_has_safe_tail {
         # Codex's footer begins only after the composer background resets.
         # A following input background means it is still composer content.
         if ($glyph eq '›') {
-            return 1 if codex_plain_footer($rows_ref, $start, $index);
+            return blank_tail_after_boundary($rows_ref, $index) if codex_plain_footer($rows_ref, $start, $index);
             my $structured = $visible =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+) · )?Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)? *\z/;
             my $reset_at = index($raw, "\e[49m");
             if ($reset_at >= 0) {
                 my $after_reset = substr($raw, $reset_at + length("\e[49m"));
-                return 1 if $structured && $after_reset !~ /\e\[48(?:;|:)/ && $after_reset !~ /\e\]/;
+                return blank_tail_after_boundary($rows_ref, $index) if $structured && $after_reset !~ /\e\[48(?:;|:)/ && $after_reset !~ /\e\]/;
             }
 
             # With NO_COLOR and some 256-colour terminals, Codex omits the
@@ -194,7 +203,7 @@ sub composer_has_safe_tail {
             # row.  Keep this deliberately strict: an unfamiliar footer is
             # not treated as a boundary and therefore refuses the send.
             if ($structured && $raw =~ /\e\[38(?:;|:)/ && $raw !~ /\e\[48(?:;|:)|\e\]/) {
-                return 1;
+                return blank_tail_after_boundary($rows_ref, $index);
             }
         }
 
