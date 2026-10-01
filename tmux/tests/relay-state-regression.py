@@ -214,6 +214,10 @@ class StateMatrix(delivery.Matrix):
             if group in ("all", "races"):
                 for action in ("respawn-paste", "respawn-enter", "draft-paste", "draft-enter", "resize-enter"):
                     self.race(relay, action)
+            if group in ("all", "signals"):
+                for stage in ("list", "load", "paste", "compare", "enter"):
+                    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGPIPE):
+                        self.interrupted(relay, stage, signum)
         failures = sum(not row["passed"] for row in self.results)
         print(f"{len(self.results)} cases; {failures} failures; evidence: {self.output}")
         return int(bool(failures))

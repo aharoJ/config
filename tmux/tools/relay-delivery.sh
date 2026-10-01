@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: bind paste and Enter to verified receiver, cursor, and dimensions
+# patched: report interrupted input with existing refusal and partial exit meanings
 # date: 2026-10-01
 
 relay_payload_file=
 relay_payload_dir=
 relay_payload_buffer=
 relay_server_unresponsive=0
+relay_input_attempted=0
 relay_payload_guard="$relay_script_dir/relay-payload-guard"
 [ -x "$relay_payload_guard" ] || fail 'relay payload guard is required'
 command -v trash >/dev/null 2>&1 || fail 'trash is required for relay scratch cleanup'
@@ -26,6 +27,14 @@ relay_cleanup() {
 }
 trap relay_cleanup EXIT
 
+relay_interrupted() {
+  trap - INT TERM PIPE
+  [ "$relay_input_attempted" = 0 ] || partial "interrupted by $1; target input may remain"
+  fail "interrupted by $1; no target input was sent"
+}
+trap 'relay_interrupted SIGINT' INT
+trap 'relay_interrupted SIGTERM' TERM
+trap 'relay_interrupted SIGPIPE' PIPE
 
 prepare_payload() {
   local dimensions code bytes width height
@@ -90,6 +99,7 @@ atomic_text() {
     fi
     expected_x=; expected_y=
     [ "$attempted" = 0 ] && { expected_x="$relay_empty_cursor_x"; expected_y="$relay_empty_cursor_y"; }
+    relay_input_attempted=1
     if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane __RELAY_DELIVERED__" "$expected_x" "$expected_y"; then
       attempted=1
     else
