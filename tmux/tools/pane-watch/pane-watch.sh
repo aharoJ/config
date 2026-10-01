@@ -1,7 +1,7 @@
 #!/bin/bash
 # path: ~/.config/tmux/tools/pane-watch/pane-watch.sh
 # description: Alert on agent waits and lost observation coverage.
-# patched: bind watcher locks to the origin socket and server process
+# patched: validate arguments and timing; bind locks and coverage to the origin server and process
 # date: 2026-10-01
 # pane-watch: tell the operator, loudly, when an agent in a tmux pane is waiting on them.
 #
@@ -183,13 +183,15 @@ else printf '%s\n' "$G_HOT_DEFAULT" > "$HOTPAT"; fi
 # ---------------------------------------------------------------- observation
 fp() { printf '%s' "$1" | shasum | cut -c1-12; }
 read_height() {
-  local height_status
+  local height_status height_state=''
   HEIGHT=""
-  tmuxq display-message -p -t "$PANE" '#{pane_height}' > "$W/height" 2>/dev/null
+  tmuxq display-message -p -t "$PANE" '#{pane_height}:#{pid}:#{pane_pid}' > "$W/height" 2>/dev/null
   height_status=$?
   [ "$height_status" = 0 ] || return "$height_status"
-  IFS= read -r HEIGHT < "$W/height" || true
-  case "$HEIGHT" in ''|*[!0-9]*) return 1 ;; esac
+  IFS= read -r height_state < "$W/height" || true
+  [[ "$height_state" =~ ^([0-9]+):([0-9]+):([0-9]+)$ ]] || return 1
+  HEIGHT="${BASH_REMATCH[1]}"
+  [ "${BASH_REMATCH[2]}:${BASH_REMATCH[3]}" = "$WATCH_SERVER_PID:$WATCH_PANE_PID" ] || return 76
 }
 capture() { tmuxq capture-pane -p -t "$PANE" -S "-$SCROLL" > "$CAP" 2>/dev/null; }
 
@@ -299,6 +301,7 @@ request_failed() {
   failed_rc=$1
   failed_label=$2
   fails=$((fails+1)); idle_run=0; winstatic=0; prev_winsig=""
+  [ "$failed_rc" = 76 ] && coverage_lost 'Target server or pane process identity changed; rearm explicitly.' 2
   timed_out "$failed_rc" && coverage_lost "A tmux $failed_label request reached its ${TMUX_TIMEOUT}s bound; stopping rather than accumulating blocked clients." 3
   [ "$fails" -ge "$MAXFAIL" ] && coverage_lost "$MAXFAIL consecutive tmux request failures. The pane or the tmux server is gone." 3
 }

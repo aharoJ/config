@@ -200,6 +200,12 @@ esac''')
                 output.close()
         self.assertFalse(list(self.directory.glob("pane-watch-locks/*/pid")))
 
+    def test_watcher_replacement_loses_coverage(self):
+        self.watcher_stub()
+        code, output = self.run_tool("pane-watch/pane-watch.sh", "--pane", "%13", "--ui", "codex", "--ack-current",
+                                     extra={"WATCH_TEST_REPLACE": "1", "PW_POLL": "0"}, timeout=2)
+        self.assertEqual(code, 2, output)
+        self.assertIn("identity changed", output)
 
     def test_relays_reject_disabled_timeouts(self):
         stub = self.executable("tmux-timeout", "exit 124")
