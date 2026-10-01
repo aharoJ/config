@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: remove owned relay scratch instead of retaining it in Trash
+# patched: enforce argument count, bind the empty cursor, and clean owned scratch and locks
 # date: 2026-10-01
 set -uo pipefail
 
@@ -37,7 +37,9 @@ RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
 
 release_relay_lock() {
   [ -n "$relay_lock" ] || return 0
-  rm -f -- "$relay_lock"
+  if [ "$(cat "$relay_lock" 2>/dev/null)" = "$$" ]; then
+    rm -f -- "$relay_lock"
+  fi
   relay_lock=
 }
 

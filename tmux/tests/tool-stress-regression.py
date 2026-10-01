@@ -187,6 +187,19 @@ relay_cleanup
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(any(b"scratch-payload-residue-marker" in path.read_bytes() for path in self.directory.rglob("*") if path.is_file()))
 
+    def test_relay_cleanup_preserves_replaced_lock(self):
+        self.executable("trash", 'rm -f "$1"')
+        for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
+            with self.subTest(relay=relay):
+                lock = self.directory / "replaced-lock"
+                lock.write_text("999999\n")
+                source = (ROOT / "tools" / relay).read_text()
+                start = source.index("release_relay_lock() {")
+                function = source[start:source.index("\n}", start) + 2]
+                result = subprocess.run(["bash", "-c", function + '\nrelay_lock="$LOCK_FILE"\nrelease_relay_lock'],
+                                        env={**self.env, "LOCK_FILE": str(lock)}, capture_output=True, text=True, timeout=2)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(lock.exists())
 
     def test_input_guard_colon_color_preserves_intensity_reset(self):
         capture = "› \x1b[2mplaceholder\x1b[38:2::99:99:99;22mtyped\n\x1b[49m  Fast off · test · Context 0% used\n"
