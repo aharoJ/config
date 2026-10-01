@@ -170,6 +170,35 @@ esac''')
                                                  extra={setting: value}, timeout=0.5)
                     self.assertEqual(code, 64, output)
 
+    def test_watcher_lock_binds_server(self):
+        self.watcher_stub()
+        children = []
+        outputs = []
+        try:
+            for server in ("one", "two"):
+                output = tempfile.TemporaryFile()
+                outputs.append(output)
+                child = subprocess.Popen([str(ROOT / "tools/pane-watch/pane-watch.sh"), "--pane", "%13", "--ui", "codex", "--ack-current"],
+                                         env={**self.env, "WATCH_TEST_SOCKET": "/tmp/" + server + ".socket", "PW_POLL": "1"},
+                                         stdout=output, stderr=subprocess.STDOUT)
+                children.append(child)
+                deadline = time.monotonic() + 3
+                while child.poll() is None and time.monotonic() < deadline:
+                    output.seek(0)
+                    if b"ARMED codex" in output.read():
+                        break
+                    time.sleep(0.05)
+                output.seek(0)
+                self.assertIn(b"ARMED codex", output.read())
+                self.assertIsNone(child.poll())
+        finally:
+            for child in children:
+                if child.poll() is None:
+                    child.terminate()
+                child.wait(timeout=4)
+            for output in outputs:
+                output.close()
+        self.assertFalse(list(self.directory.glob("pane-watch-locks/*/pid")))
 
 
     def test_relays_reject_disabled_timeouts(self):

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# path: ~/.config/tmux/tests/pane-watch-regression.sh
+# description: Exercise watcher grammar and verified lock handoff with offline fixtures.
+# patched: model server and pane identities for namespaced watcher locks
+# date: 2026-10-01
 # Black-box regression tests for the tracked pane-watch implementation. They emulate tmux and
 # never touch a live pane. The fixture text is deliberately minimal but keeps the real physical
 # prompt/blank/footer geometry.
@@ -13,6 +17,8 @@ TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/pane-watch-regression.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/bin" "$TMP/fixtures"
+watch_key="$(printf '%s' '/tmp/pane-watch-test.socket:999' | shasum -a 256 | awk '{print $1}')"
+watch_lock="$TMP/pane-watch-locks/$watch_key-13"
 
 cat > "$TMP/bin/tmux" <<'TMUX'
 #!/usr/bin/env bash
@@ -21,7 +27,9 @@ case "${1:-}" in
     format="${!#}"
     case "$format" in
       '#{pane_id}') echo '%13' ;;
-      '#{pane_height}') echo 59 ;;
+      '#{pane_height}:#{pid}:#{pane_pid}') echo 59:999:100 ;;
+      '#{socket_path}') echo /tmp/pane-watch-test.socket ;;
+      '#{pid}:#{pane_pid}') echo 999:100 ;;
       *) echo '0 node TEST codex /tmp/project' ;;
     esac
     ;;
@@ -122,8 +130,8 @@ for glyph in '›' '»'; do
 done
 
 # A malformed live lock must never be deleted by --replace merely because its PID is alive.
-mkdir -p "$TMP/pane-watch-locks/13"
-printf '%s\n' "$$" > "$TMP/pane-watch-locks/13/pid"
+mkdir -p "$watch_lock"
+printf '%s\n' "$$" > "$watch_lock/pid"
 set +e
 PATH="$TMP/bin:$PATH" TMPDIR="$TMP" PW_FIXTURE="$TMP/fixtures/idle-»" PW_POLL=0 \
   "$TIMEOUT_BIN" 1 bash "$WATCH" --pane %13 --ui codex --replace > "$TMP/unverified-lock.out" 2>&1
@@ -131,11 +139,11 @@ status=$?
 set -e
 [ "$status" -eq 1 ] || { cat "$TMP/unverified-lock.out" >&2; exit 1; }
 require "$TMP/unverified-lock.out" 'cannot be verified as this watcher'
-[ -d "$TMP/pane-watch-locks/13" ] || { echo 'unverified live lock was removed' >&2; exit 1; }
-rm -rf "$TMP/pane-watch-locks/13"
+[ -d "$watch_lock" ] || { echo 'unverified live lock was removed' >&2; exit 1; }
+rm -rf "$watch_lock"
 
 # A verified watcher receives TERM, releases its own lock, and is replaced without duplicate owners.
-mkdir -p "$TMP/pane-watch-locks/13" "$TMP/owner"
+mkdir -p "$watch_lock" "$TMP/owner"
 cat > "$TMP/owner/pane-watch.sh" <<'OWNER'
 #!/usr/bin/env bash
 lock=$1
@@ -144,16 +152,16 @@ trap 'rm -f "$lock/pid" "$lock/start" "$lock/ready"; rmdir "$lock"; exit 0' TERM
 while :; do :; done
 OWNER
 chmod +x "$TMP/owner/pane-watch.sh"
-"$TMP/owner/pane-watch.sh" "$TMP/pane-watch-locks/13" &
+"$TMP/owner/pane-watch.sh" "$watch_lock" &
 owner=$!
 owner_start="$(ps -p "$owner" -o lstart= | awk '{$1=$1; print}')"
-printf '%s\n' "$owner" > "$TMP/pane-watch-locks/13/pid"
-printf '%s\n' "$owner_start" > "$TMP/pane-watch-locks/13/start"
+printf '%s\n' "$owner" > "$watch_lock/pid"
+printf '%s\n' "$owner_start" > "$watch_lock/start"
 for _ in $(seq 1 100); do
-  [ -f "$TMP/pane-watch-locks/13/ready" ] && break
+  [ -f "$watch_lock/ready" ] && break
   /bin/sleep 0.01
 done
-[ -f "$TMP/pane-watch-locks/13/ready" ] || { echo 'test owner did not become ready' >&2; exit 1; }
+[ -f "$watch_lock/ready" ] || { echo 'test owner did not become ready' >&2; exit 1; }
 handoff_output="$TMP/handoff.out"
 PW_WATCH_TIMEOUT=7 run_watch "$TMP/fixtures/idle-»" "$handoff_output" --replace
 wait "$owner" || true

@@ -1,7 +1,7 @@
 #!/bin/bash
 # path: ~/.config/tmux/tools/pane-watch/tests/fakebin/tmux
 # description: Replay watcher fixture frames and private server identity.
-# patched: track complete offline fixture dependencies
+# patched: provide server and process identity for watcher lock and coverage checks
 # date: 2026-10-01
 # Stub tmux: replays fixture frames as pane captures and answers identity/geometry queries.
 fx="$PW_FIXTURE"; ctr="$PW_COUNTER"
@@ -10,8 +10,10 @@ case "${1:-}" in
     fmt=""; for a in "$@"; do fmt="$a"; done
     case "$fmt" in
       '#{pane_id}')     echo "%13"; exit 0 ;;
-      '#{pane_height}') if [ "${PW_HEIGHT_DYNAMIC:-0}" = "1" ]; then n=$(cat "$ctr" 2>/dev/null || echo 0); [ "$n" -ge 4 ] && echo 57 || echo 59
-                        else echo "${PW_HEIGHT:-59}"; fi; exit 0 ;;
+      '#{socket_path}') echo /tmp/pane-watch-test.socket; exit 0 ;;
+      '#{pid}:#{pane_pid}') echo 999:100; exit 0 ;;
+      '#{pane_height}:#{pid}:#{pane_pid}') if [ "${PW_HEIGHT_DYNAMIC:-0}" = "1" ]; then n=$(cat "$ctr" 2>/dev/null || echo 0); [ "$n" -ge 4 ] && echo 57:999:100 || echo 59:999:100
+                        else echo "${PW_HEIGHT:-59}:999:100"; fi; exit 0 ;;
       *)                echo "0 node TEST codex /tmp/project"; exit 0 ;;
     esac ;;
   list-panes) echo "%13"; exit 0 ;;

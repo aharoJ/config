@@ -1,7 +1,7 @@
 #!/bin/bash
 # path: ~/.config/tmux/tools/pane-watch/pane-watch.sh
 # description: Alert on agent waits and lost observation coverage.
-# patched: reject invalid polling and heartbeat intervals
+# patched: bind watcher locks to the origin socket and server process
 # date: 2026-10-01
 # pane-watch: tell the operator, loudly, when an agent in a tmux pane is waiting on them.
 #
@@ -94,8 +94,17 @@ n=$(tmuxq list-panes -a -F '#{pane_id}' 2>/dev/null | grep -cx -- "$PANE")
 read -r P_DEAD P_CMD P_SESS P_WIN P_PATH <<<"$(tmuxq display-message -p -t "$PANE" \
   '#{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}' 2>/dev/null)"
 [ "${P_DEAD:-1}" = "0" ] || { echo "REFUSE: pane $PANE is dead." >&2; exit 1; }
+WATCH_SOCKET="$(tmuxq display-message -p -t "$PANE" '#{socket_path}')" || { echo 'REFUSE: cannot identify the tmux server.' >&2; exit 1; }
+[[ "$WATCH_SOCKET" = /* ]] || { echo 'REFUSE: cannot identify the tmux socket.' >&2; exit 1; }
+watch_identity="$(tmuxq display-message -p -t "$PANE" '#{pid}:#{pane_pid}')" || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
+[[ "$watch_identity" =~ ^([0-9]+):([0-9]+)$ ]] || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
+WATCH_SERVER_PID="${BASH_REMATCH[1]}"; WATCH_PANE_PID="${BASH_REMATCH[2]}"
+
 LOCKROOT="${TMPDIR:-/tmp}/pane-watch-locks"; mkdir -p "$LOCKROOT"
-LOCK="$LOCKROOT/$(printf '%s' "$PANE" | tr -d '%')"
+pane_number="$(printf '%s' "$PANE" | tr -d '%')"
+[ ! -d "$LOCKROOT/$pane_number" ] || { echo "REFUSE: a legacy watcher lock exists for $PANE; stop that watcher before rearming." >&2; exit 1; }
+watch_key="$(printf '%s' "$WATCH_SOCKET:$WATCH_SERVER_PID" | shasum -a 256 | awk '{print $1}')"
+LOCK="$LOCKROOT/$watch_key-$pane_number"
 process_start() { ps -p "$1" -o lstart= 2>/dev/null | awk '{$1=$1; print}'; }
 LOCK_START="$(process_start "$$")"
 [ -n "$LOCK_START" ] || { echo "REFUSE: cannot identify the watcher process for a safe lock handoff." >&2; exit 1; }
