@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: cover payload fidelity, fail-closed transport, routing, and concurrent senders
+# patched: cover fresh sender identity, neutral fallback, and prefix-inclusive capacity
 # date: 2026-09-30
 import argparse
 import codecs
@@ -10,6 +10,7 @@ import os
 import pathlib
 import select
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -160,10 +161,10 @@ class Matrix:
 
     def start(self, relay, name, mode="idle", width=192, height=51):
         self.number += 1
-        session = f"ccmsg-lab-{os.getpid()}-{self.number}"
+        session = f"lab-ccmsg-{os.getpid()}-{self.number}"
         directory = self.output / f"{self.number:03d}-{relay}-{name}"
         directory.mkdir()
-        glyph, window = ("❯", "claude") if relay == "cc-msg.sh" else ("›", "codex")
+        glyph, window = ("❯", "lab-claude") if relay == "cc-msg.sh" else ("›", "lab-codex")
         command = shlex.join(["exec", sys.executable, str(pathlib.Path(__file__).resolve()), "--fixture", str(directory), glyph, mode])
         self.tmux("new-session", "-d", "-s", session, "-n", window, "-x", str(width), "-y", str(height), command)
         self.sessions.add(session)
@@ -218,12 +219,11 @@ class Matrix:
             argv, env = self.command(relay, selected, window, payload, extra)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
-            expected = ("codex: " if relay == "cc-msg.sh" else "") + normalized
+            expected = ("relay: " if relay == "cc-msg.sh" else "") + normalized
             self.record(relay, name, result, code, directory, expected, code in (1, 2, 5))
         finally:
             if not self.frozen:
-                self.tmux("kill-session", "-t", "=" + session)
-                self.sessions.discard(session)
+                self.cleanup_session(session)
 
     def concurrent(self, relay):
         session, window, directory = self.start(relay, "concurrent")
@@ -235,7 +235,7 @@ class Matrix:
             second = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             stdout, stderr = first.communicate(timeout=45)
             result = subprocess.CompletedProcess(argv, first.returncode, stdout, stderr)
-            expected = ("codex: " if relay == "cc-msg.sh" else "") + message
+            expected = ("relay: " if relay == "cc-msg.sh" else "") + message
             self.record(relay, "concurrent-winner", result, 0, directory, expected)
             passed = second.returncode == 4 and "another relay" in second.stderr
             self.results.append(dict(relay=relay, case="concurrent-loser", passed=passed, exit=second.returncode,
@@ -243,12 +243,83 @@ class Matrix:
             print(f"{'PASS' if passed else 'FAIL'} {relay} concurrent-loser exit={second.returncode}", flush=True)
         finally:
             if not self.frozen:
-                self.tmux("kill-session", "-t", "=" + session)
-                self.sessions.discard(session)
+                self.cleanup_session(session)
+
+    def cleanup_session(self, session):
+        for window in self.tmux("list-windows", "-t", "=" + session, "-F", "#{window_id}").splitlines():
+            self.tmux("kill-window", "-t", window)
+        self.sessions.discard(session)
+
+    def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False):
+        relay = "cc-msg.sh"
+        session, window, directory = self.start(relay, name, width=width)
+        alias = session + "-linked"
+        try:
+            sender_window = "lab-sender-" + agent
+            binary = self.output / ("sender-" + agent) / agent
+            binary.parent.mkdir(exist_ok=True)
+            if not binary.exists():
+                source = self.output / "sender-fixture.c"
+                source.write_text('#include <sys/wait.h>\n#include <unistd.h>\n'
+                                  'int main(int argc, char **argv) {\n'
+                                  '  if (argc < 2) return 1;\n'
+                                  '  pid_t child = fork();\n'
+                                  '  if (child < 0) return 1;\n'
+                                  '  if (!child) { execvp(argv[1], argv + 1); _exit(127); }\n'
+                                  '  int status; waitpid(child, &status, 0); sleep(60); return 0;\n}\n')
+                subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)
+            target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
+            argv, env = self.command(relay, session, window, payload,
+                                     {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"})
+            request = dict(argv=argv, env=env)
+            (directory / "sender-request.json").write_text(json.dumps(request))
+            if rename:
+                proxy = directory / "tmux-sender-proxy"
+                trigger = directory / "sender-renamed"
+                proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *pane_pid* ]] && [ "$1" = display-message ] && [ ! -f '
+                                 + shlex.quote(str(trigger)) + ' ]; then ' + shlex.quote(str(self.tmux_binary))
+                                 + " rename-window -t " + shlex.quote("=" + session + ":=" + sender_window)
+                                 + ' lab-renamed; touch ' + shlex.quote(str(trigger)) + '; fi\nexec '
+                                 + shlex.quote(str(self.tmux_binary)) + ' "$@"\n')
+                proxy.chmod(0o755)
+                request["env"]["TMUX_BIN"] = str(proxy)
+                (directory / "sender-request.json").write_text(json.dumps(request))
+            sender_argv = [sys.executable, str(pathlib.Path(__file__).resolve()), "--sender", str(directory)]
+            if node:
+                entry = directory / "node_modules" / ("@openai/codex/bin/codex.js" if agent == "codex"
+                                                       else "@anthropic-ai/claude-code/cli.js")
+                entry.parent.mkdir(parents=True)
+                entry.write_text("require('child_process').spawnSync(" + json.dumps(sender_argv[0]) + ", "
+                                 + json.dumps(sender_argv[1:]) + "); setInterval(() => {}, 1000);\n")
+                command = shlex.join([shutil.which("node"), str(entry)])
+            else:
+                command = shlex.join([str(binary), *sender_argv])
+            sender_id = self.tmux("new-window", "-d", "-P", "-F", "#{window_id}", "-t", "=" + session,
+                                  "-n", sender_window, command)
+            if linked:
+                self.tmux("new-session", "-d", "-s", alias, "-n", "lab-link", "exec sleep 60")
+                self.sessions.add(alias)
+                self.tmux("link-window", "-s", sender_id, "-t", "=" + alias + ":", "-d")
+            for _ in range(450):
+                if (directory / "sender-result.json").exists():
+                    break
+                time.sleep(0.1)
+            else:
+                raise RuntimeError("sender fixture failed to finish")
+            result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
+            label = "relay" if rename or linked else f"{agent if agent in ('claude', 'codex') else 'relay'} ({session}:{sender_window})"
+            self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)
+        finally:
+            if not self.frozen:
+                if linked and alias in self.sessions:
+                    self.cleanup_session(alias)
+                self.cleanup_session(session)
 
     def proxy_case(self, relay, name, action, code, no_input=False):
         session, window, directory = self.start(relay, name)
         try:
+            if action == "kill-after":
+                self.tmux("new-window", "-d", "-t", "=" + session, "-n", "lab-sentinel", "exec sleep 60")
             proxy = directory / "tmux-proxy"
             trigger = directory / "triggered"
             target = "=" + session + ":=" + window
@@ -260,9 +331,11 @@ class Matrix:
                 "bad-receipt": 'if [ "$1" = if-shell ]; then printf "__UNKNOWN__\\n"; exit 0; fi',
                 "copy-before": f'if [ "$1" = if-shell ] && [ ! -f {shlex.quote(str(trigger))} ]; then {real} copy-mode -t {chosen}; touch {shlex.quote(str(trigger))}; fi',
                 "copy-after": f'if [ "$1" = if-shell ]; then if [ -f {shlex.quote(str(trigger))} ]; then {real} copy-mode -t {chosen}; else touch {shlex.quote(str(trigger))}; fi; fi',
-                "rename-before": f'if [ "$1" = if-shell ]; then {real} rename-window -t {chosen} changed; fi',
-                "rename-enter": f'if [[ "$*" = *send-keys*Enter* ]]; then {real} rename-window -t {chosen} changed; fi',
+                "rename-before": f'if [ "$1" = if-shell ]; then {real} rename-window -t {chosen} lab-changed; fi',
+                "rename-enter": f'if [[ "$*" = *send-keys*Enter* ]]; then {real} rename-window -t {chosen} lab-changed; fi',
                 "copy-enter": f'if [[ "$*" = *send-keys*Enter* ]]; then {real} copy-mode -t {chosen}; fi',
+                "resize-after": f'if [ "$1" = if-shell ] && [[ "$*" = *paste-buffer* ]]; then {real} "$@"; status=$?; {real} resize-window -t {chosen} -x 80 -y 51; exit "$status"; fi',
+                "kill-after": f'if [ "$1" = if-shell ] && [[ "$*" = *paste-buffer* ]]; then {real} "$@"; status=$?; {real} kill-pane -t {chosen}; exit "$status"; fi',
             }
             proxy.write_text('#!/usr/bin/env bash\n' + cases[action] + f'\nexec {real} "$@"\n')
             proxy.chmod(0o755)
@@ -271,10 +344,21 @@ class Matrix:
             self.record(relay, name, result, code, directory, no_input=no_input)
         finally:
             if not self.frozen:
-                self.tmux("kill-session", "-t", "=" + session)
-                self.sessions.discard(session)
+                self.cleanup_session(session)
 
     def run(self):
+        self.sender_case("cc-sender-stale-pane-and-override", "claude")
+        self.sender_case("codex-sender-stale-pane-and-override", "codex")
+        self.sender_case("node-cc-sender", "claude", node=True)
+        self.sender_case("node-codex-sender", "codex", node=True)
+        self.sender_case("unknown-app-known-pane", "bash")
+        self.case("cc-msg.sh", "unknown-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
+        self.sender_case("sender-renamed-during-resolution", "claude", rename=True)
+        self.sender_case("ambiguous-linked-sender", "claude", linked=True)
+        self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
+        self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, width=80)
+        self.case("cc-msg.sh", "neutral-prefix-at-right-margin", "a" * 71, code=4, width=80)
+        self.case("cc-msg.sh", "neutral-prefix-pushes-past-one-row", "a" * 72, code=1, width=80)
         for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
             for size in (100, 1024, 1536, 4096, 16384, 65536):
                 self.case(relay, f"size-{size}", "a" * size, 0 if size == 100 else 1)
@@ -315,7 +399,8 @@ class Matrix:
             for name, code, no_input in [("timeout-list", 3, True), ("timeout-capture", 3, False),
                                          ("bad-receipt", 4, True), ("copy-before", 2, True),
                                          ("copy-after", 4, False), ("rename-before", 4, True),
-                                         ("rename-enter", 4, False), ("copy-enter", 4, False)]:
+                                         ("rename-enter", 4, False), ("copy-enter", 4, False),
+                                         ("resize-after", 4, False), ("kill-after", 4, False)]:
                 self.proxy_case(relay, name, name, code, no_input)
         (self.output / "matrix.json").write_text(json.dumps(self.results, indent=2))
         failures = sum(not row["passed"] for row in self.results)
@@ -341,6 +426,13 @@ def re_normalize(text):
 if __name__ == "__main__":
     if len(sys.argv) == 5 and sys.argv[1] == "--fixture":
         fixture(*sys.argv[2:])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--sender":
+        directory = pathlib.Path(sys.argv[2])
+        time.sleep(0.2)
+        request = json.loads((directory / "sender-request.json").read_text())
+        result = subprocess.run(request["argv"], env=request["env"], capture_output=True, text=True, timeout=45)
+        (directory / "sender-result.json").write_text(json.dumps(dict(returncode=result.returncode,
+                                                                    stdout=result.stdout, stderr=result.stderr)))
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("--output", default=None)
@@ -351,4 +443,4 @@ if __name__ == "__main__":
         finally:
             if not matrix.frozen:
                 for session in matrix.sessions.copy():
-                    matrix.tmux("kill-session", "-t", "=" + session)
+                    matrix.cleanup_session(session)

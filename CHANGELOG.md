@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-30 — Claude relay labels identify the calling agent and pane
+
+`cc-msg.sh` previously prefixed every message with `codex:`, including messages sent by Claude Code. It now matches the caller's live process ancestry to tmux's pane process, identifies native Claude/Codex binaries and their Node entry points, repeats the process check, and rechecks the pane's session, window, process, and live state before using labels such as `claude (INFRA:claude):`. Inherited `TMUX_PANE` and `CC_MSG_FROM` values cannot supply the identity. Unknown, ambiguous, changed, or untraceable origins use a neutral `relay` label; a shared Codex daemon without ancestry back to a pane remains neutral.
+
+The complete prefix still counts toward the one-row capacity limit. Bracketed paste, two exact composer checks, one Enter, explicit target routing, draft/copy refusal, exits 0–5, and clipboard avoidance are unchanged. The private-server regression matrix now covers both agents, Node launchers, stale pane ids, ignored overrides, neutral fallback, linked/renamed sender panes, prefix capacity, resizing, and pane death. Real interactive lab TUIs also exercised all four send directions and refusal paths; the existing input-guard, live-capture, and pane-watch regressions passed. Codex 0.159.2's unstyled footer is still refused by the existing input guard; supported Codex 0.157.1 screens were used for successful live delivery tests.
+
 ## 2026-09-30 — Agent relays verify the complete composer and refuse long text
 
 `cc-msg.sh`, `codex-send`, and `codex-send-to` previously reported delivery when tmux executed an input command, even if the agent lost most of the text. A live Claude Code reproduction retained only 628 of 1,650 normalized bytes while the original helper reported success. The same payload reached a raw terminal intact, and bracketed paste preserved the full text in Claude's persisted transcript.

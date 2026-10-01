@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bracketed chunks and complete composer comparison before a single Enter
+# patched: derive sender labels from fresh process ancestry and verified pane identity
 # date: 2026-09-30
 set -uo pipefail
 
@@ -18,6 +18,8 @@ usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] cc-ms
 CC_MSG_PANE is optional.  When a named window has multiple panes, set it to
 one numeric tmux pane id (for example %46).  The id must still belong to the
 declared CC_MSG_SESSION and CC_MSG_WINDOW; it never bypasses that binding.
+Sender labels come from process ancestry and a fresh pane identity check.
+Unidentified senders use a neutral relay label; CC_MSG_FROM is ignored.
 EOF
 }
 
@@ -125,7 +127,23 @@ require_empty_cc_input() {
 
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-FROM="${CC_MSG_FROM:-codex}"
+resolve_sender_label() {
+  local sender sender_pane sender_session sender_window sender_pid sender_app identity code
+  FROM=relay
+  sender="$("$relay_script_dir/relay-sender-label" "$$" "$list_file")" || return 0
+  [ -n "$sender" ] || return 0
+  read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
+  if identity="$(request display-message -p -t "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}')"; then
+    [ "$identity" = "$sender_pane $sender_session $sender_window $sender_pid 0" ] || return 0
+  else
+    code=$?
+    [ "$code" = 75 ] && unresponsive
+    return 0
+  fi
+  FROM="$sender_app ($sender_session:$sender_window)"
+}
+
+[ -x "$relay_script_dir/relay-sender-label" ] || fail 'relay sender resolver is required'
 target_session="${CC_MSG_SESSION:-}"
 target_window="${CC_MSG_WINDOW:-}"
 target_pane="${CC_MSG_PANE:-}"
@@ -153,7 +171,7 @@ fi
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set; refuse'
 
 list_file="$(mktemp "${TMPDIR:-/tmp}/cc-msg-list.XXXXXX")" || fail 'cannot create request scratch file'
-if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$list_file"; then
   :
 else
   code=$?
@@ -170,6 +188,7 @@ else
   pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
   command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
 fi
+resolve_sender_label
 trash "$list_file"
 case "$target_count" in
   0)
