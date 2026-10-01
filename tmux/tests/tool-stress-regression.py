@@ -415,6 +415,18 @@ PY''')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "CPU 10% · RAM 1.0G/8.0G")
 
+    def test_sender_rechecks_process_ancestry(self):
+        self.executable("ps", '''count=0
+[ ! -f "$TMPDIR/ps-count" ] || count=$(cat "$TMPDIR/ps-count")
+count=$((count + 1)); echo "$count" > "$TMPDIR/ps-count"
+if [ "$count" = 1 ]; then agent=codex; else agent=claude; fi
+printf '9000 8800 /bin/bash\\n8800 1 /opt/bin/%s\\n' "$agent"''')
+        panes = self.directory / "panes"
+        panes.write_text("%13 lab-test lab-worker node 8800 0\n")
+        result = subprocess.run([str(ROOT / "tools/relay-sender-label"), "9000", str(panes)], env=self.env,
+                                capture_output=True, text=True, timeout=2)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "")
 
 
 if __name__ == "__main__":
