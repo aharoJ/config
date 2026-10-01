@@ -1,7 +1,7 @@
 #!/bin/sh
 # path: ~/.config/tmux/tools/tmux-loop-rescue
 # description: Verify and recover the supported tmux copy-mode loop behind explicit gates.
-# patched: forbid production loop identity overrides
+# patched: reject future-dated rescue observations
 # date: 2026-10-01
 set -u
 
@@ -222,7 +222,7 @@ if [ -n "$observation_path" ]; then
     if observation_nonce=$(record_value nonce) && observation_created=$(record_value created_epoch) && observation_age=$(record_value max_age_seconds) && observation_socket=$(record_value socket) && observation_socket_identity=$(record_value socket_identity) && observation_pid=$(record_value pid) && observation_start=$(record_value process_start) && observation_exe=$(record_value executable) && observation_sha=$(record_value sha256) && observation_uuid=$(record_value uuid) && observation_count=$(record_value observed_count); then
       case "$observation_nonce" in *[!A-Za-z0-9._-]*|'') : ;; *)
         case "$observation_created:$observation_age:$observation_pid:$observation_count" in *[!0-9:]*|*::*) : ;; *)
-          if [ "$observation_nonce_claimed" = "$observation_nonce" ] && [ "$observation_age" -le "$observation_max_age" ] && [ "$observation_count" -ge 1 ] && [ "$observation_count" -le 4294967295 ] && [ "$observation_socket" = "$socket" ] && [ "$observation_pid" = "$pid" ]; then
+          if [ "$observation_nonce_claimed" = "$observation_nonce" ] && [ "$observation_age" -ge 1 ] && [ "$observation_age" -le "$observation_max_age" ] && [ "$observation_created" -le "$(epoch)" ] && [ "$observation_count" -ge 1 ] && [ "$observation_count" -le 4294967295 ] && [ "$observation_socket" = "$socket" ] && [ "$observation_pid" = "$pid" ]; then
             observation_deadline=$((observation_created + observation_age))
             if [ "$(epoch)" -le "$observation_deadline" ]; then observation_gate=PENDING; fi
           fi

@@ -348,6 +348,22 @@ PY''')
                 "STRESS_RESCUE_PID": str(os.getpid()),
                 "TMUX_LOOP_RESCUE_EVIDENCE_ROOT": str(self.directory / ("evidence'quoted" if quoted else "evidence"))}
 
+    def test_rescue_rejects_future_observation(self):
+        extra = self.rescue_env()
+        observe = {**extra}
+        observe.pop("TMUX_LOOP_RESCUE_COUNT")
+        code, output = self.run_tool("tmux-loop-rescue", "--observe", extra=observe, timeout=6)
+        self.assertEqual(code, 0, output)
+        observation = next((self.directory / "evidence").glob("*/observation.tsv"))
+        values = dict(line.split("=", 1) for line in observation.read_text().splitlines())
+        values["created_epoch"] = str(int(time.time()) + 3600)
+        observation.write_text("".join(key + "=" + value + "\n" for key, value in values.items()))
+        result = subprocess.run([str(ROOT / "tools/tmux-loop-rescue")],
+                                env={**self.env, **extra, "TMUX_LOOP_RESCUE_OBSERVATION": str(observation),
+                                     "TMUX_LOOP_RESCUE_OBSERVATION_NONCE": values["nonce"]},
+                                input="decline\n", capture_output=True, text=True, timeout=6)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("OBSERVATION=FAIL", result.stderr)
 
 
     def capture_env(self, status):
