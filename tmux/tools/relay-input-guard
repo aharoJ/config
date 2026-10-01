@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: require structured styled footer boundaries
+# patched: retain intensity resets after colon-form colors
 # date: 2026-10-01
 use strict;
 use warnings;
@@ -87,6 +87,7 @@ sub apply_sgr {
         my ($code) = split(/:/, $parameter, 2);
         $code = 0 if !defined($code) || $code eq '';
         if ($code eq '38' || $code eq '48' || $code eq '58') {
+            next if index($parameter, ':') >= 0;
             # In semicolon-form extended colours, the next number is a mode
             # (5 or 2), not an intensity attribute.  In particular, the "2"
             # in 48;2;R;G;B must not be mistaken for dim.

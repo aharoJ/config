@@ -158,6 +158,11 @@ esac''')
 
 
 
+    def test_input_guard_colon_color_preserves_intensity_reset(self):
+        capture = "› \x1b[2mplaceholder\x1b[38:2::99:99:99;22mtyped\n\x1b[49m  Fast off · test · Context 0% used\n"
+        result = subprocess.run([str(ROOT / "tools/relay-input-guard"), "›", "2", "0"],
+                                input=capture, capture_output=True, text=True, timeout=2)
+        self.assertEqual(result.returncode, 1, result.stderr)
 
     def test_guards_reject_unstructured_styled_boundaries(self):
         payload = self.directory / "payload"
