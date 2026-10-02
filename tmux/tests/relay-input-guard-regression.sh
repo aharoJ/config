@@ -162,12 +162,16 @@ expect_guard 1 '›' 'mixed placeholder and draft text' "$mixed_style" 2 0
 expect_guard 2 '›' 'missing Codex composer' $'no composer here' 2 0
 
 # Exercise the public relay scripts, including their exit-5 draft semantics.
-expect_relay 5 'codex-draft' "$codex_draft" '%relay relaytest codex node' \
+expect_relay 1 'codex-missing-window' "$codex_placeholder" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+expect_no_delivery 'codex-missing-window'
+
+expect_relay 5 'codex-draft' "$codex_draft" '%relay relaytest codex node' \
+  env CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_no_delivery 'codex-draft'
 
 expect_relay 5 'codex-guard-override-ignored' "$codex_draft" '%relay relaytest codex node' \
-  env RELAY_INPUT_GUARD=/usr/bin/true CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env RELAY_INPUT_GUARD=/usr/bin/true CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_no_delivery 'codex-guard-override-ignored'
 
 expect_relay 5 'codex-to-draft' "$codex_draft" '%relay relaytest codex node' \
@@ -179,24 +183,24 @@ expect_relay 5 'cc-draft' "$cc_draft" '%relay relaytest claude 2.1.284' \
 expect_no_delivery 'cc-draft'
 
 expect_relay 5 'codex-cursor-race' "$codex_placeholder" '%relay relaytest codex node' \
-  env RELAY_TEST_STATE_BEFORE=0:2:0 RELAY_TEST_STATE_AFTER=0:3:0 CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env RELAY_TEST_STATE_BEFORE=0:2:0 RELAY_TEST_STATE_AFTER=0:3:0 CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_no_delivery 'codex-cursor-race'
 
 expect_relay 2 'codex-copy-mode' "$codex_placeholder" '%relay relaytest codex node' \
-  env RELAY_TEST_PANE_MODE=1 CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env RELAY_TEST_PANE_MODE=1 CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_relay 2 'cc-copy-mode' "$cc_empty" '%relay relaytest claude 2.1.284' \
   env RELAY_TEST_PANE_MODE=1 CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
 expect_relay 3 'codex-unresponsive' "$codex_placeholder" '%relay relaytest codex node' \
-  env RELAY_TEST_FAIL_COMMAND=list-panes RELAY_TEST_FAIL_STATUS=124 CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env RELAY_TEST_FAIL_COMMAND=list-panes RELAY_TEST_FAIL_STATUS=124 CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_relay 4 'cc-partial' "$cc_empty" '%relay relaytest claude 2.1.284' \
   env RELAY_TEST_RECEIPT_MODE=unknown CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
 
 expect_relay 0 'codex-placeholder' "$codex_placeholder" '%relay relaytest codex node' \
-  env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_delivery 'codex-placeholder'
 
 expect_relay 5 'codex-unverified-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
-  env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+  env CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_no_delivery 'codex-unverified-suggestion'
 
 expect_relay 0 'codex-to-placeholder' "$codex_placeholder" '%relay relaytest codex node' \
