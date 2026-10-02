@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-10-01 — Relays survive Codex UI drift and are red-teamed before landing
+
+A stress run hardened the relay tools in 27 commits (`d6d24bb`..`a3e40ed`), each pairing one reproduced finding with one regression test.
+
+- **Test harness:** it now fails closed before any request can reach the default tmux server.
+- **Composer checks:** footer and draft detection reject unstructured styled boundaries, colon SGR resets, and dividers inside Claude drafts. Composer bytes, pane identity, geometry and cursor are rechecked immediately before Enter.
+- **Interrupted sends:** INT, TERM and PIPE are reported at every stage of a send.
+- **Rescue tooling:** `tmux-loop-rescue` refuses lab socket path escapes, production overrides and future-dated observations.
+- **pane-watch:** it refuses missing or invalid option values and namespaces its locks per private server.
+- **Freeze capture:** it stops after a tmux timeout and writes owner-only evidence.
+
+Before the harness guard existed, early tests sent six read-only `list-panes` queries and six `lsof` checks to the default socket. No input, reload or server control was sent. Relay scratch cleanup briefly moved to `rm` and was restored to `trash` (`163223f`), because a recoverable copy is preferred. A failed Trash operation now prints a cleanup-unconfirmed notice without changing exit codes.
+
+`b70cef8` introduced a strict Codex footer grammar that did not know the ` · Main [default]` segment. Codex adds that segment after a session uses subagents. Every relay to such a pane, on every desk, refused an empty composer with exit 5.
+
+- `efecb4f` taught the input guard the segment, but not the post-paste payload verifier. Payloads were therefore typed correctly and then held with exit 4, with no Enter sent.
+- `a19b07f` accepted a cleared-composer capture that the timeline later showed was a one-space draft. That capture is now a must-refuse fixture. Keyboard evidence from a real Codex 0.159.3 distinguishes the two states: Space then Home leaves a bare prompt, while End then Backspace restores the placeholder.
+- `2381d7f` landed before the design converged.
+- `de1d538` is the converged fix:
+  - Both guards accept the observed `Main [default]`, reconnect and no-`Context` Terra footers.
+  - Numeric SGR attributes are normalized before classification, so zero-padded conceal codes and conceal styling refuse.
+  - A bounded Enter retry fires only on tmux's exact no-write refusal, after rechecking identity, geometry, cursor and the payload row. A relay never prints `SENT` without a verified submission receipt.
+  - The design is deliberately fail-closed: unfamiliar visual states refuse, and the operator types by hand.
+
+`relay-live-capture-regression.sh` is now a pre-landing gate. It requires a stable six-state manifest of real Codex 0.159.3 screens:
+
+- fresh, post-subagent and working composers must be accepted
+- single-line, multiline and Home-moved drafts must refuse
+
+A second red-team round ran with no inherited context against the final candidate. It found dim and whitespace continuations, conceal styling, non-SGR controls on trusted boundaries, weak Home-draft semantics in the gate, and overstated fixture provenance; all are fixed. The final tree passes:
+
+- 74 guard checks
+- 300 fuzz iterations
+- 34 stress tests
+- 83 state/race cases
+- 196 delivery cases
+- the six-state live gate
+
+The fix was also checked on production panes. The guard accepted all six real Codex panes across the config, v3-51-walker, portfolio and INFRA sessions, and one real `codex-send` reached a `Main [default]` pane.
+
+Codex messages labelled `relay:` are by design. Codex runs commands under detached app-server processes, and no authenticated ancestry leads back to a pane. Still open, as proposals only:
+
+- an opt-in `AGENT_PANE_EXEC` launch for fish-wrapped panes, which `tai` already makes mostly unnecessary
+- an `agy` send helper for Gemini
+- a relay lock-protocol redesign
+
 ## 2026-09-30 — Relays recognize Codex 0.159.2 status and busy footers
 
 Codex 0.159.2 renders its status footer without the foreground/background color sequences that both relay guards previously required. An empty composer therefore exited 5 as a false draft, and a typed payload could exit 4 without Enter. The guards now recognize the captured footer's complete Fast/model/directory/context fields, optional agent or warning controls, and its position after one blank row below the composer. Cursor advancement and real draft detection remain unchanged.
