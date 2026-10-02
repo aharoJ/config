@@ -69,8 +69,8 @@ def run(seed, iterations, output):
             check("payload", [guard, "compare", glyph, str(cells + 2), str(row), str(payload), "80"], capture.encode(), 0)
             check("payload", [guard, "compare", glyph, str(cells + 3), str(row), str(payload), "80"], capture.encode(), 1)
             check("payload", [guard, "compare", glyph, str(cells + 2), str(row), str(payload), "80"], capture.replace(value, value + "extra", 1).encode(), 1)
-            check("payload", [guard, "capacity", str(payload), str(cells + 1)], b"", 1)
-            check("payload", [guard, "capacity", str(payload), str(cells + 2)], b"", 0)
+            check("payload", [guard, "capacity", str(payload), str(cells + 3)], b"", 1)
+            check("payload", [guard, "capacity", str(payload), str(cells + 4)], b"", 0)
 
             footer = "\x1b[49m  Fast off · test · Context 0% used" if glyph == "›" else "─" * 80
             if glyph == "›" and rng.randrange(2):
@@ -79,8 +79,8 @@ def run(seed, iterations, output):
                 placeholder = glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n" + footer + "\n"
                 dim_text = glyph + " \x1b[2m" + value + "\x1b[22m\n" + footer + "\n"
                 check("input", [input_guard, glyph, "2", "0"], placeholder.encode(), 0)
-                check("input", [input_guard, glyph, "3", "0"], placeholder.encode(), 1)
-                check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 1)
+                check("input", [input_guard, glyph, "3", "0"], placeholder.encode(), 0)
+                check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 0)
                 check("input", [input_guard, glyph, "2", "0"], (glyph + "\n" + footer + "\n").encode(), 1)
                 check("input", [input_guard, glyph, "2", "0"],
                       (glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n    \n" + footer + "\n").encode(), 1)
@@ -94,8 +94,8 @@ def run(seed, iterations, output):
                 whitespace = glyph + "    \n" + footer + "\n"
                 continuation = glyph + "\u00a0\n\x1b[2m  " + value + "\x1b[22m\n" + footer + "\n"
                 check("input", [input_guard, glyph, "2", "0"], empty.encode(), 0)
-                check("input", [input_guard, glyph, "3", "0"], empty.encode(), 1)
-                check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 1)
+                check("input", [input_guard, glyph, "3", "0"], empty.encode(), 0)
+                check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 0)
                 check("input", [input_guard, glyph, "2", "0"], whitespace.encode(), 1)
                 check("input", [input_guard, glyph, "2", "0"], continuation.encode(), 1)
                 check("input", [input_guard, glyph, "2", "0"],
@@ -107,6 +107,7 @@ def run(seed, iterations, output):
                 check("input", [input_guard, glyph, "2", "0"],
                       (glyph + "\u00a0\n\x1b[2J" + footer + "\n").encode(), 1)
             check("input", [input_guard, glyph, "2", "0"], (glyph + " " + value + "\n" + footer + "\n").encode(), 1)
+            check("input", [input_guard, glyph, "3", "0"], (glyph + " " + value + "\n" + footer + "\n").encode(), 1)
             agy_divider = "─" * 80
             agy_idle = agy_divider + "\n\x1b[94m>\x1b[39m\n" + agy_divider + "\n? for shortcuts  Gemini 3.8 Flash · high\n"
             agy_draft = agy_idle.replace("\x1b[94m>\x1b[39m\n", "\x1b[94m>\x1b[39m " + value + "\n", 1)

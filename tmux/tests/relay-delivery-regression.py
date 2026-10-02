@@ -52,7 +52,7 @@ def fixture(directory, glyph, mode):
         if mode in ("hidden", "codex159-busy-hidden") and visible:
             visible = "[Pasted text #1]"
         lines = wrap(visible, width - 2)
-        top = 3 + (redraw_tick % 2 if mode in ("codex159-redraw-payload", "codex159-redraw-input") else 0)
+        top = (6 if mode.startswith("claude-") else 3) + (redraw_tick % 2 if mode in ("codex159-redraw-payload", "codex159-redraw-input") else 0)
         if len(lines) > max(1, height - 7):
             lines = lines[-max(1, height - 7):]
             first = "  "
@@ -67,6 +67,18 @@ def fixture(directory, glyph, mode):
             output += "Model changed to GPT-6.1-Sol xhigh"
         if mode == "busy" or mode.startswith("codex159-busy"):
             output += "Working (1s · esc to interrupt)"
+        if mode == "codex159-historical-busy":
+            output += "\x1b[1;1H• Working (0s • esc to interrupt)\x1b[2;1HCompleted earlier turn"
+        if mode == "codex159-active-busy":
+            output += f"\x1b[{top - 1};1H\x1b[1m•\x1b[0m \x1b[2mWorking\x1b[0m \x1b[2m(0s • \x1b[0;1mesc\x1b[0;2m to interrupt)\x1b[0m"
+        if mode == "claude-historical-busy":
+            output += f"\x1b[1;1H✳ Hyperspacing…\x1b[{top - 2};1HCompleted earlier turn"
+        if mode == "claude-active-busy":
+            output += f"\x1b[{top - 3};1H✳ Hyperspacing…"
+        if mode == "claude-active-busy-hashing":
+            output += f"\x1b[{top - 3};1H✻ Hashing…"
+        if mode == "claude-active-busy-warping":
+            output += f"\x1b[{top - 3};1H✶ Warping…"
         if glyph == "❯":
             output += f"\x1b[{top};1H" + "─" * width
         modern = mode.startswith("codex159-")
@@ -131,7 +143,7 @@ def fixture(directory, glyph, mode):
 
     draw()
     while True:
-        timeout = 0.04 if mode == "codex159-redraw-payload" and value else 10
+        timeout = 0.5 if mode == "codex159-redraw-payload" and value else 10
         if not select.select([sys.stdin], [], [], timeout)[0]:
             if mode == "codex159-redraw-payload" and value:
                 redraw_tick += 1
@@ -317,7 +329,8 @@ class Matrix:
             trigger = directory / "atomic-refusal-triggered"
             proxy = directory / "tmux-atomic-refusal"
             real = shlex.quote(str(self.tmux_binary))
-            receipt = shlex.quote(f"__RELAY_REFUSED__:0:0:{session}:{window}")
+            pane_id = self.tmux("list-panes", "-t", "=" + session + ":=" + window, "-F", "#{pane_id}")
+            receipt = shlex.quote(f"__RELAY_REFUSED__:{pane_id}:0:0:{session}:{window}")
             proxy.write_text('#!/usr/bin/env bash\nif [ "$1" = source-file ] && [ ! -f ' + shlex.quote(str(trigger)) + ' ]; then\n'
                              + '  touch ' + shlex.quote(str(trigger)) + '\n'
                              + "  printf '%s\\n' " + receipt + '\n'
@@ -344,9 +357,9 @@ class Matrix:
             result = subprocess.CompletedProcess(argv, first.returncode, stdout, stderr)
             expected = ("relay: " if relay == "cc-msg.sh" else "") + message
             self.record(relay, "concurrent-winner", result, 0, directory, expected)
-            passed = second.returncode == 4 and "another relay" in second.stderr
+            passed = second.returncode == 5 and "another relay" in second.stderr and "no target input was sent" in second.stderr
             self.results.append(dict(relay=relay, case="concurrent-loser", passed=passed, exit=second.returncode,
-                                     expected_exit=4, stdout=second.stdout, stderr=second.stderr))
+                                     expected_exit=5, stdout=second.stdout, stderr=second.stderr))
             print(f"{'PASS' if passed else 'FAIL'} {relay} concurrent-loser exit={second.returncode}", flush=True)
         finally:
             if not self.frozen:
@@ -473,6 +486,8 @@ class Matrix:
             self.redraw_input(relay)
             self.atomic_refusal_retry(relay)
             self.case(relay, "codex159-real-draft", code=5, mode="codex159-draft")
+            self.case(relay, "codex159-active-busy", code=5, mode="codex159-active-busy")
+            self.case(relay, "codex159-historical-busy", mode="codex159-historical-busy")
             for mode in ("extra", "hidden"):
                 self.case(relay, "codex159-busy-" + mode, code=4, mode="codex159-busy-" + mode)
         self.sender_case("cc-sender-stale-pane-and-override", "claude")
@@ -485,7 +500,11 @@ class Matrix:
         self.sender_case("ambiguous-linked-sender", "claude", linked=True)
         self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
         self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, width=80)
-        self.case("cc-msg.sh", "neutral-prefix-at-right-margin", "a" * 71, code=4, width=80)
+        self.case("cc-msg.sh", "claude-active-busy", code=5, mode="claude-active-busy")
+        self.case("cc-msg.sh", "claude-active-busy-hashing", code=5, mode="claude-active-busy-hashing")
+        self.case("cc-msg.sh", "claude-active-busy-warping", code=5, mode="claude-active-busy-warping")
+        self.case("cc-msg.sh", "claude-historical-busy", mode="claude-historical-busy")
+        self.case("cc-msg.sh", "neutral-prefix-at-right-margin", "a" * 71, code=1, width=80)
         self.case("cc-msg.sh", "neutral-prefix-pushes-past-one-row", "a" * 72, code=1, width=80)
         for relay in ("cc-msg.sh", "codex-send", "codex-send-to"):
             for size in (100, 1024, 1536, 4096, 16384, 65536):
@@ -526,7 +545,7 @@ class Matrix:
             self.concurrent(relay)
             for name, code, no_input in [("timeout-list", 3, True), ("timeout-capture", 3, False),
                                          ("bad-receipt", 4, True), ("copy-before", 2, True),
-                                         ("copy-after", 4, False), ("rename-before", 4, True),
+                                         ("copy-after", 4, False), ("rename-before", 1, True),
                                          ("rename-enter", 4, False), ("copy-enter", 4, False),
                                          ("resize-after", 4, False), ("kill-after", 4, False)]:
                 self.proxy_case(relay, name, name, code, no_input)

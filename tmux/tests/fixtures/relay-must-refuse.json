@@ -16,20 +16,6 @@
       "sanitized": true
     },
     {
-      "name": "fable-dim-typed-draft",
-      "source": "/fixtures/fable-dim-draft.ansi",
-      "capture_file": "fable-dim-draft.ansi",
-      "meta_file": "fable-dim-draft.meta",
-      "capture_sha256": "80ea8d9598863e71909b65b2b0861bae5145794a64794240156079d237449f05",
-      "meta_sha256": "a3e4f0e05ff5790245c8c4c3186e6ae0c941099194eee1239b142edf727c8128",
-      "glyph": "\u276f",
-      "cursor_x": 2,
-      "cursor_y": 29,
-      "input_exit": 1,
-      "pane_width": 167,
-      "sanitized": true
-    },
-    {
       "name": "agy-home-draft",
       "source": "/fixtures/agy-home-draft.ansi",
       "capture_file": "agy-home-draft.ansi",
@@ -55,6 +41,76 @@
       "cursor_y": 17,
       "pane_width": 167,
       "input_exit": 1,
+      "sanitized": true
+    },
+    {
+      "name": "rt2-fable-interchunk-corrupted",
+      "source": "/fixtures/rt2-fable-interchunk-corrupted.ansi",
+      "capture_file": "rt2-fable-interchunk-corrupted.ansi",
+      "meta_file": "rt2-fable-interchunk-corrupted.meta",
+      "capture_sha256": "6655a5f6a2a2ff39d87cb52bb6af2b77c298a4dad557e6462531e4b0c3f456a4",
+      "meta_sha256": "4a9e5910be506b5c972318e5b244e6e88cf05f1bfdbe9f29f602d782c1cc9feb",
+      "glyph": "\u276f",
+      "cursor_x": 209,
+      "cursor_y": 52,
+      "input_exit": 1,
+      "pane_width": 215,
+      "sanitized": true
+    },
+    {
+      "name": "rt2-agy-ctrlc-warning",
+      "source": "/fixtures/rt2-agy-ctrlc-warning.ansi",
+      "capture_file": "rt2-agy-ctrlc-warning.ansi",
+      "meta_file": "rt2-agy-ctrlc-warning.meta",
+      "capture_sha256": "beb0abe045464e6b48a83ac2ab716deecf0d2e4b3c9277db295e2eccd9047f92",
+      "meta_sha256": "2c358b11c2a53fed1e34c62c9882949d3ec230404cbfae7ada5aea35b0ccc121",
+      "glyph": ">",
+      "cursor_x": 2,
+      "cursor_y": 53,
+      "input_exit": 1,
+      "pane_width": 215,
+      "sanitized": true
+    },
+    {
+      "name": "rt2-codex-wrapped-residue",
+      "source": "/fixtures/rt2-codex-wrapped-residue.ansi",
+      "capture_file": "rt2-codex-wrapped-residue.ansi",
+      "meta_file": "rt2-codex-wrapped-residue.meta",
+      "capture_sha256": "a9399bda08da844469f3fe06a52322de07e2749682975d884ec654cacd067f2c",
+      "meta_sha256": "14858cbc537fd7ee7030f7bbf74c7d5f0309a14d98c4e07e0eec94d8932c82a9",
+      "glyph": "\u203a",
+      "cursor_x": 175,
+      "cursor_y": 39,
+      "input_exit": 1,
+      "pane_width": 215,
+      "sanitized": true
+    },
+    {
+      "name": "rt2-codex-duplicate-residue",
+      "source": "/fixtures/rt2-codex-duplicate-residue.ansi",
+      "capture_file": "rt2-codex-duplicate-residue.ansi",
+      "meta_file": "rt2-codex-duplicate-residue.meta",
+      "capture_sha256": "c9750776f8b6cc3c4f4c13affef5f41ab0f845d3078fedcf982d70fa6b1374d6",
+      "meta_sha256": "d2294f1808030d303c263a8ad3f20613db1bc33d6fa682267391a044437eda40",
+      "glyph": "\u203a",
+      "cursor_x": 54,
+      "cursor_y": 22,
+      "input_exit": 1,
+      "pane_width": 215,
+      "sanitized": true
+    },
+    {
+      "name": "rt2-codex-slash-residue",
+      "source": "/fixtures/rt2-codex-slash-residue.ansi",
+      "capture_file": "rt2-codex-slash-residue.ansi",
+      "meta_file": "rt2-codex-slash-residue.meta",
+      "capture_sha256": "0437e9ab7146205e767130ee38d82bf91782fb325632ddf1d4a551c7142eb1b5",
+      "meta_sha256": "56663bf580383328387882b93d4e587739c289d67ed04dc212e0f7a61a4631f3",
+      "glyph": "\u203a",
+      "cursor_x": 2,
+      "cursor_y": 54,
+      "input_exit": 1,
+      "pane_width": 215,
       "sanitized": true
     }
   ]

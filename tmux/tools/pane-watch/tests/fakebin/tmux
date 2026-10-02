@@ -10,11 +10,13 @@ case "${1:-}" in
     fmt=""; for a in "$@"; do fmt="$a"; done
     case "$fmt" in
       '#{pane_id}')     echo "%13"; exit 0 ;;
-      '#{socket_path}') echo /tmp/pane-watch-test.socket; exit 0 ;;
-      '#{pid}:#{pane_pid}') echo 999:100; exit 0 ;;
-      '#{pane_height}:#{pid}:#{pane_pid}') if [ "${PW_HEIGHT_DYNAMIC:-0}" = "1" ]; then n=$(cat "$ctr" 2>/dev/null || echo 0); [ "$n" -ge 4 ] && echo 57:999:100 || echo 59:999:100
-                        else echo "${PW_HEIGHT:-59}:999:100"; fi; exit 0 ;;
-      *)                echo "0 node TEST codex /tmp/project"; exit 0 ;;
+      '#{pane_id}:#{socket_path}') echo '%13:/tmp/pane-watch-test.socket'; exit 0 ;;
+      '#{pane_id}:#{pid}:#{pane_pid}') echo '%13:999:100'; exit 0 ;;
+      '#{pane_id}:#{pane_height}:#{pid}:#{pane_pid}') if [ "${PW_HEIGHT_DYNAMIC:-0}" = "1" ]; then n=$(cat "$ctr" 2>/dev/null || echo 0); [ "$n" -ge 4 ] && echo '%13:57:999:100' || echo '%13:59:999:100'
+                        else echo "%13:${PW_HEIGHT:-59}:999:100"; fi; exit 0 ;;
+      '#{pane_id} #{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}')
+        echo '%13 0 node TEST codex /tmp/project'; exit 0 ;;
+      *)                echo "unexpected display-message format: $fmt" >&2; exit 1 ;;
     esac ;;
   list-panes) echo "%13"; exit 0 ;;
 esac

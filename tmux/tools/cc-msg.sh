@@ -5,12 +5,12 @@
 # date: 2026-10-02T04:00:00Z
 set -uo pipefail
 
-fail() { printf 'cc-msg: %s\n' "$1" >&2; exit 1; }
-refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was sent\n' "$1" >&2; exit 2; }
+fail() { printf 'cc-msg: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
+refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
 unresponsive() { relay_server_unresponsive=1; printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'cc-msg: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
-busy() { printf 'cc-msg: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
-refuse_draft() { printf 'cc-msg: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
+busy() { printf 'REFUSE: another relay is in progress; no target input was sent; safe to retry after the condition clears\n' >&2; exit 5; }
+refuse_draft() { printf 'cc-msg: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
 usage() {
   cat >&2 <<'EOF'
 usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] cc-msg.sh <text>
@@ -60,14 +60,23 @@ release_relay_lock() {
 }
 
 acquire_relay_lock() {
-  local socket identity key
-  socket="${TMUX%%,*}"
-  identity="$(stat -Lf '%d:%i' "$socket" 2>/dev/null || printf '%s' "$socket")"
+  local socket identity key code
+  socket="$(relay_display "$pane" '#{socket_path}')" || {
+    code=$?
+    [ "$code" = 75 ] && return 75
+    return 1
+  }
+  [[ "$socket" = /* ]] || return 1
+  relay_target_socket="$socket"
+  identity="$(stat -Lf '%d:%i' "$socket" 2>/dev/null)" || return 1
   key="$(printf '%s' "$identity:$pane" | shasum -a 256 | awk '{print $1}')" || return 1
   umask 077
   mkdir -p "$RELAY_LOCK_ROOT" || return 1
   relay_lock="$RELAY_LOCK_ROOT/$key"
-  "$LOCK_BIN" -f "$relay_lock" -p "$$" >/dev/null 2>&1 || { relay_lock=; return 1; }
+  "$LOCK_BIN" -f "$relay_lock" -p "$$" >/dev/null 2>&1 || {
+    if [ -e "$relay_lock" ]; then relay_lock=; return 5; fi
+    relay_lock=; return 1;
+  }
 }
 
 trap release_relay_lock EXIT
@@ -83,7 +92,7 @@ request() {
 
 require_empty_cc_input() {
   local capture state state_after code cursor_x cursor_y in_mode
-  if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+  if state="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
     :
   else
     code=$?
@@ -105,7 +114,7 @@ require_empty_cc_input() {
     [ "$code" = 75 ] && unresponsive
     fail "cannot capture target input for $pane"
   fi
-  if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+  if state_after="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
     :
   else
     code=$?
@@ -118,12 +127,17 @@ require_empty_cc_input() {
     fail "cannot recheck target input state for $pane"
   fi
   [ "$state_after" = "$state" ] || refuse_draft "$pane"
-  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y" "$relay_verify_width"
+  relay_busy_preflight "$capture" "$cursor_y"
+  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y" "$relay_verify_width" "$relay_sender_tier"
   code=$?
   case "$code" in
-    0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
-    1) refuse_draft "$pane" ;;
-    *) fail "cannot find CC prompt in target $pane" ;;
+    0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; relay_empty_capture="$capture"; return 0 ;;
+    1) refuse_draft "$pane" "$(relay_refusal_reason "$capture")" ;;
+    *)
+      reason="$(relay_refusal_reason "$capture")"
+      [ "$reason" = "a menu/overlay" ] && refuse_draft "$pane" "$reason"
+      fail "cannot find CC prompt in target $pane"
+      ;;
   esac
 }
 
@@ -183,15 +197,16 @@ else
   fail 'cannot query tmux panes; refuse'
 fi
 if [ -n "$target_pane" ]; then
-  target_count="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
-  pane="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { print $1 }' "$list_file")"
-  command_name="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '$1 == pane && $2 == session && $3 == window { print $4 }' "$list_file")"
+  target_count="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '("" $1) == ("" pane) && ("" $2) == ("" session) && ("" $3) == ("" window) { n++ } END { print n + 0 }' "$list_file")"
+  pane="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '("" $1) == ("" pane) && ("" $2) == ("" session) && ("" $3) == ("" window) { print $1 }' "$list_file")"
+  command_name="$(awk -v session="$target_session" -v window="$target_window" -v pane="$target_pane" '("" $1) == ("" pane) && ("" $2) == ("" session) && ("" $3) == ("" window) { print $4 }' "$list_file")"
 else
-  target_count="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { n++ } END { print n + 0 }' "$list_file")"
-  pane="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $1 }' "$list_file")"
-  command_name="$(awk -v session="$target_session" -v window="$target_window" '$2 == session && $3 == window { print $4 }' "$list_file")"
+  target_count="$(awk -v session="$target_session" -v window="$target_window" '("" $2) == ("" session) && ("" $3) == ("" window) { n++ } END { print n + 0 }' "$list_file")"
+  pane="$(awk -v session="$target_session" -v window="$target_window" '("" $2) == ("" session) && ("" $3) == ("" window) { print $1 }' "$list_file")"
+  command_name="$(awk -v session="$target_session" -v window="$target_window" '("" $2) == ("" session) && ("" $3) == ("" window) { print $4 }' "$list_file")"
 fi
 resolve_sender_label
+resolve_relay_sender_tier
 trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
 list_file=
 case "$target_count" in
@@ -210,8 +225,19 @@ esac
 
 relay_target_window="$target_window"
 relay_glyph="❯"
-acquire_relay_lock || busy
+if acquire_relay_lock; then
+  :
+else
+  code=$?
+  case "$code" in
+    5) busy ;;
+    75) unresponsive ;;
+    *) fail "cannot establish target relay lock" ;;
+  esac
+fi
 prepare_payload "$FROM: $msg"
+require_empty_cc_input
+sleep 0.04
 require_empty_cc_input
 
 if atomic_text "$FROM: $msg"; then
@@ -220,10 +246,15 @@ else
   code=$?
   case "$code" in
     2) refuse_copy "$pane" ;;
+    3) refuse_draft "$pane" "an unproven composer state" ;;
+    6) fail "target identity changed before paste" ;;
+    7) fail "cannot prepare literal payload before paste" ;;
     75) unresponsive ;;
     *) partial 'literal delivery outcome is unknown' ;;
   esac
 fi
+verify_payload
+sleep 0.04
 verify_payload
 if atomic_enter; then
   :

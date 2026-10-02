@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-02 — Relay red team 2 repairs
+
+Captured idle states at narrow Claude, Agy and Codex widths now pass their composer guards. Relay payloads paste in one guarded operation, avoiding an unguarded second chunk. Relay locks require a valid tmux socket identity, and route names compare as strings. Codex preflight uses its observed one-row margin and refuses characters whose rendered width the installed Unicode table cannot prove. Draft or unknown-state refusals now say both possibilities.
+
+With Angel's scoped approval, `codex-send`, `codex-send-to` and `agy-send-to` refuse messages starting with `/` or `!` after normalization, before target input. `cc-msg.sh` retains its sender-prefixed behavior. Disposable Codex and Agy panes refused both leading characters with byte-identical before/after captures and delivered an inert message containing `/` and `!` later in the text.
+
+The composer guard now accepts workload-dependent dim suggestions regardless of their wording, and ignores text below a proven footer boundary. Normal-intensity draft text still refuses. A verified Claude Code sender uses the relaxed tier for an ambiguous unstyled Home state; Codex, agy, DeepSeek, and unresolved senders use the strict tier. A fresh sender pane identity and Claude model status are required for the relaxed tier. Relay exits now distinguish known no-write refusals from potentially partial delivery, with busy contention returning 5 and route changes returning 1. A second preflight and a settled full-composer check precede Enter; the same-tick Enter race remains a documented residual.
+
+Wrapped all-dim suggestions are accepted when their full composer boundary is proven; bright or whitespace-only continuation drafts still refuse. Active near-prompt work indicators cause strict senders to exit 5 before input, while historical completed work remains sendable. Refusal diagnostics identify live slash menus and Agy exit warnings instead of treating both as drafts.
+
+A synthetic-derived Codex workload hint fixture changes only text inside the dim span of a real idle capture and preserves its styling and cursor metadata. Real `✻ Hashing…` and `✶ Warping…` Claude captures, plus an Agy generating capture, guard the sender-aware busy path. A real dynamic Codex hint remains pending for a read-only capture when it appears.
+
+Every targeted `display-message` relay read and paste/Enter receipt now echoes the immutable pane ID and checks it against the resolved target. tmux can return exit 0 with another pane's data for a vanished `-t` target. Pane-watch pins its initial target with `list-panes` and checks the pane ID on each metadata and geometry read. Private-server target-death and replacement races refused without input or reported an unknown outcome after a paste; none claimed delivery to the replacement.
+
+A fresh blind race found that a human could type an Agy draft and move Home between the empty check and the first paste, preserving the original cursor coordinates; the relay pasted into that draft and exited 4. Codex and Agy now bind the first paste to the exact visible input row inside tmux's conditional guard. Claude's empty NBSP prompt is not searchable by tmux's pane-content operator, so its paste path takes a fresh app-guarded capture immediately before a nested identity/cursor guard. A separate blind proxy found that duplicate Codex history skipped the Enter row check; repeated identical sends now use a fresh active-row capture before guarded Enter. The accepted final scheduling interval between the last capture and Enter remains documented as a residual.
+
 ## 2026-10-01 — Agent launches recover from a deleted fnm link
 
 An fnm multishell cleanup moved every open fish shell's live link to the Trash, so codex, gemini and qwen launched through `_agent_limit` failed as "not found". `_agent_limit` now detects a missing `$FNM_MULTISHELL_PATH`, drops the dead `fnm_multishells` entries from PATH, re-sources `fnm env --use-on-cd`, prints a one-line notice and resolves the agent as before. Older panes still need `exec fish` to recover node and npm.

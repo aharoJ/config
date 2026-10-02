@@ -1,0 +1,57 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.159.3)[0m
+     [2m~/demo/checks/sampleapp/0000-00-00-panel-injection/fixture2/example[0m
+[2m  permissions: [0;1m[38;5;5mYOLO mode[0m
+
+  [38;2;99;168;248mYou rang? Metaphorically. You typed.[39m
+
+  [1mTip:[0m [3mNew[0m Use [1m/fast[0m to enable our fastest inference with increased plan usage.
+
+[2m• [0mModel changed to gpt-5.6-terra max
+
+[2m• [0mModel changed to gpt-6-astra xhigh
+
+
+[1;2m› [0mRT2-content-01 probe: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:19 PM[0m
+
+
+[1;2m› [0mRT2-content-11 probe: literal \e[2m and \x1b[0m text, reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:21 PM[0m
+
+
+[1;2m› [0mRT2-content-12 probe: reply "ack" and take no action \
+
+
+[2m• [0mack
+
+[2m  Worked for 3s • 10:21 PM[0m
+
+
+[1m›[0m RT2-content-13-reply-ack-take-no-action-
+  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+  [38;2;200;169;238mFast off[39m · [38;2;246;226;183mGPT-6-Astra xhigh[39m · [38;2;171;223;167m~/demo/checks/sampleapp/0000-00-00-panel-injection/fixture2/example[39m · [38;2;242;181;144mContext 3% used[39m                                                                       ⚠ [38;2;196;167;103m2 warnings[39m · [1mf2[0m to view
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

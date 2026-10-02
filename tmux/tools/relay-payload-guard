@@ -8,6 +8,7 @@ import re
 import sys
 import unicodedata
 import shlex
+import subprocess
 
 
 def codex_plain_footer(raw, start, index):
@@ -41,6 +42,26 @@ def codex_styled_footer(raw, visible):
     return re.search(r"\x1b\[38[;:]", raw) is not None and re.search(r"\x1b\[48[;:]", raw) is None
 
 
+def codex_narrow_or_hint_footer(raw, visible):
+    if "\x1b]" in raw or re.search(r"\x1b\[48[;:]", raw):
+        return False
+    if visible == "  esc again to edit previous message":
+        return "\x1b[1mesc\x1b[0m" in raw
+    if re.search(r"\x1b\[38[;:]", raw) is None:
+        return False
+    if re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*…  ⚠ [1-9][0-9]* · f2", visible):
+        return True
+    return re.fullmatch(r"  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · [^\r\n·]+…  ⚠ [1-9][0-9]* warnings? · f2 to view", visible) is not None
+
+
+def codex_structural_footer(raw):
+    if re.search(r"\x1b\[48[;:]", raw):
+        return False
+    if re.search(r"\x1b\[(?:49m|38[;:][0-9;:]*m|1m)", raw) is None:
+        return False
+    return "\x1b" not in re.sub(r"\x1b\[[0-9;:]*m", "", raw)
+
+
 def main():
     mode, *args = sys.argv[1:]
     if mode == "normalize":
@@ -58,17 +79,26 @@ def main():
     if mode == "chunks":
         payload = pathlib.Path(args[0])
         text = payload.read_text(encoding="utf-8")
-        for index, offset in enumerate(range(0, len(text), 200)):
-            payload.with_name(f"chunk-{index:06d}").write_text(text[offset:offset + 200], encoding="utf-8")
+        payload.with_name("chunk-000000").write_text(text, encoding="utf-8")
         return 0
     if mode == "capacity":
         text = pathlib.Path(args[0]).read_text(encoding="utf-8")
         width = int(args[1])
+        if any(unicodedata.category(c) == "Cn" or c == "\ufe0f" for c in text):
+            return 1
         size = sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
-        margin = 3 if len(args) > 2 and args[2] in ("❯", ">") else 2
+        margin = 4 if len(args) <= 2 or args[2] == "›" else 3
         return 0 if size <= width - margin else 1
+    if mode == "duplicate":
+        payload = pathlib.Path(args[0]).read_text(encoding="utf-8")
+        glyph = args[1]
+        cursor_y = int(args[2])
+        rows = [re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", row)
+                for row in sys.stdin.buffer.read().decode("utf-8").splitlines()]
+        pattern = re.compile(r"^ *" + re.escape(glyph) + r"[ \u00a0]" + re.escape(payload) + r" *$")
+        return 0 if any(pattern.fullmatch(row) for row in rows[:cursor_y]) else 1
     if mode == "tmux-enter":
-        payload, glyph, cursor_y, guarded, pane, deliver, blocked = args
+        payload, glyph, cursor_y, guarded, pane, deliver, blocked, *options = args
         text = pathlib.Path(payload).read_text(encoding="utf-8")
         pattern = "".join("\\" + c if c in ".^$[]()|*+?{}\\" else c for c in text)
         pattern = pattern.replace("#", "##").replace(",", "#,").replace("}", "#}")
@@ -76,6 +106,86 @@ def main():
         guarded = "#{&&:" + guarded + ",#{==:#{C/r:" + pattern + "}," + str(int(cursor_y) + 1) + "}}"
         sys.stdout.write(shlex.join(["if-shell", "-F", "-t", pane, guarded, deliver, blocked]) + "\n")
         return 0
+    if mode == "tmux-paste":
+        capture_path, glyph, cursor_y = args
+        raw = pathlib.Path(capture_path).read_text(encoding="utf-8").splitlines()
+        rows = [re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", row) for row in raw]
+        cursor_y = int(cursor_y)
+        if cursor_y < 0 or cursor_y >= len(rows):
+            return 1
+        prompt = re.compile(r"^ *" + re.escape(glyph) + r"(?:[ \u00a0]|$)")
+        starts = [index for index in range(cursor_y + 1) if prompt.match(rows[index])]
+        if not starts:
+            return 1
+        start = starts[-1]
+        if glyph == "›":
+            ends = [index for index in range(start + 1, len(rows))
+                    if codex_plain_footer(raw, start, index)
+                    or codex_styled_footer(raw[index], rows[index])
+                    or (index == start + 2 and (codex_narrow_or_hint_footer(raw[index], rows[index])
+                                                or codex_structural_footer(raw[index])))]
+        elif glyph == ">":
+            ends = [index for index in range(start + 1, len(rows)) if rows[index] and set(rows[index]) == {"─"}]
+        else:
+            return 1
+        if not ends:
+            return 1
+        end = ends[0]
+        checks = []
+        for index in range(start, end):
+            if not rows[index].strip(" "):
+                continue
+            line = rows[index].rstrip(" ")
+            pattern = "".join("\\" + c if c in ".^$[]()|*+?{}\\" else c for c in line)
+            pattern = pattern.replace("#", "##").replace(",", "#,").replace("}", "#}")
+            checks.append("#{==:#{C/r:^" + pattern + " *$}," + str(index + 1) + "}")
+        if not checks:
+            return 1
+        guarded = checks[0]
+        for check in checks[1:]:
+            guarded = "#{&&:" + guarded + "," + check + "}"
+        sys.stdout.write(guarded)
+        return 0
+    if mode == "cc-prepaste-command":
+        socket, pane, glyph, cursor_x, cursor_y, width, tier, input_guard = args
+        sys.stdout.write(shlex.join([sys.argv[0], "cc-prepaste", socket, pane, glyph, cursor_x, cursor_y, width, tier, input_guard]))
+        return 0
+    if mode == "enter-row-command":
+        socket, pane, glyph, cursor_y, payload = args
+        sys.stdout.write(shlex.join([sys.argv[0], "enter-row", socket, pane, glyph, cursor_y, payload]))
+        return 0
+    if mode == "tmux-nested":
+        pane, guarded, deliver, blocked = args
+        sys.stdout.write(shlex.join(["if-shell", "-F", "-t", pane, guarded, deliver, blocked]))
+        return 0
+    if mode == "cc-prepaste":
+        socket, pane, glyph, cursor_x, cursor_y, width, tier, input_guard = args
+        expected = f"{pane}:{cursor_x}:{cursor_y}:0:{width}"
+        def query(*command):
+            return subprocess.run(["tmux", "-S", socket, *command], capture_output=True, timeout=0.6)
+        fmt = "#{pane_id}:#{cursor_x}:#{cursor_y}:#{pane_in_mode}:#{pane_width}"
+        before = query("display-message", "-p", "-t", pane, fmt)
+        if before.returncode or before.stdout.decode("utf-8").strip() != expected:
+            return 1
+        capture = query("capture-pane", "-p", "-e", "-t", pane)
+        if capture.returncode:
+            return 1
+        guarded = subprocess.run([input_guard, glyph, cursor_x, cursor_y, width, tier], input=capture.stdout,
+                                 capture_output=True, timeout=0.6)
+        if guarded.returncode:
+            return 1
+        after = query("display-message", "-p", "-t", pane, fmt)
+        return 0 if after.returncode == 0 and after.stdout == before.stdout else 1
+    if mode == "enter-row":
+        socket, pane, glyph, cursor_y, payload = args
+        row = subprocess.run(["tmux", "-S", socket, "capture-pane", "-p", "-e", "-t", pane,
+                              "-S", cursor_y, "-E", cursor_y], capture_output=True, timeout=0.6)
+        if row.returncode:
+            return 1
+        visible = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", row.stdout.decode("utf-8").rstrip("\n"))
+        expected = pathlib.Path(payload).read_text(encoding="utf-8")
+        pattern = r"^ *" + re.escape(glyph) + r"[ \u00a0]" + re.escape(expected) + r" *$"
+        return 0 if re.fullmatch(pattern, visible) else 1
     if mode != "compare" or len(args) != 5:
         return 2
     glyph, cursor_x, cursor_y, payload_path, width = args
@@ -101,7 +211,9 @@ def main():
     elif glyph == "›":
         ends = [i for i in range(cursor_y + 1, len(rows))
                 if codex_plain_footer(raw, start, i)
-                or codex_styled_footer(raw[i], rows[i])]
+                or codex_styled_footer(raw[i], rows[i])
+                or (i == start + 2 and (codex_narrow_or_hint_footer(raw[i], rows[i])
+                                        or codex_structural_footer(raw[i])))]
     else:
         return 2
     if not ends:
@@ -121,5 +233,5 @@ def main():
 
 try:
     sys.exit(main())
-except (ValueError, OSError, UnicodeError, IndexError):
+except (ValueError, OSError, UnicodeError, IndexError, subprocess.TimeoutExpired):
     sys.exit(2)

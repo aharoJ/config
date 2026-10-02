@@ -8,6 +8,8 @@ set -euo pipefail
 : "${RELAY_TEST_CAPTURE:?}"
 : "${RELAY_TEST_LOG:?}"
 : "${RELAY_TEST_PANES:?}"
+relay_test_pane_id="${CC_MSG_PANE:-${AGY_SEND_PANE:-${CODEX_SEND_PANE:-}}}"
+[ -n "$relay_test_pane_id" ] || relay_test_pane_id="$(awk 'NR == 1 {print $1}' <<< "$RELAY_TEST_PANES")"
 
 printf '%s\n' "${1:-}" >> "$RELAY_TEST_LOG"
 
@@ -37,8 +39,18 @@ case "${1:-}" in
     ;;
   display-message)
     format="${!#}"
+    relay_pane_id="$relay_test_pane_id"
+    relay_prefix=
+    if [[ "$format" = '#{pane_id}|'* ]]; then
+      relay_prefix="$relay_pane_id|"
+      format="${format#'#{pane_id}|'}"
+    fi
+    if [ "$format" = '#{socket_path}' ]; then
+      printf '%s%s\n' "$relay_prefix" "${RELAY_TEST_SOCKET:-${TMUX%%,*}}"
+      exit 0
+    fi
     if [[ "$format" = '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_pid}:#{pane_current_command}' ]]; then
-      printf '192:51:0:relaytest:%s:100:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
+      printf '%s192:51:0:relaytest:%s:100:%s\n' "$relay_prefix" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
       exit 0
     fi
     if [ -s "$RELAY_TEST_LOG.payload" ]; then
@@ -48,7 +60,7 @@ case "${1:-}" in
       [[ "$RELAY_TEST_PANES" = *' agy'* ]] && row=1
       suffix=
       [[ "$format" = *pane_width* ]] && suffix=":192:51:100:$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
-      printf '0:%s:%s:0:relaytest:%s%s\n' "$column" "$row" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$suffix"
+      printf '%s0:%s:%s:0:relaytest:%s%s\n' "$relay_prefix" "$column" "$row" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$suffix"
       exit 0
     fi
     state_count_file="${RELAY_TEST_STATE_COUNT_FILE:-${RELAY_TEST_LOG}.state-count}"
@@ -57,11 +69,11 @@ case "${1:-}" in
     state_count=$((state_count + 1))
     printf '%s\n' "$state_count" > "$state_count_file"
     if [ "$state_count" -eq 1 ] && [ -n "${RELAY_TEST_STATE_BEFORE:-}" ]; then
-      printf '%s\n' "$RELAY_TEST_STATE_BEFORE"
+      printf '%s%s\n' "$relay_prefix" "$RELAY_TEST_STATE_BEFORE"
     elif [ "$state_count" -gt 1 ] && [ -n "${RELAY_TEST_STATE_AFTER:-}" ]; then
-      printf '%s\n' "$RELAY_TEST_STATE_AFTER"
+      printf '%s%s\n' "$relay_prefix" "$RELAY_TEST_STATE_AFTER"
     else
-      printf '%s\n' "${RELAY_TEST_STATE:-${RELAY_TEST_PANE_MODE:-0}:2:0}"
+      printf '%s%s\n' "$relay_prefix" "${RELAY_TEST_STATE:-${RELAY_TEST_PANE_MODE:-0}:2:0}"
     fi
     ;;
   if-shell|source-file)
@@ -74,7 +86,7 @@ case "${1:-}" in
     case "${RELAY_TEST_RECEIPT_MODE:-delivered}" in
       copy)
         if [[ "$*" = *__RELAY_REFUSED__* ]]; then
-          printf '__RELAY_REFUSED__:1:0:relaytest:%s\n' "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")"
+          printf '__RELAY_REFUSED__:%s:1:0:relaytest:%s\n' "$relay_test_pane_id" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")"
           exit 0
         fi
         case " $* " in
@@ -91,7 +103,7 @@ case "${1:-}" in
         ;;
     esac
     case " $* " in
-      *__RELAY_DELIVERED__*) printf '%s\n' '__RELAY_DELIVERED__' ;;
+      *__RELAY_DELIVERED__*) printf '__RELAY_DELIVERED__:%s\n' "$relay_test_pane_id" ;;
       *__CODEX_SEND_TO_DELIVERED__*) printf '%s\n' '__CODEX_SEND_TO_DELIVERED__' ;;
       *__CODEX_SEND_DELIVERED__*) printf '%s\n' '__CODEX_SEND_DELIVERED__' ;;
       *__CC_MSG_DELIVERED__*) printf '%s\n' '__CC_MSG_DELIVERED__' ;;

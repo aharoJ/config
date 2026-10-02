@@ -87,18 +87,25 @@ timed_out() { case "$1" in 124|137|143) return 0 ;; *) return 1 ;; esac; }
 
 # ---------------------------------------------------------------- pane identity
 PANE=$(tmuxq display-message -p -t "$TARGET" '#{pane_id}' 2>/dev/null) || PANE=""
-[ -n "$PANE" ] || { echo "REFUSE: '$TARGET' does not resolve to a pane on this tmux server." >&2; exit 1; }
+[[ "$PANE" =~ ^%[0-9]+$ ]] || { echo "REFUSE: '$TARGET' does not resolve to a pane on this tmux server." >&2; exit 1; }
+target_panes=$(tmuxq list-panes -t "$TARGET" -F '#{pane_id}' 2>/dev/null) || target_panes=""
+[ -n "$target_panes" ] && printf '%s\n' "$target_panes" | grep -qxF -- "$PANE" || {
+  echo "REFUSE: '$TARGET' did not resolve to the reported pane $PANE." >&2; exit 1;
+}
 n=$(tmuxq list-panes -a -F '#{pane_id}' 2>/dev/null | grep -cx -- "$PANE")
 [ "$n" = "1" ] || { echo "REFUSE: '$TARGET' resolved to $n panes, expected exactly 1." >&2; exit 1; }
 [ "$PANE" = "${TMUX_PANE:-}" ] && { echo "REFUSE: refusing to watch my own pane ($PANE)." >&2; exit 1; }
-read -r P_DEAD P_CMD P_SESS P_WIN P_PATH <<<"$(tmuxq display-message -p -t "$PANE" \
-  '#{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}' 2>/dev/null)"
+read -r P_CHECK P_DEAD P_CMD P_SESS P_WIN P_PATH <<<"$(tmuxq display-message -p -t "$PANE" \
+  '#{pane_id} #{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}' 2>/dev/null)"
+[ "$P_CHECK" = "$PANE" ] || { echo "REFUSE: pane identity changed while arming $PANE." >&2; exit 1; }
 [ "${P_DEAD:-1}" = "0" ] || { echo "REFUSE: pane $PANE is dead." >&2; exit 1; }
-WATCH_SOCKET="$(tmuxq display-message -p -t "$PANE" '#{socket_path}')" || { echo 'REFUSE: cannot identify the tmux server.' >&2; exit 1; }
+socket_identity="$(tmuxq display-message -p -t "$PANE" '#{pane_id}:#{socket_path}')" || { echo 'REFUSE: cannot identify the tmux server.' >&2; exit 1; }
+[[ "$socket_identity" = "$PANE":/* ]] || { echo 'REFUSE: pane identity changed while identifying the tmux server.' >&2; exit 1; }
+WATCH_SOCKET="${socket_identity#"$PANE":}"
 [[ "$WATCH_SOCKET" = /* ]] || { echo 'REFUSE: cannot identify the tmux socket.' >&2; exit 1; }
-watch_identity="$(tmuxq display-message -p -t "$PANE" '#{pid}:#{pane_pid}')" || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
-[[ "$watch_identity" =~ ^([0-9]+):([0-9]+)$ ]] || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
-WATCH_SERVER_PID="${BASH_REMATCH[1]}"; WATCH_PANE_PID="${BASH_REMATCH[2]}"
+watch_identity="$(tmuxq display-message -p -t "$PANE" '#{pane_id}:#{pid}:#{pane_pid}')" || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
+[[ "$watch_identity" =~ ^(%[0-9]+):([0-9]+):([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" = "$PANE" ] || { echo 'REFUSE: cannot identify the target process.' >&2; exit 1; }
+WATCH_SERVER_PID="${BASH_REMATCH[2]}"; WATCH_PANE_PID="${BASH_REMATCH[3]}"
 
 LOCKROOT="${TMPDIR:-/tmp}/pane-watch-locks"; mkdir -p "$LOCKROOT"
 pane_number="$(printf '%s' "$PANE" | tr -d '%')"
@@ -185,13 +192,14 @@ fp() { printf '%s' "$1" | shasum | cut -c1-12; }
 read_height() {
   local height_status height_state=''
   HEIGHT=""
-  tmuxq display-message -p -t "$PANE" '#{pane_height}:#{pid}:#{pane_pid}' > "$W/height" 2>/dev/null
+  tmuxq display-message -p -t "$PANE" '#{pane_id}:#{pane_height}:#{pid}:#{pane_pid}' > "$W/height" 2>/dev/null
   height_status=$?
   [ "$height_status" = 0 ] || return "$height_status"
   IFS= read -r height_state < "$W/height" || true
-  [[ "$height_state" =~ ^([0-9]+):([0-9]+):([0-9]+)$ ]] || return 1
-  HEIGHT="${BASH_REMATCH[1]}"
-  [ "${BASH_REMATCH[2]}:${BASH_REMATCH[3]}" = "$WATCH_SERVER_PID:$WATCH_PANE_PID" ] || return 76
+  [[ "$height_state" =~ ^(%[0-9]+):([0-9]+):([0-9]+):([0-9]+)$ ]] || return 1
+  [ "${BASH_REMATCH[1]}" = "$PANE" ] || return 76
+  HEIGHT="${BASH_REMATCH[2]}"
+  [ "${BASH_REMATCH[3]}:${BASH_REMATCH[4]}" = "$WATCH_SERVER_PID:$WATCH_PANE_PID" ] || return 76
 }
 capture() { tmuxq capture-pane -p -t "$PANE" -S "-$SCROLL" > "$CAP" 2>/dev/null; }
 

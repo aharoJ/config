@@ -1,0 +1,57 @@
+  nineteen
+  twenty
+  twenty-one
+  twenty-two
+  twenty-three
+  twenty-four
+  twenty-five
+  twenty-six
+  twenty-seven
+  twenty-eight
+  twenty-nine
+  thirty
+  thirty-one
+  thirty-two
+  thirty-three
+  thirty-four
+  thirty-five
+  thirty-six
+  thirty-seven
+  thirty-eight
+  thirty-nine
+  forty
+  forty-one
+  forty-two
+  forty-three
+  forty-four
+  forty-five
+  forty-six
+  forty-seven
+  forty-eight
+  forty-nine
+  fifty
+  fifty-one
+  fifty-two
+  fifty-three
+  fifty-four
+  fifty-five
+  fifty-six
+  fifty-seven
+  fifty-eight
+  fifty-nine
+  sixty
+
+[38;5;246m✻[39m [38;5;246mWorked[39m [38;5;246mfor[39m [38;5;246m2s[39m [38;5;246m·[39m [38;5;246mdone[39m [38;5;246m10:24[39m [38;5;246mPM[39m
+
+[38;5;246m[48;5;237m❯ [38;5;231mclaude (config:claude): RT2-concurrency-32b probe: reply "ack" and take no action[39m
+
+[38;5;231m[49m⏺[39m ack
+
+[38;5;246m✻[39m [38;5;246mCooked[39m [38;5;246mfor[39m [38;5;246m2s[39m [38;5;246m·[39m [38;5;246mdone[39m [38;5;246m10:24[39m [38;5;246mPM[39m
+
+[38;5;244m───────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m❯ 
+[38;5;244m───────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m  [1m[38;5;246mSonnet[0m [1m[38;5;246m4.6[0m[90m [39m [90m|[39m  [90mcontext[38;5;246m [39m [38;5;246m34.9k[39m [38;5;246m/[39m [90m200.0k[38;5;246m [39m [32m17%[39m  [32m⣿⣀⣀⣀⣀⣀⣀⣀⣀⣀[90m [39m [90m|[39m  [90mcache[38;5;246m [32m100%[90m [39m [90m|[39m  [90msession[38;5;246m 34.9k[90m [39m [90m|[39m  [90meffort[38;5;246m [36mhi…[39m
+  [38;5;211m⏵⏵[39m [38;5;211mbypass[39m [38;5;211mpermissions[39m [38;5;211mon[38;5;246m (shift+tab[39m [38;5;246mto[39m [38;5;246mcycle)[39m [38;5;246m·[39m [38;5;246m←[39m [38;5;246m1[39m [38;5;246magent[39m
+

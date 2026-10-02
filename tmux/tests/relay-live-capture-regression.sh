@@ -21,26 +21,34 @@ if [ "$1" = --fixtures ]; then
 import hashlib
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
 guard, manifest = sys.argv[1:]
 path = pathlib.Path(manifest)
 cases = json.loads(path.read_text())["cases"]
-required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19", "deepseek-idle-ctrl-y-hint", "agy-fresh", "agy-post-turn", "agy-post-helper", "agy-wide-200", "agy-narrow-40", "agy-narrow-19"}
+required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19", "deepseek-idle-ctrl-y-hint", "agy-fresh", "agy-post-turn", "agy-post-helper", "agy-wide-200", "agy-narrow-40", "agy-narrow-19", "rt2-fable-idle-107", "rt2-fable-idle-120", "rt2-agy-idle-34", "rt2-agy-idle-39", "rt2-deepseek-effort-hint", "rt2-codex-esc-hint", "rt2-codex-idle-30", "rt2-codex-idle-120", "rt2-codex-dynamic-synthetic-derived", "fable-dim-app-suggestion"}
 assert {case["name"] for case in cases} == required
 for case in cases:
     capture = (path.parent / case["capture_file"]).read_bytes()
     meta = (path.parent / case["meta_file"]).read_bytes()
     assert hashlib.sha256(capture).hexdigest() == case["capture_sha256"], case["name"]
     assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"], case["name"]
+    if case["name"] == "rt2-codex-dynamic-synthetic-derived":
+        original = (path.parent / "rt2-codex-idle-120.ansi").read_bytes()
+        assert capture.replace(b"Continue the relay audit", b"Ask Codex to do anything", 1) == original
+        assert meta == (path.parent / "rt2-codex-idle-120.meta").read_bytes()
+        assert case["derivation"].startswith("synthetic-derived:")
     assert pathlib.Path(case["source"]).is_absolute(), case["name"]
+    colon_meta = re.match(rb'^0:(\d+):(\d+):', meta)
     assert (f'cursor={case["cursor_x"]},{case["cursor_y"]}'.encode() in meta or
+            (colon_meta and tuple(map(int, colon_meta.groups())) == (case["cursor_x"], case["cursor_y"])) or
             meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()] or
             meta.split()[-2:] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()]), case["name"]
     result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
     assert result.returncode == 0, (case["name"], result.returncode)
-print(f"relay must-accept capture regression: {len(cases)} proven idle states, PASS")
+print(f"relay must-accept capture regression: {len(cases) - 1} real states plus 1 synthetic-derived dim hint, PASS")
 PY
   exit $?
 fi

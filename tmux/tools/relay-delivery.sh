@@ -9,7 +9,97 @@ relay_payload_dir=
 relay_payload_buffer=
 relay_server_unresponsive=0
 relay_input_attempted=0
+relay_paste_delivered=0
+relay_enter_duplicate=0
+relay_empty_capture=
 relay_payload_guard="$relay_script_dir/relay-payload-guard"
+relay_sender_tier=strict
+
+relay_display() {
+  local expected=$1 format=$2 response
+  response="$(request display-message -p -t "$expected" "#{pane_id}|$format")" || return $?
+  [ "${response%%|*}" = "$expected" ] || return 1
+  printf '%s\n' "${response#*|}"
+}
+
+resolve_relay_sender_tier() {
+  local sender_file sender sender_pane sender_session sender_window sender_pid sender_app identity sender_command capture model
+  relay_sender_tier=strict
+  [ -x "$relay_script_dir/relay-sender-label" ] || return 0
+  sender_file="$(mktemp "${TMPDIR:-/tmp}/relay-sender-list.XXXXXX")" || return 0
+  if ! request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$sender_file"; then
+    trash "$sender_file" >/dev/null 2>&1
+    return 0
+  fi
+  sender="$("$relay_script_dir/relay-sender-label" "$$" "$sender_file")"
+  trash "$sender_file" >/dev/null 2>&1
+  [ -n "$sender" ] || return 0
+  read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
+  [ "$sender_app" = claude ] || return 0
+  identity="$(relay_display "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead} #{pane_current_command}')" || return 0
+  case "$identity" in
+    "$sender_pane $sender_session $sender_window $sender_pid 0 "*) ;;
+    *) return 0 ;;
+  esac
+  sender_command="${identity##* }"
+  [ "$sender_command" != claude.exe ] || return 0
+  capture="$(request capture-pane -p -t "$sender_pane")" || return 0
+  model="$(printf '%s\n' "$capture" | python3 -c 'import re,sys
+rows=sys.stdin.read().splitlines()
+for index in range(len(rows)-2,-1,-1):
+    if re.fullmatch("─{8,}", rows[index]):
+        status=rows[index+1]
+        if re.match(r"^  (?:Sonnet|Opus|Haiku)(?:\s|$)",status) and re.search(r"\bv[0-9]+\.[0-9]+\.[0-9]+\b",status):
+            print("claude")
+        break')" || return 0
+  [ "$model" = claude ] && relay_sender_tier=relaxed
+}
+
+relay_busy_preflight() {
+  local capture=$1 cursor_y=$2 code
+  printf '%s\n' "$capture" | python3 -c 'import re,sys
+glyph=sys.argv[1]
+y=int(sys.argv[2])
+rows=[re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", row) for row in sys.stdin.read().splitlines()]
+if y >= len(rows) or not rows[y].lstrip().startswith(glyph):
+    sys.exit(1)
+if glyph == "›":
+    previous=next((row.strip() for row in reversed(rows[max(0,y-4):y]) if row.strip()), "")
+    sys.exit(0 if re.fullmatch(r"• Working \((?:[0-9]+h )?(?:[0-9]+m )?[0-9]+s [•·] esc to interrupt\)", previous) else 1)
+if y == 0 or not re.fullmatch("─{8,}", rows[y-1].strip()):
+    sys.exit(1)
+if glyph == ">":
+    previous=next((row.strip() for row in reversed(rows[max(0,y-3):y-1]) if row.strip()), "")
+    spinner=bool(re.fullmatch(r"[⠁-⣿]  Generating\.\.\.", previous))
+    footer=y+2 < len(rows) and rows[y+2].strip() == "esc to cancel"
+    sys.exit(0 if spinner or footer else 1)
+if glyph == "❯":
+    preceding=[row.strip() for row in rows[max(0,y-4):y-1] if row.strip()]
+    while preceding and re.match(r"^⎿\s*Tip:", preceding[-1]):
+        preceding.pop()
+    spinner=bool(preceding and re.fullmatch(r"[^\w\s] [^\r\n]*…\s*", preceding[-1]))
+    sys.exit(0 if spinner else 1)
+sys.exit(2)' "$relay_glyph" "$cursor_y"
+  code=$?
+  case "$code" in
+    0)
+      [ "$relay_sender_tier" = relaxed ] && [ "$relay_glyph" = '❯' ] || refuse_draft "$pane" 'an agent busy state'
+      ;;
+    1) ;;
+    *) refuse_draft "$pane" 'an unproven agent state' ;;
+  esac
+}
+
+relay_refusal_reason() {
+  local visible
+  visible="$(printf '%s' "$1" | python3 -c 'import re,sys; print(re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", sys.stdin.read()))')"
+  case "$visible" in
+    *'press ctrl+c again to exit'*) printf '%s' 'an exit-warning overlay' ;;
+    *'Generating…'*|*'esc to cancel'*|*'Thinking for'*) printf '%s' 'an agent busy state' ;;
+    *'❯ (current)'*|*'/add-dir'*|*'/model         choose what model'*|*'/permissions   choose what Codex'*|*'Select a '*|*'Rewind'*) printf '%s' 'a menu/overlay' ;;
+    *) printf '%s' 'a draft or unrecognized footer' ;;
+  esac
+}
 [ -x "$relay_payload_guard" ] || fail 'relay payload guard is required'
 command -v trash >/dev/null 2>&1 || fail 'trash is required for relay scratch cleanup'
 for relay_timeout_value in "$TMUX_TIMEOUT_SECONDS" "$TMUX_TIMEOUT_KILL_AFTER"; do
@@ -51,7 +141,7 @@ prepare_payload() {
   relay_payload_file="$relay_payload_dir/payload"
   printf '%s' "$1" > "$relay_payload_file" || fail 'cannot write payload scratch file'
   "$relay_payload_guard" validate "$relay_payload_file" || fail 'payload must be printable UTF-8 without control or format characters'
-  if dimensions="$(request display-message -p -t "$pane" '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_pid}:#{pane_current_command}')"; then
+  if dimensions="$(relay_display "$pane" '#{pane_width}:#{pane_height}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_pid}:#{pane_current_command}')"; then
     :
   else
     code=$?
@@ -73,18 +163,36 @@ prepare_payload() {
 }
 
 relay_atomic() {
-  local deliver=$1 blocked receipt code identity guarded command_file
-  blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
-  identity="#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{==:#{pane_current_command},$relay_target_command}}}}}"
+  local deliver=$1 blocked receipt code identity guarded command_file row_guard check_command nested
+  blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_id}:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
+  identity="#{&&:#{==:#{pane_id},$pane},#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{==:#{pane_current_command},$relay_target_command}}}}}}"
   guarded="#{&&:$identity,#{==:#{pane_in_mode},0}}"
   guarded="#{&&:$guarded,#{&&:#{==:#{pane_width},$relay_verify_width},#{==:#{pane_height},$relay_verify_height}}}"
   if [ -n "${2:-}" ]; then
     guarded="#{&&:$guarded,#{&&:#{==:#{cursor_x},$2},#{==:#{cursor_y},$3}}}"
   fi
   if [ -n "${4:-}" ]; then
-    command_file="$relay_payload_dir/send-keys-Enter.tmux"
-    "$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked" > "$command_file" || return 1
-    receipt="$(request source-file "$command_file")"
+    if [ "$relay_enter_duplicate" = 1 ]; then
+      check_command="$("$relay_payload_guard" enter-row-command "$relay_target_socket" "$pane" "$relay_glyph" "$3" "$4")" || return 1
+      nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 1
+      receipt="$(request if-shell -t "$pane" "$check_command" "$nested" "$blocked")"
+      code=$?
+    else
+      command_file="$relay_payload_dir/send-keys-Enter.tmux"
+      "$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked" > "$command_file" || return 1
+      receipt="$(request source-file "$command_file")"
+      code=$?
+    fi
+  elif [ -n "${5:-}" ]; then
+    if [ "$relay_glyph" = '❯' ]; then
+      check_command="$("$relay_payload_guard" cc-prepaste-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$relay_verify_width" "$relay_sender_tier" "$RELAY_INPUT_GUARD")" || return 7
+      nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 7
+      receipt="$(request if-shell -t "$pane" "$check_command" "$nested" "$blocked")"
+    else
+      row_guard="$("$relay_payload_guard" tmux-paste "$5" "$relay_glyph" "$3")" || return 7
+      guarded="#{&&:$guarded,$row_guard}"
+      receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"
+    fi
     code=$?
   elif receipt="$(request if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")"; then
     code=0
@@ -93,16 +201,24 @@ relay_atomic() {
   fi
   [ "$code" = 75 ] && return 75
   [ "$code" = 0 ] || return 1
-  [ "$receipt" = __RELAY_DELIVERED__ ] && return 0
-  [ "$receipt" = "__RELAY_REFUSED__:1:0:$target_session:$relay_target_window" ] && return 2
-  [ "$receipt" = "__RELAY_REFUSED__:0:0:$target_session:$relay_target_window" ] && return 3
+  [ "$receipt" = "__RELAY_DELIVERED__:$pane" ] && return 0
+  [ "$receipt" = "__RELAY_REFUSED__:$pane:1:0:$target_session:$relay_target_window" ] && return 2
+  if [ "$receipt" = "__RELAY_REFUSED__:$pane:0:0:$target_session:$relay_target_window" ]; then
+    local current
+    current="$(relay_display "$pane" '#{pane_pid}:#{pane_current_command}:#{pane_width}:#{pane_height}')" || return 3
+    [ "$current" = "$relay_target_pid:$relay_target_command:$relay_verify_width:$relay_verify_height" ] || return 6
+    return 3
+  fi
+  [[ "$receipt" == __RELAY_REFUSED__:* ]] && return 6
   printf 'relay: unexpected tmux delivery receipt: %s\n' "$receipt" >&2
   return 1
 }
 
 atomic_text() {
-  local chunk_file code attempted=0 expected_x expected_y
-  "$relay_payload_guard" chunks "$relay_payload_file" || return 1
+  local chunk_file code attempted=0 expected_x expected_y relay_empty_capture_file
+  "$relay_payload_guard" chunks "$relay_payload_file" || return 7
+  relay_empty_capture_file="$relay_payload_dir/empty-capture"
+  printf '%s\n' "$relay_empty_capture" > "$relay_empty_capture_file" || return 7
   relay_payload_buffer="relay-$$-$(basename "$relay_payload_dir")"
   for chunk_file in "$relay_payload_dir"/chunk-*; do
     if request load-buffer -b "$relay_payload_buffer" "$chunk_file"; then
@@ -110,13 +226,14 @@ atomic_text() {
     else
       code=$?
       [ "$code" = 75 ] && return 75
-      return 1
+      return 7
     fi
     expected_x=; expected_y=
     [ "$attempted" = 0 ] && { expected_x="$relay_empty_cursor_x"; expected_y="$relay_empty_cursor_y"; }
     relay_input_attempted=1
-    if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane __RELAY_DELIVERED__" "$expected_x" "$expected_y"; then
+    if relay_atomic "paste-buffer -p -d -t $pane -b $relay_payload_buffer ; display-message -p -t $pane '__RELAY_DELIVERED__:#{pane_id}'" "$expected_x" "$expected_y" '' "$relay_empty_capture_file"; then
       attempted=1
+      relay_paste_delivered=1
     else
       code=$?
       [ "$code" = 2 ] && [ "$attempted" = 1 ] && return 1
@@ -133,7 +250,7 @@ verify_payload() {
   local state state_after capture code cursor_x cursor_y attempts=0 delay
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
-    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
+    if state="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
     else
       code=$?
@@ -151,7 +268,7 @@ verify_payload() {
       [ "$code" = 75 ] && unresponsive
       partial 'cannot capture composer for payload verification'
     fi
-    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
+    if state_after="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
     else
       code=$?
@@ -159,6 +276,10 @@ verify_payload() {
       partial 'cannot recheck composer for payload verification'
     fi
     if [ "$state" = "$state_after" ] && printf '%s\n' "$capture" | "$relay_payload_guard" compare "$relay_glyph" "$cursor_x" "$cursor_y" "$relay_payload_file" "$relay_verify_width"; then
+      relay_enter_duplicate=0
+      if [ "$relay_glyph" = '›' ] && printf '%s\n' "$capture" | "$relay_payload_guard" duplicate "$relay_payload_file" "$relay_glyph" "$cursor_y"; then
+        relay_enter_duplicate=1
+      fi
       relay_verified_cursor_x="$cursor_x"
       relay_verified_cursor_y="$cursor_y"
       return 0
@@ -177,7 +298,7 @@ atomic_enter() {
   local state code in_mode cursor_x cursor_y attempts=0 delay
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
-    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
+    if state="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
       :
     else
       code=$?
@@ -192,7 +313,7 @@ atomic_enter() {
     [ "$in_mode" = 0 ] || return 2
     relay_verified_cursor_x="$cursor_x"
     relay_verified_cursor_y="$cursor_y"
-    if relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$cursor_x" "$cursor_y" "$relay_payload_file"; then
+    if relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane '__RELAY_DELIVERED__:#{pane_id}'" "$cursor_x" "$cursor_y" "$relay_payload_file"; then
       return 0
     else
       # Capture relay_atomic's status inside the conditional.  Reading $?

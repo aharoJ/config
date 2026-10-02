@@ -25,15 +25,30 @@ cat > "$TMP/bin/tmux" <<'TMUX'
 case "${1:-}" in
   display-message)
     format="${!#}"
+    pane_id='%13'
+    [ "${PW_WRONG_FORMAT:-}" = "$format" ] && pane_id='%99'
     case "$format" in
-      '#{pane_id}') echo '%13' ;;
-      '#{pane_height}:#{pid}:#{pane_pid}') echo 59:999:100 ;;
-      '#{socket_path}') echo /tmp/pane-watch-test.socket ;;
-      '#{pid}:#{pane_pid}') echo 999:100 ;;
-      *) echo '0 node TEST codex /tmp/project' ;;
+      '#{pane_id}') echo "$pane_id" ;;
+      '#{pane_id}:#{pane_height}:#{pid}:#{pane_pid}')
+        if [ -n "${PW_CHANGE_AT:-}" ]; then
+          count=$(cat "$PW_CHANGE_COUNT" 2>/dev/null || echo 0)
+          count=$((count + 1))
+          printf '%s\n' "$count" > "$PW_CHANGE_COUNT"
+          [ "$count" -ge "$PW_CHANGE_AT" ] && { echo '%99:59:999:100'; exit 0; }
+        fi
+        echo "$pane_id:59:999:100" ;;
+      '#{pane_id}:#{socket_path}') echo "$pane_id:/tmp/pane-watch-test.socket" ;;
+      '#{pane_id}:#{pid}:#{pane_pid}') echo "$pane_id:999:100" ;;
+      '#{pane_id} #{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}')
+        echo "$pane_id 0 node TEST codex /tmp/project" ;;
+      *) echo "unexpected display-message format: $format" >&2; exit 1 ;;
     esac
     ;;
-  list-panes) echo '%13' ;;
+  list-panes)
+    if [ "${PW_MISSING_TARGET:-}" = 1 ] && [ "$3" = '%13' ]; then
+      echo "can't find pane: %13" >&2; exit 1
+    fi
+    echo '%13' ;;
   capture-pane) cat "$PW_FIXTURE" ;;
   *) echo "unexpected fake tmux request: $*" >&2; exit 1 ;;
 esac
@@ -128,6 +143,40 @@ for glyph in '›' '»'; do
   require "$modal_output" 'service modal'
   forbidden "$modal_output" 'WATCH COVERAGE LOST|OPERATOR ACTION NEEDED'
 done
+
+set +e
+PATH="$TMP/bin:$PATH" TMPDIR="$TMP" PW_FIXTURE="$TMP/fixtures/idle-›" PW_MISSING_TARGET=1 PW_POLL=0 \
+  "$TIMEOUT_BIN" 2 bash "$WATCH" --pane %13 --ui codex --ack-current > "$TMP/missing-target.out" 2>&1
+status=$?
+set -e
+[ "$status" -eq 1 ] || { cat "$TMP/missing-target.out" >&2; exit 1; }
+require "$TMP/missing-target.out" 'did not resolve to the reported pane'
+forbidden "$TMP/missing-target.out" 'ARMED'
+
+for format in '#{pane_id} #{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}' \
+              '#{pane_id}:#{socket_path}' '#{pane_id}:#{pid}:#{pane_pid}' \
+              '#{pane_id}:#{pane_height}:#{pid}:#{pane_pid}'; do
+  output="$TMP/wrong-identity-$RANDOM.out"
+  set +e
+  PATH="$TMP/bin:$PATH" TMPDIR="$TMP" PW_FIXTURE="$TMP/fixtures/idle-›" PW_WRONG_FORMAT="$format" PW_POLL=0 \
+    "$TIMEOUT_BIN" 2 bash "$WATCH" --pane %13 --ui codex --ack-current > "$output" 2>&1
+  status=$?
+  set -e
+  [ "$status" -eq 1 ] || { cat "$output" >&2; exit 1; }
+  require "$output" 'REFUSE:'
+  forbidden "$output" 'ARMED'
+done
+
+set +e
+PATH="$TMP/bin:$PATH" TMPDIR="$TMP" PW_FIXTURE="$TMP/fixtures/idle-›" PW_POLL=0 \
+  PW_CHANGE_AT=4 PW_CHANGE_COUNT="$TMP/change-count" \
+  "$TIMEOUT_BIN" 3 bash "$WATCH" --pane %13 --ui codex --ack-current > "$TMP/changed-pane.out" 2>&1
+status=$?
+set -e
+[ "$status" -eq 2 ] || { cat "$TMP/changed-pane.out" >&2; exit 1; }
+require "$TMP/changed-pane.out" 'ARMED codex'
+require "$TMP/changed-pane.out" 'WATCH COVERAGE LOST'
+require "$TMP/changed-pane.out" 'Target server or pane process identity changed'
 
 # A malformed live lock must never be deleted by --replace merely because its PID is alive.
 mkdir -p "$watch_lock"

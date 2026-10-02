@@ -259,14 +259,14 @@ class ToolStress(unittest.TestCase):
 display-message)
  case "${!#}" in
  '#{pane_id}') echo %13 ;;
- '#{pane_height}') echo 59 ;;
- '#{pane_height}:#{pid}:#{pane_pid}')
+ '#{pane_id}:#{pane_height}:#{pid}:#{pane_pid}')
   count=0; [ ! -f "$TMPDIR/height-count" ] || count=$(cat "$TMPDIR/height-count")
   count=$((count + 1)); echo "$count" > "$TMPDIR/height-count"
-  if [ "${WATCH_TEST_REPLACE:-0}" = 1 ] && [ "$count" -gt 3 ]; then echo 59:999:101; else echo 59:999:100; fi ;;
- '#{pid}:#{pane_pid}') echo 999:100 ;;
- '#{socket_path}') echo "${WATCH_TEST_SOCKET:-/tmp/watch-test.socket}" ;;
- *) echo '0 node lab-test lab-codex /tmp/project' ;;
+  if [ "${WATCH_TEST_REPLACE:-0}" = 1 ] && [ "$count" -gt 3 ]; then echo %13:59:999:101; else echo %13:59:999:100; fi ;;
+ '#{pane_id}:#{pid}:#{pane_pid}') echo %13:999:100 ;;
+ '#{pane_id}:#{socket_path}') echo "%13:${WATCH_TEST_SOCKET:-/tmp/watch-test.socket}" ;;
+ '#{pane_id} #{pane_dead} #{pane_current_command} #{session_name} #{window_name} #{pane_current_path}') echo '%13 0 node lab-test lab-codex /tmp/project' ;;
+ *) echo "unexpected display-message format: ${!#}" >&2; exit 1 ;;
  esac ;;
 list-panes) echo %13 ;;
 capture-pane) printf '%s\\n' '› operation' '• Finished.' '› Ask Codex to do anything' '' '  Fast off · test · Context 0% used' ;;
@@ -395,6 +395,7 @@ exec "$TRASH_TEST_STUB" "$@"''')
                 with self.subTest(relay=relay, signal=signal_stage):
                     directory = self.directory / (relay + ("-signal" if signal_stage else "-delivered"))
                     directory.mkdir()
+                    (directory / "socket").touch()
                     window = "claude" if relay == "cc-msg.sh" else "codex"
                     command = "2.1.286" if relay == "cc-msg.sh" else "node"
                     capture = "❯\u00a0\n" + "─" * 192 + "\n  Opus 5.5 | v2.1.287\n  ⏵⏵ bypass permissions on" if relay == "cc-msg.sh" else "› \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m  Fast off · test · Context 0% used"

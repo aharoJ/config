@@ -1,0 +1,57 @@
+  literal \e[2m and \x1b[0m
+  text, reply "ack" and take
+  no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:21 PM[0m
+
+
+[1;2m› [0mRT2-content-12 probe: reply
+  "ack" and take no action \
+
+
+[2m• [0mack
+
+[2m  Worked for 3s • 10:21 PM[0m
+
+
+[1;2m› [0mRT2content16replyackTakeNoA
+  ctionxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  xxxxxxxxxxxxxxxxxxxxxx
+
+
+[2m• [0mack
+
+[2m  Worked for 3s • 10:23 PM[0m
+
+
+[1;2m› [0mRT2-content-18 probe café
+  naı̈ve: reply "ack" and take
+  no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:23 PM[0m
+
+
+[1;2m› [0mRT2-content-20 probe שלום
+  مرحبا: reply "ack" and take
+  no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:24 PM[0m
+
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [38;2;200;169;238mFast off[39m · [38;2;246;226;183mGPT-6…[39m  ⚠ [38;2;196;167;103m2[39m · [1mf2[0m

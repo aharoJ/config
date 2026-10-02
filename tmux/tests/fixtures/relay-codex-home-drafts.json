@@ -26,12 +26,12 @@
       "input_exit": 0
     },
     {
-      "name": "dim-text-at-prompt-column-must-refuse",
-      "source": "synthetic styling-collision adversarial case",
-      "capture": "\u001b[1m›\u001b[0m \u001b[2mtyped but dim\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "name": "dim-app-suggestion-at-prompt-column",
+      "source": "synthetic dim application suggestion case",
+      "capture": "\u001b[1m›\u001b[0m \u001b[2mapp suggestion\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 1
+      "input_exit": 0
     },
     {
       "name": "plain-known-placeholder-text-must-refuse",

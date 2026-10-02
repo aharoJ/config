@@ -1,0 +1,57 @@
+
+[2m• [0mack
+
+[2m  Worked for 3s • 10:25 PM[0m
+
+
+[1;2m› [0mRT2-content-27 probe: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 1s • 10:25 PM[0m
+
+
+[1;2m› [0mRT2-content-30 probe #{session_name} #{pane_id} a,b} c ## d: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 1s • 10:26 PM[0m
+
+
+[1;2m› [0mRT2-content-31 probe \d+ [a-z]* (x|y) ^$ 'q' "dq" ; ~ $HOME \\: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 2s • 10:27 PM[0m
+
+
+[1;2m› [0mRT2-content-32 probe a b  c: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 1s • 10:27 PM[0m
+
+
+[1;2m› [0mRT2-content-33 probe: count silently to three then reply "ack"; take no other action
+
+
+[2m• [0mack
+
+
+[1;2m› [0mRT2-content-34 probe: reply "ack" and take no action
+
+
+[2m• [0mack
+
+[2m  Worked for 4s • 10:27 PM[0m
+
+[2m• [0mUnrecognized command '/rt2probe35'. Type "/" for a list of supported commands.
+
+
+[1m›[0m /rt2probe35 reply ack and take no action
+
+  [38;2;200;169;238mFast off[39m · [38;2;246;226;183mGPT-6-Astra xhigh[39m · [38;2;171;223;167m~/demo/checks/sampleapp/0000-00-00-panel-injection/fixture2/example[39m · [38;2;242;181;144mContext 3% used[39m                                                                       ⚠ [38;2;196;167;103m2 warnings[39m · [1mf2[0m to view
