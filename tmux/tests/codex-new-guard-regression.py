@@ -37,4 +37,50 @@ fresh = '› Ask Codex to do anything\n\n  ' + footer + ' · Context 0% used · 
 check('fresh', fresh, 0)
 for mutated in [fresh.replace('0%','1%'), fresh.replace('~/.config','~/elsewhere'), fresh.replace(' low',' high'), fresh.replace('Context 0% used','Context 0% used arbitrary')]:
     check('fresh', mutated, 1)
+models = (root / 'tests/fixtures/codex-new-models.ansi').read_text()
+efforts = (root / 'tests/fixtures/codex-new-efforts.ansi').read_text()
+advanced = (root / 'tests/fixtures/codex-new-advanced.ansi').read_text()
+model_slash = (root / 'tests/fixtures/codex-new-model-slash.ansi').read_text()
+check('models', models, 0)
+check('efforts', efforts, 0)
+check('advanced', advanced, 0, 'Fast off · GPT-6-Astra ultra · ~/.config')
+check('model-slash', model_slash, 0, 'Fast off · GPT-6.1-Sol low · ~/.config')
+for mode, capture, footer in [('models', models, 'Fast off · GPT-6-Astra low · ~/.config'),
+                              ('efforts', efforts, 'Fast off · GPT-6-Astra high · ~/.config'),
+                              ('advanced', advanced, 'Fast off · GPT-6-Astra max · ~/.config')]:
+    for mutation in [capture + 'unknown overlay\n', capture.replace('1.', '9.', 1),
+                     capture.replace('\x1b[1;7m', '\x1b[1m'),
+                     capture.replace('enter', 'space'), capture + capture,
+                     capture.replace('› ', '  ', 1)]:
+        check(mode, mutation, 1, footer)
+check('models', models.replace('Latest workhorse model', 'Unknown model'), 1)
+check('efforts', efforts.replace('GPT-6-Astra', 'GPT-6.1-Sol'), 1)
+check('advanced', advanced.replace('⚠ Consumes usage limits faster', 'Unknown warning'), 1, 'Fast off · GPT-6-Astra ultra · ~/.config')
+for effort in ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']:
+    check('efforts', efforts, 0, f'Fast off · GPT-6-Astra {effort} · ~/.config')
+for footer in ['Fast off · Unknown-model low · ~/.config', 'Fast off · GPT-6-Astra unknown · ~/.config']:
+    check('supported-footer', '', 1, footer)
+check('supported-footer', '', 0)
+reset = fresh.replace('GPT-6-Astra low', 'GPT-6.1-Sol low')
+check('reset', reset, 0)
+check('fresh', reset, 1)
+check('reset', reset.replace('~/.config', '~/elsewhere'), 1)
+check('reset', reset.replace('Fast off', 'Fast on'), 1)
+check('reset', reset.rstrip('\n') + '  ⚠ 1 warning · f2 to view\n', 0)
+check('reset', reset.rstrip('\n') + '  ⚠ unknown warning\n', 1)
+more = (root / 'tests/fixtures/codex-new-effort-more.ansi').read_text()
+check('efforts', more, 0, 'Fast off · GPT-6-Astra ultra · ~/.config')
+check('efforts', more.replace(' select · ', ' default · s session · '), 1)
+check('efforts', efforts.replace(' default · ', ' select · ').replace('\x1b[0;1ms\x1b[0;2m session · ', ''), 1)
+current = (root / 'tests/fixtures/codex-new-advanced-current.ansi').read_text()
+check('advanced', current, 0, 'Fast off · GPT-6-Astra max · ~/.config')
+check('advanced', current.replace(' default · ', ' apply · '), 0, 'Fast off · GPT-6-Astra max · ~/.config')
+check('advanced', current.replace(' default · ', ' run · '), 1, 'Fast off · GPT-6-Astra max · ~/.config')
+for mode, screen, footer, wanted in [('navigate-models', models, 'Fast off · GPT-6-Astra low · ~/.config', '0:1'),
+                                     ('navigate-efforts', efforts, 'Fast off · GPT-6-Astra xhigh · ~/.config', '1:3'),
+                                     ('navigate-efforts', more, 'Fast off · GPT-6-Astra low · ~/.config', '4:0'),
+                                     ('navigate-advanced', advanced, 'Fast off · GPT-6-Astra ultra · ~/.config', '0:1')]:
+    p = subprocess.run([str(guard), mode, footer], input=screen, text=True, capture_output=True)
+    assert p.returncode == 0 and p.stdout.strip() == wanted, (mode, p.stdout, p.stderr)
+    checks += 1
 print(f'codex new guard: {checks} checks PASS')
