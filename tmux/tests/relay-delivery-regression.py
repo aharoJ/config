@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: cover verified Codex status variants and redraw-tolerant delivery
-# date: 2026-10-01T23:02:00Z
+# patched: cover verified Codex status variants and redraw-tolerant delivery retries
+# date: 2026-10-01T23:18:00Z
 import argparse
 import codecs
 import json
@@ -238,8 +238,12 @@ class Matrix:
         return argv, env
 
     def record(self, relay, name, result, expected_code, directory, expected_payload=None, no_input=False):
-        time.sleep(0.05)
-        submitted = json.loads((directory / "submitted.json").read_text()) if (directory / "submitted.json").exists() else []
+        submitted = []
+        for _ in range(20):
+            submitted = json.loads((directory / "submitted.json").read_text()) if (directory / "submitted.json").exists() else []
+            if expected_code != 0 or submitted == [expected_payload]:
+                break
+            time.sleep(0.05)
         landed = json.loads((directory / "landed.json").read_text()) if (directory / "landed.json").exists() else ""
         passed = result.returncode == expected_code
         if expected_code == 0:
@@ -298,6 +302,30 @@ class Matrix:
             argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             self.record(relay, "codex159-redraw-input", result, 0, directory, payload)
+        finally:
+            if not self.frozen:
+                self.cleanup_session(session)
+
+    def atomic_refusal_retry(self, relay):
+        # Simulate tmux's normal, no-write source-file refusal once.  This
+        # makes the retry contract deterministic; redraw_payload exercises
+        # the corresponding real UI redraw separately.
+        session, window, directory = self.start(relay, "codex159-atomic-refusal-retry", mode="codex159-main-default")
+        try:
+            trigger = directory / "atomic-refusal-triggered"
+            proxy = directory / "tmux-atomic-refusal"
+            real = shlex.quote(str(self.tmux_binary))
+            receipt = shlex.quote(f"__RELAY_REFUSED__:0:0:{session}:{window}")
+            proxy.write_text('#!/usr/bin/env bash\nif [ "$1" = source-file ] && [ ! -f ' + shlex.quote(str(trigger)) + ' ]; then\n'
+                             + '  touch ' + shlex.quote(str(trigger)) + '\n'
+                             + "  printf '%s\\n' " + receipt + '\n'
+                             + '  exit 0\nfi\nexec ' + real + ' "$@"\n')
+            proxy.chmod(0o755)
+            payload = "redraw-safe payload"
+            argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
+            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
+            expected = ("relay: " if relay == "cc-msg.sh" else "") + payload
+            self.record(relay, "codex159-atomic-refusal-retry", result, 0, directory, expected)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -441,6 +469,7 @@ class Matrix:
                 self.case(relay, "codex159-" + mode, mode="codex159-" + mode)
             self.redraw_payload(relay)
             self.redraw_input(relay)
+            self.atomic_refusal_retry(relay)
             self.case(relay, "codex159-real-draft", code=5, mode="codex159-draft")
             for mode in ("extra", "hidden"):
                 self.case(relay, "codex159-busy-" + mode, code=4, mode="codex159-busy-" + mode)

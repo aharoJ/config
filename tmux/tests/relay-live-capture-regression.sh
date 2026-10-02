@@ -24,13 +24,14 @@ lab_tmux() { tmux -L "$server" -f /dev/null "$@"; }
 
 awk -F '\t' '
   /^[[:space:]]*(#|$)/ { next }
-  NF != 4 { exit 1 }
+  NF != 5 { exit 1 }
   $1 !~ /^[a-z0-9][a-z0-9-]*$/ { exit 1 }
   $2 !~ /^[A-Za-z0-9_.:%@=+-]+$/ { exit 1 }
   $3 !~ /^[01]$/ { exit 1 }
   $4 !~ /^[0-9]+\.[0-9]+\.[0-9]+$/ { exit 1 }
+  $5 == "" { exit 1 }
   ++seen[$1] != 1 { exit 1 }
-' "$manifest" || fail 'manifest must have unique name, target, expected-exit, and Codex-version TSV columns'
+' "$manifest" || fail 'manifest must have unique name, target, expected-exit, Codex-version, and visible-marker TSV columns'
 
 require_case() {
   local required_name=$1 required_exit=$2
@@ -53,8 +54,8 @@ codex_version="$(printf '%s\n' "$version_output" | sed -nE 's/.*([0-9]+\.[0-9]+\
 [ -n "$codex_version" ] || fail "cannot parse Codex version: $version_output"
 
 snapshot() {
-  local name=$1 target=$2 expected=$3 state_before state_between state_after styled_first styled_second plain
-  local pane_id pane_pid command in_mode cursor_x cursor_y width height code
+  local name=$1 target=$2 expected=$3 marker=$4 state_before state_between state_after styled_first styled_second plain
+  local pane_id pane_pid command in_mode cursor_x cursor_y width height code cursor_row previous_row
 
   state_before="$(lab_tmux display-message -p -t "$target" '#{pane_id}:#{pane_pid}:#{pane_current_command}:#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_width}:#{pane_height}')" || fail "$name cannot query pre-capture state"
   styled_first="$(lab_tmux capture-pane -p -e -t "$target")" || fail "$name cannot take first styled capture"
@@ -72,9 +73,43 @@ snapshot() {
 
   plain="$(printf '%s\n' "$styled_first" | strip_ansi)"
   [ -n "$plain" ] || fail "$name normalized capture is empty"
+  printf '%s\n' "$plain" | grep -F -q -- "$marker" || fail "$name lacks required visible marker: $marker"
+  cursor_row="$(printf '%s\n' "$plain" | sed -n "$((cursor_y + 1))p")"
+  previous_row=
+  [ "$cursor_y" = 0 ] || previous_row="$(printf '%s\n' "$plain" | sed -n "${cursor_y}p")"
   if [ "$name" = fresh-empty ]; then
     [[ "$plain" == *"OpenAI Codex (v$codex_version)"* ]] || fail "$name does not attest Codex v$codex_version"
   fi
+
+  # A case name is evidence, not a semantic assertion.  Require the visible
+  # state it names so a cursor-only/draft-only substitute cannot make the
+  # current private corpus print PASS.
+  case "$name" in
+    fresh-empty)
+      [ "$cursor_x" = 2 ] || fail "$name must remain at the prompt column"
+      ;;
+    post-subagent-empty)
+      [ "$cursor_x" = 2 ] || fail "$name must remain at the prompt column"
+      [[ "$plain" == *"Main [default]"* ]] || fail "$name lacks the Main [default] state marker"
+      ;;
+    working-empty)
+      [ "$cursor_x" = 2 ] || fail "$name must remain at the prompt column"
+      [[ "$plain" == *"Working"* ]] || fail "$name lacks a Working state marker"
+      ;;
+    single-line-draft)
+      [ "$cursor_x" -gt 2 ] || fail "$name is not an end-of-line draft"
+      printf '%s\n' "$cursor_row" | perl -CSDA -ne 's/^\h*\x{203a}\h*//; exit(/\S/ ? 0 : 1)' || fail "$name lacks visible prompt-row text"
+      ;;
+    multiline-draft)
+      [ "$cursor_y" -gt 0 ] || fail "$name has no continuation row"
+      printf '%s\n' "$previous_row" | perl -CSDA -ne 'exit(/^\h*\x{203a}/ ? 0 : 1)' || fail "$name lacks a prompt before its continuation"
+      printf '%s\n' "$cursor_row" | perl -CSDA -ne 'exit(/^\h+\S/ ? 0 : 1)' || fail "$name lacks visible continuation text"
+      ;;
+    home-cursor-draft)
+      [ "$cursor_x" = 2 ] || fail "$name must remain at the prompt column"
+      printf '%s\n' "$cursor_row" | perl -CSDA -ne 's/^\h*\x{203a}\h*//; exit(/\S/ ? 0 : 1)' || fail "$name lacks visible Home-moved draft text"
+      ;;
+  esac
 
   set +e
   printf '%s\n' "$styled_first" | "$guard" '›' "$cursor_x" "$cursor_y" >/dev/null
@@ -87,10 +122,10 @@ snapshot() {
 count=0
 while IFS= read -r line || [ -n "$line" ]; do
   [[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
-  IFS=$'\t' read -r name target expected capture_version extra <<< "$line"
+  IFS=$'\t' read -r name target expected capture_version marker extra <<< "$line"
   [ -z "$extra" ] || fail "manifest has extra columns for $name"
   [ "$capture_version" = "$codex_version" ] || fail "$name attests $capture_version, installed Codex is $codex_version"
-  snapshot "$name" "$target" "$expected"
+  snapshot "$name" "$target" "$expected" "$marker"
   count=$((count + 1))
 done < "$manifest"
 

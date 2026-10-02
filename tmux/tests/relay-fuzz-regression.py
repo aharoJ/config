@@ -82,10 +82,30 @@ def run(seed, iterations, output):
                 check("input", [input_guard, glyph, "3", "0"], placeholder.encode(), 1)
                 check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 1)
                 check("input", [input_guard, glyph, "2", "0"], (glyph + "\n" + footer + "\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n    \n" + footer + "\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m\x1b[0;08m  Fast off · test · Context 0% used\x1b[0m\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m\x1b[2J  Fast off · test · Context 0% used\n").encode(), 1)
             else:
-                placeholder = glyph + " \x1b[2m" + value + "\x1b[22m\n" + footer + "\n"
-                check("input", [input_guard, glyph, "2", "0"], placeholder.encode(), 0)
-                check("input", [input_guard, glyph, "3", "0"], placeholder.encode(), 1)
+                empty = glyph + "\u00a0\n" + footer + "\n"
+                dim_text = glyph + " \x1b[2m" + value + "\x1b[22m\n" + footer + "\n"
+                whitespace = glyph + "    \n" + footer + "\n"
+                continuation = glyph + "\u00a0\n\x1b[2m  " + value + "\x1b[22m\n" + footer + "\n"
+                check("input", [input_guard, glyph, "2", "0"], empty.encode(), 0)
+                check("input", [input_guard, glyph, "3", "0"], empty.encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"], dim_text.encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"], whitespace.encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"], continuation.encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + "\u00a0\n    \n" + footer + "\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + "\x1b[08m\u00a0\x1b[0m\n" + footer + "\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + "\u00a0\n\x1b[0008m" + footer + "\x1b[0m\n").encode(), 1)
+                check("input", [input_guard, glyph, "2", "0"],
+                      (glyph + "\u00a0\n\x1b[2J" + footer + "\n").encode(), 1)
             check("input", [input_guard, glyph, "2", "0"], (glyph + " " + value + "\n" + footer + "\n").encode(), 1)
             if glyph == "›":
                 malformed = rng.choice(("\x1b[49m  continuation", "\x1b[38;5;215m  Fast unknown · Draft Context", "\x1b[49m  Fast off", "\x1b[49m  Fast off · test · Context 0% used · Main [other]"))

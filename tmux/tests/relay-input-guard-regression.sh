@@ -83,6 +83,21 @@ cc_wrapped_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util\n\e
 cc_draft=$'\e[38;5;239m\e[48;5;237m❯ \e[38;5;231mreal user draft\e[39m'
 cc_grey_draft=$'\e[38;5;239m\e[48;5;237m❯ \e[38;5;246mreal user draft\e[39m'
 cc_multiline_draft=$'\e[39m❯\302\240\n\e[48;5;237m  real user draft\n\e[38;5;244m────────────────────'
+cc_home_whitespace_draft=$'❯    \n────────────────────'
+cc_home_dim_draft=$'❯ \e[2mtyped but dim\e[0m\n────────────────────'
+cc_dim_continuation_draft=$'❯\302\240\n\e[2m  hidden continuation\e[0m\n────────────────────'
+cc_whitespace_continuation_draft=$'❯\302\240\n    \n────────────────────'
+cc_concealed_marker=$'❯\e[8m\302\240\e[0m\n────────────────────'
+cc_concealed_divider=$'❯\302\240\n\e[8m────────────────────\e[0m'
+cc_csi_divider=$'❯\302\240\n\e[2J────────────────────'
+cc_zero_padded_concealed_marker=$'❯\e[08m\302\240\e[0m\n────────────────────'
+cc_zero_padded_concealed_divider=$'❯\302\240\n\e[0008m────────────────────\e[0m'
+codex_concealed_placeholder=$'› \e[2;8mAsk Codex to do anything\e[0m\n\e[49m  Fast off · test · Context 0% used'
+codex_dim_continuation_draft=$'› \e[2mAsk Codex to do anything\e[0m\n\e[2m  hidden continuation\e[0m\n\e[49m  Fast off · test · Context 0% used'
+codex_whitespace_continuation_draft=$'› \e[2mAsk Codex to do anything\e[0m\n    \n\e[49m  Fast off · test · Context 0% used'
+codex_concealed_footer=$'› \e[2mAsk Codex to do anything\e[0m\n\e[49m\e[8m  Fast off · test · Context 0% used\e[0m'
+codex_csi_footer=$'› \e[2mAsk Codex to do anything\e[0m\n\e[49m\e[2J  Fast off · test · Context 0% used'
+codex_zero_padded_concealed_footer=$'› \e[2mAsk Codex to do anything\e[0m\n\e[49m\e[0;08m  Fast off · test · Context 0% used\e[0m'
 mixed_style=$'\e[1m›\e[0m \e[2mplaceholder-looking \e[22mreal draft'
 
 expect_guard 0 '›' 'generic Codex placeholder' "$codex_placeholder" 2 0
@@ -92,8 +107,8 @@ expect_guard 1 '›' 'NO_COLOR unverified Codex suggestion' "$codex_no_color_sug
 expect_guard 1 '›' '256-colour unverified Codex suggestion' "$codex_256_suggestion" 2 0
 expect_guard 1 '›' 'TERM=dumb Codex suggestion without a trustworthy footer style' "$codex_dumb_suggestion" 2 0
 expect_guard 0 '❯' 'empty Claude composer with NBSP' "$cc_empty" 2 0
-expect_guard 0 '❯' 'dynamic Claude suggestion' "$cc_placeholder" 2 0
-expect_guard 0 '❯' 'wrapped dynamic Claude suggestion' "$cc_wrapped_placeholder" 2 0
+expect_guard 1 '❯' 'unverified dynamic Claude suggestion' "$cc_placeholder" 2 0
+expect_guard 1 '❯' 'unverified wrapped Claude suggestion' "$cc_wrapped_placeholder" 2 0
 expect_guard 1 '›' 'typed Codex draft' "$codex_draft" 3 0
 expect_guard 1 '›' 'RGB-background Codex draft' "$codex_rgb_draft" 3 0
 expect_guard 1 '›' 'typed but dim Codex draft advances cursor' "$codex_dim_typed" 3 0
@@ -104,6 +119,21 @@ expect_guard 1 '›' 'Codex choice row' "$codex_choice" 2 0
 expect_guard 1 '❯' 'typed Claude draft' "$cc_draft" 3 0
 expect_guard 1 '❯' 'grey Claude draft' "$cc_grey_draft" 3 0
 expect_guard 1 '❯' 'multiline Claude draft' "$cc_multiline_draft" 4 1
+expect_guard 1 '❯' 'Home-moved whitespace Claude draft' "$cc_home_whitespace_draft" 2 0
+expect_guard 1 '❯' 'Home-moved dim Claude draft' "$cc_home_dim_draft" 2 0
+expect_guard 1 '❯' 'dim Claude continuation draft' "$cc_dim_continuation_draft" 2 0
+expect_guard 1 '❯' 'whitespace-only Claude continuation is ambiguous' "$cc_whitespace_continuation_draft" 2 0
+expect_guard 1 '❯' 'concealed Claude empty marker is ambiguous' "$cc_concealed_marker" 2 0
+expect_guard 1 '❯' 'concealed Claude divider is ambiguous' "$cc_concealed_divider" 2 0
+expect_guard 1 '❯' 'non-SGR CSI Claude divider is ambiguous' "$cc_csi_divider" 2 0
+expect_guard 1 '❯' 'zero-padded concealed Claude marker is ambiguous' "$cc_zero_padded_concealed_marker" 2 0
+expect_guard 1 '❯' 'zero-padded concealed Claude divider is ambiguous' "$cc_zero_padded_concealed_divider" 2 0
+expect_guard 1 '›' 'concealed Codex placeholder is ambiguous' "$codex_concealed_placeholder" 2 0
+expect_guard 1 '›' 'dim Codex continuation is ambiguous' "$codex_dim_continuation_draft" 2 0
+expect_guard 1 '›' 'whitespace-only Codex continuation is ambiguous' "$codex_whitespace_continuation_draft" 2 0
+expect_guard 1 '›' 'concealed Codex footer is ambiguous' "$codex_concealed_footer" 2 0
+expect_guard 1 '›' 'non-SGR CSI Codex footer is ambiguous' "$codex_csi_footer" 2 0
+expect_guard 1 '›' 'zero-padded concealed Codex footer is ambiguous' "$codex_zero_padded_concealed_footer" 2 0
 expect_guard 1 '›' 'mixed placeholder and draft text' "$mixed_style" 2 0
 expect_guard 2 '›' 'missing Codex composer' $'no composer here' 2 0
 
@@ -130,11 +160,11 @@ expect_no_delivery 'codex-cursor-race'
 
 expect_relay 2 'codex-copy-mode' "$codex_placeholder" '%relay relaytest codex node' \
   env RELAY_TEST_PANE_MODE=1 CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
-expect_relay 2 'cc-copy-mode' "$cc_placeholder" '%relay relaytest claude 2.1.284' \
+expect_relay 2 'cc-copy-mode' "$cc_empty" '%relay relaytest claude 2.1.284' \
   env RELAY_TEST_PANE_MODE=1 CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
 expect_relay 3 'codex-unresponsive' "$codex_placeholder" '%relay relaytest codex node' \
   env RELAY_TEST_FAIL_COMMAND=list-panes RELAY_TEST_FAIL_STATUS=124 CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
-expect_relay 4 'cc-partial' "$cc_placeholder" '%relay relaytest claude 2.1.284' \
+expect_relay 4 'cc-partial' "$cc_empty" '%relay relaytest claude 2.1.284' \
   env RELAY_TEST_RECEIPT_MODE=unknown CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
 
 expect_relay 0 'codex-placeholder' "$codex_placeholder" '%relay relaytest codex node' \
@@ -153,18 +183,18 @@ expect_relay 5 'codex-to-unverified-suggestion' "$codex_suggestion" '%relay rela
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
 expect_no_delivery 'codex-to-unverified-suggestion'
 
-expect_relay 0 'cc-placeholder' "$cc_placeholder" '%relay relaytest claude 2.1.284' \
+expect_relay 0 'cc-empty' "$cc_empty" '%relay relaytest claude 2.1.284' \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
-expect_delivery 'cc-placeholder'
+expect_delivery 'cc-empty'
 
 two_cc_panes=$'%41 relaytest claude 2.1.284\n%42 relaytest claude 2.1.284'
-expect_relay 1 'cc-ambiguous' "$cc_placeholder" "$two_cc_panes" \
+expect_relay 1 'cc-ambiguous' "$cc_empty" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-ambiguous'
-expect_relay 0 'cc-explicit-pane' "$cc_placeholder" "$two_cc_panes" \
+expect_relay 0 'cc-explicit-pane' "$cc_empty" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%42 "$cc_relay" 'relay payload'
 expect_delivery 'cc-explicit-pane'
-expect_relay 1 'cc-pane-outside-window' "$cc_placeholder" "$two_cc_panes" \
+expect_relay 1 'cc-pane-outside-window' "$cc_empty" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
 
@@ -217,6 +247,9 @@ try:
         rows = capture.splitlines()
         rows.insert(case["cursor_y"] + 1, "  hidden draft continuation")
         check_guard(case, 1, capture="\n".join(rows) + "\n")
+        rows = capture.splitlines()
+        rows.insert(case["cursor_y"] + 1, "\x1b[2m  dim draft continuation\x1b[0m")
+        check_guard(case, 1, capture="\n".join(rows) + "\n")
         check_guard(case, 1, cursor_x=case["cursor_x"] + 1)
     for case in live_cases:
         check_guard(case, case["input_exit"])
@@ -232,6 +265,8 @@ try:
             check_payload(case, 1, cursor_x=case["cursor_x"] + 1)
     for case in home_cases:
         check_guard(case, case["input_exit"])
+    restored = next(case for case in home_cases if case["name"] == "restored-placeholder-after-backspace")
+    check_guard(restored, 1, capture=restored["capture"] + "\x1b[2m  dim text after footer\x1b[0m\n")
     reconnected_payload = next(case for case in status_cases if case["name"] == "reconnected-main-default-payload")
     check_payload(reconnected_payload, 1, capture=reconnected_payload["capture"].replace("Main [default]", "Main [other]"))
     no_context_empty = next(case for case in status_cases if case["name"] == "no-context-terra-empty")
@@ -255,10 +290,11 @@ try:
         rows = lines.copy()
         rows[index] = mutated
         check_guard(fresh, 1, capture="\n".join(rows) + "\n")
-    for middle in ("  undimmed draft continuation", ""):
+    for middle in ("  undimmed draft continuation", "\x1b[2m  dim draft continuation\x1b[0m", ""):
         rows = lines.copy()
         rows.insert(fresh["cursor_y"] + 1, middle)
         check_guard(fresh, 1, capture="\n".join(rows) + "\n")
+    check_guard(fresh, 1, capture=fresh["capture"].replace("Ask Codex", "\x1b[8mAsk Codex", 1))
     rows = lines.copy()
     del rows[fresh["cursor_y"] + 1]
     check_guard(fresh, 1, capture="\n".join(rows) + "\n")

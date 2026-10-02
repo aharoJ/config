@@ -95,6 +95,7 @@ relay_atomic() {
   [ "$code" = 0 ] || return 1
   [ "$receipt" = __RELAY_DELIVERED__ ] && return 0
   [ "$receipt" = "__RELAY_REFUSED__:1:0:$target_session:$relay_target_window" ] && return 2
+  [ "$receipt" = "__RELAY_REFUSED__:0:0:$target_session:$relay_target_window" ] && return 3
   printf 'relay: unexpected tmux delivery receipt: %s\n' "$receipt" >&2
   return 1
 }
@@ -170,5 +171,38 @@ verify_payload() {
 }
 
 atomic_enter() {
-  relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$relay_verified_cursor_x" "$relay_verified_cursor_y" "$relay_payload_file"
+  # The payload row is checked inside relay_atomic.  If a redraw moves its
+  # cursor between verification and source-file, re-observe coordinates and
+  # retry only the known no-write refusal.
+  local state code in_mode cursor_x cursor_y attempts=0 delay
+  while [ "$attempts" -lt 24 ]; do
+    attempts=$((attempts + 1))
+    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && return 75
+      return 1
+    fi
+    [[ "$state" =~ ^([01]):([0-9]+):([0-9]+):0:$target_session:$relay_target_window:$relay_verify_width:$relay_verify_height:$relay_target_pid:([A-Za-z0-9_.+-]+)$ ]] || return 1
+    in_mode="${BASH_REMATCH[1]}"
+    cursor_x="${BASH_REMATCH[2]}"
+    cursor_y="${BASH_REMATCH[3]}"
+    [ "${BASH_REMATCH[4]}" = "$relay_target_command" ] || return 1
+    [ "$in_mode" = 0 ] || return 2
+    relay_verified_cursor_x="$cursor_x"
+    relay_verified_cursor_y="$cursor_y"
+    if relay_atomic "send-keys -t $pane Enter ; display-message -p -t $pane __RELAY_DELIVERED__" "$cursor_x" "$cursor_y" "$relay_payload_file"; then
+      return 0
+    else
+      # Capture relay_atomic's status inside the conditional.  Reading $?
+      # after a false `if` compound yields the compound's success status and
+      # would incorrectly turn a refused Enter into SENT.
+      code=$?
+    fi
+    [ "$code" = 3 ] || return "$code"
+    if [ "$attempts" -lt 8 ]; then delay=0.05; else delay=0.15; fi
+    sleep "$delay"
+  done
+  return 1
 }

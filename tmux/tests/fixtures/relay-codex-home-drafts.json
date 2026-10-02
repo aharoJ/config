@@ -1,26 +1,26 @@
 {
-  "description": "Private real Codex v0.159.3 composer excerpts. A literal space or text draft moved Home retains cursor_x=2; only the post-Backspace placeholder is a proven empty state.",
+  "description": "Normalized composer-tail fixtures derived from the owned real Codex v0.159.3 lab corpus at scratchpad/cursor-bug/r2-real-codex; each source records the original raw capture and cursor metadata. A literal space or text draft moved Home retains cursor_x=2; only the post-Backspace placeholder is a proven empty state.",
   "cases": [
     {
       "name": "space-draft-moved-home-must-refuse",
-      "source": "private real Codex v0.159.3 lab: Space, Home",
-      "capture": "\u001b[1m›\u001b[0m\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n",
+      "source": "r2-real-codex/space-home.cap + space-home.meta; direct keyboard sequence Space, Home",
+      "capture": "\u001b[1m›\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
       "input_exit": 1
     },
     {
       "name": "text-draft-moved-home-must-refuse",
-      "source": "private real Codex v0.159.3 lab: typed draft, Home",
-      "capture": "\u001b[1m›\u001b[0m typed draft\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n",
+      "source": "r2-real-codex/p0b-home.cap + p0b-home.meta; direct keyboard sequence type R2-HOME-DRAFT, Home",
+      "capture": "\u001b[1m›\u001b[0m R2-HOME-DRAFT\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
       "input_exit": 1
     },
     {
       "name": "restored-placeholder-after-backspace",
-      "source": "private real Codex v0.159.3 lab: Space, Home, End, Backspace",
-      "capture": "\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n",
+      "source": "r2-real-codex/cleared.cap + cleared.meta; direct keyboard sequence Space, Home, End, Backspace",
+      "capture": "\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
       "input_exit": 0
@@ -28,7 +28,7 @@
     {
       "name": "dim-text-at-prompt-column-must-refuse",
       "source": "synthetic styling-collision adversarial case",
-      "capture": "\u001b[1m›\u001b[0m \u001b[2mtyped but dim\u001b[0m\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n",
+      "capture": "\u001b[1m›\u001b[0m \u001b[2mtyped but dim\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
       "input_exit": 1
@@ -36,7 +36,7 @@
     {
       "name": "plain-known-placeholder-text-must-refuse",
       "source": "synthetic renderer-signature adversarial case",
-      "capture": "\u001b[1m›\u001b[0m Ask Codex to do anything\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n",
+      "capture": "\u001b[1m›\u001b[0m Ask Codex to do anything\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
       "input_exit": 1

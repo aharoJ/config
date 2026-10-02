@@ -76,7 +76,7 @@ my $empty_cursor_x = expected_empty_cursor_x($cursor_visible, $glyph);
 exit 1 if !defined($empty_cursor_x) || $cursor_x != $empty_cursor_x;
 
 sub apply_sgr {
-    my ($parameters, $dim_ref) = @_;
+    my ($parameters, $dim_ref, $conceal_ref) = @_;
     my $set_dim = 0;
     my @parameters = length($parameters) ? split(/;/, $parameters, -1) : (0);
     for (my $index = 0; $index <= $#parameters; $index++) {
@@ -85,12 +85,17 @@ sub apply_sgr {
         # attribute number changes intensity.
         my ($code) = split(/:/, $parameter, 2);
         $code = 0 if !defined($code) || $code eq '';
+        # CSI SGR parameters are decimal numbers. Leading zeroes do not
+        # change their meaning (for example, 08 is conceal), so compare the
+        # normalized numeric value rather than its original spelling.
+        $code = 0 + $code;
         if ($code eq '38' || $code eq '48' || $code eq '58') {
             next if index($parameter, ':') >= 0;
             # In semicolon-form extended colours, the next number is a mode
             # (5 or 2), not an intensity attribute.  In particular, the "2"
             # in 48;2;R;G;B must not be mistaken for dim.
             my ($colour_mode) = split(/:/, $parameters[$index + 1] // '', 2);
+            $colour_mode = 0 + $colour_mode if defined($colour_mode) && $colour_mode =~ /\A[0-9]+\z/;
             if (defined($colour_mode) && $colour_mode eq '5') {
                 $index += 2;
             } elsif (defined($colour_mode) && $colour_mode eq '2') {
@@ -105,6 +110,10 @@ sub apply_sgr {
         } elsif ($code eq '2') {
             $$dim_ref = 1;
             $set_dim = 1;
+        } elsif ($code eq '8') {
+            # Once conceal appears in an input marker, do not treat the row
+            # as a verified placeholder even if a later reset clears it.
+            $$conceal_ref = 1 if defined $conceal_ref;
         } elsif ($code eq '22') {
             $$dim_ref = 0;
         }
@@ -112,33 +121,72 @@ sub apply_sgr {
     return $set_dim;
 }
 
-sub row_is_dim_or_blank {
-    my ($raw, $dim_ref) = @_;
+sub row_has_trusted_sgr {
+    my ($raw) = @_;
+    my $dim = 0;
+    my $conceal = 0;
     while (length $raw) {
         if ($raw =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
-            return 0 if $2 ne 'm';
-            apply_sgr($1, $dim_ref);
+            my ($parameters, $final) = ($1, $2);
+            return 0 if $final ne 'm' || $parameters !~ /\A[0-9:;]*\z/;
+            apply_sgr($parameters, \$dim, \$conceal);
             next;
         }
-        # A placeholder never needs an OSC/control sequence.  Treat one as
-        # ambiguity rather than risking a typed value hidden by formatting.
+        # Trusted boundaries contain only numeric SGR styling; an OSC or a
+        # non-SGR CSI could change the terminal state while looking blank.
+        return 0 if $raw =~ s/^\e\][^\e\a]*(?:\a|\e\\)//;
+        return 0 if $raw =~ s/^\e//;
+
+        substr($raw, 0, 1, '');
+    }
+    return !$conceal;
+}
+
+sub row_is_blank {
+    my ($raw) = @_;
+    my $dim = 0;
+    my $conceal = 0;
+    while (length $raw) {
+        if ($raw =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
+            my ($parameters, $final) = ($1, $2);
+            return 0 if $final ne 'm' || $parameters !~ /\A[0-9:;]*\z/;
+            apply_sgr($parameters, \$dim, \$conceal);
+            next;
+        }
+        # A blank compositor tail never needs an OSC/control sequence.
         return 0 if $raw =~ s/^\e\][^\e\a]*(?:\a|\e\\)//;
         return 0 if $raw =~ s/^\e//;
 
         my $character = substr($raw, 0, 1, '');
         next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}" || $character eq "\r" || $character eq "\n";
-        return 0 if !$$dim_ref;
+        return 0;
     }
-    return 1;
+    return !$conceal;
+}
+
+sub row_is_canonical_separator {
+    my ($raw) = @_;
+    # A real Codex empty composer is followed by a zero-cell separator.
+    # Spaces here can be a whitespace-only wrapped draft, so never infer a
+    # boundary from a merely blank-looking row.
+    return $raw =~ /\A\r?\n?\z/;
+}
+
+sub claude_known_divider {
+    my ($raw) = @_;
+    return 0 if !row_has_trusted_sgr($raw);
+    my $visible = visible_row($raw);
+    $visible =~ s/[\r\n]+\z//;
+    return $visible =~ /^\h*─{20,}\h*\z/;
 }
 
 sub codex_plain_footer {
     my ($rows_ref, $start, $index) = @_;
     return 0 if $index != $start + 2;
     my $separator = $rows_ref->[$start + 1];
-    $separator =~ s/\e\[[0-9;:]*m//g;
-    return 0 if $separator !~ /\A *\r?\n?\z/;
+    return 0 if !row_is_canonical_separator($separator);
     my $raw_footer = $rows_ref->[$index];
+    return 0 if !row_has_trusted_sgr($raw_footer);
     return 0 if $raw_footer =~ /\e\[48(?:;|:)/;
     my $footer = $raw_footer;
     $footer =~ s/\e\[[0-9;:]*m//g;
@@ -155,36 +203,29 @@ sub codex_plain_footer {
 sub blank_tail_after_boundary {
     my ($rows_ref, $boundary) = @_;
     for my $index ($boundary + 1 .. $#$rows_ref) {
-        my $tail_dim = 0;
-        return 0 if !row_is_dim_or_blank($rows_ref->[$index], \$tail_dim);
+        return 0 if !row_is_blank($rows_ref->[$index]);
     }
     return 1;
 }
 
 sub composer_has_safe_tail {
-    my ($rows_ref, $start, $glyph, $dim_ref) = @_;
-    my $cc_end = -1;
+    my ($rows_ref, $start, $glyph) = @_;
     if ($glyph eq '❯') {
-        for my $index ($start + 1 .. $#$rows_ref) {
-            my $visible = visible_row($rows_ref->[$index]);
-            $visible =~ s/[\r\n]+\z//;
-            $cc_end = $index if $visible =~ /^\h*─{20,}\h*\z/;
-        }
+        my $divider = $start + 1;
+        # No intervening row is a proven empty Claude state. In particular,
+        # a space-only wrapped continuation can be a draft moved Home.
+        return 0 if $divider > $#$rows_ref || !claude_known_divider($rows_ref->[$divider]);
+        return blank_tail_after_boundary($rows_ref, $divider);
     }
     for my $index ($start + 1 .. $#$rows_ref) {
         my $raw = $rows_ref->[$index];
         my $visible = visible_row($raw);
         $visible =~ s/[\r\n]+\z//;
 
-        # Claude ends its composer with a divider.  Anything visible before
-        # it is either a wrapped value or an unknown UI state, so refuse.
-        if ($glyph eq '❯' && $index == $cc_end) {
-            return 1;
-        }
-
         # Codex's footer begins only after the composer background resets.
         # A following input background means it is still composer content.
         if ($glyph eq '›') {
+            return 0 if !row_has_trusted_sgr($raw);
             return blank_tail_after_boundary($rows_ref, $index) if codex_plain_footer($rows_ref, $start, $index);
             my $path = qr/(?:~(?:\/[^·\x00-\x1f\x7f]+)?|\/[^·\x00-\x1f\x7f]+)/;
             my $structured = $visible =~ /\A  Fast (?:on|off) · [A-Za-z0-9][A-Za-z0-9._-]*(?: (?:default|minimal|low|medium|high|xhigh|max|ultra))? · (?:(?:$path · )?Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?|$path · ← for agents) *\z/;
@@ -202,9 +243,13 @@ sub composer_has_safe_tail {
             if ($structured && $raw =~ /\e\[38(?:;|:)/ && $raw !~ /\e\[48(?:;|:)|\e\]/) {
                 return blank_tail_after_boundary($rows_ref, $index);
             }
-        }
 
-        return 0 if !row_is_dim_or_blank($raw, $dim_ref);
+            # Codex's proven empty placeholder fits on its prompt row.  The
+            # only allowed row before its footer is the zero-cell separator;
+            # whitespace or styled continuation content is unproven input.
+            return 0 if !row_is_canonical_separator($raw);
+            next;
+        }
     }
     # A cropped or unfamiliar composer has no trustworthy boundary.
     return 0;
@@ -222,13 +267,15 @@ sub codex_known_placeholder {
     my $at_input = 0;
     my $dim = 0;
     my $saw_dim_after_glyph = 0;
+    my $saw_conceal_after_glyph = 0;
     my $all_visible_text_dim = 1;
     my $after_glyph = '';
 
     while (length $scan) {
         if ($scan =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
-            return 0 if $2 ne 'm';
-            my $set_dim = apply_sgr($1, \$dim);
+            my ($parameters, $final) = ($1, $2);
+            return 0 if $final ne 'm' || $parameters !~ /\A[0-9:;]*\z/;
+            my $set_dim = apply_sgr($parameters, \$dim, \$saw_conceal_after_glyph);
             $saw_dim_after_glyph ||= $at_input && $set_dim;
             next;
         }
@@ -254,74 +301,57 @@ sub codex_known_placeholder {
         }
     }
 
-    return 0 if !$at_input || !$saw_dim_after_glyph || !$all_visible_text_dim;
+    return 0 if !$at_input || !$saw_dim_after_glyph || $saw_conceal_after_glyph || !$all_visible_text_dim;
     $after_glyph =~ s/[\r\n]+\z//;
     return $after_glyph eq ' Ask Codex to do anything';
 }
 
 if ($glyph eq '›') {
-    my $tail_dim = 0;
     exit 1 if !codex_known_placeholder($rows[$prompt_index], $glyph);
-    exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph, \$tail_dim);
+    exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph);
     exit 0;
 }
 
-my $raw = $rows[$prompt_index];
-chomp $raw;
-my $at_input = 0;
-my $dim = 0;
-my $saw_explicit_dim_after_glyph = 0;
-my $has_visible_input = 0;
-my $unknown_control_after_glyph = 0;
+sub claude_known_empty {
+    my ($raw, $glyph) = @_;
+    return 0 if $glyph ne '❯';
+    my $scan = $raw;
+    my $at_input = 0;
+    my $after_glyph = '';
+    my $dim = 0;
+    my $saw_conceal = 0;
 
-while (length $raw) {
-    if ($raw =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
-        my ($parameters, $final) = ($1, $2);
-        if ($final ne 'm') {
-            $unknown_control_after_glyph ||= $at_input;
+    while (length $scan) {
+        if ($scan =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
+            my ($parameters, $final) = ($1, $2);
+            return 0 if $final ne 'm' || $parameters !~ /\A[0-9:;]*\z/;
+            apply_sgr($parameters, \$dim, \$saw_conceal);
+            next;
+        }
+        # The known Claude empty marker has no OSC or other terminal control.
+        return 0 if $scan =~ s/^\e\][^\e\a]*(?:\a|\e\\)//;
+        return 0 if $scan =~ s/^\e//;
+
+        if (!$at_input && index($scan, $glyph) == 0) {
+            substr($scan, 0, length($glyph), '');
+            $at_input = 1;
             next;
         }
 
-        my $set_dim = apply_sgr($parameters, \$dim);
-        $saw_explicit_dim_after_glyph = 1 if $at_input && $set_dim;
-        next;
+        my $character = substr($scan, 0, 1, '');
+        if (!$at_input) {
+            next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
+            return 0;
+        }
+        $after_glyph .= $character;
     }
 
-    if ($raw =~ s/^\e\][^\e\a]*(?:\a|\e\\)//) {
-        $unknown_control_after_glyph ||= $at_input;
-        next;
-    }
-
-    if ($raw =~ s/^\e//) {
-        $unknown_control_after_glyph ||= $at_input;
-        next;
-    }
-
-    if (!$at_input && index($raw, $glyph) == 0) {
-        substr($raw, 0, length($glyph), '');
-        $at_input = 1;
-        next;
-    }
-
-    my $character = substr($raw, 0, 1, '');
-    if (!$at_input) {
-        # The selected row was visibly anchored at the glyph.  Anything else
-        # here means an escape sequence made that conclusion unreliable.
-        next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
-        exit 2;
-    }
-
-    # tmux pads rows with spaces and Claude's blank composer uses NBSP.
-    next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
-
-    $has_visible_input = 1;
-    exit 1 if !$dim;
+    $after_glyph =~ s/[\r\n]+\z//;
+    # A single NBSP is Claude's captured blank-composer marker.  A normal
+    # space, dim suggestion, or any continuation is ambiguous and refuses.
+    return $at_input && !$saw_conceal && $after_glyph eq "\x{a0}";
 }
 
-exit 1 if !$at_input || $unknown_control_after_glyph;
-exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph, \$dim);
-exit 0 if !$has_visible_input;
-
-# Do not trust inherited styling: a non-empty value is safe only when tmux
-# showed an explicit dim transition after the prompt glyph on this row.
-exit($saw_explicit_dim_after_glyph ? 0 : 1);
+exit 1 if !claude_known_empty($rows[$prompt_index], $glyph);
+exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph);
+exit 0;

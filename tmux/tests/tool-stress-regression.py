@@ -99,12 +99,12 @@ class ToolStress(unittest.TestCase):
 
     def live_manifest(self, rows=None):
         rows = rows or [
-            "fresh-empty\tfresh\t0\t0.159.3",
-            "post-subagent-empty\tpost\t0\t0.159.3",
-            "working-empty\tworking\t0\t0.159.3",
-            "single-line-draft\tsingle\t1\t0.159.3",
-            "multiline-draft\tmultiline\t1\t0.159.3",
-            "home-cursor-draft\thome\t1\t0.159.3",
+            "fresh-empty\tfresh\t0\t0.159.3\tOpenAI Codex (v0.159.3)",
+            "post-subagent-empty\tpost\t0\t0.159.3\tMain [default]",
+            "working-empty\tworking\t0\t0.159.3\tWorking",
+            "single-line-draft\tsingle\t1\t0.159.3\tsingle draft",
+            "multiline-draft\tmultiline\t1\t0.159.3\tsecond draft",
+            "home-cursor-draft\thome\t1\t0.159.3\thome draft",
         ]
         manifest = self.directory / "live-corpus.tsv"
         manifest.write_text("\n".join(rows) + "\n")
@@ -117,12 +117,14 @@ class ToolStress(unittest.TestCase):
             r'for argument in "$@"; do [ "$previous" = -t ] && target=$argument; case "$argument" in display-message|capture-pane) command=$argument ;; esac; previous=$argument; done; '
             r'case "$command:$target" in '
             r'display-message:fresh) printf "%%13:4242:codex:0:2:1:167:51\\n" ;; '
-            r'display-message:post|display-message:working) printf "%%13:4242:codex:0:2:0:167:51\\n" ;; '
+            r'display-message:post) printf "%%13:4242:codex:0:2:0:167:51\\n" ;; '
+            r'display-message:working) printf "%%13:4242:codex:0:2:1:167:51\\n" ;; '
             r'display-message:single) printf "%%13:4242:codex:0:14:0:167:51\\n" ;; '
             r'display-message:multiline) printf "%%13:4242:codex:0:14:1:167:51\\n" ;; '
-            r'display-message:home) printf "%%13:4242:codex:0:2:0:167:51\\n" ;; '
+            r'display-message:home) if [ "${LIVE_CAPTURE_HOME_END:-0}" = 1 ]; then printf "%%13:4242:codex:0:14:0:167:51\\n"; else printf "%%13:4242:codex:0:2:0:167:51\\n"; fi ;; '
             r'capture-pane:fresh) count=0; [ ! -f "$TMPDIR/live-count" ] || count=$(cat "$TMPDIR/live-count"); count=$((count + 1)); printf "%s\\n" "$count" > "$TMPDIR/live-count"; if [ "${LIVE_CAPTURE_UNSTABLE:-0}" = 1 ] && [ "$count" -gt 1 ]; then printf "%b\\n" "\\e[1mOpenAI Codex (v0.159.3)\\e[0m\\n\\e[1m›\\e[0m \\e[2mAsk Codex to do anything\\e[0m\\n  NEW USER DRAFT DURING CAPTURE\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 0% used\\e[39m"; else printf "%b\\n" "\\e[1mOpenAI Codex (v0.159.3)\\e[0m\\n\\e[1m›\\e[0m \\e[2mAsk Codex to do anything\\e[0m\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 0% used\\e[39m"; fi ;; '
-            r'capture-pane:post|capture-pane:working) printf "%b\\n" "\\e[1m›\\e[0m \\e[2mAsk Codex to do anything\\e[0m\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m · Main [default]" ;; '
+            r'capture-pane:post) printf "%b\\n" "\\e[1m›\\e[0m \\e[2mAsk Codex to do anything\\e[0m\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m · Main [default]" ;; '
+            r'capture-pane:working) printf "%b\\n" "Working (1s · esc to interrupt)\\n\\e[1m›\\e[0m \\e[2mAsk Codex to do anything\\e[0m\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m" ;; '
             r'capture-pane:single) printf "%b\\n" "\\e[1m›\\e[0m single draft\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m" ;; '
             r'capture-pane:multiline) printf "%b\\n" "\\e[1m›\\e[0m \\n  second draft\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m" ;; '
             r'capture-pane:home) printf "%b\\n" "\\e[1m›\\e[0m home draft\\n\\n\\e[49m  \\e[38;2;200;169;238mFast off\\e[39m · \\e[38;2;246;226;183mGPT-6.1-Sol low\\e[39m · \\e[38;2;171;223;167m~/lab\\e[39m · \\e[38;2;242;181;144mContext 1% used\\e[39m" ;; '
@@ -143,7 +145,7 @@ class ToolStress(unittest.TestCase):
 
     def test_live_capture_rejects_incomplete_manifest_before_tmux(self):
         marker = self.directory / "called"
-        manifest = self.live_manifest(["fresh-empty\tfresh\t0\t0.159.3"])
+        manifest = self.live_manifest(["fresh-empty\tfresh\t0\t0.159.3\tOpenAI Codex (v0.159.3)"])
         self.executable("tmux", 'touch "$DEFAULT_CALL_MARKER"; exit 0')
         result = subprocess.run(["bash", str(ROOT / "tests/relay-live-capture-regression.sh"), "--manifest", str(manifest)],
                                 env={**self.env, "TMUX": "/private/tmp/tmux-501/ccmsg-lab-private-99999,1,0",
@@ -178,6 +180,33 @@ class ToolStress(unittest.TestCase):
                                      "CODEX_VERSION_BIN": str(version)}, capture_output=True, text=True, timeout=4)
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("home-cursor-draft guard returned 0, expected 1", result.stderr)
+
+    def test_live_capture_rejects_home_case_at_end_of_draft(self):
+        manifest = self.live_manifest()
+        version = self.live_capture_stub()
+        result = subprocess.run(["bash", str(ROOT / "tests/relay-live-capture-regression.sh"), "--manifest", str(manifest)],
+                                env={**self.env, "TMUX": "/private/tmp/tmux-501/ccmsg-lab-private-99999,1,0",
+                                     "CODEX_VERSION_BIN": str(version), "LIVE_CAPTURE_HOME_END": "1"},
+                                capture_output=True, text=True, timeout=4)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("home-cursor-draft must remain at the prompt column", result.stderr)
+
+    def test_live_capture_rejects_missing_required_state_marker(self):
+        rows = [
+            "fresh-empty\tfresh\t0\t0.159.3\tOpenAI Codex (v0.159.3)",
+            "post-subagent-empty\tpost\t0\t0.159.3\tMain [default]",
+            "working-empty\tworking\t0\t0.159.3\tWorking",
+            "single-line-draft\tsingle\t1\t0.159.3\tmissing draft marker",
+            "multiline-draft\tmultiline\t1\t0.159.3\tsecond draft",
+            "home-cursor-draft\thome\t1\t0.159.3\thome draft",
+        ]
+        manifest = self.live_manifest(rows)
+        version = self.live_capture_stub()
+        result = subprocess.run(["bash", str(ROOT / "tests/relay-live-capture-regression.sh"), "--manifest", str(manifest)],
+                                env={**self.env, "TMUX": "/private/tmp/tmux-501/ccmsg-lab-private-99999,1,0",
+                                     "CODEX_VERSION_BIN": str(version)}, capture_output=True, text=True, timeout=4)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("single-line-draft lacks required visible marker", result.stderr)
 
     def test_fixture_runner_refuses_missing_fake_tmux(self):
         source = ROOT / "tools/pane-watch/tests/run"
