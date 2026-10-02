@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: pass verified pane width to the Claude composer boundary guard
-# date: 2026-10-02T04:00:00Z
+# patched: CC_MSG_EXACT=1 sends an unlabelled payload to agentic audit seats only
+# date: 2026-10-02
 set -uo pipefail
 
 fail() { printf 'cc-msg: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -13,13 +13,15 @@ busy() { printf 'REFUSE: another relay is in progress; no target input was sent;
 refuse_draft() { printf 'cc-msg: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
 usage() {
   cat >&2 <<'EOF'
-usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] cc-msg.sh <text>
+usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] [CC_MSG_EXACT=1] cc-msg.sh <text>
 
 CC_MSG_PANE is optional.  When a named window has multiple panes, set it to
 one numeric tmux pane id (for example %46).  The id must still belong to the
 declared CC_MSG_SESSION and CC_MSG_WINDOW; it never bypasses that binding.
 Sender labels come from process ancestry and a fresh pane identity check.
 Unidentified senders use a neutral relay label; CC_MSG_FROM is ignored.
+CC_MSG_EXACT=1 sends the text without the sender label, only to a pane whose
+folder is an agentic audit seat (/private/tmp/review-protocol-*-audit-r*-agentic-*-cli).
 EOF
 }
 
@@ -235,12 +237,31 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
-prepare_payload "$FROM: $msg"
+payload="$FROM: $msg"
+case "${CC_MSG_EXACT:-}" in
+  '') ;;
+  1)
+    if seat_path="$(relay_display "$pane" '#{pane_current_path}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot read target folder for exact delivery to $pane"
+    fi
+    [[ "$seat_path" =~ ^/private/tmp/review-protocol-[A-Za-z0-9._-]+-audit-r[0-9]+-agentic-[A-Za-z0-9._-]+-cli$ ]] || fail "CC_MSG_EXACT=1 is only for agentic audit seats; target folder is not one"
+    case "${msg:0:1}" in
+      '/'|'!'|'#') fail 'exact message starts with "/", "!" or "#", which the receiving CLI would treat as a command; rephrase and resend' ;;
+    esac
+    payload="$msg"
+    ;;
+  *) fail 'CC_MSG_EXACT, when set, must be 1' ;;
+esac
+prepare_payload "$payload"
 require_empty_cc_input
 sleep 0.04
 require_empty_cc_input
 
-if atomic_text "$FROM: $msg"; then
+if atomic_text "$payload"; then
   :
 else
   code=$?
