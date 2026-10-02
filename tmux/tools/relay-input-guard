@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
 # description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: recognize verified Codex status variants and proven empty placeholder rows
-# date: 2026-10-01T23:02:00Z
+# patched: verify Claude footer boundary, dim Try placeholder, and idle cursor cell
+# date: 2026-10-02T04:00:00Z
 use strict;
 use warnings;
 use utf8;
@@ -16,11 +16,12 @@ binmode STDERR, ':encoding(UTF-8)';
 #   0 = the composer is visibly empty with its verified UI placeholder;
 #   1 = a draft or any ambiguous non-empty composer;
 #   2 = the current composer cannot be found.
-my ($glyph, $cursor_x, $cursor_y) = @ARGV;
-exit 2 if @ARGV != 3 || !defined($glyph) || !defined($cursor_x) || !defined($cursor_y);
+my ($glyph, $cursor_x, $cursor_y, $pane_width) = @ARGV;
+exit 2 if (@ARGV != 3 && @ARGV != 4) || !defined($glyph) || !defined($cursor_x) || !defined($cursor_y);
 eval { $glyph = decode('UTF-8', $glyph, FB_CROAK); 1 } or exit 2;
 exit 2 if length($glyph) == 0;
 exit 2 if $cursor_x !~ /\A[0-9]+\z/ || $cursor_y !~ /\A[0-9]+\z/;
+exit 2 if defined($pane_width) && $pane_width !~ /\A[0-9]+\z/;
 
 my @rows = <STDIN>;
 
@@ -177,7 +178,7 @@ sub claude_known_divider {
     return 0 if !row_has_trusted_sgr($raw);
     my $visible = visible_row($raw);
     $visible =~ s/[\r\n]+\z//;
-    return $visible =~ /^\h*─{20,}\h*\z/;
+    return $visible =~ /^\h*─{8,}\h*\z/;
 }
 
 sub codex_plain_footer {
@@ -214,8 +215,22 @@ sub composer_has_safe_tail {
         my $divider = $start + 1;
         # No intervening row is a proven empty Claude state. In particular,
         # a space-only wrapped continuation can be a draft moved Home.
+        # Rows below the closing divider are Claude's status line and mode
+        # footer, never composer input.
         return 0 if $divider > $#$rows_ref || !claude_known_divider($rows_ref->[$divider]);
-        return blank_tail_after_boundary($rows_ref, $divider);
+        return 0 if $divider + 2 > $#$rows_ref;
+        my $divider_visible = visible_row($rows_ref->[$divider]);
+        $divider_visible =~ s/[\r\n]+\z//;
+        return 0 if defined($pane_width) && length($divider_visible) != $pane_width;
+        for my $index ($divider + 1 .. $#$rows_ref) {
+            return 0 if claude_known_divider($rows_ref->[$index]);
+        }
+        my $status = visible_row($rows_ref->[$divider + 1]);
+        my $mode = visible_row($rows_ref->[$divider + 2]);
+        return 0 if $status !~ /^  \S/;
+        return 0 if length($divider_visible) >= 80 && $status !~ /\bv[0-9]+\.[0-9]+\.[0-9]+\s*$/;
+        return 0 if $mode !~ /^  ⏵⏵ bypass/;
+        return 1;
     }
     for my $index ($start + 1 .. $#$rows_ref) {
         my $raw = $rows_ref->[$index];
@@ -348,10 +363,59 @@ sub claude_known_empty {
 
     $after_glyph =~ s/[\r\n]+\z//;
     # A single NBSP is Claude's captured blank-composer marker.  A normal
-    # space, dim suggestion, or any continuation is ambiguous and refuses.
-    return $at_input && !$saw_conceal && $after_glyph eq "\x{a0}";
+    # space or any continuation is ambiguous and refuses.
+    return 0 if !$at_input || $saw_conceal;
+    return 1 if $after_glyph eq "\x{a0}";
+    return $after_glyph eq "\x{a0} " && $raw =~ /\Q$glyph\E\x{a0}\e\[7m \e\[0m\r?\n?\z/;
 }
 
-exit 1 if !claude_known_empty($rows[$prompt_index], $glyph);
+# Claude's idle suggestion renders as ❯ + one spacer + explicitly dim
+# 'Try "…"' text.  Typed input is never dim, and the cursor check above
+# already requires the cursor to sit at the spacer.
+sub claude_known_placeholder {
+    my ($raw, $glyph) = @_;
+    return 0 if $glyph ne '❯';
+    my $scan = $raw;
+    my $at_input = 0;
+    my $dim = 0;
+    my $saw_conceal = 0;
+    my $saw_dim_after_glyph = 0;
+    my $all_visible_text_dim = 1;
+    my $after_glyph = '';
+
+    while (length $scan) {
+        if ($scan =~ s/^\e\[([0-?]*[ -\/]*)([@-~])//) {
+            my ($parameters, $final) = ($1, $2);
+            return 0 if $final ne 'm' || $parameters !~ /\A[0-9:;]*\z/;
+            my $set_dim = apply_sgr($parameters, \$dim, \$saw_conceal);
+            $saw_dim_after_glyph ||= $at_input && $set_dim;
+            next;
+        }
+        return 0 if $scan =~ s/^\e\][^\e\a]*(?:\a|\e\\)//;
+        return 0 if $scan =~ s/^\e//;
+
+        if (!$at_input && index($scan, $glyph) == 0) {
+            substr($scan, 0, length($glyph), '');
+            $at_input = 1;
+            next;
+        }
+
+        my $character = substr($scan, 0, 1, '');
+        if (!$at_input) {
+            next if $character eq ' ' || $character eq "\t" || $character eq "\x{a0}";
+            return 0;
+        }
+        $after_glyph .= $character;
+        if ($character ne ' ' && $character ne "\t" && $character ne "\x{a0}" && $character ne "\r" && $character ne "\n") {
+            $all_visible_text_dim &&= $dim;
+        }
+    }
+
+    return 0 if !$at_input || !$saw_dim_after_glyph || $saw_conceal || !$all_visible_text_dim;
+    $after_glyph =~ s/[\r\n]+\z//;
+    return $after_glyph =~ /\A[ \x{a0}]Try "\S[^"\r\n]*"\z/;
+}
+
+exit 1 if !claude_known_empty($rows[$prompt_index], $glyph) && !claude_known_placeholder($rows[$prompt_index], $glyph);
 exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph);
 exit 0;

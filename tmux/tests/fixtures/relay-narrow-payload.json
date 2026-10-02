@@ -1,0 +1,12 @@
+{
+  "source": "/fixtures/deepseek-narrow19-payload.ansi",
+  "capture_file": "deepseek-narrow19-payload.ansi",
+  "meta_file": "deepseek-narrow19-payload.meta",
+  "capture_sha256": "ca351eec8ea51e130cb9d217d4d4dede09ea97cd145aa380141af00a82acc719",
+  "meta_sha256": "996756de1fb864a5a35798da6464ced8b2a1c3ed1f9bba923e5ea0ae95b7b7de",
+  "payload": "relay: RT19",
+  "cursor_x": 13,
+  "cursor_y": 46,
+  "pane_width": 19,
+  "sanitized": true
+}

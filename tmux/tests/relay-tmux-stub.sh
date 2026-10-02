@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-tmux-stub.sh
 # description: Emulate relay routing, bracketed payload delivery, and composer captures.
-# patched: model structured footers and receiver process identity with landed text verification
-# date: 2026-10-01
+# patched: render full-width Claude dividers for payload verification
+# date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
 : "${RELAY_TEST_CAPTURE:?}"
@@ -23,7 +23,8 @@ case "${1:-}" in
     if [ -s "$RELAY_TEST_LOG.payload" ]; then
       payload="$(cat "$RELAY_TEST_LOG.payload")"
       if [[ "$RELAY_TEST_PANES" = *claude* ]]; then
-        printf '────────────────────\n❯ %s\n────────────────────\n' "$payload"
+        divider=$(printf '─%.0s' {1..192})
+        printf '%s\n❯ %s\n%s\n' "$divider" "$payload" "$divider"
       else
         printf '› %s\n\033[49m  Fast off · test · Context 0%% used\n' "$payload"
       fi

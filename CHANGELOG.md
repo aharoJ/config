@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-01 — Restore Claude relay delivery after false draft refusals
+
+Live red teaming found a P0 in an intermediate candidate: a divider-shaped line inside a real multiline DeepSeek draft fooled the guard and `cc-msg.sh` pasted into the draft before stopping with exit 4. The exact pre-paste capture is a must-refuse fixture. The guard now rejects a later divider and requires the observed Claude status and permissions mode rows immediately after the first divider, with the version checked when the full status fits. The same staged live attack then exited 5 without changing the pane; idle delivery still exited 0.
+
+Narrow live panes exposed two availability edges: truncated Claude status rows made empty 40- and 19-column panes refuse, and the 19-column payload verifier rejected a correctly pasted short message because it required a 20-character divider. The input guard now compares the divider with the verified pane width, and the payload verifier uses that width too. Claude capacity reserves one extra cursor cell so a right-edge message refuses before paste.
+
 ## 2026-10-01 — Relays survive Codex UI drift and are red-teamed before landing
 
 A stress run hardened the relay tools in 27 commits (`d6d24bb`..`a3e40ed`), each pairing one reproduced finding with one regression test.

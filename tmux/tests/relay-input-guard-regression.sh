@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: use only provenance-verified Codex captures and Home-moved draft refusal
-# date: 2026-10-01T23:02:00Z
+# patched: enforce real Claude must-accept captures and adversarial draft refusal
+# date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,7 +17,11 @@ fail() { printf 'relay input guard regression: %s\n' "$1" >&2; exit 1; }
 expect_guard() {
   local expected=$1 glyph=$2 name=$3 capture=$4 cursor_x=$5 cursor_y=$6 code
   set +e
-  printf '%s\n' "$capture" | "$guard" "$glyph" "$cursor_x" "$cursor_y" >/dev/null
+  if [ "$#" = 7 ]; then
+    printf '%s\n' "$capture" | "$guard" "$glyph" "$cursor_x" "$cursor_y" "$7" >/dev/null
+  else
+    printf '%s\n' "$capture" | "$guard" "$glyph" "$cursor_x" "$cursor_y" >/dev/null
+  fi
   code=$?
   set -e
   [ "$code" = "$expected" ] || fail "$name returned $code, expected $expected"
@@ -77,9 +81,15 @@ codex_multiline_draft=$'\e[1m›\e[0m\e[48;2;66;66;79m \n  real user draft\n\e[4
 codex_footer_lookalike_draft=$'› \n\n  Fast off · model · ~/repo · Context 0% used\n  REAL USER DRAFT\n\e[49m  Fast off · model · ~/repo · Context 0% used'
 codex_colored_footer_lookalike_draft=$'› \n\n  \e[38;5;183mFast off · model · Context 0% used\n  REAL USER DRAFT\n\e[49m  Fast off · model · Context 0% used'
 codex_choice=$'\e[1m\e[38;2;0;0;46m\e[48;2;99;168;248m› 1. Trust and continue'
-cc_empty=$'\e[39m❯\302\240\n\e[38;5;244m────────────────────'
-cc_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util logging.py that…"\e[0m\n\e[38;5;244m────────────────────'
+cc_footer=$'\n\e[39m  \e[1m\e[38;5;246mOpus 5.5\e[0m\e[90m  |  v2.1.287\n  \e[38;5;211m⏵⏵ bypass permissions on\e[39m'
+cc_divider=$(printf '─%.0s' {1..192})
+cc_empty=$'\e[39m❯\302\240\n\e[38;5;244m'"$cc_divider""$cc_footer"
+cc_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util logging.py that…"\e[0m\n\e[38;5;244m'"$cc_divider""$cc_footer"
 cc_wrapped_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util\n\e[48;5;237m  logging.py that…"\e[0m\n\e[38;5;244m────────────────────'
+cc_empty_footer=$'\e[39m❯\302\240\n\e[38;5;244m────────────────────'"$cc_footer"
+cc_placeholder_footer=$'\e[39m❯ \e[2mTry\e[0m \e[2m"create\e[0m \e[2mlogging.py\e[0m \e[2mthat..."\e[0m\n\e[38;5;244m────────────────────'"$cc_footer"
+cc_draft_footer=$'\e[39m❯ hello\n\e[38;5;244m────────────────────'"$cc_footer"
+cc_dim_non_placeholder=$'❯ \e[2mTry\e[0m\n────────────────────'
 cc_draft=$'\e[38;5;239m\e[48;5;237m❯ \e[38;5;231mreal user draft\e[39m'
 cc_grey_draft=$'\e[38;5;239m\e[48;5;237m❯ \e[38;5;246mreal user draft\e[39m'
 cc_multiline_draft=$'\e[39m❯\302\240\n\e[48;5;237m  real user draft\n\e[38;5;244m────────────────────'
@@ -107,7 +117,18 @@ expect_guard 1 '›' 'NO_COLOR unverified Codex suggestion' "$codex_no_color_sug
 expect_guard 1 '›' '256-colour unverified Codex suggestion' "$codex_256_suggestion" 2 0
 expect_guard 1 '›' 'TERM=dumb Codex suggestion without a trustworthy footer style' "$codex_dumb_suggestion" 2 0
 expect_guard 0 '❯' 'empty Claude composer with NBSP' "$cc_empty" 2 0
-expect_guard 1 '❯' 'unverified dynamic Claude suggestion' "$cc_placeholder" 2 0
+expect_guard 0 '❯' 'Claude full-width closing divider' "$cc_empty" 2 0 192
+expect_guard 1 '❯' 'Claude divider mismatched to pane width' "$cc_empty" 2 0 191
+expect_guard 0 '❯' 'Claude idle reverse-video cursor cell' $'❯\302\240\e[7m \e[0m\n────────────────────'"$cc_footer" 2 0
+expect_guard 1 '❯' 'Claude reversed typed space without NBSP' $'❯ \e[7m \e[0m\n────────────────────' 2 0
+expect_guard 0 '❯' 'dim Claude Try suggestion' "$cc_placeholder" 2 0
+expect_guard 0 '❯' 'empty Claude composer above status and mode footer' "$cc_empty_footer" 2 0
+expect_guard 0 '❯' 'Claude Try suggestion above status and mode footer' "$cc_placeholder_footer" 2 0
+expect_guard 1 '❯' 'typed Claude draft above footer' "$cc_draft_footer" 8 0
+expect_guard 1 '❯' 'Home-moved typed Claude draft above footer' "$cc_draft_footer" 2 0
+expect_guard 1 '❯' 'dim non-placeholder Claude text' "$cc_dim_non_placeholder" 2 0
+expect_guard 1 '❯' 'dim Claude placeholder with trailing draft' $'❯ \e[2mTry "create"\e[0m typed\n────────────────────' 2 0
+expect_guard 1 '❯' 'dim Claude placeholder with extra quoted text' $'❯ \e[2mTry "create" extra"\e[0m\n────────────────────' 2 0
 expect_guard 1 '❯' 'unverified wrapped Claude suggestion' "$cc_wrapped_placeholder" 2 0
 expect_guard 1 '›' 'typed Codex draft' "$codex_draft" 3 0
 expect_guard 1 '›' 'RGB-background Codex draft' "$codex_rgb_draft" 3 0
@@ -198,20 +219,24 @@ expect_relay 1 'cc-pane-outside-window' "$cc_empty" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
 
-python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" "$root/tests/fixtures/relay-codex-status-drift.json" "$root/tests/fixtures/relay-codex-home-drafts.json" <<'PY'
+python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" "$root/tests/fixtures/relay-codex-status-drift.json" "$root/tests/fixtures/relay-codex-home-drafts.json" "$root/tests/fixtures/relay-must-accept.json" "$root/tests/fixtures/relay-must-refuse.json" "$root/tests/fixtures/relay-narrow-payload.json" <<'PY'
 import json
+import hashlib
 import pathlib
 import re
 import subprocess
 import sys
 import tempfile
 
-guard, payload_guard, main_fixture, live_fixture, ambiguous_fixture, status_fixture, home_fixture = sys.argv[1:]
+guard, payload_guard, main_fixture, live_fixture, ambiguous_fixture, status_fixture, home_fixture, claude_fixture, refuse_fixture, narrow_fixture = sys.argv[1:]
 main_cases = json.loads(pathlib.Path(main_fixture).read_text())["cases"]
 live_cases = json.loads(pathlib.Path(live_fixture).read_text())["cases"]
 ambiguous_cases = json.loads(pathlib.Path(ambiguous_fixture).read_text())["cases"]
 status_cases = json.loads(pathlib.Path(status_fixture).read_text())["cases"]
 home_cases = json.loads(pathlib.Path(home_fixture).read_text())["cases"]
+claude_cases = json.loads(pathlib.Path(claude_fixture).read_text())["cases"]
+refuse_cases = json.loads(pathlib.Path(refuse_fixture).read_text())["cases"]
+narrow_case = json.loads(pathlib.Path(narrow_fixture).read_text())
 scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-captured-159-"))
 payload_file = scratch / "payload"
 checks = 0
@@ -234,6 +259,40 @@ def check_payload(case, expected, capture=None, payload=None, cursor_x=None):
     checks += 1
 
 try:
+    capture = (pathlib.Path(narrow_fixture).parent / narrow_case["capture_file"]).read_bytes()
+    meta = (pathlib.Path(narrow_fixture).parent / narrow_case["meta_file"]).read_bytes()
+    assert hashlib.sha256(capture).hexdigest() == narrow_case["capture_sha256"]
+    assert hashlib.sha256(meta).hexdigest() == narrow_case["meta_sha256"]
+    payload_file.write_text(narrow_case["payload"])
+    result = subprocess.run([payload_guard, "compare", "❯", str(narrow_case["cursor_x"]), str(narrow_case["cursor_y"]), str(payload_file), str(narrow_case["pane_width"])], input=capture, capture_output=True)
+    assert result.returncode == 0, ("deepseek narrow payload", result.returncode)
+    checks += 1
+    for case in refuse_cases:
+        base = pathlib.Path(refuse_fixture).parent
+        capture = (base / case["capture_file"]).read_bytes()
+        meta = (base / case["meta_file"]).read_bytes()
+        assert hashlib.sha256(capture).hexdigest() == case["capture_sha256"]
+        assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"]
+        result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
+        assert result.returncode == 1, (case["name"], result.returncode)
+        checks += 1
+    for case in claude_cases:
+        base = pathlib.Path(claude_fixture).parent
+        capture = (base / case["capture_file"]).read_bytes()
+        meta = (base / case["meta_file"]).read_bytes()
+        assert hashlib.sha256(capture).hexdigest() == case["capture_sha256"]
+        assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"]
+        assert pathlib.Path(case["source"]).is_absolute()
+        assert (f'cursor={case["cursor_x"]},{case["cursor_y"]}'.encode() in meta or
+                meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()])
+        result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
+        assert result.returncode == case["input_exit"], (case["name"], result.returncode)
+        checks += 1
+        rows = capture.decode().splitlines()
+        rows[case["cursor_y"]] = rows[case["cursor_y"]].replace(case["glyph"], case["glyph"] + " drafted ", 1)
+        result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=("\n".join(rows) + "\n").encode(), capture_output=True)
+        assert result.returncode == 1, (case["name"], "Home-moved draft", result.returncode)
+        checks += 1
     for case in main_cases:
         check_guard(case, case["input_exit"])
         capture = case["capture"]

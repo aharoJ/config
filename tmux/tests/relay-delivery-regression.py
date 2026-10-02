@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-delivery-regression.py
 # description: Exercise public relays against real throwaway tmux terminals and hostile receivers.
-# patched: cover verified Codex status variants and redraw-tolerant delivery retries
-# date: 2026-10-01T23:18:00Z
+# patched: render Claude's required status and mode footer in delivery fixtures
+# date: 2026-10-02T04:00:00Z
 import argparse
 import codecs
 import json
@@ -78,6 +78,8 @@ def fixture(directory, glyph, mode):
             output += f"\x1b[{top + 1 + index};1H" + (first if index == 0 else "  ") + line
         if glyph == "❯":
             output += f"\x1b[{top + len(lines) + 1};1H" + "─" * width
+            output += f"\x1b[{top + len(lines) + 2};1H  Opus 5.5 | v2.1.287"
+            output += f"\x1b[{top + len(lines) + 3};1H  ⏵⏵ bypass permissions on"
         elif modern:
             if mode == "codex159-no-context":
                 footer = ("\x1b[49m  \x1b[38;2;200;169;238mFast off\x1b[38;2;135;140;164m · "

@@ -1,0 +1,51 @@
+[48;5;237m  [38;5;231mreply "ack RT-DS[39m
+  [38;5;231m-ROUND2-IDLE" [39m
+  [38;5;231mand take no [39m
+  [38;5;231maction[39m
+
+[38;5;231m[49m⏺[39m ack
+  RT-DS-ROUND2-IDLE
+
+[38;5;246m✻[39m [38;5;246mCooked[39m [38;5;246mfor[39m [38;5;246m1s[39m
+
+[38;5;246m※[39m [1m[38;5;246mrecap:[0m [3m[38;5;246mYou've[0m
+  [3m[38;5;246mbeen[0m [3m[38;5;246mrunning[0m
+  [3m[38;5;246mrelay[0m [3m[38;5;246midle[0m
+  [3m[38;5;246mprobes;[0m [3m[38;5;246mI[0m [3m[38;5;246macked[0m
+  [3m[38;5;246mfour[0m [3m[38;5;246min[0m [3m[38;5;246ma[0m [3m[38;5;246mrow[0m
+  [3m[38;5;246m(DEEPSEEK-READY,[0m
+  [3m[38;5;246mRT-DS-IDLE,[0m [3m[38;5;246mRT-DS
+[0m  [3m[38;5;246m-POSTFIX-IDLE,[0m [3m[38;5;246mRT
+[0m  [3m[38;5;246m-DS-ROUND2-IDLE).
+[0m  [3m[38;5;246m No[0m [3m[38;5;246maction[0m
+  [3m[38;5;246mpending.[0m [3m[38;5;246mNext:[0m
+  [3m[38;5;246msend[0m [3m[38;5;246mthe[0m [3m[38;5;246mnext[0m
+  [3m[38;5;246mrelay[0m [3m[38;5;246mprompt[0m
+  [3m[38;5;246mwhenever[0m [3m[38;5;246mready.[0m
+  [3m[38;5;246m(disable[0m [3m[38;5;246mrecaps[0m
+  [3m[38;5;246min[0m [3m[38;5;246m/config)[0m
+
+[38;5;239m[48;5;237m❯ [38;5;231mrelay: Final [39m
+  [38;5;231mrelay smoke: [39m
+  [38;5;231mreply [39m
+  [38;5;231mDEEPSEEK-FINAL [39m
+  [38;5;231mand take no [39m
+  [38;5;231maction.[39m
+
+[38;5;231m[49m⏺[39m DEEPSEEK-FINAL
+
+[38;5;246m✻[39m [38;5;246mCooked[39m [38;5;246mfor[39m [38;5;246m1s[39m
+
+[38;5;239m[48;5;237m❯ [38;5;231mrelay: RT40 [39m
+  [38;5;231mreply ack[39m
+
+[38;5;231m[49m⏺[39m ack RT40
+
+[38;5;246m✻[39m [38;5;246mWorked[39m [38;5;246mfor[39m [38;5;246m1s[39m
+
+[38;5;244m───────────────────
+[39m❯ relay: RT19[7m [0m
+[38;5;244m───────────────────
+[39m  [1m[38;5;246mdeepseek-flash…[0m
+  [38;5;211m⏵⏵ bypass [39m
+

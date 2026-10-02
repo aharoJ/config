@@ -1,0 +1,33 @@
+{
+  "description": "Real staged multiline draft in config:deepseek that caused P0 paste into draft before guard fix.",
+  "cases": [
+    {
+      "name": "deepseek-divider-shaped-multiline-draft",
+      "source": "/fixtures/deepseek-spoof-draft.ansi",
+      "capture_file": "deepseek-spoof-draft.ansi",
+      "meta_file": "deepseek-spoof-draft.meta",
+      "capture_sha256": "0382b880693096db8206d4819d899bbe67129ee7bbd9b8bfefebe662eec9e0d7",
+      "meta_sha256": "f142e0f5e981b9573400538eb47c05854ae328f3fedaadf6f135d89b758b1cd4",
+      "glyph": "\u276f",
+      "cursor_x": 2,
+      "cursor_y": 23,
+      "input_exit": 1,
+      "pane_width": 167,
+      "sanitized": true
+    },
+    {
+      "name": "fable-dim-typed-draft",
+      "source": "/fixtures/fable-dim-draft.ansi",
+      "capture_file": "fable-dim-draft.ansi",
+      "meta_file": "fable-dim-draft.meta",
+      "capture_sha256": "80ea8d9598863e71909b65b2b0861bae5145794a64794240156079d237449f05",
+      "meta_sha256": "a3e4f0e05ff5790245c8c4c3186e6ae0c941099194eee1239b142edf727c8128",
+      "glyph": "\u276f",
+      "cursor_x": 2,
+      "cursor_y": 29,
+      "input_exit": 1,
+      "pane_width": 167,
+      "sanitized": true
+    }
+  ]
+}

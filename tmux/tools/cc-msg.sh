@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: trash owned relay scratch and locks while preserving delivery guards
-# date: 2026-10-01T19:06:04Z
+# patched: pass verified pane width to the Claude composer boundary guard
+# date: 2026-10-02T04:00:00Z
 set -uo pipefail
 
 fail() { printf 'cc-msg: %s\n' "$1" >&2; exit 1; }
@@ -118,7 +118,7 @@ require_empty_cc_input() {
     fail "cannot recheck target input state for $pane"
   fi
   [ "$state_after" = "$state" ] || refuse_draft "$pane"
-  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y"
+  printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '❯' "$cursor_x" "$cursor_y" "$relay_verify_width"
   code=$?
   case "$code" in
     0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;

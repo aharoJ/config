@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: verify the current composer payload safely across transient Codex redraws
-# date: 2026-10-01T23:02:00Z
+# patched: reserve a Claude cursor cell before literal payload delivery
+# date: 2026-10-02T04:00:00Z
 
 relay_payload_file=
 relay_payload_dir=
@@ -69,7 +69,7 @@ prepare_payload() {
   bytes="$(LC_ALL=C wc -c < "$relay_payload_file" | tr -d ' ')"
   [ "$width" -gt 4 ] && [ "$height" -gt 6 ] || fail 'target pane is too small to verify delivery'
   [ "$bytes" -le "$(((width - 2) * (height - 6)))" ] || fail 'payload exceeds visible verification capacity; send a short file reference instead'
-  "$relay_payload_guard" capacity "$relay_payload_file" "$width" || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
+  "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph" || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
 }
 
 relay_atomic() {

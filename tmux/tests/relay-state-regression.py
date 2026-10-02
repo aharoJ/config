@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-state-regression.py
 # description: Attack relay process, cursor, draft, and signal races on private tmux fixtures.
-# patched: reproduce changed receivers and interrupted delivery without contacting agent panes
-# date: 2026-10-01T23:02:00Z
+# patched: render Claude's required status and mode footer in race fixtures
+# date: 2026-10-02T04:00:00Z
 import argparse
 import codecs
 import importlib.util
@@ -37,7 +37,7 @@ def fixture(directory, glyph, mode):
     def draw():
         spacer = " " if value else "\u00a0"
         if glyph == "❯":
-            screen = "─" * width + "\r\n❯" + spacer + value + "\r\n" + "─" * width
+            screen = "─" * width + "\r\n❯" + spacer + value + "\r\n" + "─" * width + "\r\n  Opus 5.5 | v2.1.287\r\n  ⏵⏵ bypass permissions on"
             row = 2
         else:
             composer = "› " + value if value else "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m"

@@ -1,21 +1,48 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-live-capture-regression.sh
-# description: Verify a stable, current private Codex composer-state corpus.
-# patched: require bracketing snapshots and a Home-moved draft state
-# date: 2026-10-01T23:02:00Z
+# description: Verify proven empty composer captures and a stable current private Codex corpus.
+# patched: require fresh and post-turn must-accept captures before relay guard changes land
+# date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
 fail() { printf 'relay live capture regression: %s\n' "$1" >&2; exit 1; }
 has_ansi() { printf '%s\n' "$1" | perl -ne '$found ||= /\e\[/; END { exit($found ? 0 : 1) }'; }
 strip_ansi() { perl -pe 's/\e\[[0-?]*[ -\/]*[@-~]//g; s/\e\][^\e\a]*(?:\a|\e\\)//g'; }
 
-[ "$#" = 2 ] && [ "$1" = --manifest ] || fail 'usage: relay-live-capture-regression.sh --manifest <tsv>'
+[ "$#" = 2 ] && { [ "$1" = --manifest ] || [ "$1" = --fixtures ]; } || fail 'usage: relay-live-capture-regression.sh --fixtures <json> | --manifest <tsv>'
 manifest=$2
 [ -f "$manifest" ] && [ -r "$manifest" ] || fail 'manifest is not a readable regular file'
 
 root="$(cd -P "$(dirname "$0")/.." && pwd)"
 guard="$root/tools/relay-input-guard"
 [ -x "$guard" ] || fail 'relay input guard is not executable'
+if [ "$1" = --fixtures ]; then
+  python3 - "$guard" "$manifest" <<'PY'
+import hashlib
+import json
+import pathlib
+import subprocess
+import sys
+
+guard, manifest = sys.argv[1:]
+path = pathlib.Path(manifest)
+cases = json.loads(path.read_text())["cases"]
+required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19"}
+assert {case["name"] for case in cases} == required
+for case in cases:
+    capture = (path.parent / case["capture_file"]).read_bytes()
+    meta = (path.parent / case["meta_file"]).read_bytes()
+    assert hashlib.sha256(capture).hexdigest() == case["capture_sha256"], case["name"]
+    assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"], case["name"]
+    assert pathlib.Path(case["source"]).is_absolute(), case["name"]
+    assert (f'cursor={case["cursor_x"]},{case["cursor_y"]}'.encode() in meta or
+            meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()]), case["name"]
+    result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
+    assert result.returncode == 0, (case["name"], result.returncode)
+print(f"relay must-accept capture regression: {len(cases)} proven idle states, PASS")
+PY
+  exit $?
+fi
 tmux_context="$(printenv TMUX 2>/dev/null || true)"
 socket="$(printf '%s\n' "$tmux_context" | sed 's/,.*//')"
 server="$(basename "$socket")"

@@ -1,0 +1,51 @@
+  - [1mxxxxxx[0m [1mxxxx:[0m [38;5;153mxxxxxx[39m [38;5;153m-x[39m [38;5;153mxxx[39m xxxxx [38;5;153mxxxxxxxx…xxxxxxx[39m, xxxxx xxxxxxx xxx xxxxxxxx xxxx.
+  - [1mxxxxxx[0m [1mxxxxxxx[0m [1mxxx[0m [1mxxxx:[0m [38;5;153mxxx-xxxxx[39m [38;5;153mxxxx[39m xxxxxxxx xxx xxxxxxxx xxx. xxx x xxxx-xxxx xxxxx xxx xxxx-xxxxxxxxx xx xxxx. x xxxxxxx xxxx xx xxxxxxxxx [38;5;153mxxx[39m [38;5;153mxxxx-xxxxxx[39m
+    [38;5;153m--xx-xxxxxxx[39m xx xxxxxx xxxxxx xxxx xxx xxxxxx xxxxxxx [38;5;153mxx-xxxx[39m xxxx xxx: xxxxxxx.xxxx [38;5;153mxxxxxxxx…[39m, xxxxxxxxxx.xxxxxx.xxx [38;5;153mxxxxxxxx…[39m, xxxxxx.xxxx.xxx [38;5;153mxxxxxxxx…[39m,
+    xxxxx-xxxxxxxxx.xx [38;5;153mxxxxxxxx…[39m, xxxxxxx-xxxx.xxxx [38;5;153mxxxxxxxx…[39m, [38;5;153m.xxxxxxxxx[39m [38;5;153mxxxxxxxx…[39m, [38;5;153mxxxxxxxx/.xxxxxxxxx[39m [38;5;153mxxxxxxxx…[39m.
+  - [1mxx[0m [1mxxxxxx[0m [1mxx[0m [1mxxxxxxxxxx[0m [1mxxxx[0m [1mxxxxxxx:
+[0m    - [38;5;153mxxxxxxxx/xxxxxxx.xxxx:xx[39m xxxx [38;5;153mxxx[39m [38;5;153mxxx[39m [38;5;153mxxxxx[39m [38;5;153m&&[39m [38;5;153mxxxxxxxxxx[39m [38;5;153mxxxxxxx[39m [38;5;153mxxxxxxxx[39m [38;5;153m&&[39m [38;5;153mxxxxxxxxxx[39m [38;5;153mxxxx[39m.
+    - [38;5;153mxxxxxxxx/xxxxxxxxxx.xxxxxx.xxx:xx[39m xxxxxx xxx xxxxxx xxxx [38;5;153mxxx[39m [38;5;153mxxx[39m [38;5;153mxxxxxxx[39m [38;5;153m--[39m [38;5;153m--xxxx[39m [38;5;153mxxx.x.x.x[39m [38;5;153m--xxxx[39m [38;5;153m${xxxx}[39m [38;5;153m--xxxxxx-xxxx[39m.
+    - xxxxxxx xxxxx xx–xx xxx xxx xxxx xxxx-xxxxxx xxxxxxx xxxxxxx.
+    - xxxx xx xxxxx xxxxx xx xxxxxx. xxx xxxxxxxx'x xxxx [38;5;153mxxxxxxxxxxxxxxxx[39m xxxxxxx xxx [38;5;153mxxxxxxx x.xx.x[39m xxx xxx xxxxxxxx [38;5;153mxxxxxxxx x.x.x[39m.
+  - [1mxx xxx xxxxxxxxxx:[0m xxx xxxx xxxxxxxxxxxx xx xxx xxxxxxxx ([38;5;153mxxxxx ^x.x.x[39m, [38;5;153m@xxxxxxxxxx/xxxx ^x.xx.x[39m) xxx xxx xxxxxxx xxxxx [38;5;153mxxxxxxx.xxxx[39m. xxx xxx xxxxxxxx xxxxxxx
+    xxxxxxx xxxx xxxx xxxxxxxxxx xxxxxxxxxx xxxxx.
+  - [1mxxxx xxxxx xxx xxxxxx xxxxxxx:[0m xxx xxxxxxxxx [38;5;153mxxxxxxx.xxxx[39m xxxxxxxx xx xxx xxxx xx [38;5;153m>=xx.xx.x[39m ([38;5;153mxxxxxx x.xx.x[39m, xxxxxx xx xx [38;5;153mxxxxxxx[39m), xxxxx xxxxxx xxx xxxx xxxxx.
+    xxxxx xxxxx xxxxx xxxxxx xx.xx.x. xxx xxxx xxxxxxxxx xx xxx xxxxxxxx-xxxxx xxxxxxxx [38;5;153m@xxx/xxxxx-xxxxx-xxxx[39m ([38;5;153m^xx.x.x[39m), xxxxx xxx xxxxx xx xxxxx xxxxxxxxx. xx xxxxx
+    xxx xx xxxxx xxxxx xxxx xxxx xxx xxxxx xxxx xxxxxxxx.
+  - [1mxxxxx-xxxxxxxx xxxxxxxx:[0m xxxxx-xxx xxx/xxxx xxxxxx xxxxxxxx xxx xxxxxxx xxx xxxxxxxx, [38;5;153m@xxxxxxx/xxxxxxxx-xxxxxxx[39m, xxxxxxx, xxxxxxxxxxxx, xxxxxxx xxx xxxxx. x
+    xxxxxxxx xxxxxxxxx xx xxx xxxxxxxx xxxxxxxxx xxxx xxx xxxxxx [38;5;153mxxx xx[39m xx xxxxxxx.
+  - [1mxxxx xxxxxxxxxx:[0m
+    - xxxxxxxxxx xx xxxxxxxx xxxxxxxx ([38;5;153mxxxxxxxxxx.xxxxxx.xxx:xx[39m).
+    - xxx xxxxxxxxx-xxxxxxx xxxxx [38;5;153mxxxxxx, xxxxx-xxxxxx, xxxxx-xxxxxx-xxxxxx[39m xxxxx x xx xx [38;5;153mxxxxxx.xxxx.xxx:xx[39m.
+    - xxx xxxxx xxxxx xxxxxx xxxxxxxxxx xx xxx xxxxxxx, xxxxxxxxxx xxxxxxx xxx xxxxx xxxx, xxxxx xxx xxxxxxxxxxx xxxxxxxx, xxx xxx xxxx xxxx.
+    - xxxx xxxx xxx xxxx xxx.x.x.x xxx xxx xxxx xx xxx xxxxxx xxx xxx xxxxxxx.
+  - [1mxxxxxx xxxxx:[0m [38;5;153mxxxx/[39m, [38;5;153m.xxxxx/[39m, [38;5;153mxxxx-xxxxxxx/[39m xxx [38;5;153mxxxxxxxxxx-xxxxxx/[39m xxx xxxxxxx. x xxxxx xx xxxxxxxx xxxxxxxxx xxxxxx xxxx xxxxxxx xxxx.
+
+  [1mxxxxxxxxx (xxx xxx xx x xxxx xxxxxxx)[0m
+
+  - [1mxxxxx xxxxxxxxx:[0m [38;5;153mxxxxxxxxxxxxxxxxxxx: xxxxx[39m ([38;5;153mxxxxxxxxxx.xxxxxx.xxx:xx[39m) xxxxx xxxxxxxxxx xxxxxx xx xxxxx xxxxxxx x xxxxxxxx xxxx xxxxxxx xxxxxxx xxxx xx xxx.x.x.x.
+    x xxxx xxxxxxxxxx x xxxxxxxx xxxx xx xxx xxxx, xx xxxx xxxxxxx [38;5;153m/[39m xxxx x xxx xx xxxxxx. xx xxxx xxxx xxx xxx xxxxx xxx xxxxxxx xx xxxxxxx xxx xxxxx xxxxxx, xx xx
+    xxxxx xxxxxx. xxxx xxxxx xx x xxxxxxxxxx xxxxxxxx xxxxx xxxxxxxxxxx, xx x xxxxxxx xx.
+  - [1mxxxxx [38;5;153mxxxxxxxxx_xxxx_xxxx[39m:[0m [38;5;153m??[39m xxxx xxx xxxxxxx xx xxxxx xxxxxx, xx xx xxxxx xxxxx xxxxxxxx x xxxxxxxxx xxx. xxxx xxx xxxx xxxx xxxx xxxxxxxx xxxxx xxx xxxxx
+    xxxxxx, xx x xxxxxxx xx.
+  - [1m[38;5;153m--xxxxxx-xxxx[39m:[0m xxxxx x.x.x xxxxxxx xx [38;5;153mxx-x-xxxxxx[39m xxx [38;5;153mxxxx-xxxx[39m (xxxxxxxx), xxxxx xxxxx x xxxx xx xxxxxx xxxxxxxxx xxxxxxxxx. xxxxxxx, x xxxxx xxx xxxxxx xxxx xxx
+    xxxxxx xxxx xxx xxxx xxxxxxxx xxxx: xxxxxxx xx xxxxx xxx xxxxxx xx xxx xxxxxxxxxx xxx xxxxxxx xxxxxxxxxx'x xxxxxxx-xxxxx xxxxxxx xxxx xxxxxxx xx. x xx xxxxxxx xx
+    xxx xxxx'x xxx xx xxxx xxx.xx.x.
+
+  [1mxxxxxx[0m
+
+  - x xxx xx xxxxxxx, xxxxx, xxxxxxx xx xxxxxxxxxx xxxx. xxx xxxxxxxxxxxx xxxx xx xxxxxx [38;5;153mxxxx_xxxxxxx[39m, xxx xxxxxxxxxx xxxxxxxx xxx xxxxxxxxxx.
+  - xxx xxxxxxxx xxx xxxxxxxx xx xxxxxx xxxx xxx xxxxxxxx xxxxxxxx xxx xxxx xxxxxx xxx xx [38;5;153mxxxxx/[39m, x xxxxxxxxx xx xx xxxxxxx xxxxxx.
+  - x xxxxxxx xx xxxxxxxxxx xxxxxx xxx xxxxx xx xxxxxxxx.
+
+  xxxxxxx xxxx: xx xxxxxxxx xxxxxxx / xxxx-xxxx.
+
+[38;5;246m✻[39m [38;5;246mCooked for 3m 34s · done 7:46 PM[39m
+
+[38;5;244m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m❯ 
+[38;5;244m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m  [1m[38;5;246mOpus 5.5[0m[90m  |  context[38;5;246m  75.8k / [90m1.0M[38;5;246m  [32m8%  ⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀[90m  |  cache[38;5;246m [32m97%[90m  |  session[38;5;246m 79.2k[90m  |  effort[38;5;246m [36mhigh[90m  |  v2.1.287[39m
+  [38;5;211m⏵⏵ bypass permissions on[38;5;246m (shift+tab[39m [38;5;246mto cycle) · ← 1 agent[39m
+
+

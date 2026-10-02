@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-fuzz-regression.py
 # description: Seeded hostile payload, composer, footer, and ancestry properties.
-# patched: exercise current Codex footer variants and proven-placeholder boundaries
-# date: 2026-10-01T23:02:00Z
+# patched: require Claude status and mode footer for proven empty captures
+# date: 2026-10-02T04:00:00Z
 import argparse
 import json
 import os
@@ -89,7 +89,7 @@ def run(seed, iterations, output):
                 check("input", [input_guard, glyph, "2", "0"],
                       (glyph + " \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m\x1b[2J  Fast off · test · Context 0% used\n").encode(), 1)
             else:
-                empty = glyph + "\u00a0\n" + footer + "\n"
+                empty = glyph + "\u00a0\n" + footer + "\n  Opus 5.5 | v2.1.287\n  ⏵⏵ bypass permissions on\n"
                 dim_text = glyph + " \x1b[2m" + value + "\x1b[22m\n" + footer + "\n"
                 whitespace = glyph + "    \n" + footer + "\n"
                 continuation = glyph + "\u00a0\n\x1b[2m  " + value + "\x1b[22m\n" + footer + "\n"

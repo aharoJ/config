@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/tool-stress-regression.py
 # description: Attack watcher invocation, incident boundaries, and status fallbacks without live tmux.
-# patched: cover stable live-corpus validation including Home-moved drafts
-# date: 2026-10-01T23:02:00Z
+# patched: model Claude's verified idle footer in cleanup stress cases
+# date: 2026-10-02T04:00:00Z
 import os
 import pathlib
 import socket
@@ -397,7 +397,7 @@ exec "$TRASH_TEST_STUB" "$@"''')
                     directory.mkdir()
                     window = "claude" if relay == "cc-msg.sh" else "codex"
                     command = "2.1.286" if relay == "cc-msg.sh" else "node"
-                    capture = "❯\u00a0\n────────────────────" if relay == "cc-msg.sh" else "› \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m  Fast off · test · Context 0% used"
+                    capture = "❯\u00a0\n" + "─" * 192 + "\n  Opus 5.5 | v2.1.287\n  ⏵⏵ bypass permissions on" if relay == "cc-msg.sh" else "› \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m  Fast off · test · Context 0% used"
                     env = {**self.env, "TMPDIR": str(directory), "TMUX": str(directory / "socket") + ",0,0",
                            "TMUX_BIN": str(proxy), "TIMEOUT_BIN": str(timer), "TMUX_RELAY_LOCK_BIN": str(locker),
                            "TMUX_RELAY_LOCK_ROOT": str(directory / "locks"), "TRASH_TEST_SIGNAL": str(int(signal_stage)),
