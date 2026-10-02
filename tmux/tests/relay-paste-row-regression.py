@@ -55,7 +55,7 @@ def evaluate(pane, expression):
 
 def main():
     global SOCKET
-    SOCKET = f"relay-paste-row-private-{os.getpid()}"
+    SOCKET = f"ccmsg-lab-private-{os.getpid()}"
     scratch = pathlib.Path(tempfile.mkdtemp(prefix="relay-paste-row-"))
     fifo = scratch / "redraw.fifo"
     os.mkfifo(fifo)
@@ -78,8 +78,8 @@ else:
 ''')
     try:
         command = f"exec {shlex.quote(sys.executable)} -u {shlex.quote(str(pane_program))} {shlex.quote(str(fifo))} codex"
-        run("new-session", "-d", "-s", "row", "-n", "codex", "-x", "100", "-y", "20", command)
-        codex_pane = run("list-panes", "-t", "=row:=codex", "-F", "#{pane_id}")
+        run("new-session", "-d", "-s", "lab-row", "-n", "codex", "-x", "100", "-y", "20", command)
+        codex_pane = run("list-panes", "-t", "=lab-row:=codex", "-F", "#{pane_id}")
         before = wait_for(codex_pane, "wrapped line alpha")
         state_before = pane_state(codex_pane)
         expression = paste_guard(before, "›", state_before.split(":")[2], scratch / "codex.capture")
@@ -95,8 +95,8 @@ else:
         assert evaluate(codex_pane, expression) == "0", "changed continuation passed paste guard"
 
         command = f"exec {shlex.quote(sys.executable)} -u {shlex.quote(str(pane_program))} {shlex.quote(str(fifo))} agy"
-        run("new-window", "-d", "-t", "row", "-n", "agy", command)
-        agy_pane = run("list-panes", "-t", "=row:=agy", "-F", "#{pane_id}")
+        run("new-window", "-d", "-t", "lab-row", "-n", "agy", command)
+        agy_pane = run("list-panes", "-t", "=lab-row:=agy", "-F", "#{pane_id}")
         agy = wait_for(agy_pane, "? for shortcuts")
         agy_state = pane_state(agy_pane)
         agy_expression = paste_guard(agy, ">", agy_state.split(":")[2], scratch / "agy.capture")

@@ -25,13 +25,13 @@ class DuplicateEnterGuardTest(unittest.TestCase):
                           'Enter must check the active composer even when history duplicates the payload')
 
     def test_duplicate_fallback_checks_current_row(self):
-        socket = f"relay-duplicate-row-private-{os.getpid()}"
+        socket = f"ccmsg-lab-private-{os.getpid()}"
         def tmux(*args):
             return subprocess.run(['tmux', '-L', socket, *args], capture_output=True, text=True)
-        started = tmux('-f', '/dev/null', 'new-session', '-d', '-s', 'row', 'exec cat')
+        started = tmux('-f', '/dev/null', 'new-session', '-d', '-s', 'lab-row', 'exec cat')
         self.assertEqual(started.returncode, 0, started.stderr)
         try:
-            pane = tmux('list-panes', '-t', 'row', '-F', '#{pane_id}').stdout.strip()
+            pane = tmux('list-panes', '-t', 'lab-row', '-F', '#{pane_id}').stdout.strip()
             socket_path = tmux('display-message', '-p', '-t', pane, '#{socket_path}').stdout.strip()
             self.assertTrue(pane.startswith('%'))
             tmux('send-keys', '-t', pane, '-l', '› old')

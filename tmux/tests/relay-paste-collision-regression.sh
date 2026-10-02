@@ -8,10 +8,10 @@ tmux_bin="${TMUX_BIN:-$(command -v tmux)}"
 agy_bin="${AGY_BIN:-$HOME/.local/bin/agy}"
 output_root="${RELAY_EVIDENCE_DIR:-${TMPDIR:-/tmp}}"
 run="$(mktemp -d "$output_root/relay-paste-collision.XXXXXX")" || exit 90
-socket="relay-paste-private-$$"
+socket="ccmsg-lab-private-$$"
 trap '"$tmux_bin" -L "$socket" kill-server >/dev/null 2>&1 || true' EXIT
-env -u NO_COLOR "$tmux_bin" -L "$socket" -f /dev/null new-session -d -s race -n gemini -x 215 -y 57 "exec $agy_bin" || exit 90
-pane="$("$tmux_bin" -L "$socket" list-panes -t '=race:=gemini' -F '#{pane_id}')" || exit 90
+env -u NO_COLOR "$tmux_bin" -L "$socket" -f /dev/null new-session -d -s lab-race -n gemini -x 215 -y 57 "exec $agy_bin" || exit 90
+pane="$("$tmux_bin" -L "$socket" list-panes -t '=lab-race:=gemini' -F '#{pane_id}')" || exit 90
 ready=0
 for i in {1..40}; do
   command_name="$("$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_current_command}')"
@@ -34,7 +34,7 @@ fi
 exec "$RELAY_RACE_TMUX_BIN" -L "$RELAY_RACE_SOCKET" "$@"
 WRAPPER
 chmod +x "$run/tmux-wrapper"
-RELAY_RACE_RUN="$run" RELAY_RACE_SOCKET="$socket" RELAY_RACE_PANE="$pane" RELAY_RACE_TMUX_BIN="$tmux_bin" TMUX_BIN="$run/tmux-wrapper" AGY_SEND_SESSION=race \
+RELAY_RACE_RUN="$run" RELAY_RACE_SOCKET="$socket" RELAY_RACE_PANE="$pane" RELAY_RACE_TMUX_BIN="$tmux_bin" TMUX_BIN="$run/tmux-wrapper" AGY_SEND_SESSION=lab-race \
   "$script_dir/../tools/agy-send-to" gemini RT-RACE-RELAY > "$run/relay.stdout" 2> "$run/relay.stderr"
 relay_code=$?
 printf '%s\n' "$relay_code" > "$run/relay.exit"

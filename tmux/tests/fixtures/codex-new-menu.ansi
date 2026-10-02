@@ -1,0 +1,7 @@
+  [1mWhere should the new conversation run?
+[0m
+
+[1;7m› 1. Current checkout  [0;7mKeep using the current working directory[1m
+[0m  2. New worktree      [2mCreate an isolated managed checkout[0m
+
+  [1menter[0;2m select · [0;1mesc[0;2m back
