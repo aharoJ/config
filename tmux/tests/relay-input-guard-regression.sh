@@ -162,9 +162,17 @@ expect_guard 1 '›' 'mixed placeholder and draft text' "$mixed_style" 2 0
 expect_guard 2 '›' 'missing Codex composer' $'no composer here' 2 0
 
 # Exercise the public relay scripts, including their exit-5 draft semantics.
-expect_relay 1 'codex-missing-window' "$codex_placeholder" '%relay relaytest codex node' \
+expect_relay 0 'codex-paired-window-default' "$codex_placeholder" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
-expect_no_delivery 'codex-missing-window'
+expect_delivery 'codex-paired-window-default'
+
+expect_relay 1 'codex-paired-window-no-cross-session' "$codex_placeholder" '%other other codex node' \
+  env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+expect_no_delivery 'codex-paired-window-no-cross-session'
+
+expect_relay 1 'codex-paired-window-no-other-window' "$codex_placeholder" '%relay relaytest astra node' \
+  env CODEX_SEND_SESSION=relaytest "$codex_relay" 'relay payload'
+expect_no_delivery 'codex-paired-window-no-other-window'
 
 expect_relay 5 'codex-draft' "$codex_draft" '%relay relaytest codex node' \
   env CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'

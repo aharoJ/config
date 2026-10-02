@@ -125,12 +125,12 @@ source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is r
 message="$(printf '%s' "$1" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
 target_session="${CODEX_SEND_SESSION:-}"
-target_window="${CODEX_SEND_WINDOW:-}"
+target_window="${CODEX_SEND_WINDOW:-codex}"
 case "$target_session" in
   ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
 esac
 case "$target_window" in
-  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_WINDOW is required and may contain only letters, digits, underscores, or hyphens' ;;
+  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_WINDOW may contain only letters, digits, underscores, or hyphens' ;;
 esac
 
 list_file="$(mktemp "${TMPDIR:-/tmp}/codex-send-list.XXXXXX")" || fail 'scratch file unavailable'
