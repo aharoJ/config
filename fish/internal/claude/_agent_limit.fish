@@ -1,7 +1,7 @@
 # path: fish/internal/claude/_agent_limit.fish
 # description: run an AI agent under a reduced hard RLIMIT_NPROC
-# patched: new -- fork-exhaustion containment
-# date: 2026-08-26
+# patched: self-heal a deleted fnm multishell link before resolving the agent
+# date: 2026-10-01
 #
 # Why this exists: 2026-08-26 a headless Firefox spawned by an agent leaked 5,443
 # unreaped children and filled uid 501's process table (kern.maxprocperuid = 6000).
@@ -43,6 +43,17 @@ function _agent_limit --description 'run an AI agent under a reduced hard RLIMIT
         else
             echo "_agent_limit: AGENT_NPROC_CAP must be a positive integer <= 2147483647; using 2000" >&2
         end
+    end
+
+    # A deleted fnm multishell link drops every npm-global agent off PATH.
+    if set -q FNM_MULTISHELL_PATH; and not test -e "$FNM_MULTISHELL_PATH"; and type -q fnm
+        set -l _clean
+        for _e in $PATH
+            string match -q '*/fnm_multishells/*' -- $_e; or set -a _clean $_e
+        end
+        set -gx PATH $_clean
+        fnm env --use-on-cd | source
+        echo "_agent_limit: fnm multishell link was gone; re-created $FNM_MULTISHELL_PATH" >&2
     end
 
     # Resolve to a real executable so the child never re-enters a fish function.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 — Agent launches recover from a deleted fnm link
+
+An fnm multishell cleanup moved every open fish shell's live link to the Trash, so codex, gemini and qwen launched through `_agent_limit` failed as "not found". `_agent_limit` now detects a missing `$FNM_MULTISHELL_PATH`, drops the dead `fnm_multishells` entries from PATH, re-sources `fnm env --use-on-cd`, prints a one-line notice and resolves the agent as before. Older panes still need `exec fish` to recover node and npm.
+
 ## 2026-10-01 — Accept Claude's empty post-delete hint
 
 The blind live round found an empty DeepSeek composer refused after clearing a draft: its status row added `Ctrl+Y to paste deleted text` after the version. The exact styled capture is now a must-accept fixture. The guard accepts only that observed suffix; other status text still refuses.
