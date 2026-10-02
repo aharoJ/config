@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/panel-seat-trust
+# description: Pre-trust one exact agentic audit seat folder for claude, deepseek, codex or agy, and seed the clean Codex panel home.
+# patched: initial version for unattended panel seat launches
+# date: 2026-10-02
+import json
+import os
+import pathlib
+import re
+import stat
+import subprocess
+import sys
+import time
+import tomllib
+
+SEAT = re.compile(r"\A/private/tmp/review-protocol-[A-Za-z0-9._-]+-audit-r[0-9]+-agentic-[A-Za-z0-9._-]+-cli\Z")
+HOME = pathlib.Path.home()
+CODEX_PANEL_HOME = HOME / ".local/state/codex-panel-home"
+CODEX_PANEL_CONFIG = """model = "gpt-5.6-terra"
+model_reasoning_effort = "max"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+check_for_update_on_startup = false
+
+[skills]
+include_instructions = false
+
+[features]
+plugins = false
+remote_plugin = false
+apps = false
+skill_search = false
+tool_suggest = false
+memories = false
+
+[notice]
+hide_rate_limit_model_nudge = true
+
+[tui]
+alternate_screen = "never"
+status_line = ["fast-mode", "model-with-reasoning", "current-dir", "context-used"]
+screen_reader_detection_done = true
+
+[tui.keymap.editor]
+insert_newline = ["shift-enter", "alt-enter"]
+"""
+CODEX_REQUIRED = {
+    ("skills", "include_instructions"): False,
+    ("features", "plugins"): False,
+    ("features", "remote_plugin"): False,
+    ("features", "apps"): False,
+    ("features", "skill_search"): False,
+    ("features", "memories"): False,
+}
+
+
+def die(message):
+    print(f"panel-seat-trust: {message}; nothing was trusted", file=sys.stderr)
+    sys.exit(1)
+
+
+def seat_paths(raw):
+    given = pathlib.Path(raw)
+    if not given.is_absolute():
+        die("seat path must be absolute")
+    real = os.path.realpath(raw)
+    if not SEAT.match(real):
+        die(f"{real} is not an agentic audit seat folder")
+    info = os.lstat(real)
+    if not stat.S_ISDIR(info.st_mode):
+        die(f"{real} is not a real directory")
+    if info.st_uid != os.getuid() or info.st_mode & 0o077:
+        die(f"{real} must be owned by you with mode 0700")
+    return [real, "/tmp" + real[len("/private/tmp"):]]
+
+
+def write_atomic(path, text, mode):
+    tmp = path.with_name(f".{path.name}.panel-seat-trust.{os.getpid()}")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    with os.fdopen(fd, "w") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp, path)
+
+
+class DirLock:
+    def __init__(self, path):
+        self.path = pathlib.Path(f"{path}.lock")
+        self.held = False
+
+    def __enter__(self):
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                os.mkdir(self.path)
+                self.held = True
+                return self
+            except FileExistsError:
+                if time.monotonic() > deadline:
+                    die(f"{self.path} stayed locked for 5s")
+                time.sleep(0.05)
+
+    def __exit__(self, *_):
+        if self.held:
+            subprocess.run(["trash", str(self.path)], check=False)
+
+
+def trust_claude(paths):
+    config = HOME / ".claude.json"
+    with DirLock(config):
+        data = json.loads(config.read_text())
+        projects = data.setdefault("projects", {})
+        changed = False
+        for path in paths:
+            entry = projects.setdefault(path, {})
+            if entry.get("hasTrustDialogAccepted") is not True:
+                entry["hasTrustDialogAccepted"] = True
+                changed = True
+        if changed:
+            write_atomic(config, json.dumps(data, indent=2), stat.S_IMODE(config.stat().st_mode))
+
+
+def trust_deepseek(paths):
+    trust_claude(paths)
+    key = (HOME / "desk/.secret/deepseek/api-key").read_text().strip()
+    if len(key) < 20:
+        die("DeepSeek key is missing or too short")
+    tail = key[-20:]
+    config = HOME / ".claude.json"
+    with DirLock(config):
+        data = json.loads(config.read_text())
+        responses = data.setdefault("customApiKeyResponses", {})
+        approved = responses.setdefault("approved", [])
+        rejected = responses.setdefault("rejected", [])
+        if tail not in approved or tail in rejected:
+            if tail not in approved:
+                approved.append(tail)
+            responses["rejected"] = [entry for entry in rejected if entry != tail]
+            write_atomic(config, json.dumps(data, indent=2), stat.S_IMODE(config.stat().st_mode))
+
+
+def trust_agy(paths):
+    config = HOME / ".gemini/antigravity-cli/settings.json"
+    with DirLock(config):
+        data = json.loads(config.read_text())
+        trusted = data.setdefault("trustedWorkspaces", [])
+        missing = [path for path in paths if path not in trusted]
+        if missing:
+            trusted.extend(missing)
+            write_atomic(config, json.dumps(data, indent=2), stat.S_IMODE(config.stat().st_mode))
+
+
+def seed_codex_home():
+    CODEX_PANEL_HOME.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(CODEX_PANEL_HOME, 0o700)
+    auth = CODEX_PANEL_HOME / "auth.json"
+    target = HOME / ".codex/auth.json"
+    if not auth.is_symlink():
+        if auth.exists():
+            die(f"{auth} is a real file, not a link to {target}; the shared login would diverge")
+        auth.symlink_to(target)
+    elif os.readlink(auth) != str(target):
+        die(f"{auth} does not link to {target}")
+    if (CODEX_PANEL_HOME / "AGENTS.md").exists():
+        die(f"{CODEX_PANEL_HOME}/AGENTS.md exists; the panel home must carry no global instructions")
+    config = CODEX_PANEL_HOME / "config.toml"
+    if not config.exists():
+        write_atomic(config, CODEX_PANEL_CONFIG, 0o600)
+    return config
+
+
+def trust_codex(paths):
+    config = seed_codex_home()
+    with DirLock(config):
+        text = config.read_text()
+        data = tomllib.loads(text)
+        for (table, key), value in CODEX_REQUIRED.items():
+            if data.get(table, {}).get(key) is not value:
+                die(f"{config} must set [{table}] {key} = {str(value).lower()}")
+        projects = data.get("projects", {})
+        missing = [path for path in paths if projects.get(path, {}).get("trust_level") != "trusted"]
+        conflicting = [path for path in missing if path in projects]
+        if conflicting:
+            die(f"{config} already has a non-trusted entry for {conflicting[0]}")
+        if missing:
+            addition = "".join(f'\n[projects."{path}"]\ntrust_level = "trusted"\n' for path in missing)
+            tomllib.loads(text + addition)
+            write_atomic(config, text.rstrip("\n") + "\n" + addition, stat.S_IMODE(config.stat().st_mode))
+
+
+def main():
+    kinds = {"claude": trust_claude, "deepseek": trust_deepseek, "codex": trust_codex, "agy": trust_agy}
+    if len(sys.argv) != 3 or sys.argv[1] not in kinds:
+        print("usage: panel-seat-trust <claude|deepseek|codex|agy> <seat-folder>", file=sys.stderr)
+        sys.exit(2)
+    paths = seat_paths(sys.argv[2])
+    kinds[sys.argv[1]](paths)
+    print(f"panel-seat-trust: {sys.argv[1]} trusts {paths[0]}")
+
+
+if __name__ == "__main__":
+    main()

@@ -14,6 +14,7 @@ end
 
 function __tai_usage
     echo "usage: tai [codex|gemini|cc|deepseek|mimo|kimi|all] [agent args...]"
+    echo "       tai seat <gemini|astra|fable|deepseek> [agent args...]"
     echo "       tai        # same as: tai all"
 end
 
@@ -83,9 +84,12 @@ function __tai_validate
     return 0
 end
 
+# Leading --env=KEY=VALUE args become tmux window env, since send-keys cannot
+# carry the caller's environment into the new pane.
 function __tai_spawn
     set -l window_name $argv[1]
     set -l launch_dir $argv[2]
+    set -e argv[1..2]
     set -l fish_bin (command -s fish)
 
     if test -z "$fish_bin"
@@ -93,17 +97,76 @@ function __tai_spawn
         return 1
     end
 
+    set -l env_args
+    while string match -q -- '--env=*' "$argv[1]"
+        set -a env_args -e (string replace -- '--env=' '' "$argv[1]")
+        set -e argv[1]
+    end
+
     set -l parts
-    for arg in $argv[3..-1]
+    for arg in $argv
         set -a parts (string escape -- "$arg")
     end
     set -l commandline (string join ' ' -- $parts)
 
-    set -l pane (tmux new-window -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" "$fish_bin -l")
+    set -l pane (tmux new-window -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args "$fish_bin -l")
     or return $status
 
     tmux send-keys -t "$pane" "$commandline" Enter
     echo "tai: $window_name -> $commandline"
+end
+
+# tai seat: one isolated agentic audit seat, launched from inside its exact
+# /private/tmp/review-protocol-*-audit-r*-agentic-*-cli folder. The folder is
+# pre-trusted for that CLI only. Extra args replace the default model/effort
+# args; the isolation flags are always appended.
+function __tai_seat
+    set -l seat $argv[1]
+    set -e argv[1]
+    set -l launch_dir (pwd -P)
+    set -l trust_kind
+    set -l parts
+    set -l defaults
+    set -l isolation
+    switch "$seat"
+        case gemini
+            set trust_kind agy
+            set parts agy --dangerously-skip-permissions
+            set defaults --effort high
+            __tai_validate gemini $argv
+            or return $status
+        case astra
+            set trust_kind codex
+            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home codex
+            __tai_validate codex $argv
+            or return $status
+        case fable
+            set trust_kind claude
+            set parts cc
+            set defaults --settings '{"model":"claude-opus-5-5"}' --effort high
+            set isolation --safe-mode --disable-slash-commands
+        case deepseek
+            set trust_kind deepseek
+            set parts deepseek
+            set defaults --settings '{"model":"deepseek-flash"}' --effort high
+            set isolation --bare --disable-slash-commands
+        case '*'
+            echo "tai: seat must be one of gemini astra fable deepseek" >&2
+            return 2
+    end
+
+    set -l args $defaults
+    if test (count $argv) -gt 0
+        set args
+        for arg in $argv
+            contains -- "$arg" $isolation; or set -a args "$arg"
+        end
+    end
+
+    $HOME/.config/tmux/tools/panel-seat-trust $trust_kind "$launch_dir"
+    or return $status
+
+    __tai_spawn "$seat" "$launch_dir" $parts $args $isolation
 end
 
 function tai --description 'tmux: spawn AI agent window in current directory'
@@ -120,6 +183,15 @@ function tai --description 'tmux: spawn AI agent window in current directory'
 
     set -l target $argv[1]
     set -e argv[1]
+
+    if test "$target" = seat
+        if test (count $argv) -eq 0
+            __tai_usage >&2
+            return 2
+        end
+        __tai_seat $argv
+        return $status
+    end
 
     set -l targets
     switch "$target"
@@ -177,4 +249,5 @@ end
 
 complete -c tai -e
 complete -c tai -f
-complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo kimi all" -a "codex gemini cc deepseek mimo kimi all"
+complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo kimi all seat" -a "codex gemini cc deepseek mimo kimi all seat"
+complete -c tai -n "__fish_seen_subcommand_from seat" -a "gemini astra fable deepseek"
