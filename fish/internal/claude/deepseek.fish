@@ -1,6 +1,6 @@
 function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash default)"
-    if not set -q DEEPSEEK_API_KEY
-        echo "DEEPSEEK_API_KEY not set"
+    if not test -f ~/desk/.secret/deepseek/api-key; or not test -r ~/desk/.secret/deepseek/api-key
+        echo "DeepSeek key missing: ~/desk/.secret/deepseek/api-key" >&2
         return 1
     end
 
@@ -9,6 +9,7 @@ function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash defa
     set -l options 1
     set -l raw_model 0
     set -l v4_pro 0
+    set -l bare 0
     for arg in $argv
         if test $options -eq 0
             set -a argv_clean "$arg"
@@ -25,6 +26,9 @@ function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash defa
                 return 1
             case --v4-pro
                 set v4_pro 1
+            case --bare
+                set bare 1
+                set -a argv_clean "$arg"
             case --model '--model=*' -m '-m*'
                 set raw_model 1
                 set -a argv_clean "$arg"
@@ -43,7 +47,7 @@ function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash defa
     set argv $argv_clean
 
     set -lx ANTHROPIC_BASE_URL                        "https://api.deepseek.com/anthropic"
-    set -lx ANTHROPIC_AUTH_TOKEN                       $DEEPSEEK_API_KEY
+    set -lx ANTHROPIC_AUTH_TOKEN                       (string trim < ~/desk/.secret/deepseek/api-key)
     set -lx ANTHROPIC_MODEL                            $model"[1m]"
     set -lx ANTHROPIC_DEFAULT_OPUS_MODEL               $model
     set -lx ANTHROPIC_DEFAULT_SONNET_MODEL             $model
@@ -51,6 +55,11 @@ function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash defa
     set -lx CLAUDE_CODE_SUBAGENT_MODEL                 $model
     set -lx CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC   1
     set -lx CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK  1
+    # --bare authenticates only from ANTHROPIC_API_KEY; outside bare it would
+    # trigger the custom-API-key approval dialog, so export it for bare only.
+    if test $bare -eq 1
+        set -fx ANTHROPIC_API_KEY $ANTHROPIC_AUTH_TOKEN
+    end
 
     # CC 2.1.154 REGRESSION: it injects `role: system` messages into messages[]
     # -- the skills list (messages[1]) AND live system-reminders mid-session (the
