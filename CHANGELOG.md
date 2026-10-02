@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 — Accept Claude's empty post-delete hint
+
+The blind live round found an empty DeepSeek composer refused after clearing a draft: its status row added `Ctrl+Y to paste deleted text` after the version. The exact styled capture is now a must-accept fixture. The guard accepts only that observed suffix; other status text still refuses.
+
 ## 2026-10-01 — Add guarded Agy panel delivery
 
 `agy-send-to` delivers one-row messages to an explicitly named Agy window in an explicit session, with an optional numeric pane ID for a multi-pane window. It uses the shared relay lock, identity and resize checks, buffered paste, complete composer verification and conditional Enter. The Agy input guard recognizes the captured blue `>` prompt between full-width dividers and its idle shortcuts footer. Real Home-moved text and whitespace drafts, an open slash menu and a wrapped draft refused without a paste. Idle sends passed at 167 and 19 columns. Six real Agy idle captures were added to the must-accept gate, and the staged drafts to the must-refuse set. The helper is linked from `~/.local/bin/agy-send-to`.

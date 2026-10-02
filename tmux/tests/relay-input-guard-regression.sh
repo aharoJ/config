@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: replay real Agy captures and exercise the Agy relay route
+# patched: replay the empty Claude post-delete hint and refuse altered hints
 # date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
@@ -310,10 +310,16 @@ try:
         assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"]
         assert pathlib.Path(case["source"]).is_absolute()
         assert (f'cursor={case["cursor_x"]},{case["cursor_y"]}'.encode() in meta or
-                meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()])
+                meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()] or
+                meta.split()[-2:] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()])
         result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
         assert result.returncode == case["input_exit"], (case["name"], result.returncode)
         checks += 1
+        if case["name"] == "deepseek-idle-ctrl-y-hint":
+            altered = capture.replace(b"Ctrl+Y to paste deleted text", b"Ctrl+Y to paste arbitrary text")
+            result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=altered, capture_output=True)
+            assert result.returncode == 1, (case["name"], "unverified status hint", result.returncode)
+            checks += 1
         rows = capture.decode().splitlines()
         rows[case["cursor_y"]] = rows[case["cursor_y"]].replace(case["glyph"], case["glyph"] + " drafted ", 1)
         result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=("\n".join(rows) + "\n").encode(), capture_output=True)

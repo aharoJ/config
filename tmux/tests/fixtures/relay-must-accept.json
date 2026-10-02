@@ -238,6 +238,20 @@
       "pane_width": 19,
       "input_exit": 0,
       "sanitized": true
+    },
+    {
+      "name": "deepseek-idle-ctrl-y-hint",
+      "source": "/fixtures/deepseek-idle-ctrl-y-hint.ansi",
+      "capture_file": "deepseek-idle-ctrl-y-hint.ansi",
+      "meta_file": "deepseek-idle-ctrl-y-hint.meta",
+      "capture_sha256": "e87759d524f2cb46b71375ddc117516d6482c29d145f1037e789719cf64026ee",
+      "meta_sha256": "82e6c0fe1e080ac25ee00cc39fab3ef29234a36ca9cbf34baa257bcbbb15cdd7",
+      "glyph": "\u276f",
+      "cursor_x": 2,
+      "cursor_y": 46,
+      "pane_width": 167,
+      "input_exit": 0,
+      "sanitized": true
     }
   ]
 }

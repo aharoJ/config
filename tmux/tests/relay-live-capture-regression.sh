@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-live-capture-regression.sh
 # description: Verify proven empty composer captures and a stable current private Codex corpus.
-# patched: require proven Claude, Codex, and Agy idle captures before landing
+# patched: include the proven empty Claude post-delete status state
 # date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
@@ -27,7 +27,7 @@ import sys
 guard, manifest = sys.argv[1:]
 path = pathlib.Path(manifest)
 cases = json.loads(path.read_text())["cases"]
-required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19", "agy-fresh", "agy-post-turn", "agy-post-helper", "agy-wide-200", "agy-narrow-40", "agy-narrow-19"}
+required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19", "deepseek-idle-ctrl-y-hint", "agy-fresh", "agy-post-turn", "agy-post-helper", "agy-wide-200", "agy-narrow-40", "agy-narrow-19"}
 assert {case["name"] for case in cases} == required
 for case in cases:
     capture = (path.parent / case["capture_file"]).read_bytes()
@@ -36,7 +36,8 @@ for case in cases:
     assert hashlib.sha256(meta).hexdigest() == case["meta_sha256"], case["name"]
     assert pathlib.Path(case["source"]).is_absolute(), case["name"]
     assert (f'cursor={case["cursor_x"]},{case["cursor_y"]}'.encode() in meta or
-            meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()]), case["name"]
+            meta.split()[5:7] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()] or
+            meta.split()[-2:] == [str(case["cursor_x"]).encode(), str(case["cursor_y"]).encode()]), case["name"]
     result = subprocess.run([guard, case["glyph"], str(case["cursor_x"]), str(case["cursor_y"]), str(case["pane_width"])], input=capture, capture_output=True)
     assert result.returncode == 0, (case["name"], result.returncode)
 print(f"relay must-accept capture regression: {len(cases)} proven idle states, PASS")
