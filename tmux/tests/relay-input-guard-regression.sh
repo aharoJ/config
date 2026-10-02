@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: replay the empty Claude post-delete hint and refuse altered hints
-# date: 2026-10-02T04:00:00Z
+# patched: distinguish synthetic native targets from unproven node wrappers
+# date: 2026-10-02
 set -euo pipefail
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,14 +61,9 @@ expect_delivery() {
 }
 
 tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/relay-input-guard.XXXXXX")"
-trap 'rm -rf -- "$tmpdir"' EXIT
+trap 'trash "$tmpdir"' EXIT
 mkdir -p "$tmpdir/bin"
 : > "$tmpdir/socket"
-cat > "$tmpdir/bin/trash" <<'EOF'
-#!/usr/bin/env bash
-rm -rf -- "$@"
-EOF
-chmod +x "$tmpdir/bin/trash"
 export PATH="$tmpdir/bin:$PATH"
 
 # Captures reproduce the SGR classes observed in live Codex and Claude panes.
@@ -217,9 +212,13 @@ expect_relay 5 'codex-guard-override-ignored' "$codex_draft" '%relay relaytest c
   env RELAY_INPUT_GUARD=/usr/bin/true CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_no_delivery 'codex-guard-override-ignored'
 
-expect_relay 5 'codex-to-draft' "$codex_draft" '%relay relaytest codex node' \
+expect_relay 5 'codex-to-draft' "$codex_draft" '%relay relaytest codex codex' \
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
 expect_no_delivery 'codex-to-draft'
+
+expect_relay 1 'codex-to-unproven-node' "$codex_placeholder" '%relay relaytest codex node' \
+  env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
+expect_no_delivery 'codex-to-unproven-node'
 
 expect_relay 5 'cc-draft' "$cc_draft" '%relay relaytest claude 2.1.284' \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude "$cc_relay" 'relay payload'
@@ -246,11 +245,11 @@ expect_relay 0 'codex-dim-suggestion' "$codex_suggestion" '%relay relaytest code
   env CODEX_SEND_SESSION=relaytest CODEX_SEND_WINDOW=codex "$codex_relay" 'relay payload'
 expect_delivery 'codex-dim-suggestion'
 
-expect_relay 0 'codex-to-placeholder' "$codex_placeholder" '%relay relaytest codex node' \
+expect_relay 0 'codex-to-placeholder' "$codex_placeholder" '%relay relaytest codex codex' \
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
 expect_delivery 'codex-to-placeholder'
 
-expect_relay 0 'codex-to-dim-suggestion' "$codex_suggestion" '%relay relaytest codex node' \
+expect_relay 0 'codex-to-dim-suggestion' "$codex_suggestion" '%relay relaytest codex codex' \
   env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex 'relay payload'
 expect_delivery 'codex-to-dim-suggestion'
 
@@ -264,7 +263,7 @@ for command_case in 'slash:/' 'bang:!'; do
   expect_relay 1 "codex-command-$command_label" "$codex_placeholder" '%relay relaytest codex node' \
     env CODEX_SEND_SESSION=relaytest "$codex_relay" "$command_prefix"'unsafe'
   expect_no_delivery "codex-command-$command_label"
-  expect_relay 1 "codex-to-command-$command_label" "$codex_placeholder" '%relay relaytest codex node' \
+  expect_relay 1 "codex-to-command-$command_label" "$codex_placeholder" '%relay relaytest codex codex' \
     env CODEX_SEND_SESSION=relaytest "$codex_to_relay" codex "$command_prefix"'unsafe'
   expect_no_delivery "codex-to-command-$command_label"
   expect_relay 1 "agy-command-$command_label" "$agy_idle" '%relay relaytest gemini agy' \

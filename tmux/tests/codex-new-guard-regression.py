@@ -83,4 +83,19 @@ for mode, screen, footer, wanted in [('navigate-models', models, 'Fast off · GP
     p = subprocess.run([str(guard), mode, footer], input=screen, text=True, capture_output=True)
     assert p.returncode == 0 and p.stdout.strip() == wanted, (mode, p.stdout, p.stderr)
     checks += 1
+for mode, screen, footer in [('menu', menu, 'Fast off · GPT-6-Astra low · ~/.config'),
+                             ('slash', slash, 'Fast off · GPT-6-Astra low · ~/.config'),
+                             ('model-slash', model_slash, 'Fast off · GPT-6.1-Sol low · ~/.config'),
+                             ('models', models, 'Fast off · GPT-6-Astra low · ~/.config'),
+                             ('efforts', efforts, 'Fast off · GPT-6-Astra high · ~/.config'),
+                             ('advanced', advanced, 'Fast off · GPT-6-Astra max · ~/.config')]:
+    color = '\x1b[1m\x1b[38;2;0;0;46m\x1b[48;2;99;168;248m'
+    colored = screen.replace('\x1b[1;7m', color)
+    check(mode, colored, 0, footer)
+    for bad in [color.replace('\x1b[1m', ''), color.replace('48;2;99;168;248', '49'),
+                color.replace('248', '256'), color + '\x1b[0m', color + '\x1b[22m']:
+        check(mode, screen.replace('\x1b[1;7m', bad), 1, footer)
+for mode in ('models', 'efforts', 'advanced'):
+    live = (root / ('tests/fixtures/codex-new-colored-' + mode + '.ansi')).read_text()
+    check(mode, live, 0, 'Fast off · GPT-5.6-Terra max · ~/.config')
 print(f'codex new guard: {checks} checks PASS')

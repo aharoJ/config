@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: tolerate transient Codex redraws while retaining fail-closed draft checks
-# date: 2026-10-01T23:02:00Z
+# patched: prove node entry points and require an uncropped Codex footer
+# date: 2026-10-02
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -186,12 +186,23 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
+send_target_proof=
+if [ "$command_name" = node ]; then
+  send_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane")" || fail "foreground node process is not proven Codex"
+fi
+send_target_check() {
+  [ -z "$send_target_proof" ] || "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" "$send_target_proof"
+}
 prepare_payload "$message"
 resolve_relay_sender_tier
 require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
+if [ -n "$send_target_proof" ]; then
+  printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer >/dev/null || fail "unrecognized or cropped Codex model/cwd footer"
+fi
+send_target_check || fail "Codex process identity changed before paste"
 if atomic_text "$message"; then
   :
 else
@@ -208,6 +219,7 @@ fi
 verify_payload
 sleep 0.04
 verify_payload
+send_target_check || partial "Codex process identity changed before Enter"
 if atomic_enter; then
   :
 else

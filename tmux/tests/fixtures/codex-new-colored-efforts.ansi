@@ -1,0 +1,22 @@
+
+ [38;2;135;161;238m.config[39m [38;2;164;137;137m devel…[39m [38;2;95;133;117m[ 2 󱅘 2 ][39m [38;2;155;149;120m󰁔[39m [38;2;142;192;124mcodex[38;2;235;219;178m [38;2;250;189;47m--no-alt-screen[38;2;235;219;178m [38;2;250;189;47m-C[38;2;235;219;178m /Users/tester/.config[39m                                                                                         [38;2;235;219;178m
+
+[39m  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.160.0)[0m
+     [2m~/.config[0m
+[2m  permissions: [0;1m[38;5;5mYOLO mode[0m
+
+  [38;2;99;168;248mHello again. What’s the plot this time?
+
+[39m  [1mTip:[0m Visit the [4m[38;2;99;168;248m]8;;https://community.openai.com/c/codex/37\Codex community forum[0m]8;;\ ([4m[38;2;99;168;248m]8;;https://community.openai.com/c/codex/37\https://community.openai.com/c/codex/37[0m]8;;\).
+
+[48;2;57;57;71m
+  [1mSelect Reasoning Level for GPT-5.6-Terra[0m[48;2;57;57;71m
+
+
+  1. Low               [2mFast responses with lighter reasoning[0m[48;2;57;57;71m
+  2. Medium (default)  [2mBalances speed and reasoning depth for everyday tasks[0m[48;2;57;57;71m
+  3. High              [2mGreater reasoning depth for complex problems[0m[48;2;57;57;71m
+  4. Extra high        [2mExtra high reasoning depth for complex problems[0m[48;2;57;57;71m
+[1m[38;2;0;0;46m[48;2;99;168;248m› 5. More reasoning…   [0m[38;2;0;0;46m[48;2;99;168;248mMax and Ultra consume usage limits faster[1m
+[0m[48;2;57;57;71m
+[49m  [1m[38;2;205;214;244menter[0;2m select · [0;1m[38;2;205;214;244mesc[0;2m back

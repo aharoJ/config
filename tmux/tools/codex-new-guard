@@ -3,6 +3,7 @@
 # description: Recognize guarded fresh-chat and session-only model-restoration screens.
 # patched: require known picker content, highlights, controls, model and effort
 # date: 2026-10-02
+import pathlib
 import re
 import subprocess
 import sys
@@ -30,6 +31,53 @@ ADVANCED = {
     'Ultra': 'For demanding work using multiple agents · highest usage',
 }
 EFFORT_LABELS = dict(low='Low', medium='Medium', high='High', xhigh='Extra high', max='Max', ultra='Ultra')
+
+
+def highlighted(raw):
+    if '›' not in raw:
+        return False
+    prefix = raw.split('›', 1)[0]
+    if not re.fullmatch(r'(?:\x1b\[[0-9;]*m)+', prefix):
+        return False
+    bold = inverse = foreground = background = False
+    for code in re.findall(r'\x1b\[([0-9;]*)m', prefix):
+        values = [int(x) for x in code.split(';')] if code else [0]
+        i = 0
+        while i < len(values):
+            value = values[i]
+            if value == 0:
+                bold = inverse = foreground = background = False
+            elif value == 1:
+                bold = True
+            elif value == 22:
+                bold = False
+            elif value == 7:
+                inverse = True
+            elif value == 27:
+                inverse = False
+            elif value in (38, 48):
+                if i + 1 >= len(values) or values[i+1] not in (2, 5):
+                    return False
+                size = 3 if values[i+1] == 2 else 1
+                if len(values[i+2:i+2+size]) != size or any(x > 255 for x in values[i+2:i+2+size]):
+                    return False
+                if value == 38:
+                    foreground = True
+                else:
+                    background = True
+                i += size + 1
+            elif value == 39:
+                foreground = False
+            elif value == 49:
+                background = False
+            elif 30 <= value <= 37 or 90 <= value <= 97:
+                foreground = True
+            elif 40 <= value <= 47 or 100 <= value <= 107:
+                background = True
+            else:
+                return False
+            i += 1
+    return bold and (inverse or (foreground and background))
 
 
 def footer_parts(footer):
@@ -69,7 +117,7 @@ def picker(rows, raw, kind, expected):
         if plain_label != label:
             raise ValueError('unrecognized picker label')
         if match[1] == '›':
-            if not ansi.startswith('\x1b[1;7m› '):
+            if not highlighted(ansi):
                 raise ValueError('unproven picker highlight')
             selected.append(index)
         labels.append(label)
@@ -134,7 +182,7 @@ def check(mode, capture, expected=''):
         if len(starts) != 1:
             return 1
         i = starts[0]
-        if not raw[i].startswith('\x1b[1;7m› ' + command + '  '):
+        if not highlighted(raw[i]):
             return 1
         tail = [x for x in rows[i:] if x]
         valid = len(tail) == 3 and tail[:2] == [rows[i], '› ' + command]
@@ -150,14 +198,17 @@ def check(mode, capture, expected=''):
         tail = [x for x in rows[i:] if x]
         wanted = [title, '› 1. Current checkout  Keep using the current working directory', '  2. New worktree      Create an isolated managed checkout', '  enter select · esc back']
         selected = next((x for x in raw[i:] if '› 1. Current checkout' in x), '')
-        return 0 if tail == wanted and selected.startswith('\x1b[1;7m› 1. Current checkout') else 1
+        return 0 if tail == wanted and highlighted(selected) else 1
     return 1
 
 
 try:
     mode = sys.argv[1]
     if mode == 'live':
-        socket, pane, mode, expected, cwd = sys.argv[2:]
+        socket, pane, mode, expected, cwd, proof = sys.argv[2:]
+        identity = subprocess.run([str(pathlib.Path(__file__).resolve().with_name('codex-target-guard')), socket, pane, proof], timeout=.9)
+        if identity.returncode:
+            sys.exit(1)
         state = subprocess.run(["tmux", "-S", socket, "display-message", "-p", "-t", pane, "#{pane_in_mode}:#{pane_current_path}"], capture_output=True, text=True, timeout=0.6)
         if state.returncode or state.stdout.rstrip("\n") != "0:" + cwd:
             sys.exit(1)

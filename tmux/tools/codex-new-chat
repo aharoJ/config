@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-new-chat
 # description: Start a guarded fresh Codex chat in the same checkout.
-# patched: restore the pre-reset model and effort with guarded session-only picker selections
+# patched: bind node wrappers to a proven foreground Codex entry point throughout reset
 # date: 2026-10-02
 set -uo pipefail
 
@@ -182,7 +182,11 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
-[ "$command_name" = codex ] || fail "target process is not Codex"
+case "$command_name" in codex|node) ;; *) fail "target process is not Codex" ;; esac
+new_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane")" || fail "foreground process is not proven Codex"
+new_target_check() {
+  "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" "$new_target_proof"
+}
 prepare_payload "$message"
 relay_sender_tier=strict
 require_empty_codex_input
@@ -192,6 +196,7 @@ require_empty_codex_input
 before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
 "$relay_script_dir/codex-new-guard" supported-footer "$before_footer" < /dev/null || fail "unsupported model/effort; cannot prove restoration"
 before_cwd="$(relay_display "$pane" "#{pane_current_path}")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot read cwd"; }
+new_target_check || fail "Codex process identity changed before paste"
 if atomic_text "$message"; then
   :
 else
@@ -208,8 +213,9 @@ fi
 
 new_observe() {
   local state after code
+  new_target_check || partial 'Codex foreground process changed'
   state="$(relay_display "$pane" '#{pane_in_mode}:#{pane_dead}:#{pane_pid}:#{pane_current_command}:#{pane_width}:#{pane_height}:#{session_name}:#{window_name}:#{pane_current_path}')" || { code=$?; [ "$code" = 75 ] && unresponsive; partial 'cannot inspect target'; }
-  [ "$state" = "0:0:$relay_target_pid:codex:$relay_verify_width:$relay_verify_height:$target_session:$window_name:$before_cwd" ] || partial 'target identity, mode, dimensions or cwd changed'
+  [ "$state" = "0:0:$relay_target_pid:$relay_target_command:$relay_verify_width:$relay_verify_height:$target_session:$window_name:$before_cwd" ] || partial 'target identity, mode, dimensions or cwd changed'
   new_capture="$(request capture-pane -p -e -t "$pane")" || { code=$?; [ "$code" = 75 ] && unresponsive; partial 'cannot capture target'; }
   after="$(relay_display "$pane" '#{pane_in_mode}:#{pane_dead}:#{pane_pid}:#{pane_current_command}:#{pane_width}:#{pane_height}:#{session_name}:#{window_name}:#{pane_current_path}')" || partial 'cannot recheck target'
   [ "$state" = "$after" ] || partial 'target changed during capture'
@@ -227,13 +233,13 @@ new_wait() {
 new_key() {
   local check nested receipt code screen_guard key=${2:-Enter} expected=${3:-$before_footer}
   case "$key" in Enter|Up|Down|s) ;; *) partial "unsupported restoration key" ;; esac
-  check="$(python3 - "$relay_script_dir/codex-new-guard" "$relay_target_socket" "$pane" "$1" "$expected" "$before_cwd" <<'PY2'
+  check="$(python3 - "$relay_script_dir/codex-new-guard" "$relay_target_socket" "$pane" "$1" "$expected" "$before_cwd" "$new_target_proof" <<'PY2'
 import shlex,sys
 print(shlex.join(sys.argv[1:2]+['live']+sys.argv[2:]))
 PY2
 )" || partial 'cannot build screen guard'
   screen_guard="$(printf "%s\n" "$new_capture" | "$relay_script_dir/codex-new-guard" tmux-rows "$before_cwd")" || partial "cannot build atomic screen guard"
-  nested="$("$relay_payload_guard" tmux-nested "$pane" "#{&&:$screen_guard,#{&&:#{==:#{pane_in_mode},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{&&:#{==:#{pane_current_command},codex},#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$window_name},#{&&:#{==:#{pane_width},$relay_verify_width},#{==:#{pane_height},$relay_verify_height}}}}}}}}" "send-keys -t $pane $key ; display-message -p -t $pane '__NEW_SENT__'" "display-message -p -t $pane '__NEW_REFUSED__'")" || partial 'cannot build Enter guard'
+  nested="$("$relay_payload_guard" tmux-nested "$pane" "#{&&:$screen_guard,#{&&:#{==:#{pane_in_mode},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{&&:#{==:#{pane_current_command},$relay_target_command},#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$window_name},#{&&:#{==:#{pane_width},$relay_verify_width},#{==:#{pane_height},$relay_verify_height}}}}}}}}" "send-keys -t $pane $key ; display-message -p -t $pane '__NEW_SENT__'" "display-message -p -t $pane '__NEW_REFUSED__'")" || partial 'cannot build Enter guard'
   receipt="$(request if-shell -t "$pane" "$check" "$nested" "display-message -p -t $pane '__NEW_REFUSED__'")"
   code=$?
   [ "$code" = 75 ] && unresponsive
@@ -286,6 +292,7 @@ if ! printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" fresh "$
   restore_footer="$(printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" footer)" || partial 'unrecognized reset model footer'
   new_idle
   printf '%s' /model > "$relay_payload_file" || partial 'cannot prepare model command'
+  new_target_check || partial "Codex process changed before model paste"
   if atomic_text /model; then :; else code=$?; [ "$code" = 75 ] && unresponsive; partial 'model-command paste could not be verified'; fi
   new_wait model-slash "$restore_footer"
   new_key model-slash Enter "$restore_footer"

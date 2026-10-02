@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: reserve a Claude cursor cell before literal payload delivery
-# date: 2026-10-02T04:00:00Z
+# patched: recognize timed Claude busy spinners before literal payload delivery
+# date: 2026-10-02
 
 relay_payload_file=
 relay_payload_dir=
@@ -77,7 +77,7 @@ if glyph == "❯":
     preceding=[row.strip() for row in rows[max(0,y-4):y-1] if row.strip()]
     while preceding and re.match(r"^⎿\s*Tip:", preceding[-1]):
         preceding.pop()
-    spinner=bool(preceding and re.fullmatch(r"[^\w\s] [^\r\n]*…\s*", preceding[-1]))
+    spinner=bool(preceding and re.fullmatch(r"[^\w\s] [^\r\n]*…(?: \([^\r\n]*\))?\s*", preceding[-1]))
     sys.exit(0 if spinner else 1)
 sys.exit(2)' "$relay_glyph" "$cursor_y"
   code=$?
