@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-tmux-stub.sh
 # description: Emulate relay routing, bracketed payload delivery, and composer captures.
-# patched: render full-width Claude dividers for payload verification
+# patched: render full-width Claude and Agy payload dividers
 # date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
@@ -25,6 +25,9 @@ case "${1:-}" in
       if [[ "$RELAY_TEST_PANES" = *claude* ]]; then
         divider=$(printf '─%.0s' {1..192})
         printf '%s\n❯ %s\n%s\n' "$divider" "$payload" "$divider"
+      elif [[ "$RELAY_TEST_PANES" = *' agy'* ]]; then
+        divider=$(printf '─%.0s' {1..192})
+        printf '%s\n> %s\n%s\n  Gemini 3.8 Flash · high\n' "$divider" "$payload" "$divider"
       else
         printf '› %s\n\033[49m  Fast off · test · Context 0%% used\n' "$payload"
       fi
@@ -42,6 +45,7 @@ case "${1:-}" in
       column=$(($(wc -c < "$RELAY_TEST_LOG.payload") + 2))
       row=0
       [[ "$RELAY_TEST_PANES" = *claude* ]] && row=1
+      [[ "$RELAY_TEST_PANES" = *' agy'* ]] && row=1
       suffix=
       [[ "$format" = *pane_width* ]] && suffix=":192:51:100:$(awk 'NR == 1 {print $4}' <<< "$RELAY_TEST_PANES")"
       printf '0:%s:%s:0:relaytest:%s%s\n' "$column" "$row" "$(awk 'NR == 1 {print $3}' <<< "$RELAY_TEST_PANES")" "$suffix"

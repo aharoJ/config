@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-input-guard-regression.sh
 # description: Check draft refusal, explicit routing, and verified public relay delivery.
-# patched: enforce real Claude must-accept captures and adversarial draft refusal
+# patched: replay real Agy captures and exercise the Agy relay route
 # date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
@@ -11,6 +11,7 @@ stub="$root/tests/relay-tmux-stub.sh"
 cc_relay="$root/tools/cc-msg.sh"
 codex_relay="$root/tools/codex-send"
 codex_to_relay="$root/tools/codex-send-to"
+agy_relay="$root/tools/agy-send-to"
 
 fail() { printf 'relay input guard regression: %s\n' "$1" >&2; exit 1; }
 
@@ -83,6 +84,8 @@ codex_colored_footer_lookalike_draft=$'› \n\n  \e[38;5;183mFast off · model �
 codex_choice=$'\e[1m\e[38;2;0;0;46m\e[48;2;99;168;248m› 1. Trust and continue'
 cc_footer=$'\n\e[39m  \e[1m\e[38;5;246mOpus 5.5\e[0m\e[90m  |  v2.1.287\n  \e[38;5;211m⏵⏵ bypass permissions on\e[39m'
 cc_divider=$(printf '─%.0s' {1..192})
+agy_idle=$'\e[90m'"$cc_divider"$'\n\e[94m>\e[39m\n\e[90m'"$cc_divider"$'\n? for shortcuts  \e[2mGemini 3.8 Flash · high\e[0m'
+agy_draft=$'\e[90m'"$cc_divider"$'\n\e[94m>\e[39m typed draft\n\e[90m'"$cc_divider"$'\n  \e[2mGemini 3.8 Flash · high\e[0m'
 cc_empty=$'\e[39m❯\302\240\n\e[38;5;244m'"$cc_divider""$cc_footer"
 cc_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util logging.py that…"\e[0m\n\e[38;5;244m'"$cc_divider""$cc_footer"
 cc_wrapped_placeholder=$'\e[38;5;239m\e[48;5;237m❯ \e[2mTry "create a util\n\e[48;5;237m  logging.py that…"\e[0m\n\e[38;5;244m────────────────────'
@@ -218,6 +221,29 @@ expect_delivery 'cc-explicit-pane'
 expect_relay 1 'cc-pane-outside-window' "$cc_empty" "$two_cc_panes" \
   env CC_MSG_SESSION=relaytest CC_MSG_WINDOW=claude CC_MSG_PANE=%99 "$cc_relay" 'relay payload'
 expect_no_delivery 'cc-pane-outside-window'
+
+expect_relay 0 'agy-empty' "$agy_idle" '%relay relaytest gemini agy' \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest "$agy_relay" gemini 'relay payload'
+expect_delivery 'agy-empty'
+expect_relay 5 'agy-draft' "$agy_draft" '%relay relaytest gemini agy' \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest "$agy_relay" gemini 'relay payload'
+expect_no_delivery 'agy-draft'
+expect_relay 1 'agy-wrong-window' "$agy_idle" '%relay relaytest gemini agy' \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest "$agy_relay" wrong 'relay payload'
+expect_no_delivery 'agy-wrong-window'
+two_agy_panes=$'%41 relaytest gemini agy\n%42 relaytest gemini agy'
+expect_relay 1 'agy-ambiguous' "$agy_idle" "$two_agy_panes" \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest "$agy_relay" gemini 'relay payload'
+expect_no_delivery 'agy-ambiguous'
+expect_relay 0 'agy-explicit-pane' "$agy_idle" "$two_agy_panes" \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest AGY_SEND_PANE=%42 "$agy_relay" gemini 'relay payload'
+expect_delivery 'agy-explicit-pane'
+expect_relay 1 'agy-pane-outside-window' "$agy_idle" "$two_agy_panes" \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest AGY_SEND_PANE=%99 "$agy_relay" gemini 'relay payload'
+expect_no_delivery 'agy-pane-outside-window'
+expect_relay 1 'agy-bare-shell' "$agy_idle" '%relay relaytest gemini fish' \
+  env RELAY_TEST_STATE=0:2:1 AGY_SEND_SESSION=relaytest "$agy_relay" gemini 'relay payload'
+expect_no_delivery 'agy-bare-shell'
 
 python3 - "$guard" "$root/tools/relay-payload-guard" "$root/tests/fixtures/relay-codex-main-default.json" "$root/tests/fixtures/relay-codex-live-160.json" "$root/tests/fixtures/relay-codex-cleared-after-edit.json" "$root/tests/fixtures/relay-codex-status-drift.json" "$root/tests/fixtures/relay-codex-home-drafts.json" "$root/tests/fixtures/relay-must-accept.json" "$root/tests/fixtures/relay-must-refuse.json" "$root/tests/fixtures/relay-narrow-payload.json" <<'PY'
 import json

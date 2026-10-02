@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 — Add guarded Agy panel delivery
+
+`agy-send-to` delivers one-row messages to an explicitly named Agy window in an explicit session, with an optional numeric pane ID for a multi-pane window. It uses the shared relay lock, identity and resize checks, buffered paste, complete composer verification and conditional Enter. The Agy input guard recognizes the captured blue `>` prompt between full-width dividers and its idle shortcuts footer. Real Home-moved text and whitespace drafts, an open slash menu and a wrapped draft refused without a paste. Idle sends passed at 167 and 19 columns. Six real Agy idle captures were added to the must-accept gate, and the staged drafts to the must-refuse set. The helper is linked from `~/.local/bin/agy-send-to`.
+
 ## 2026-10-01 — Restore Claude relay delivery after false draft refusals
 
 Live red teaming found a P0 in an intermediate candidate: a divider-shaped line inside a real multiline DeepSeek draft fooled the guard and `cc-msg.sh` pasted into the draft before stopping with exit 4. The exact pre-paste capture is a must-refuse fixture. The guard now rejects a later divider and requires the observed Claude status and permissions mode rows immediately after the first divider, with the version checked when the full status fits. The same staged live attack then exited 5 without changing the pane; idle delivery still exited 0.

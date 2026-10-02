@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# path: ~/.config/tmux/tools/agy-send-to
+# description: Deliver text to an explicitly selected agent with fail-closed payload verification.
+# patched: verify the live Agy composer before and after delivery
+# date: 2026-10-02T04:00:00Z
+set -uo pipefail
+
+fail() { printf 'REFUSE: %s\n' "$1" >&2; exit 1; }
+refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was sent\n' "$1" >&2; exit 2; }
+unresponsive() { relay_server_unresponsive=1; printf 'REFUSE: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
+partial() { printf 'UNVERIFIED: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
+busy() { printf 'UNVERIFIED: another relay is in progress; no target input was sent by this invocation\n' >&2; exit 4; }
+refuse_draft() { printf 'REFUSE: target %s has a draft; no target input was sent\n' "$1" >&2; exit 5; }
+
+TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
+TMUX_BIN="${TMUX_BIN:-tmux}"
+TMUX_TIMEOUT_SECONDS="${TMUX_TIMEOUT_SECONDS:-1}"
+TMUX_TIMEOUT_KILL_AFTER="${TMUX_TIMEOUT_KILL_AFTER:-1}"
+RELAY_LOCK_ROOT="${TMUX_RELAY_LOCK_ROOT:-/private/tmp/tmux-$(id -u)/relay-locks}"
+LOCK_BIN="${TMUX_RELAY_LOCK_BIN:-/usr/bin/shlock}"
+relay_lock=
+[ -n "$TIMEOUT_BIN" ] || fail 'timeout or gtimeout is required'
+[ -x "$LOCK_BIN" ] || fail 'shlock is required'
+
+relay_script="${BASH_SOURCE[0]}"
+while [ -L "$relay_script" ]; do
+  relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+  relay_link="$(readlink "$relay_script")" || fail 'cannot resolve relay tool path'
+  case "$relay_link" in
+    /*) relay_script="$relay_link" ;;
+    *) relay_script="$relay_script_dir/$relay_link" ;;
+  esac
+done
+relay_script_dir="$(cd -P "$(dirname "$relay_script")" && pwd)" || fail 'cannot resolve relay tool directory'
+RELAY_INPUT_GUARD="$relay_script_dir/relay-input-guard"
+[ -x "$RELAY_INPUT_GUARD" ] || fail 'relay input guard is required'
+
+release_relay_lock() {
+  [ -n "$relay_lock" ] || return 0
+  if [ "$(cat "$relay_lock" 2>/dev/null)" = "$$" ]; then
+    trash "$relay_lock" || printf 'relay: owned lock cleanup is unconfirmed; may remain at %s\n' "$relay_lock" >&2
+  fi
+  relay_lock=
+}
+
+acquire_relay_lock() {
+  local socket identity key
+  socket="${TMUX%%,*}"
+  identity="$(stat -Lf '%d:%i' "$socket" 2>/dev/null || printf '%s' "$socket")"
+  key="$(printf '%s' "$identity:$pane" | shasum -a 256 | awk '{print $1}')" || return 1
+  umask 077
+  mkdir -p "$RELAY_LOCK_ROOT" || return 1
+  relay_lock="$RELAY_LOCK_ROOT/$key"
+  "$LOCK_BIN" -f "$relay_lock" -p "$$" >/dev/null 2>&1 || { relay_lock=; return 1; }
+}
+
+trap release_relay_lock EXIT
+
+request() {
+  "$TIMEOUT_BIN" -k "$TMUX_TIMEOUT_KILL_AFTER" "$TMUX_TIMEOUT_SECONDS" "$TMUX_BIN" "$@"
+  local code=$?
+  case "$code" in
+    124|137|143) return 75 ;;
+    *) return "$code" ;;
+  esac
+}
+
+require_empty_agy_input() {
+  local capture state state_after code cursor_x cursor_y in_mode attempts=0
+  while [ "$attempts" -lt 24 ]; do
+    attempts=$((attempts + 1))
+    if state="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot query target input state for $pane"
+    fi
+    if [[ "$state" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+      in_mode="${BASH_REMATCH[1]}"
+      cursor_x="${BASH_REMATCH[2]}"
+      cursor_y="${BASH_REMATCH[3]}"
+    else
+      fail "cannot determine target input state for $pane"
+    fi
+    [ "$in_mode" = 0 ] || refuse_copy "$pane"
+    if capture="$(request capture-pane -p -e -t "$pane")"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot capture target input for $pane"
+    fi
+    if state_after="$(request display-message -p -t "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
+      :
+    else
+      code=$?
+      [ "$code" = 75 ] && unresponsive
+      fail "cannot recheck target input state for $pane"
+    fi
+    if [[ "$state_after" =~ ^([01]):([0-9]+):([0-9]+)$ ]]; then
+      [ "${BASH_REMATCH[1]}" = 0 ] || refuse_copy "$pane"
+    else
+      fail "cannot recheck target input state for $pane"
+    fi
+    if [ "$state_after" != "$state" ]; then
+      sleep 0.05
+      continue
+    fi
+    printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" '>' "$cursor_x" "$cursor_y" "$relay_verify_width"
+    code=$?
+    case "$code" in
+      0) relay_empty_cursor_x="$cursor_x"; relay_empty_cursor_y="$cursor_y"; return 0 ;;
+      1) refuse_draft "$pane" ;;
+      *) fail "cannot find Agy prompt in target $pane" ;;
+    esac
+  done
+  fail "target composer kept redrawing during inspection; no target input was sent"
+}
+
+source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
+
+[ "$#" = 2 ] && [ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: agy-send-to <window-name> <text>\n' >&2; exit 1; }
+window_name=$1
+message="$(printf '%s' "$2" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
+[ -n "$message" ] || fail 'empty message'
+[ -n "${TMUX:-}" ] || fail 'TMUX is not set'
+target_session="${AGY_SEND_SESSION:-}"
+case "$target_session" in
+  ''|*[!A-Za-z0-9_-]*) fail 'AGY_SEND_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
+case "$window_name" in
+  ''|*[!A-Za-z0-9_-]*) fail 'window name may contain only letters, digits, underscores, or hyphens' ;;
+esac
+target_pane="${AGY_SEND_PANE:-}"
+if [ -n "$target_pane" ]; then
+  [[ "$target_pane" =~ ^%[0-9]+$ ]] || fail 'AGY_SEND_PANE must be a numeric tmux pane ID'
+fi
+
+list_file="$(mktemp "${TMPDIR:-/tmp}/agy-send-to-list.XXXXXX")" || fail 'scratch file unavailable'
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
+  :
+else
+  code=$?
+  trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
+  list_file=
+  [ "$code" = 75 ] && unresponsive
+  fail 'cannot query tmux panes'
+fi
+target_count="$(awk -v session="$target_session" -v window="$window_name" -v selected="$target_pane" '$2 == session && $3 == window && (selected == "" || $1 == selected) { n++ } END { print n + 0 }' "$list_file")"
+pane="$(awk -v session="$target_session" -v window="$window_name" -v selected="$target_pane" '$2 == session && $3 == window && (selected == "" || $1 == selected) { print $1 }' "$list_file")"
+command_name="$(awk -v session="$target_session" -v window="$window_name" -v selected="$target_pane" '$2 == session && $3 == window && (selected == "" || $1 == selected) { print $4 }' "$list_file")"
+trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
+list_file=
+case "$target_count" in
+  0) fail "no target window $target_session:$window_name" ;;
+  1) ;;
+  *) fail "target window $target_session:$window_name is ambiguous" ;;
+esac
+[ "$command_name" = agy ] || fail "pane $pane is running '$command_name', not Agy; refuse"
+
+relay_target_window="$window_name"
+relay_glyph=">"
+acquire_relay_lock || busy
+prepare_payload "$message"
+require_empty_agy_input
+
+if atomic_text "$message"; then
+  :
+else
+  code=$?
+  case "$code" in
+    2) refuse_copy "$pane" ;;
+    75) unresponsive ;;
+    *) partial "literal delivery outcome is unknown for $pane" ;;
+  esac
+fi
+verify_payload
+if atomic_enter; then
+  :
+else
+  code=$?
+  case "$code" in
+    2) partial "target $pane entered copy mode after literal delivery; Enter was not sent" ;;
+    75) unresponsive ;;
+    *) partial "Enter delivery outcome is unknown for $pane" ;;
+  esac
+fi
+printf 'SENT ok (%s:%s %s); complete composer verified (not an acknowledgment)\n' "$target_session" "$window_name" "$pane"

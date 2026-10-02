@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-fuzz-regression.py
 # description: Seeded hostile payload, composer, footer, and ancestry properties.
-# patched: require Claude status and mode footer for proven empty captures
+# patched: fuzz Agy's prompt, footer, and draft boundary
 # date: 2026-10-02T04:00:00Z
 import argparse
 import json
@@ -107,6 +107,11 @@ def run(seed, iterations, output):
                 check("input", [input_guard, glyph, "2", "0"],
                       (glyph + "\u00a0\n\x1b[2J" + footer + "\n").encode(), 1)
             check("input", [input_guard, glyph, "2", "0"], (glyph + " " + value + "\n" + footer + "\n").encode(), 1)
+            agy_divider = "─" * 80
+            agy_idle = agy_divider + "\n\x1b[94m>\x1b[39m\n" + agy_divider + "\n? for shortcuts  Gemini 3.8 Flash · high\n"
+            agy_draft = agy_idle.replace("\x1b[94m>\x1b[39m\n", "\x1b[94m>\x1b[39m " + value + "\n", 1)
+            check("input", [input_guard, ">", "2", "1", "80"], agy_idle.encode(), 0)
+            check("input", [input_guard, ">", "2", "1", "80"], agy_draft.encode(), 1)
             if glyph == "›":
                 malformed = rng.choice(("\x1b[49m  continuation", "\x1b[38;5;215m  Fast unknown · Draft Context", "\x1b[49m  Fast off", "\x1b[49m  Fast off · test · Context 0% used · Main [other]"))
                 check("input", [input_guard, glyph, "2", "0"], (glyph + " \n" + malformed + "\n").encode(), 1)

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # path: ~/.config/tmux/tools/relay-input-guard
-# description: Refuse drafts while recognizing captured Claude and Codex composer boundaries.
-# patched: verify Claude footer boundary, dim Try placeholder, and idle cursor cell
+# description: Refuse drafts while recognizing captured Claude, Codex, and Agy composers.
+# patched: verify the live Agy prompt, dividers, and idle footer
 # date: 2026-10-02T04:00:00Z
 use strict;
 use warnings;
@@ -62,7 +62,8 @@ sub expected_empty_cursor_x {
     # draft made solely of spaces indistinguishable from terminal padding.
     return undef if $visible !~ /^([ \x{a0}]*)\Q$glyph\E(.*)\z/s;
     my ($leading, $after) = ($1, $2);
-    my $column = length($leading) + 1; # Both known prompt glyphs are one cell.
+    my $column = length($leading) + 1; # Known prompt glyphs are one cell.
+    $column++ if $glyph eq '>';
     if (length($after) && (substr($after, 0, 1) eq ' ' || substr($after, 0, 1) eq "\x{a0}")) {
         $column++;
     }
@@ -270,6 +271,29 @@ sub composer_has_safe_tail {
     return 0;
 }
 
+sub agy_known_empty {
+    my ($rows_ref, $start) = @_;
+    return 0 if !defined($pane_width) || $pane_width < 8;
+    my $raw = $rows_ref->[$start];
+    return 0 if $raw !~ /\A\e\[94m>\e\[39m\r?\n?\z/;
+    return 0 if $start == 0 || $start + 2 > $#$rows_ref;
+    for my $divider_index ($start - 1, $start + 1) {
+        my $divider_raw = $rows_ref->[$divider_index];
+        return 0 if !row_has_trusted_sgr($divider_raw);
+        my $visible = visible_row($divider_raw);
+        $visible =~ s/[\r\n]+\z//;
+        return 0 if $visible ne ('─' x $pane_width);
+    }
+    for my $index ($start + 2 .. $#$rows_ref) {
+        return 0 if claude_known_divider($rows_ref->[$index]);
+    }
+    my $footer_raw = $rows_ref->[$start + 2];
+    return 0 if !row_has_trusted_sgr($footer_raw);
+    my $footer = visible_row($footer_raw);
+    return $footer =~ /\A\? for shortcuts\r?\n?\z/ if $pane_width < 30;
+    return $footer =~ /\A\? for shortcuts\s+Gemini [^\r\n]+ · [^\r\n]+\r?\n?\z/;
+}
+
 # Codex renders its current empty composer as this exact dim placeholder.  A
 # cursor at the prompt column alone proves nothing: a draft can be moved Home,
 # and a trailing space draft is omitted by capture-pane.  Do not treat generic
@@ -319,6 +343,11 @@ sub codex_known_placeholder {
     return 0 if !$at_input || !$saw_dim_after_glyph || $saw_conceal_after_glyph || !$all_visible_text_dim;
     $after_glyph =~ s/[\r\n]+\z//;
     return $after_glyph eq ' Ask Codex to do anything';
+}
+
+if ($glyph eq '>') {
+    exit 1 if !agy_known_empty(\@rows, $prompt_index);
+    exit 0;
 }
 
 if ($glyph eq '›') {

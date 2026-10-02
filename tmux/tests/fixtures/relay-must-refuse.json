@@ -28,6 +28,34 @@
       "input_exit": 1,
       "pane_width": 167,
       "sanitized": true
+    },
+    {
+      "name": "agy-home-draft",
+      "source": "/fixtures/agy-home-draft.ansi",
+      "capture_file": "agy-home-draft.ansi",
+      "meta_file": "agy-home-draft.meta",
+      "capture_sha256": "60a568889196fd036d391ceabbac9e8c6bd482ec70dd688a21eeaac06df8aff7",
+      "meta_sha256": "79455e779d83b838dd80f3a8d30ccb228757ebb04f887cf926db58dbaf45e08f",
+      "glyph": ">",
+      "cursor_x": 2,
+      "cursor_y": 17,
+      "pane_width": 167,
+      "input_exit": 1,
+      "sanitized": true
+    },
+    {
+      "name": "agy-space-home",
+      "source": "/fixtures/agy-space-home.ansi",
+      "capture_file": "agy-space-home.ansi",
+      "meta_file": "agy-space-home.meta",
+      "capture_sha256": "83527744e7c01c6b73087d3992a14f698240c7b7772622838cc8098b2e327eb5",
+      "meta_sha256": "79455e779d83b838dd80f3a8d30ccb228757ebb04f887cf926db58dbaf45e08f",
+      "glyph": ">",
+      "cursor_x": 2,
+      "cursor_y": 17,
+      "pane_width": 167,
+      "input_exit": 1,
+      "sanitized": true
     }
   ]
 }

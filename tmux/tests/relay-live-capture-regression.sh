@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tests/relay-live-capture-regression.sh
 # description: Verify proven empty composer captures and a stable current private Codex corpus.
-# patched: require fresh and post-turn must-accept captures before relay guard changes land
+# patched: require proven Claude, Codex, and Agy idle captures before landing
 # date: 2026-10-02T04:00:00Z
 set -euo pipefail
 
@@ -27,7 +27,7 @@ import sys
 guard, manifest = sys.argv[1:]
 path = pathlib.Path(manifest)
 cases = json.loads(path.read_text())["cases"]
-required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19"}
+required = {"fable", "deepseek", "config-claude", "astra-fresh", "astra-post-turn", "fable-fresh", "fable-post-turn", "deepseek-fresh", "deepseek-post-turn", "deepseek-idle-40", "deepseek-idle-19", "agy-fresh", "agy-post-turn", "agy-post-helper", "agy-wide-200", "agy-narrow-40", "agy-narrow-19"}
 assert {case["name"] for case in cases} == required
 for case in cases:
     capture = (path.parent / case["capture_file"]).read_bytes()
