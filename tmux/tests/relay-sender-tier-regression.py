@@ -111,8 +111,11 @@ relay_busy_preflight "$MOCK_CAPTURE" "$MOCK_CURSOR_Y"
                 ("cc-real-warping-relaxed", "❯", "relaxed", real_cc_warping, 52, 0),
                 ("codex-strict-busy", "›", "strict", codex_busy, 4, 5),
                 ("codex-strict-busy-hms", "›", "strict", codex_busy_hms, 4, 5),
+                ("codex-background-busy", "›", "strict", codex_busy.replace('esc to interrupt)', 'esc to interrupt) · 1 background terminal running · /ps to view · /stop to close'), 4, 5),
+                ("codex-background-busy-relaxed", "›", "relaxed", codex_busy.replace('esc to interrupt)', 'esc to interrupt) · 2 background terminals running · /ps to view · /stop to close'), 4, 5),
                 ("codex-relaxed-busy", "›", "relaxed", codex_busy, 4, 5),
                 ("codex-historical", "›", "strict", codex_historical, 4, 0),
+                ("codex-background-historical", "›", "strict", codex_historical.replace('esc to interrupt)', 'esc to interrupt) · 1 background terminal running · /ps to view · /stop to close'), 4, 0),
                 ("agy-real-generating-strict", ">", "strict", real_agy_busy, 41, 5),
                 ("agy-real-generating-relaxed", ">", "relaxed", real_agy_busy, 41, 5),
             )

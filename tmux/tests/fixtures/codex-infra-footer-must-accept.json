@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "name": "infra-gpt-6.1-sol",
+      "footer": "Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.repository/infra \u00b7 Context 69% used \u00b7 Main [default] \u00b7 \u2190 for agents",
+      "capture": "\u001b[1m\u203a\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.repository/infra \u00b7 Context 69% used \u00b7 Main [default] \u00b7 \u2190 for agents\n",
+      "cursor_x": 2,
+      "cursor_y": 0,
+      "pane_width": 167,
+      "input_exit": 0,
+      "source": "verbatim footer reported in BRIEF.md; constructed idle composer around it"
+    },
+    {
+      "name": "infra-gpt-5.6-terra",
+      "footer": "Fast off \u00b7 GPT-5.6-Terra max \u00b7 ~/.repository/infra \u00b7 Context 58% used \u00b7 Main [default] \u00b7 \u2190 for agents",
+      "capture": "\u001b[1m\u203a\u001b[0m\u001b[48;2;57;57;71m \u001b[2mAsk Codex to do anything\u001b[0m\u001b[48;2;57;57;71m\n\n\u001b[49m  Fast off \u00b7 GPT-5.6-Terra max \u00b7 ~/.repository/infra \u00b7 Context 58% used \u00b7 Main [default] \u00b7 \u2190 for agents\n",
+      "cursor_x": 2,
+      "cursor_y": 0,
+      "pane_width": 167,
+      "input_exit": 0,
+      "source": "verbatim footer reported in BRIEF.md; constructed idle composer around it"
+    }
+  ]
+}

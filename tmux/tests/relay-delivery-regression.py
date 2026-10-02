@@ -69,8 +69,10 @@ def fixture(directory, glyph, mode):
             output += "Working (1s · esc to interrupt)"
         if mode == "codex159-historical-busy":
             output += "\x1b[1;1H• Working (0s • esc to interrupt)\x1b[2;1HCompleted earlier turn"
-        if mode == "codex159-active-busy":
+        if mode in ("codex159-active-busy", "codex159-active-busy-background"):
             output += f"\x1b[{top - 1};1H\x1b[1m•\x1b[0m \x1b[2mWorking\x1b[0m \x1b[2m(0s • \x1b[0;1mesc\x1b[0;2m to interrupt)\x1b[0m"
+            if mode.endswith("-background"):
+                output += " · 1 background terminal running · /ps to view · /stop to close"
         if mode == "claude-historical-busy":
             output += f"\x1b[1;1H✳ Hyperspacing…\x1b[{top - 2};1HCompleted earlier turn"
         if mode == "claude-active-busy":
@@ -487,6 +489,7 @@ class Matrix:
             self.atomic_refusal_retry(relay)
             self.case(relay, "codex159-real-draft", code=5, mode="codex159-draft")
             self.case(relay, "codex159-active-busy", code=5, mode="codex159-active-busy")
+            self.case(relay, "codex159-active-busy-background", code=5, mode="codex159-active-busy-background")
             self.case(relay, "codex159-historical-busy", mode="codex159-historical-busy")
             for mode in ("extra", "hidden"):
                 self.case(relay, "codex159-busy-" + mode, code=4, mode="codex159-busy-" + mode)

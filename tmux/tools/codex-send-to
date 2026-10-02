@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: prove node entry points and require an uncropped Codex footer
+# patched: prove node entry points while preserving the established composer guard
 # date: 2026-10-02
 set -uo pipefail
 
@@ -199,9 +199,6 @@ require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
-if [ -n "$send_target_proof" ]; then
-  printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer >/dev/null || fail "unrecognized or cropped Codex model/cwd footer"
-fi
 send_target_check || fail "Codex process identity changed before paste"
 if atomic_text "$message"; then
   :

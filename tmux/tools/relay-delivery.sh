@@ -65,7 +65,7 @@ if y >= len(rows) or not rows[y].lstrip().startswith(glyph):
     sys.exit(1)
 if glyph == "›":
     previous=next((row.strip() for row in reversed(rows[max(0,y-4):y]) if row.strip()), "")
-    sys.exit(0 if re.fullmatch(r"• Working \((?:[0-9]+h )?(?:[0-9]+m )?[0-9]+s [•·] esc to interrupt\)", previous) else 1)
+    sys.exit(0 if re.fullmatch(r"• Working \((?:[0-9]+h )?(?:[0-9]+m )?[0-9]+s [•·] esc to interrupt\)(?: · [1-9][0-9]* background terminals? running · /ps to view · /stop to close)?", previous) else 1)
 if y == 0 or not re.fullmatch("─{8,}", rows[y-1].strip()):
     sys.exit(1)
 if glyph == ">":
