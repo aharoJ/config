@@ -168,6 +168,24 @@ def check(mode, capture, expected=''):
         current = footer_parts(footers[0].split(' · Context ')[0])
         previous = footer_parts(expected)
         return 0 if current[0] == previous[0] and current[3] == previous[3] else 1
+    if mode == 'direct-reset':
+        if check('reset', capture, expected):
+            return 1
+        content = [(row, raw[i]) for i, row in enumerate(rows) if row]
+        _, model, effort, cwd = footer_parts(expected)
+        if len(content) == 7:
+            notice = '• Model changed to ' + model.lower() + ' ' + effort + ' for this session only'
+            if content[4][0] != notice:
+                return 1
+            content.pop(4)
+        valid = len(content) == 6
+        valid = valid and content[0][0] == '  >_ OpenAI Codex (v0.160.0)'
+        valid = valid and content[1][0] == '     ' + cwd
+        valid = valid and content[2][0].startswith('  ') and content[2][1].startswith('  \x1b[38;2;99;168;248m')
+        valid = valid and content[3][0].startswith('  Tip: ') and content[3][1].startswith('  \x1b[1mTip:\x1b[0m ')
+        valid = valid and content[4][0] == '› Ask Codex to do anything'
+        valid = valid and content[5][0].strip() == footers[0]
+        return 0 if valid else 1
     if mode in ('models', 'efforts', 'advanced') or mode.startswith('navigate-'):
         kind = mode.removeprefix('navigate-')
         selected, desired = picker(rows, raw, kind, expected)

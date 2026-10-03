@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 — Verify fresh Codex chats outside git
+
+`codex-new-chat` now accepts the observed fresh home screen that `/new` displays outside a git repository, alongside the existing current-checkout menu. Both paths retain the same identity, cwd, zero-context, model/effort restoration, and idle-composer checks before reporting success, and additionally require the supported home-screen grammar, refusing retained conversation text even beside a zero-context footer. An unfamiliar transition still returns an unverified result without further input.
+
 ## 2026-10-02 — Own private tmux lab fixtures
 
 `tmux-lab run -- <command>` owns one isolated private server, restricts child tmux requests to that server, records process and socket identities, and verifies teardown on completion or interruption. Detached descendants are checked through their macOS responsibility scope; survivors and interrupted owners remain visible in the read-only `tmux-lab ls` ledger and listener census. The paste-collision fixture now uses the supplied owner when wrapped and waits for a stable, guard-accepted empty composer, so a workspace-trust dialog cannot masquerade as readiness. Focused regression coverage checks lifecycle, isolation, escaped descendants, signal handling, reused names, and independent live-server accounting.

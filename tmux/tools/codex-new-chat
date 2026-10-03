@@ -230,6 +230,23 @@ new_wait() {
   done
   partial "unrecognized $1 screen; no further input sent"
 }
+new_destination_wait() {
+  local attempts=0
+  while [ "$attempts" -lt 40 ]; do
+    new_observe
+    if printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" menu "$before_footer"; then
+      new_destination=menu
+      return
+    fi
+    if printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$before_footer"; then
+      new_destination=reset
+      return
+    fi
+    attempts=$((attempts + 1))
+    sleep 0.1
+  done
+  partial 'unrecognized menu or reset screen; no further input sent'
+}
 new_key() {
   local check nested receipt code screen_guard key=${2:-Enter} expected=${3:-$before_footer}
   case "$key" in Enter|Up|Down|s) ;; *) partial "unsupported restoration key" ;; esac
@@ -285,9 +302,11 @@ new_select() {
 }
 new_wait slash
 new_key slash
-new_wait menu
-new_key menu
-new_wait reset
+new_destination_wait
+if [ "$new_destination" = menu ]; then
+  new_key menu
+  new_wait reset
+fi
 if ! printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" fresh "$before_footer"; then
   restore_footer="$(printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" footer)" || partial 'unrecognized reset model footer'
   new_idle
@@ -309,5 +328,6 @@ if ! printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" fresh "$
   esac
 fi
 new_wait fresh
+new_wait direct-reset
 new_idle
 printf 'NEW ok (%s:%s %s); fresh context, model and cwd verified\n' "$target_session" "$window_name" "$pane"
