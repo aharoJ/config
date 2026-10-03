@@ -210,8 +210,6 @@ docs/prompts/*.md
 # Cross-review infrastructure (symlinked to ~/.notes/)
 .claude/rules
 GOTCHAS.md
-scripts/templates
-scripts/generate-intake.sh
 .claude/skills/review/references/
 
 # WireGuard private keys

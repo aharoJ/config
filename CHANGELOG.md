@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 — Retire obsolete config scripts links
+
+The config cross-review links to `~/.notes` were dangling after that tooling moved to `~/.notes/idle`. Removed the obsolete config-local usage instructions and ignore entries as part of the scripts-directory retirement. Relay users now use the stable `~/.local/bin/cc-msg` entry point; tracked source remains under `tmux/tools/`.
+
 ## 2026-10-02 — Relay red team 2 repairs
 
 Captured idle states at narrow Claude, Agy and Codex widths now pass their composer guards. Relay payloads paste in one guarded operation, avoiding an unguarded second chunk. Relay locks require a valid tmux socket identity, and route names compare as strings. Codex preflight uses its observed one-row margin and refuses characters whose rendered width the installed Unicode table cannot prove. Draft or unknown-state refusals now say both possibilities.
