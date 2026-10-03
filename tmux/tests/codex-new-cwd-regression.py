@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/codex-new-cwd-regression.py
-# description: Replay byte-exact private Codex captures across cwd and footer variants.
+# description: Replay byte-exact sanitized Codex captures across cwd and footer variants.
 # date: 2026-10-02
 import hashlib
 import json

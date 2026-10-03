@@ -1,6 +1,10 @@
+# Sanitized fixture provenance
+
+Published captures use synthetic account identities and directories, with unrelated private transcript prose replaced. ANSI sequences, per-row cell widths, wrapping and cursor metadata are preserved. Manifest digests identify the sanitized published bytes; `/fixtures/` source identifiers are public labels, not links to raw evidence. Raw capture locations are not published. Synthetic-derived cases retain their distinct labels.
+
 # Relay guard landing gate
 
-Every change to `tmux/tools/relay-input-guard` must prove that real empty composers still pass, as well as that drafts refuse. Run `bash tmux/tests/relay-live-capture-regression.sh --fixtures tmux/tests/fixtures/relay-must-accept.json` and `bash tmux/tests/relay-input-guard-regression.sh` before landing. The must-accept set contains raw `capture-pane -p -e` output and cursor metadata for the three 2026-10-01 exit-5 panes, fresh/post-turn config panes, and 40- and 19-column DeepSeek panes. The guard regression replays the real DeepSeek divider-shaped multiline draft in `relay-must-refuse.json` that caused a paste into unsent input. It also replays the 19-column pasted payload that previously failed verification.
+Every change to `tmux/tools/relay-input-guard` must prove that real empty composers still pass, as well as that drafts refuse. Run `bash tmux/tests/relay-live-capture-regression.sh --fixtures tmux/tests/fixtures/relay-must-accept.json` and `bash tmux/tests/relay-input-guard-regression.sh` before landing. The must-accept set contains sanitized `capture-pane -p -e` output and cursor metadata for the three 2026-10-01 exit-5 panes, fresh/post-turn config panes, and 40- and 19-column DeepSeek panes. The guard regression replays the sanitized DeepSeek divider-shaped multiline draft in `relay-must-refuse.json` that caused a paste into unsent input. It also replays the 19-column pasted payload that previously failed verification.
 
 Relay code must never trust a bare `tmux display-message -t` result: tmux may return exit 0 and another pane's data when the requested target has vanished. Include `#{pane_id}` in every targeted format and require it to equal the resolved pane ID, including paste and Enter receipts. A missing or mismatched identity is a refusal or an unknown delivery outcome according to whether input was already attempted.
 

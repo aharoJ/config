@@ -397,7 +397,7 @@ exec "$TRASH_TEST_STUB" "$@"''')
                     directory.mkdir()
                     (directory / "socket").touch()
                     window = "claude" if relay == "cc-msg.sh" else "codex"
-                    command = "2.1.286" if relay == "cc-msg.sh" else "node"
+                    command = "2.1.286" if relay == "cc-msg.sh" else "codex"
                     capture = "❯\u00a0\n" + "─" * 192 + "\n  Opus 5.5 | v2.1.287\n  ⏵⏵ bypass permissions on" if relay == "cc-msg.sh" else "› \x1b[2mAsk Codex to do anything\x1b[0m\n\x1b[49m  Fast off · test · Context 0% used"
                     env = {**self.env, "TMPDIR": str(directory), "TMUX": str(directory / "socket") + ",0,0",
                            "TMUX_BIN": str(proxy), "TIMEOUT_BIN": str(timer), "TMUX_RELAY_LOCK_BIN": str(locker),

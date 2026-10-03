@@ -3,91 +3,102 @@
   "cases": [
     {
       "name": "sol-fresh",
-      "source": "live-sol-fresh.cap",
-      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Hello, you. Got an idea?\n\n  \u001b[1mTip:\u001b[0m Use \u001b[1m/fork\u001b[0m to branch the current chat into a new thread.\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-fresh.cap",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Hello, you. Got an idea?\n\n  \u001b[1mTip:\u001b[0m Use \u001b[1m/fork\u001b[0m to branch the current chat into a new thread.\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 9,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "terra-fresh",
-      "source": "live-terra-fresh.cap",
-      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  These might be the bugs you’re looking for.\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-terra-fresh.cap",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  These might be the bugs you\u2019re looking for.\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off \u00b7 GPT-5.6-Terra max \u00b7 ~/.config \u00b7 Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 9,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-subagent-idle-main-default",
-      "source": "live-sol-subagent-idle.cap",
-      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Shall we make the thing that makes the other thing easier?\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1;2m› \u001b[0mThis is a private UI-state capture lab. Do not read or write any files and do not run shell tools. Spawn exactly one\n  subagent, asking it to reply only READY without tools. Wait for its response and then reply DONE. No other actions.\n\n\n\u001b[2m• \u001b[0;1mStarted \u001b[0m`/root/ready`\n\n\u001b[2m• \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m• \u001b[0;1mCompleted \u001b[0m`/root/ready`\n\n\u001b[2m• \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  └ \u001b[0mNo agents completed yet\n\n\u001b[2m• \u001b[0mDONE\n\n\u001b[2m  Worked for 11s • 12:38 PM\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 1% used · Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-subagent-idle.cap",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Shall we make the thing that makes the other thing easier?\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1;2m\u203a \u001b[0mThis is a private UI-state capture lab. Do not read or write any files and do not run shell tools. Spawn exactly one\n  subagent, asking it to reply only READY without tools. Wait for its response and then reply DONE. No other actions.\n\n\n\u001b[2m\u2022 \u001b[0;1mStarted \u001b[0m`/root/ready`\n\n\u001b[2m\u2022 \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m\u2022 \u001b[0;1mCompleted \u001b[0m`/root/ready`\n\n\u001b[2m\u2022 \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  \u2514 \u001b[0mNo agents completed yet\n\n\u001b[2m\u2022 \u001b[0mDONE\n\n\u001b[2m  Worked for 11s \u2022 12:38 PM\u001b[0m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 1% used \u00b7 Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 27,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-truecolor-fresh",
-      "source": "live-sol-color-fresh.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHello, world. Hello, you.\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m · \u001b[38;2;171;223;167m~/.config\u001b[39m · \u001b[38;2;242;181;144mContext 0% used\u001b[39m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-color-fresh.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHello, world. Hello, you.\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[39m \u00b7 \u001b[38;2;242;181;144mContext 0% used\u001b[39m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 9,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-truecolor-subagent-idle-main-default",
-      "source": "live-sol-color-subagent-idle.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mShall we make the thing that makes the other thing easier?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b[38;2;99;168;248m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1;2m› \u001b[0mThis is a private UI-state capture lab. Do not read or write any files and do not run shell tools. Spawn exactly one\n  subagent asking it to reply READY without tools, wait for it, and reply DONE. No other actions.\n\n\n\u001b[2m• \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[2m• \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m• \u001b[0;1mCompleted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[2m• \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  └ \u001b[0mNo agents completed yet\n\n\u001b[2m• \u001b[0mDONE\n\n\u001b[2m  Worked for 15s • 12:38 PM\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m · \u001b[38;2;171;223;167m~/.config\u001b[39m · \u001b[38;2;242;181;144mContext 1% used\u001b[39m · Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-color-subagent-idle.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mShall we make the thing that makes the other thing easier?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b[38;2;99;168;248m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1;2m\u203a \u001b[0mThis is a private UI-state capture lab. Do not read or write any files and do not run shell tools. Spawn exactly one\n  subagent asking it to reply READY without tools, wait for it, and reply DONE. No other actions.\n\n\n\u001b[2m\u2022 \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[2m\u2022 \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m\u2022 \u001b[0;1mCompleted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[2m\u2022 \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  \u2514 \u001b[0mNo agents completed yet\n\n\u001b[2m\u2022 \u001b[0mDONE\n\n\u001b[2m  Worked for 15s \u2022 12:38 PM\u001b[0m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[39m \u00b7 \u001b[38;2;242;181;144mContext 1% used\u001b[39m \u00b7 Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 27,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-startup-without-footer",
-      "source": "live-sol-working-1.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-working-1.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 7,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     },
     {
       "name": "sol-working-empty",
-      "source": "live-sol-working-3.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m› \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn one subagent asking it to reply READY without\n  tools, wait for it, and reply DONE.\n\n\n\u001b[1m\u001b[38;2;128;128;128m•\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(1s • \u001b[0;1mesc\u001b[0;2m to interrupt)\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m · \u001b[38;2;171;223;167m~/.config\u001b[39m · \u001b[38;2;242;181;144mContext 0% used\u001b[39m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-working-3.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m\u203a \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn one subagent asking it to reply READY without\n  tools, wait for it, and reply DONE.\n\n\n\u001b[1m\u001b[38;2;128;128;128m\u2022\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(1s \u2022 \u001b[0;1mesc\u001b[0;2m to interrupt)\u001b[0m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[39m \u00b7 \u001b[38;2;242;181;144mContext 0% used\u001b[39m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 16,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-working-main-default-empty",
-      "source": "live-sol-working-7.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m› \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn one subagent asking it to reply READY without\n  tools, wait for it, and reply DONE.\n\n\n\u001b[2m• \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[1m\u001b[38;2;128;128;128m•\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(5s • \u001b[0;1mesc\u001b[0;2m to interrupt)\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m · \u001b[38;2;171;223;167m~/.config\u001b[39m · \u001b[38;2;242;181;144mContext 1% used\u001b[39m · Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-working-7.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mHey there. Big plans or little fixes?\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m\u203a \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn one subagent asking it to reply READY without\n  tools, wait for it, and reply DONE.\n\n\n\u001b[2m\u2022 \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready`\u001b[39m\n\n\u001b[1m\u001b[38;2;128;128;128m\u2022\u001b[0m \u001b[2mWorking\u001b[0m \u001b[2m(5s \u2022 \u001b[0;1mesc\u001b[0;2m to interrupt)\u001b[0m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[39m \u00b7 \u001b[38;2;242;181;144mContext 1% used\u001b[39m \u00b7 Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 18,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-queued-turn-idle-empty",
-      "source": "live-sol-queued.cap",
-      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mNice to see you in these parts.\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m› \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn three subagents sequentially asking each to\n  reply READY without tools, and wait after each. Then reply DONE.\n\n\n\u001b[2m• \u001b[0mI’ll ask three subagents in sequence to reply READY without tools, waiting for each before starting the next.\n\n\u001b[2m• \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready_one`\u001b[39m\n\n\u001b[2m• \u001b[0;1mCompleted \u001b[0m\u001b[38;2;99;168;248m`/root/ready_one`\u001b[39m\n\n\u001b[2m• \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m• \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  └ \u001b[0mNo agents completed yet\n\n\n\u001b[1;2m› \u001b[0mAfter current work reply QUEUED-ACK. No tools, no file reads or writes.\n\n\n\u001b[2m• \u001b[0mQUEUED-ACK\n\n\u001b[2m  Worked for 17s • 12:41 PM\u001b[0m\n\n\n\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m · \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m · \u001b[38;2;171;223;167m~/.config\u001b[39m · \u001b[38;2;242;181;144mContext 1% used\u001b[39m · Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-queued.cap",
+      "capture": "\n  \u001b[38;2;99;168;248m>_ \u001b[1m\u001b[39mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  \u001b[38;2;99;168;248mNice to see you in these parts.\u001b[39m\n\n  \u001b[1mTip:\u001b[0m \u001b[3mNew\u001b[0m Use \u001b[1m/fast\u001b[0m to enable our fastest inference with increased plan usage.\n\n\n\u001b[1;2m\u203a \u001b[0mPrivate UI lab. Do not read or write files or use shell tools. Spawn three subagents sequentially asking each to\n  reply READY without tools, and wait after each. Then reply DONE.\n\n\n\u001b[2m\u2022 \u001b[0mI\u2019ll ask three subagents in sequence to reply READY without tools, waiting for each before starting the next.\n\n\u001b[2m\u2022 \u001b[0;1mStarted \u001b[0m\u001b[38;2;99;168;248m`/root/ready_one`\u001b[39m\n\n\u001b[2m\u2022 \u001b[0;1mCompleted \u001b[0m\u001b[38;2;99;168;248m`/root/ready_one`\u001b[39m\n\n\u001b[2m\u2022 \u001b[0;1mWaiting for agents\u001b[0m\n\n\u001b[2m\u2022 \u001b[0;1mFinished waiting\u001b[0m\n\u001b[2m  \u2514 \u001b[0mNo agents completed yet\n\n\n\u001b[1;2m\u203a \u001b[0mAfter current work reply QUEUED-ACK. No tools, no file reads or writes.\n\n\n\u001b[2m\u2022 \u001b[0mQUEUED-ACK\n\n\u001b[2m  Worked for 17s \u2022 12:41 PM\u001b[0m\n\n\n\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  \u001b[38;2;200;169;238mFast off\u001b[39m \u00b7 \u001b[38;2;246;226;183mGPT-6.1-Sol low\u001b[39m \u00b7 \u001b[38;2;171;223;167m~/.config\u001b[39m \u00b7 \u001b[38;2;242;181;144mContext 1% used\u001b[39m \u00b7 Main [default]\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 2,
       "cursor_y": 33,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "sol-single-line-draft",
-      "source": "live-sol-draft.cap",
-      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Hello, you. Got an idea?\n\n  \u001b[1mTip:\u001b[0m Use \u001b[1m/fork\u001b[0m to branch the current chat into a new thread.\n\n\n\u001b[1m›\u001b[0m real draft: preserve this unsent input\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-sol-draft.cap",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  Hello, you. Got an idea?\n\n  \u001b[1mTip:\u001b[0m Use \u001b[1m/fork\u001b[0m to branch the current chat into a new thread.\n\n\n\u001b[1m\u203a\u001b[0m real draft: preserve this unsent input\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 40,
       "cursor_y": 9,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     },
     {
       "name": "terra-multiline-draft",
-      "source": "live-terra-multiline-draft.cap",
-      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  These might be the bugs you’re looking for.\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1m›\u001b[0m first unsent draft line\n  second unsent draft line\n\n  Fast off · GPT-5.6-Terra max · ~/.config · Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "source": "/fixtures/live-terra-multiline-draft.cap",
+      "capture": "\n  >_ \u001b[1mOpenAI Codex\u001b[0;2m (v0.159.3)\u001b[0m\n     \u001b[2m~/.config\u001b[0m\n\n  These might be the bugs you\u2019re looking for.\n\n  \u001b[1mTip:\u001b[0m Try the \u001b[1mDesktop app\u001b[0m. Run 'codex app' or visit \u001b[4m\u001b]8;;https://chatgpt.com/codex?app-landing-page=true\u001b\\https://chatgpt.com/codex?app-landing-page=true\u001b[0m\u001b]8;;\u001b\\\n\n\n\u001b[1m\u203a\u001b[0m first unsent draft line\n  second unsent draft line\n\n  Fast off \u00b7 GPT-5.6-Terra max \u00b7 ~/.config \u00b7 Context 0% used\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
       "cursor_x": 26,
       "cursor_y": 10,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     }
   ]
 }

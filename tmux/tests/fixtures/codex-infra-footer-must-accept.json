@@ -8,7 +8,8 @@
       "cursor_y": 0,
       "pane_width": 167,
       "input_exit": 0,
-      "source": "verbatim footer reported in BRIEF.md; constructed idle composer around it"
+      "source": "/fixtures/verbatim footer reported in BRIEF.md; constructed idle composer around it",
+      "sanitized": true
     },
     {
       "name": "infra-gpt-5.6-terra",
@@ -18,7 +19,8 @@
       "cursor_y": 0,
       "pane_width": 167,
       "input_exit": 0,
-      "source": "verbatim footer reported in BRIEF.md; constructed idle composer around it"
+      "source": "/fixtures/verbatim footer reported in BRIEF.md; constructed idle composer around it",
+      "sanitized": true
     }
   ]
 }

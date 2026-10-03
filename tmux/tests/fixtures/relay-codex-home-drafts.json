@@ -3,43 +3,48 @@
   "cases": [
     {
       "name": "space-draft-moved-home-must-refuse",
-      "source": "r2-real-codex/space-home.cap + space-home.meta; direct keyboard sequence Space, Home",
-      "capture": "\u001b[1m›\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "source": "/fixtures/space-home.cap + space-home.meta; direct keyboard sequence Space, Home",
+      "capture": "\u001b[1m\u203a\u001b[0m\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     },
     {
       "name": "text-draft-moved-home-must-refuse",
-      "source": "r2-real-codex/p0b-home.cap + p0b-home.meta; direct keyboard sequence type R2-HOME-DRAFT, Home",
-      "capture": "\u001b[1m›\u001b[0m R2-HOME-DRAFT\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "source": "/fixtures/p0b-home.cap + p0b-home.meta; direct keyboard sequence type R2-HOME-DRAFT, Home",
+      "capture": "\u001b[1m\u203a\u001b[0m R2-HOME-DRAFT\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     },
     {
       "name": "restored-placeholder-after-backspace",
-      "source": "r2-real-codex/cleared.cap + cleared.meta; direct keyboard sequence Space, Home, End, Backspace",
-      "capture": "\u001b[1m›\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "source": "/fixtures/cleared.cap + cleared.meta; direct keyboard sequence Space, Home, End, Backspace",
+      "capture": "\u001b[1m\u203a\u001b[0m \u001b[2mAsk Codex to do anything\u001b[0m\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "dim-app-suggestion-at-prompt-column",
-      "source": "synthetic dim application suggestion case",
-      "capture": "\u001b[1m›\u001b[0m \u001b[2mapp suggestion\u001b[0m\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "source": "/fixtures/synthetic dim application suggestion case",
+      "capture": "\u001b[1m\u203a\u001b[0m \u001b[2mapp suggestion\u001b[0m\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 0
+      "input_exit": 0,
+      "sanitized": true
     },
     {
       "name": "plain-known-placeholder-text-must-refuse",
-      "source": "synthetic renderer-signature adversarial case",
-      "capture": "\u001b[1m›\u001b[0m Ask Codex to do anything\n\n  Fast off · GPT-6.1-Sol low · ~/.config · Context 0% used\n",
+      "source": "/fixtures/synthetic renderer-signature adversarial case",
+      "capture": "\u001b[1m\u203a\u001b[0m Ask Codex to do anything\n\n  Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/.config \u00b7 Context 0% used\n",
       "cursor_x": 2,
       "cursor_y": 0,
-      "input_exit": 1
+      "input_exit": 1,
+      "sanitized": true
     }
   ]
 }

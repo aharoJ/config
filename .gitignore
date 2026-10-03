@@ -1,5 +1,5 @@
 # Ignore general generated files
-tools/
+/tools/
 dev/
 link.py
 unlink.py

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------------------
 # path:        ~/.config/.pre-commit-hook
-# description: blocks commits containing sensitive patterns
+# description: blocks staged credentials and private identifiers
 # install:     cp .pre-commit-hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 # -------------------------------------------------------------------
 
@@ -50,6 +50,72 @@ if [ -n "$BLOCKED_FILES" ]; then
   done
   echo ""
   echo "Run: git reset HEAD <file>"
+  exit 1
+fi
+
+python3 - "$REPO_ROOT" <<'PY'
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import unicodedata
+
+root = pathlib.Path(sys.argv[1])
+names = subprocess.check_output(['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], cwd=root).split(b'\0')
+email = re.compile(r'[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
+mac = re.compile(r'(?<![\w:])(?:[0-9a-f]{2}:){5}[0-9a-f]{2}(?![\w:])', re.I)
+absolute = re.compile(r'(?:/' + r'Users/[^/\s"\x1b]+|/' + r'home/[^/\s"\x1b]+)')
+private_capture = re.compile(r'(?:~/|/)(?:desk/(?:audits|incidents)|private/tmp/[^\s]*audit)[^\s]*', re.I)
+ansi = re.compile(r'\x1b\[[0-9;]*m')
+issues = []
+for raw in names:
+    if not raw:
+        continue
+    name = raw.decode('utf-8', errors='surrogateescape')
+    result = subprocess.run(['git', 'show', ':' + name], cwd=root, capture_output=True)
+    if result.returncode:
+        issues.append((name, 0, 'staged blob unreadable'))
+        continue
+    if b'\0' in result.stdout:
+        if name.startswith('tmux/tests/fixtures/'):
+            issues.append((name, 0, 'binary terminal fixture'))
+        continue
+    fixture = name.startswith('tmux/tests/fixtures/')
+    for number, line in enumerate(result.stdout.decode('utf-8', errors='replace').splitlines(), 1):
+        plain = unicodedata.normalize('NFKC', ansi.sub('', line))
+        for match in email.finditer(plain):
+            domain = match.group().rsplit('@', 1)[1].lower()
+            if domain not in {'example.org', 'example.com', 'example.net', 'example.invalid'} and match.group().lower() != 'noreply@openai.com':
+                issues.append((name, number, 'personal email'))
+        if mac.search(plain):
+            issues.append((name, number, 'device MAC'))
+        for match in absolute.finditer(plain):
+            if not (name.startswith('tmux/tests/') and match.group() == '/' + 'Users/tester'):
+                issues.append((name, number, 'machine-specific home path'))
+        if private_capture.search(plain) and (fixture or pathlib.Path(name).suffix not in {'.fish', '.py', '.sh', '.lua'}):
+            issues.append((name, number, 'private capture path'))
+    if fixture and name.endswith('.json'):
+        try:
+            data = json.loads(result.stdout)
+            def inspect(value):
+                if isinstance(value, dict):
+                    if 'source' in value and ('capture_file' in value or 'meta_file' in value):
+                        if value.get('sanitized') is not True or not value['source'].startswith('/fixtures/'):
+                            issues.append((name, 0, 'raw capture provenance'))
+                    for child in value.values():
+                        inspect(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        inspect(child)
+            inspect(data)
+        except (ValueError, TypeError):
+            issues.append((name, 0, 'invalid fixture manifest'))
+for name, line, kind in sorted(set(issues)):
+    print(f'BLOCKED: {name}:{line}: {kind}; value redacted', file=sys.stderr)
+sys.exit(bool(issues))
+PY
+if [ "$?" -ne 0 ]; then
   exit 1
 fi
 

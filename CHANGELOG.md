@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 — Sanitize public configuration and restore reproducible loading
+
+Sanitized terminal fixtures while preserving rendering geometry, refreshed fixture digests, removed deployment details, added a staged privacy gate, made profile links portable, and included the Neovim tools plugin specifications.
+
 ## 2026-10-03 — Recognize equivalent fresh-home ANSI renders
 
 Fresh Codex home recognition now checks the supported visible layout instead of literal greeting and tip SGR prefixes. Redundant resets, reordered attributes and equivalent reset placement no longer reject a fresh home. The input/draft guard and menu-highlight proof remain unchanged. Byte-exact live reset coverage and intensity-preserving ANSI variants cover accepted homes/menus, drafts, unfamiliar screens and retained-transcript counterexamples.
@@ -20,7 +24,7 @@ The config cross-review links to `~/.notes` were dangling after that tooling mov
 
 Captured idle states at narrow Claude, Agy and Codex widths now pass their composer guards. Relay payloads paste in one guarded operation, avoiding an unguarded second chunk. Relay locks require a valid tmux socket identity, and route names compare as strings. Codex preflight uses its observed one-row margin and refuses characters whose rendered width the installed Unicode table cannot prove. Draft or unknown-state refusals now say both possibilities.
 
-With Angel's scoped approval, `codex-send`, `codex-send-to` and `agy-send-to` refuse messages starting with `/` or `!` after normalization, before target input. `cc-msg.sh` retains its sender-prefixed behavior. Disposable Codex and Agy panes refused both leading characters with byte-identical before/after captures and delivered an inert message containing `/` and `!` later in the text.
+With explicit approval, `codex-send`, `codex-send-to` and `agy-send-to` refuse messages starting with `/` or `!` after normalization, before target input. `cc-msg.sh` retains its sender-prefixed behavior. Disposable Codex and Agy panes refused both leading characters with byte-identical before/after captures and delivered an inert message containing `/` and `!` later in the text.
 
 The composer guard now accepts workload-dependent dim suggestions regardless of their wording, and ignores text below a proven footer boundary. Normal-intensity draft text still refuses. A verified Claude Code sender uses the relaxed tier for an ambiguous unstyled Home state; Codex, agy, DeepSeek, and unresolved senders use the strict tier. A fresh sender pane identity and Claude model status are required for the relaxed tier. Relay exits now distinguish known no-write refusals from potentially partial delivery, with busy contention returning 5 and route changes returning 1. A second preflight and a settled full-composer check precede Enter; the same-tick Enter race remains a documented residual.
 
@@ -122,6 +126,8 @@ All three relays now use named tmux buffers and bracketed paste, compare the ent
 
 Codex 0.157.1 defaults to `tui.fullscreen_transcript = true`, which enters the alternate screen and captures the mouse, so tmux wheel scrolling and copy mode could not reach its history. The fix is `tui.alternate_screen = "never"` in `~/.codex/config.toml` (outside this repo). It applies to every launch path: the fish wrapper, `command codex`, raw binary paths, other shells, and raw tmux commands. The interim `--no-alt-screen` wrapper flags in `fish/internal/codex/codex.fish` were reverted and the stray zsh alias removed. Verified in disposable tmux windows through `#{alternate_on}` and `#{mouse_any_flag}`: the default gives 1/1, and `alternate_screen = "never"`, `--no-alt-screen` or `fullscreen_transcript = false` each give 0/0. The composer and footer rows that pane-watch parses are unchanged, and the pane-watch regression suite passes. `codex --strict-config` accepts arbitrary values for this key, so it proves nothing about the setting.
 
+## 2026-09-17 — Tmux freeze captures default to external storage
+
 ## 2026-09-14 — Add tmux freeze capture and guided loop recovery
 
 Added autoloaded fish functions `tfreeze` and `trescue` plus the narrow `tmux-loop-rescue --observe` interface. `tfreeze` captures new read-only evidence for the literal production socket without starting a missing server. `trescue` captures, observes, displays the fresh PID/build/count evidence, requires `RESCUE`, then leaves the exact PID confirmation to the rescue tool. It carries the fresh observed count forward automatically; there is no manual count prompt or maximum fallback.
@@ -171,6 +177,10 @@ Re-added two Xiaomi MiMo model flags to `fish/internal/claude/openrouter.fish`. 
 Restored across all four flag-list sites (model resolver, allow-guard, usage text, strip loop). Single-model-flag enforcement and cost-safety guards unchanged.
 
 **Follow-up (same day):** wrapper now **defaults to `--approval-mode yolo`** (auto-approve every tool, no prompts) — the bare prompt-on-everything default made the agents unusable. The default is skipped when the caller passes their own `-y` / `--yolo` / `--approval-mode ...`, so per-call override (e.g. `--approval-mode plan`) still works.
+
+## 2026-03-25–29 — Network tooling hardening
+
+Improved device discovery, DNS handling, wake-on-LAN, guest-network isolation, monitoring and input validation. Deployment identifiers and household network details are omitted from the public changelog.
 
 ## 2026-03-19 — Hammerspoon Nuke & Rebuild + Claude Code Keybindings
 
