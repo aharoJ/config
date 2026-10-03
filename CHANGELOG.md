@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 — Complete portable home-path cleanup
+
+Replaced remaining literal home paths in recovery shortcuts, archived notes and backup configurations with runtime home expansion or removed redundant examples.
+
 ## 2026-10-03 — Sanitize public configuration and restore reproducible loading
 
 Sanitized terminal fixtures while preserving rendering geometry, refreshed fixture digests, removed deployment details, added a staged privacy gate, made profile links portable, and included the Neovim tools plugin specifications.

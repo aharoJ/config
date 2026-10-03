@@ -1,3 +1,8 @@
+# path: ~/.config/fish/internal/tmux/trescue.fish
+# description: Capture and inspect tmux evidence with portable home paths.
+# patched: Resolve owner paths from HOME.
+# date: 2026-10-03
+
 function trescue --description 'tmux: capture, observe, and guide loop recovery'
     if test (count $argv) -ne 0
         echo 'usage: trescue' >&2
@@ -5,9 +10,9 @@ function trescue --description 'tmux: capture, observe, and guide loop recovery'
     end
 
     set -l target /private/tmp/tmux-501/default
-    set -l output_root $HOME/desk/incidents/tmux
-    set -l capture $HOME/.config/tmux/tools/tmux-freeze-capture.fish
-    set -l rescue $HOME/.config/tmux/tools/tmux-loop-rescue
+    set -l output_root "$HOME/desk/incidents/tmux"
+    set -l capture "$HOME/.config/tmux/tools/tmux-freeze-capture.fish"
+    set -l rescue "$HOME/.config/tmux/tools/tmux-loop-rescue"
     set -l lab 0
 
     if set -q TMUX_SHORTCUTS_LAB

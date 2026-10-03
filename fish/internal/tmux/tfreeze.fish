@@ -1,3 +1,8 @@
+# path: ~/.config/fish/internal/tmux/tfreeze.fish
+# description: Capture and inspect tmux evidence with portable home paths.
+# patched: Resolve owner paths from HOME.
+# date: 2026-10-03
+
 function tfreeze --description 'tmux: capture frozen production server'
     if test (count $argv) -ne 0
         echo 'usage: tfreeze' >&2
@@ -5,8 +10,8 @@ function tfreeze --description 'tmux: capture frozen production server'
     end
 
     set -l target /private/tmp/tmux-501/default
-    set -l output_root $HOME/desk/incidents/tmux
-    set -l capture $HOME/.config/tmux/tools/tmux-freeze-capture.fish
+    set -l output_root "$HOME/desk/incidents/tmux"
+    set -l capture "$HOME/.config/tmux/tools/tmux-freeze-capture.fish"
     set -l lab 0
 
     if set -q TMUX_SHORTCUTS_LAB
