@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/tmux-lab
+# description: Own an isolated tmux lab server for one command and record its lifecycle.
+# date: 2026-10-02
+import json
+import ctypes
+import os
+import pathlib
+import re
+import shlex
+import signal
+import socket
+import stat
+import subprocess
+import sys
+import time
+import uuid
+
+
+SYSTEM = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True)
+
+
+class ProcessIdentity(ctypes.Structure):
+    _fields_ = [('uuid', ctypes.c_ubyte * 16), ('unique_id', ctypes.c_uint64),
+                ('parent_unique_id', ctypes.c_uint64), ('version', ctypes.c_int32),
+                ('parent_version', ctypes.c_int32), ('reserved', ctypes.c_uint64 * 2)]
+
+
+class ProcessBSDInfo(ctypes.Structure):
+    _fields_ = [('prefix', ctypes.c_uint32 * 12), ('comm', ctypes.c_char * 16),
+                ('name', ctypes.c_char * 32), ('middle', ctypes.c_uint32 * 6),
+                ('start_sec', ctypes.c_uint64), ('start_usec', ctypes.c_uint64)]
+
+
+def kernel_process(pid):
+    info = ProcessBSDInfo()
+    size = SYSTEM.proc_pidinfo(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+    if size != ctypes.sizeof(info) or info.prefix[1] == 5:
+        return None
+    return {'uid': info.prefix[5], 'birth': [info.start_sec, info.start_usec]}
+
+
+def unique_identity(pid):
+    info = ProcessIdentity()
+    size = SYSTEM.proc_pidinfo(pid, 17, 0, ctypes.byref(info), ctypes.sizeof(info))
+    return info.unique_id if size == ctypes.sizeof(info) else None
+
+
+def responsible_pid(pid):
+    return SYSTEM.responsibility_get_pid_responsible_for_pid(pid)
+
+
+def become_responsible():
+    inherited = responsible_pid(os.getpid())
+    root = pathlib.Path.home() / 'desk/lab/tmux-lab-ledger'
+    for path in root.glob('run-*/record.json'):
+        try:
+            record = json.loads(path.read_text())
+            if record.get('owner_pid') == inherited and inherited != os.getpid() and owner_start(inherited) == record.get('owner_start'):
+                raise RuntimeError('nested lab owners are refused; use the current private server')
+        except (OSError, ValueError):
+            continue
+    if os.environ.get('TMUX_LAB_RESPONSIBLE_PID') == str(os.getpid()) and responsible_pid(os.getpid()) == os.getpid():
+        return
+    attr = ctypes.c_void_p()
+    if SYSTEM.posix_spawnattr_init(ctypes.byref(attr)):
+        raise RuntimeError('cannot initialize responsibility scope')
+    try:
+        if SYSTEM.responsibility_spawnattrs_setdisclaim(ctypes.byref(attr), True) or SYSTEM.posix_spawnattr_setflags(ctypes.byref(attr), 0x0040):
+            raise RuntimeError('cannot create responsibility scope')
+        args = [os.fsencode(sys.executable), os.fsencode(str(pathlib.Path(__file__).resolve())), *map(os.fsencode, sys.argv[1:])]
+        argv = (ctypes.c_char_p * (len(args) + 1))(*args, None)
+        env = {**os.environ, 'TMUX_LAB_RESPONSIBLE_PID': str(os.getpid())}
+        values = [os.fsencode(key + '=' + value) for key, value in env.items()]
+        envp = (ctypes.c_char_p * (len(values) + 1))(*values, None)
+        pid = ctypes.c_int()
+        error = SYSTEM.posix_spawn(ctypes.byref(pid), args[0], None, ctypes.byref(attr), argv, envp)
+        raise RuntimeError('responsibility re-exec failed: ' + os.strerror(error))
+    finally:
+        SYSTEM.posix_spawnattr_destroy(ctypes.byref(attr))
+
+
+def scoped_processes(record):
+    result = subprocess.run(['ps', '-axo', 'pid=,uid=,lstart=,command='], capture_output=True, text=True, check=True)
+    found = []
+    for line in result.stdout.splitlines():
+        parts = line.split(None, 7)
+        if len(parts) != 8 or not parts[0].isdigit() or not parts[1].isdigit():
+            continue
+        pid, uid = int(parts[0]), int(parts[1])
+        if pid == os.getpid() or uid != record['uid']:
+            continue
+        responsibility = responsible_pid(pid)
+        if responsibility <= 0 and kernel_process(pid):
+            raise RuntimeError('process attribution unavailable: pid=' + str(pid) + ' command=' + parts[7])
+        if responsibility != record['owner_pid']:
+            continue
+        identity = unique_identity(pid)
+        kernel = kernel_process(pid)
+        if identity is not None and kernel:
+            found.append({'pid': pid, **kernel, 'unique_id': identity, 'start': ' '.join(parts[2:7]), 'command': parts[7]})
+    return found
+
+
+def signal_scoped_process(record, row, signum):
+    pid = row['pid']
+    current = kernel_process(pid)
+    if (unique_identity(record['owner_pid']) != record['owner_unique_id'] or not current
+            or current['uid'] != record['uid'] or current['birth'] != row['birth']
+            or current['birth'][0] < int(record['created'])
+            or responsible_pid(pid) != record['owner_pid'] or unique_identity(pid) != row['unique_id']):
+        return False
+    try:
+        os.kill(pid, signum)
+        return True
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return False
+
+
+def clear_scoped_processes(record):
+    escalated = set()
+    for signum in (None, signal.SIGTERM, signal.SIGKILL):
+        rows = scoped_processes(record)
+        if signum:
+            for row in rows:
+                if signal_scoped_process(record, row, signum):
+                    escalated.add(row['pid'])
+        for _ in range(10):
+            time.sleep(0.1)
+            rows = scoped_processes(record)
+            if not rows:
+                return [], sorted(escalated)
+    return rows, sorted(escalated)
+
+
+class Interrupted(Exception):
+    def __init__(self, signum):
+        self.signum = signum
+
+
+def owner_start(pid):
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "lstart="], capture_output=True, text=True)
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def process_exists(pid):
+    return bool(owner_start(pid))
+
+
+def real_tmux():
+    for path in ("/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/usr/bin/tmux"):
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    raise RuntimeError("real tmux binary unavailable")
+
+
+def tmux_env():
+    env = os.environ.copy()
+    for key in ("TMUX", "TMUX_PANE", "TMUX_TMPDIR", "NO_COLOR"):
+        env.pop(key, None)
+    return env
+
+
+def tmux_command(binary, name, *args, timeout=5):
+    return subprocess.run([binary, "-L", name, "-f", "/dev/null", *args], env=tmux_env(), capture_output=True, text=True, timeout=timeout)
+
+
+def write_record(path, record):
+    pending = path.with_name(path.name + ".pending")
+    pending.write_text(json.dumps(record, sort_keys=True) + "\n")
+    os.chmod(pending, 0o600)
+    os.replace(pending, path)
+
+
+def server_identity(binary, name):
+    result = tmux_command(binary, name, "display-message", "-p", "-t", "=lab-owner-" + name.rsplit("-", 1)[-1], "#{pid}|#{socket_path}")
+    if result.returncode:
+        raise RuntimeError("cannot identify private server: " + result.stderr.strip())
+    fields = result.stdout.strip().split("|", 1)
+    if len(fields) != 2 or not fields[0].isdigit():
+        raise RuntimeError("invalid private server identity")
+    return int(fields[0]), fields[1]
+
+
+def verify_identity(binary, record):
+    path = pathlib.Path(record["socket_path"])
+    try:
+        info = path.stat()
+    except FileNotFoundError:
+        return False
+    if not stat.S_ISSOCK(info.st_mode) or info.st_ino != record["socket_inode"]:
+        return False
+    try:
+        pid, reported_path = server_identity(binary, record["socket"])
+    except (RuntimeError, subprocess.TimeoutExpired):
+        return False
+    return pid == record["server_pid"] and os.path.realpath(reported_path) == os.path.realpath(path) and process_exists(pid)
+
+
+def socket_owners(path):
+    probe = subprocess.run(["lsof", "-nU"], capture_output=True, text=True)
+    if probe.returncode not in (0, 1):
+        return None
+    owners = set()
+    for line in probe.stdout.splitlines()[1:]:
+        fields = line.split()
+        if len(fields) > 2 and fields[-1] == str(path) and fields[1].isdigit():
+            owners.add(int(fields[1]))
+    return owners
+
+
+def socket_state(path):
+    if not os.path.lexists(path):
+        return "absent"
+    owners = socket_owners(path)
+    return "unknown" if owners is None else "live" if owners else "stale"
+
+
+def process_table():
+    result = subprocess.run(["ps", "-axo", "pid=,ppid=,tty=,lstart="], capture_output=True, text=True, check=True)
+    table = {}
+    for line in result.stdout.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) == 4 and parts[0].isdigit() and parts[1].isdigit():
+            table[int(parts[0])] = {"ppid": int(parts[1]), "tty": parts[2], "start": parts[3]}
+    return table
+
+
+def pane_descendants(binary, name):
+    result = tmux_command(binary, name, "list-panes", "-a", "-F", "#{pane_pid}|#{pane_tty}")
+    if result.returncode:
+        raise RuntimeError("cannot enumerate owned pane processes")
+    roots = []
+    for line in result.stdout.splitlines():
+        fields = line.split("|", 1)
+        if len(fields) != 2 or not fields[0].isdigit():
+            raise RuntimeError("invalid pane process identity")
+        roots.append(int(fields[0]))
+    table = process_table()
+    selected = set(roots)
+    changed = True
+    while changed:
+        before = len(selected)
+        selected.update(pid for pid, row in table.items() if row["ppid"] in selected)
+        changed = len(selected) != before
+    return {pid: table[pid] for pid in selected if pid in table}
+
+
+def stop_child(child):
+    if child is None or child.poll() is not None:
+        return
+    try:
+        os.killpg(child.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
+        child.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        child.wait(timeout=3)
+
+
+def run_command(args):
+    if len(args) < 2 or args[0] != "--":
+        raise RuntimeError("usage: tmux-lab run -- command [args...]")
+    become_responsible()
+    owner_pid = os.getpid()
+    name = f"ccmsg-lab-private-{owner_pid}"
+    socket_path = pathlib.Path(f"/private/tmp/tmux-{os.getuid()}/{name}")
+    if len(os.fsencode(socket_path)) >= 104:
+        raise RuntimeError("private socket path exceeds macOS Unix limit")
+    existing = socket_state(socket_path)
+    if existing != "absent":
+        raise RuntimeError("private socket already exists (" + existing + "): " + str(socket_path))
+    start = owner_start(owner_pid)
+    if not start:
+        raise RuntimeError("cannot attest owner start time")
+    root = pathlib.Path.home() / "desk/lab/tmux-lab-ledger"
+    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(root, 0o700)
+    run_dir = root / f"run-{owner_pid}-{uuid.uuid4().hex[:12]}"
+    run_dir.mkdir(mode=0o700)
+    record_path = run_dir / "record.json"
+    tool_path = pathlib.Path(__file__).resolve()
+    wrapper = run_dir / "tmux"
+    wrapper.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + " " + shlex.quote(str(tool_path)) + ' tmux "$@"\n')
+    wrapper.chmod(0o700)
+    token = uuid.uuid4().hex
+    binary = real_tmux()
+    record = {"socket": name, "owner_pid": owner_pid, "owner_start": start, "server_pid": None,
+              "socket_path": str(socket_path), "socket_inode": None, "state": "preparing", "command": args[1:],
+              "token": token, "created": time.time(), "uid": os.getuid(), "owner_unique_id": unique_identity(owner_pid)}
+    if record['owner_unique_id'] is None:
+        raise RuntimeError('cannot attest owner kernel identity')
+    write_record(record_path, record)
+    child = None
+    creation_attempted = False
+    exit_code = 1
+    old_handlers = {}
+    initializing = True
+    pending_signals = []
+    def interrupted(signum, frame):
+        if initializing:
+            pending_signals.append(signum)
+            return
+        raise Interrupted(signum)
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        old_handlers[signum] = signal.signal(signum, interrupted)
+    try:
+        creation_attempted = True
+        created = tmux_command(binary, name, "new-session", "-d", "-s", f"lab-owner-{owner_pid}", "-n", "hold", "exec sleep 2147483647")
+        if created.returncode:
+            raise RuntimeError("private server creation failed: " + created.stderr.strip())
+        server_pid, actual_path = server_identity(binary, name)
+        if os.path.realpath(actual_path) != os.path.realpath(socket_path):
+            raise RuntimeError("private socket path differs from expected path")
+        record["server_pid"] = server_pid
+        record["socket_path"] = actual_path
+        record["socket_inode"] = pathlib.Path(actual_path).stat().st_ino
+        if responsible_pid(server_pid) != owner_pid:
+            raise RuntimeError('private server did not inherit responsibility scope')
+        record["state"] = "running"
+        write_record(record_path, record)
+        initializing = False
+        if pending_signals:
+            raise Interrupted(pending_signals[0])
+        env = os.environ.copy()
+        env.pop("TMUX", None)
+        env.pop("TMUX_PANE", None)
+        env.pop("TMUX_TMPDIR", None)
+        env.update({"TMUX_LAB_SOCKET": name, "TMUX_LAB_OWNER_PID": str(owner_pid), "TMUX_LAB_OWNER_START": start,
+                    "TMUX_LAB_RECORD": str(record_path), "TMUX_LAB_TOKEN": token, "TMUX_LAB_TMUX": str(wrapper),
+                    "TMUX_BIN": str(wrapper), "TMUX": f"{actual_path},{server_pid},0", "PATH": str(run_dir) + os.pathsep + env.get("PATH", "")})
+        child = subprocess.Popen(args[1:], env=env, start_new_session=True)
+        code = child.wait()
+        exit_code = 128 - code if code < 0 else code
+    except Interrupted as error:
+        exit_code = 128 + error.signum
+    finally:
+        for signum in old_handlers:
+            signal.signal(signum, signal.SIG_IGN)
+        cleanup_errors = []
+        try:
+            stop_child(child)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            cleanup_errors.append("child: " + str(error))
+        if record["server_pid"] is None and creation_attempted and os.path.lexists(socket_path):
+            try:
+                server_pid, actual_path = server_identity(binary, name)
+                info = pathlib.Path(actual_path).stat()
+                process = subprocess.run(["ps", "-p", str(server_pid), "-o", "command="], capture_output=True, text=True)
+                if (stat.S_ISSOCK(info.st_mode) and os.path.realpath(actual_path) == os.path.realpath(socket_path)
+                        and f"-L {name}" in process.stdout and "-f /dev/null" in process.stdout):
+                    record["server_pid"] = server_pid
+                    record["socket_path"] = actual_path
+                    record["socket_inode"] = info.st_ino
+            except (OSError, RuntimeError, subprocess.TimeoutExpired):
+                pass
+        if record["server_pid"] is not None and verify_identity(binary, record):
+            try:
+                clients = tmux_command(binary, name, "list-clients", "-F", "#{client_pid}")
+                if clients.stdout.strip():
+                    print("tmux-lab: warning: an external client attached to the owned server", file=sys.stderr)
+            except (OSError, subprocess.TimeoutExpired) as error:
+                cleanup_errors.append("client census: " + str(error))
+            try:
+                tracked = pane_descendants(binary, name)
+            except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+                tracked = {}
+                cleanup_errors.append("pane census: " + str(error))
+            record["pane_descendants_before"] = [{"pid": pid, **row} for pid, row in sorted(tracked.items())]
+            try:
+                killed = tmux_command(binary, name, "kill-server")
+                record["kill_exit"] = killed.returncode
+            except (OSError, subprocess.TimeoutExpired) as error:
+                record["kill_exit"] = None
+                cleanup_errors.append("kill-server: " + str(error))
+            try:
+                record['escape_candidates'] = scoped_processes(record)
+                record['escaped_processes'], record['escalated_pane_pids'] = clear_scoped_processes(record)
+                record['remaining_pane_pids'] = [row['pid'] for row in record['escaped_processes']]
+            except (OSError, subprocess.TimeoutExpired) as error:
+                record["remaining_pane_pids"] = list(tracked)
+                record["escalated_pane_pids"] = []
+                cleanup_errors.append("pane follow-up: " + str(error))
+            for _ in range(20):
+                if not process_exists(record["server_pid"]):
+                    break
+                time.sleep(0.05)
+            record["state"] = ('closed-with-escapes' if record.get('escaped_processes') else 'closed') if not process_exists(record["server_pid"]) and not cleanup_errors else "cleanup-failed"
+        elif record["server_pid"] is None and not os.path.lexists(socket_path):
+            record["state"] = "creation-failed"
+        else:
+            record["state"] = "identity-mismatch"
+        try:
+            record['escaped_processes'] = scoped_processes(record)
+            if record['escaped_processes'] and record['state'] == 'closed':
+                record['state'] = 'closed-with-escapes'
+        except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+            cleanup_errors.append('escape inspection: ' + str(error))
+            record['state'] = 'cleanup-failed'
+        record["exit_code"] = exit_code
+        record["cleanup_errors"] = cleanup_errors
+        record["finished"] = time.time()
+        for row in record.get('escaped_processes', []):
+            print('tmux-lab: ESCAPED PROCESS pid=' + str(row['pid']) + ' command=' + row['command'] + '; inspect ' + str(record_path), file=sys.stderr)
+        write_record(record_path, record)
+        for signum, handler in old_handlers.items():
+            signal.signal(signum, handler)
+    if record["state"] not in ("closed", "creation-failed"):
+        print("tmux-lab: cleanup unverified; inspect " + str(record_path), file=sys.stderr)
+    return exit_code
+
+
+def proxy_command(args):
+    record_path = os.environ.get("TMUX_LAB_RECORD", "")
+    try:
+        record = json.loads(pathlib.Path(record_path).read_text())
+    except (OSError, ValueError):
+        return 97
+    name = os.environ.get("TMUX_LAB_SOCKET", "")
+    if not re.fullmatch(r"ccmsg-lab-private-[0-9]+", name) or name != record.get("socket"):
+        return 97
+    if os.environ.get("TMUX_LAB_TOKEN") != record.get("token") or str(record.get("owner_pid")) != os.environ.get("TMUX_LAB_OWNER_PID"):
+        return 97
+    if owner_start(record["owner_pid"]) != record.get("owner_start") or record.get("state") != "running":
+        return 97
+    if len(args) < 3 or args[:2] != ["-L", name]:
+        return 97
+    if args[2:3] == ["-f"]:
+        if args[2:4] != ["-f", "/dev/null"]:
+            return 97
+        rest = args[4:]
+    else:
+        rest = args[2:]
+    if not rest:
+        return 97
+    command = rest[0]
+    forbidden = {"attach", "attach-session", "detach-client", "switch-client", "refresh-client", "lock-client", "kill-server", "start-server", "new-client"}
+    if command.startswith("-") or command in forbidden or any(arg in ("-L", "-S", "-f") for arg in rest[1:]):
+        return 97
+    if command == "new-session":
+        options = rest[1:]
+        if "-d" not in options or "-s" not in options:
+            return 97
+        index = options.index("-s")
+        if index + 1 >= len(options) or not re.fullmatch(r"lab-[A-Za-z0-9_-]+", options[index + 1]):
+            return 97
+    if command == "new-window" and "-d" not in rest[1:]:
+        return 97
+    binary = real_tmux()
+    if not verify_identity(binary, record):
+        return 97
+    return subprocess.run([binary, "-L", name, "-f", "/dev/null", *rest], env=tmux_env()).returncode
+
+
+def list_runs():
+    root = pathlib.Path.home() / "desk/lab/tmux-lab-ledger"
+    registered = set()
+    socket_dir = pathlib.Path("/private/tmp") / ("tmux-" + str(os.getuid()))
+    pattern = re.compile(r"ccmsg-lab-private-.+\Z")
+    probe = subprocess.run(["lsof", "-nU", "-Fpn"], capture_output=True, text=True)
+    listener_pids = {}
+    if probe.returncode in (0, 1):
+        pid = None
+        for line in probe.stdout.splitlines():
+            if line.startswith('p') and line[1:].isdigit():
+                pid = int(line[1:])
+            elif line.startswith('n/') and pid is not None:
+                path = pathlib.Path(line[1:])
+                if pattern.fullmatch(path.name):
+                    listener_pids.setdefault(os.path.realpath(path), set()).add(pid)
+    for path in sorted(root.glob("run-*/record.json")):
+        try:
+            record = json.loads(path.read_text())
+            owner_live = owner_start(record["owner_pid"]) == record["owner_start"]
+            path_obj = pathlib.Path(record["socket_path"])
+            owners = listener_pids.get(os.path.realpath(path_obj), set()) if probe.returncode in (0, 1) else None
+            if record["server_pid"]:
+                try:
+                    inode_matches = path_obj.stat().st_ino == record["socket_inode"]
+                except FileNotFoundError:
+                    inode_matches = False
+                server_live = bool(owners is not None and record["server_pid"] in owners and inode_matches)
+            else:
+                server_live = bool(owners)
+            if server_live:
+                registered.add(os.path.realpath(path_obj))
+            record.pop("token", None)
+            escapes = [row for row in record.get('escaped_processes', []) if unique_identity(row['pid']) == row['unique_id']]
+            print(json.dumps({"record": str(path), "state": record["state"], "owner_live": owner_live,
+                              "escaped_processes": escapes, "escape_inspection_unknown": not owner_live and record['state'] in ('running', 'preparing', 'identity-mismatch', 'cleanup-failed'),
+                              "escape_observation": 'live' if escapes else 'gone' if record.get('escaped_processes') else 'none',
+                              "server_live": server_live, "socket_observation": "unknown" if owners is None else "live" if owners else "stale" if os.path.lexists(path_obj) else "absent",
+                              "stale": server_live and not owner_live, "inspection_unknown": owners is None,
+                              "socket": record["socket"], "server_pid": record["server_pid"]}, sort_keys=True))
+        except (OSError, ValueError, KeyError):
+            print(json.dumps({"record": str(path), "state": "unreadable"}))
+    candidates = set()
+    try:
+        candidates.update(os.path.realpath(entry) for entry in socket_dir.iterdir() if pattern.fullmatch(entry.name))
+    except FileNotFoundError:
+        pass
+    candidates.update(listener_pids)
+    for candidate in sorted(candidates - registered):
+        path = pathlib.Path(candidate)
+        pids = sorted(listener_pids.get(candidate, set()))
+        print(json.dumps({"state": "unregistered", "socket": path.name, "socket_path": str(path),
+                          "listener_pids": pids, "socket_observation": "unknown" if probe.returncode not in (0, 1) else "live" if pids else "stale" if os.path.lexists(path) else "absent",
+                          "inspection_unknown": probe.returncode not in (0, 1)}, sort_keys=True))
+    return 0
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        raise RuntimeError("usage: tmux-lab run -- command | tmux ... | ls")
+    if args[0] == "run":
+        return run_command(args[1:])
+    if args[0] == "tmux":
+        return proxy_command(args[1:])
+    if args == ["ls"]:
+        return list_runs()
+    raise RuntimeError("unknown tmux-lab command")
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
+        print("tmux-lab: " + str(error), file=sys.stderr)
+        sys.exit(97)

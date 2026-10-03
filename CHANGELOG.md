@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 — Own private tmux lab fixtures
+
+`tmux-lab run -- <command>` owns one isolated private server, restricts child tmux requests to that server, records process and socket identities, and verifies teardown on completion or interruption. Detached descendants are checked through their macOS responsibility scope; survivors and interrupted owners remain visible in the read-only `tmux-lab ls` ledger and listener census. The paste-collision fixture now uses the supplied owner when wrapped and waits for a stable, guard-accepted empty composer, so a workspace-trust dialog cannot masquerade as readiness. Focused regression coverage checks lifecycle, isolation, escaped descendants, signal handling, reused names, and independent live-server accounting.
+
 ## 2026-10-02 — Retire obsolete config scripts links
 
 The config cross-review links to `~/.notes` were dangling after that tooling moved to `~/.notes/idle`. Removed the obsolete config-local usage instructions and ignore entries as part of the scripts-directory retirement. Relay users now use the stable `~/.local/bin/cc-msg` entry point; tracked source remains under `tmux/tools/`.

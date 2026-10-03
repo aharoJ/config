@@ -8,17 +8,33 @@ tmux_bin="${TMUX_BIN:-$(command -v tmux)}"
 agy_bin="${AGY_BIN:-$HOME/.local/bin/agy}"
 output_root="${RELAY_EVIDENCE_DIR:-${TMPDIR:-/tmp}}"
 run="$(mktemp -d "$output_root/relay-paste-collision.XXXXXX")" || exit 90
-socket="ccmsg-lab-private-$$"
-trap '"$tmux_bin" -L "$socket" kill-server >/dev/null 2>&1 || true' EXIT
+socket="${TMUX_LAB_SOCKET:-ccmsg-lab-private-$$}"
+if [ -z "${TMUX_LAB_OWNER_PID:-}" ]; then trap '"$tmux_bin" -L "$socket" kill-server >/dev/null 2>&1 || true' EXIT; fi
 env -u NO_COLOR "$tmux_bin" -L "$socket" -f /dev/null new-session -d -s lab-race -n gemini -x 215 -y 57 "exec $agy_bin" || exit 90
 pane="$("$tmux_bin" -L "$socket" list-panes -t '=lab-race:=gemini' -F '#{pane_id}')" || exit 90
 ready=0
-for i in {1..40}; do
+stable=0
+previous_state=
+for i in {1..100}; do
   command_name="$("$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_current_command}')"
-  if [ "$command_name" = agy ] && "$tmux_bin" -L "$socket" capture-pane -p -t "$pane" | rg -q '^>'; then ready=1; break; fi
+  state_before="$("$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_id} #{cursor_x} #{cursor_y} #{pane_width} #{pane_in_mode}')"
+  "$tmux_bin" -L "$socket" capture-pane -p -e -t "$pane" > "$run/readiness.ansi"
+  state_after="$("$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_id} #{cursor_x} #{cursor_y} #{pane_width} #{pane_in_mode}')"
+  read -r captured_pane cursor_x cursor_y width in_mode <<< "$state_before"
+  printf '%s\n' "$state_before" > "$run/readiness.state"
+  if [ "$command_name" = agy ] && [ "$captured_pane" = "$pane" ] && [ "$in_mode" = 0 ] && [ "$state_before" = "$state_after" ] && \
+    "$script_dir/../tools/relay-input-guard" '>' "$cursor_x" "$cursor_y" "$width" < "$run/readiness.ansi"; then
+    if [ "$state_before" = "$previous_state" ] && cmp -s "$run/readiness.ansi" "$run/readiness.previous.ansi"; then stable=$((stable + 1)); else stable=1; fi
+    if [ "$stable" -ge 3 ]; then ready=1; break; fi
+    cp "$run/readiness.ansi" "$run/readiness.previous.ansi"
+    previous_state="$state_before"
+  else
+    stable=0
+    previous_state=
+  fi
   sleep 0.2
 done
-[ "$ready" = 1 ] || { printf 'Agy not ready; evidence: %s\n' "$run" >&2; exit 91; }
+[ "$ready" = 1 ] || { printf 'Agy composer not ready (check workspace trust or startup); evidence: %s\n' "$run" >&2; exit 91; }
 "$tmux_bin" -L "$socket" capture-pane -p -e -t "$pane" > "$run/before.ansi"
 "$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_id} #{cursor_x}:#{cursor_y} #{pane_in_mode} #{pane_current_command}' > "$run/before.state"
 cat > "$run/tmux-wrapper" <<'WRAPPER'
