@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 — Recognize equivalent fresh-home ANSI renders
+
+Fresh Codex home recognition now checks the supported visible layout instead of literal greeting and tip SGR prefixes. Redundant resets, reordered attributes and equivalent reset placement no longer reject a fresh home. The input/draft guard and menu-highlight proof remain unchanged. Byte-exact live reset coverage and intensity-preserving ANSI variants cover accepted homes/menus, drafts, unfamiliar screens and retained-transcript counterexamples.
+
 ## 2026-10-02 — Verify fresh Codex chats outside git
 
 `codex-new-chat` now accepts the observed fresh home screen that `/new` displays outside a git repository, alongside the existing current-checkout menu. Both paths retain the same identity, cwd, zero-context, model/effort restoration, and idle-composer checks before reporting success, and additionally require the supported home-screen grammar, refusing retained conversation text even beside a zero-context footer. An unfamiliar transition still returns an unverified result without further input.

@@ -35,4 +35,15 @@ for case in cases:
 for label in ['nongit', 'git', 'config', 'another-repo']:
     assert any(c['label'] == label and not c['main_default'] for c in cases)
     assert any(c['label'] == label + '-main' and c['main_default'] for c in cases)
-print(f'codex new cwd real captures: {len(cases)} captures; {checks} checks PASS')
+extra = json.loads((fixtures / 'codex-new-reset-ansi.json').read_text())['cases']
+for case in extra:
+    raw = (fixtures / case['capture_file']).read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == case['sha256'], case
+    for mode in ['reset', 'fresh', 'direct-reset']:
+        result = subprocess.run([str(root / 'tools/codex-new-guard'), mode, case['footer']], input=raw, capture_output=True)
+        assert result.returncode == 0, (case, mode)
+        checks += 1
+    result = subprocess.run([str(root / 'tools/relay-input-guard'), '›', str(case['cursor_x']), str(case['cursor_y']), str(case['width']), 'strict'], input=raw, capture_output=True)
+    assert result.returncode == 0, case
+    checks += 1
+print(f'codex new cwd real captures: {len(cases) + len(extra)} captures; {checks} checks PASS')

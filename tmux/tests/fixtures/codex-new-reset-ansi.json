@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "name": "real-home-leading-reset",
+      "capture_file": "codex-new-live-leading-reset.ansi",
+      "source": "/fixtures/codex-new-live-leading-reset.ansi",
+      "sha256": "c02740d9f9fed4e9a5519127050560105047e7c31ba21512930c31b89c762a3d",
+      "footer": "Fast off \u00b7 GPT-6.1-Sol low \u00b7 ~/demo/lab/codex-new-step5-redo/smoke/nongit-cwd",
+      "cursor_x": 2,
+      "cursor_y": 9,
+      "width": 215,
+      "cursor_provenance": "Derived from the sole visible idle composer row; abort prevented a post-helper live metadata snapshot.",
+      "sanitized": true
+    }
+  ]
+}

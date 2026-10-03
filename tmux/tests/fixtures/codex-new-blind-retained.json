@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "name": "direct",
+      "capture_file": "codex-new-blind-retained-direct.ansi",
+      "source": "/fixtures/codex-new-blind-retained-direct.ansi",
+      "sha256": "73656b3a385d070526051acf72c957a2e9175419e45d0a38637a040440f39281",
+      "description": "Synthetic-derived retained-history counterexample: rename the dummy labeled value to a marker. Original controlled private capture remains at source; this is not a byte-exact installed CLI capture.",
+      "source_sha256": "332339dd1baa486e34cdf3c8bd9039610a66cc7916f87f1f98860147e4952bcc",
+      "sanitized": true
+    },
+    {
+      "name": "menu",
+      "capture_file": "codex-new-blind-retained-menu.ansi",
+      "source": "/fixtures/codex-new-blind-retained-menu.ansi",
+      "sha256": "73656b3a385d070526051acf72c957a2e9175419e45d0a38637a040440f39281",
+      "description": "Synthetic-derived retained-history counterexample: rename the dummy labeled value to a marker. Original controlled private capture remains at source; this is not a byte-exact installed CLI capture.",
+      "source_sha256": "332339dd1baa486e34cdf3c8bd9039610a66cc7916f87f1f98860147e4952bcc",
+      "sanitized": true
+    }
+  ]
+}

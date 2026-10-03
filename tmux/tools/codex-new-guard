@@ -181,8 +181,8 @@ def check(mode, capture, expected=''):
         valid = len(content) == 6
         valid = valid and content[0][0] == '  >_ OpenAI Codex (v0.160.0)'
         valid = valid and content[1][0] == '     ' + cwd
-        valid = valid and content[2][0].startswith('  ') and content[2][1].startswith('  \x1b[38;2;99;168;248m')
-        valid = valid and content[3][0].startswith('  Tip: ') and content[3][1].startswith('  \x1b[1mTip:\x1b[0m ')
+        valid = valid and re.fullmatch(r'  [^›•\x00-\x1f]+', content[2][0]) is not None
+        valid = valid and content[3][0].startswith('  Tip: ')
         valid = valid and content[4][0] == '› Ask Codex to do anything'
         valid = valid and content[5][0].strip() == footers[0]
         return 0 if valid else 1
