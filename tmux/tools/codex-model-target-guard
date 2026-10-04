@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/codex-model-target-guard
+# description: Bind a selected pane to its foreground Codex process and entry point.
+# patched: recognize Codex node wrappers without trusting arbitrary node panes
+# date: 2026-10-02
+import hashlib
+import json
+import pathlib
+import re
+import runpy
+import subprocess
+import sys
+
+LABEL = runpy.run_path(str(pathlib.Path(__file__).resolve().with_name('codex-model-sender-label')))
+
+
+def query(socket, pane):
+    p = subprocess.run(['tmux', '-S', socket, 'display-message', '-p', '-t', pane,
+                        '#{pane_id}|#{pane_pid}|#{pane_current_command}|#{pane_tty}|#{pane_dead}'],
+                       check=True, text=True, capture_output=True, timeout=.6)
+    fields = p.stdout.rstrip('\n').split('|')
+    if len(fields) != 5 or fields[0] != pane or fields[4] != '0' or fields[2] not in ('node', 'codex'):
+        raise ValueError('unrecognized target identity')
+    return fields
+
+
+def snapshot(socket, pane):
+    identity = query(socket, pane)
+    root, command, tty = int(identity[1]), identity[2], identity[3]
+    if not tty.startswith('/dev/'):
+        raise ValueError('missing target tty')
+    table = {}
+    for row in LABEL['ps']('-t', tty, '-o', 'pid=,ppid=,pgid=,tpgid=,comm=').splitlines():
+        pid, parent, group, foreground, executable = row.split(None, 4)
+        table[int(pid)] = (int(parent), int(group), int(foreground), executable)
+    if root not in table or table[root][2] <= 0:
+        raise ValueError('missing foreground group')
+    foreground = table[root][2]
+    candidates = []
+    for pid, (parent, group, _, executable) in table.items():
+        if group != foreground or pathlib.Path(executable).name != command:
+            continue
+        chain, seen, current = [], set(), pid
+        while current in table and current not in seen:
+            seen.add(current)
+            chain.append(current)
+            if current == root:
+                break
+            current = table[current][0]
+        if not chain or chain[-1] != root or LABEL['app'](pid, executable) != 'codex':
+            continue
+        if command == 'codex' and not re.search(r'/@openai/codex(?:/node_modules/@openai/codex-[^/]+)?/vendor/[^/]+/(?:bin/)?codex$', executable):
+            continue
+        args = LABEL['ps']('-p', str(pid), '-o', 'lstart=,args=').strip()
+        candidates.append((pid, args))
+    if len(candidates) != 1 or query(socket, pane) != identity:
+        raise ValueError('ambiguous or changed foreground identity')
+    return hashlib.sha256(json.dumps([identity, foreground, candidates], sort_keys=True).encode()).hexdigest()
+
+
+if __name__ == '__main__':
+    try:
+        socket, pane, *expected = sys.argv[1:]
+        first = snapshot(socket, pane)
+        if snapshot(socket, pane) != first or (expected and expected != [first]):
+            sys.exit(1)
+        if not expected:
+            print(first)
+    except (ValueError, OSError, UnicodeError, subprocess.SubprocessError):
+        sys.exit(1)

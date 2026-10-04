@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/codex-model-guard
+# description: Recognize guarded operator-invoked model selection screens.
+# patched: validate operator arguments and session-only confirmation with matching footer
+# date: 2026-10-03
+import pathlib
+import hashlib
+import re
+import subprocess
+import sys
+
+
+MODELS = {
+    'GPT-6.1-Sol': 'Latest workhorse model for coding and everyday work.',
+    'GPT-6-Astra': 'Frontier intelligence for the most demanding work.',
+    'GPT-6-Sol': 'Previous generation workhorse model.',
+    'GPT-6-Luna': 'Fast and affordable model for easier tasks.',
+    'GPT-5.6-Sol': 'Older generation workhorse model.',
+    'GPT-5.6-Terra': 'Older balanced model for straightforward work.',
+    'GPT-5.6-Luna': 'Older fast and efficient model.',
+    'GPT-5.5': 'Legacy coding model.',
+}
+EFFORTS = {
+    'Low': 'Fast responses with lighter reasoning',
+    'Medium': 'Balances speed and reasoning depth for everyday tasks',
+    'High': 'Greater reasoning depth for complex problems',
+    'Extra high': 'Extra high reasoning depth for complex problems',
+    'More reasoning…': 'Max and Ultra consume usage limits faster',
+}
+ADVANCED = {
+    'Max': 'For difficult problems when quality matters more than speed · higher usage',
+    'Ultra': 'For demanding work using multiple agents · highest usage',
+}
+EFFORT_LABELS = dict(low='Low', medium='Medium', high='High', xhigh='Extra high', max='Max', ultra='Ultra')
+
+
+def highlighted(raw):
+    if not any(g in raw for g in ('›', '»')):
+        return False
+    prefix = re.split('[›»]', raw, 1)[0]
+    if not re.fullmatch(r'(?:\x1b\[[0-9;]*m)+', prefix):
+        return False
+    bold = inverse = foreground = background = False
+    for code in re.findall(r'\x1b\[([0-9;]*)m', prefix):
+        values = [int(x) for x in code.split(';')] if code else [0]
+        i = 0
+        while i < len(values):
+            value = values[i]
+            if value == 0:
+                bold = inverse = foreground = background = False
+            elif value == 1:
+                bold = True
+            elif value == 22:
+                bold = False
+            elif value == 7:
+                inverse = True
+            elif value == 27:
+                inverse = False
+            elif value in (38, 48):
+                if i + 1 >= len(values) or values[i+1] not in (2, 5):
+                    return False
+                size = 3 if values[i+1] == 2 else 1
+                if len(values[i+2:i+2+size]) != size or any(x > 255 for x in values[i+2:i+2+size]):
+                    return False
+                if value == 38:
+                    foreground = True
+                else:
+                    background = True
+                i += size + 1
+            elif value == 39:
+                foreground = False
+            elif value == 49:
+                background = False
+            elif 30 <= value <= 37 or 90 <= value <= 97:
+                foreground = True
+            elif 40 <= value <= 47 or 100 <= value <= 107:
+                background = True
+            else:
+                return False
+            i += 1
+    return bold and (inverse or (foreground and background))
+
+
+def footer_parts(footer):
+    match = re.fullmatch(r'(Fast (?:on|off)) · (.+) (low|medium|high|xhigh|max|ultra) · ((?:~|/)[^·]+)', footer)
+    if not match or match[2] not in MODELS:
+        raise ValueError('unsupported model/effort footer')
+    return match.groups()
+
+
+def picker(rows, raw, kind, expected):
+    _, model, effort, _ = footer_parts(expected)
+    if kind == 'models':
+        title, choices, hint, desired = '  Select Model and Effort', MODELS, '  enter select · esc back', model
+        prelude = []
+    elif kind == 'efforts':
+        title, choices, hint = '  Select Reasoning Level for ' + model, EFFORTS, '  enter default · s session · esc back'
+        if model in ('GPT-6-Luna', 'GPT-5.6-Luna'):
+            choices = dict(EFFORTS, **{'More reasoning…': 'Max consumes usage limits faster'})
+        desired = 'More reasoning…' if effort in ('max', 'ultra') else EFFORT_LABELS[effort]
+        prelude = []
+    else:
+        title, choices, hint, desired = '  Advanced Reasoning', ADVANCED, '  enter default · s session · esc back', EFFORT_LABELS[effort]
+        if model in ('GPT-6-Luna', 'GPT-5.6-Luna'):
+            choices = {'Max': ADVANCED['Max']}
+        prelude = ['  ⚠ Consumes usage limits faster']
+    starts = [i for i, row in enumerate(rows) if row == title]
+    if len(starts) != 1:
+        raise ValueError('missing or ambiguous picker')
+    tail = [(row, raw[i]) for i, row in enumerate(rows) if i >= starts[0] and row]
+    if len(tail) != len(choices) + len(prelude) + 2:
+        raise ValueError('unrecognized picker content')
+    if [row for row, _ in tail[1:1+len(prelude)]] != prelude:
+        raise ValueError('unrecognized picker prelude')
+    selected = []
+    labels = []
+    for index, ((row, ansi), (label, description)) in enumerate(zip(tail[1+len(prelude):-1], choices.items())):
+        match = re.fullmatch(r'(›| ) ([1-9][0-9]*)\. (.+?) {2,}(.+)', row)
+        if not match or int(match[2]) != index + 1 or match[4] != description:
+            raise ValueError('unrecognized picker option')
+        plain_label = re.sub(r' \((?:current|default)\)$', '', match[3])
+        if plain_label != label:
+            raise ValueError('unrecognized picker label')
+        if match[1] == '›':
+            if not highlighted(ansi):
+                raise ValueError('unproven picker highlight')
+            selected.append(index)
+        labels.append(label)
+    if len(selected) != 1 or desired not in labels:
+        raise ValueError('unrecognized picker selection')
+    if kind == 'efforts' and labels[selected[0]] == 'More reasoning…':
+        hint = '  enter select · esc back'
+    controls = {hint}
+    if hint == '  enter default · s session · esc back':
+        controls.add('  enter apply · s session · esc back')
+    if tail[-1][0] not in controls:
+        raise ValueError('unrecognized picker controls')
+    return selected[0], labels.index(desired)
+
+
+def check(mode, capture, expected=''):
+    if mode == 'digest':
+        print(hashlib.sha256(capture.rstrip('\n').encode()).hexdigest())
+        return 0
+    raw = capture.splitlines()
+    rows = [re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', x).rstrip() for x in raw]
+    if mode == 'glyph':
+        row = rows[int(expected)]
+        match = re.match(r'^([›»])(?: |$)', row)
+        if not match:
+            return 1
+        print(match[1])
+        return 0
+    if mode == 'validate':
+        valid = expected in {m.lower() for m in MODELS} and sys.argv[3] in EFFORT_LABELS
+        valid = valid and not (expected in ('gpt-6-luna', 'gpt-5.6-luna') and sys.argv[3] == 'ultra')
+        return 0 if valid else 1
+    if mode == 'desired':
+        fast, _, _, cwd = footer_parts(capture.strip())
+        model = next(m for m in MODELS if m.lower() == expected)
+        print(f'{fast} · {model} {sys.argv[3]} · {cwd}')
+        return 0
+    if mode == 'tmux-rows':
+        starts = [i for i, x in enumerate(rows) if x.startswith(('› /new  ', '› /model  ', '» /model  ')) or x in ('  Where should the new conversation run?', '  Select Model and Effort', '  Advanced Reasoning') or x.startswith('  Select Reasoning Level for ')]
+        if len(starts) != 1:
+            return 1
+        checks = []
+        for i in range(starts[0], len(rows)):
+            if not rows[i]:
+                continue
+            pattern = ''.join('\\' + c if c in '.^$[]()|*+?{}\\' else c for c in rows[i])
+            pattern = pattern.replace('#', '##').replace(',', '#,').replace('}', '#}')
+            checks.append('#{==:#{C/r:^' + pattern + ' *$},' + str(i + 1) + '}')
+        result = checks[0]
+        for item in checks[1:]:
+            result = '#{&&:' + result + ',' + item + '}'
+        cwd = expected.replace("#", "##").replace(",", "#,").replace("}", "#}")
+        print("#{&&:" + result + ",#{==:#{pane_current_path}," + cwd + "}}")
+        return 0
+    footers = [x.strip() for x in rows if re.fullmatch(r'  Fast (?:on|off) · [^·]+ · (?:~|/)[^·]+ · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?', x)]
+    if mode == 'footer':
+        if len(footers) != 1:
+            return 1
+        print(footers[0].split(' · Context ')[0])
+        return 0
+    if mode == 'supported-footer':
+        footer_parts(expected)
+        return 0
+    if mode == 'changed':
+        _, model, effort, _ = footer_parts(expected)
+        notice = '• Model changed to ' + model.lower() + ' ' + effort + ' for this session only'
+        return 0 if notice in rows and len(footers) == 1 and footers[0].startswith(expected + ' · Context ') else 1
+    if mode == 'reset':
+        if len(footers) != 1 or ' · Context 0% used' not in footers[0]:
+            return 1
+        current = footer_parts(footers[0].split(' · Context ')[0])
+        previous = footer_parts(expected)
+        return 0 if current[0] == previous[0] and current[3] == previous[3] else 1
+    if mode == 'direct-reset':
+        if check('reset', capture, expected):
+            return 1
+        content = [(row, raw[i]) for i, row in enumerate(rows) if row]
+        _, model, effort, cwd = footer_parts(expected)
+        if len(content) == 7:
+            notice = '• Model changed to ' + model.lower() + ' ' + effort + ' for this session only'
+            if content[4][0] != notice:
+                return 1
+            content.pop(4)
+        valid = len(content) == 6
+        valid = valid and content[0][0] == '  >_ OpenAI Codex (v0.160.0)'
+        valid = valid and content[1][0] == '     ' + cwd
+        valid = valid and re.fullmatch(r'  [^›•\x00-\x1f]+', content[2][0]) is not None
+        valid = valid and content[3][0].startswith('  Tip: ')
+        valid = valid and content[4][0] == '› Ask Codex to do anything'
+        valid = valid and content[5][0].strip() == footers[0]
+        return 0 if valid else 1
+    if mode in ('models', 'efforts', 'advanced') or mode.startswith('navigate-'):
+        kind = mode.removeprefix('navigate-')
+        selected, desired = picker(rows, raw, kind, expected)
+        if mode.startswith('navigate-'):
+            print(f'{selected}:{desired}')
+        return 0
+    if mode == 'fresh':
+        return 0 if len(footers) == 1 and footers[0].startswith(expected + ' · Context 0% used') else 1
+    if mode in ('slash', 'model-slash'):
+        command, description = ('/new', 'start a new chat during a conversation') if mode == 'slash' else ('/model', 'choose what model and reasoning effort to use')
+        starts = [i for i, x in enumerate(rows) if x in [g + ' ' + command + '  ' + description for g in ('›', '»')]]
+        if len(starts) != 1:
+            return 1
+        i = starts[0]
+        if not highlighted(raw[i]):
+            return 1
+        tail = [x for x in rows[i:] if x]
+        valid = len(tail) == 3 and tail[0] == rows[i] and tail[1] in [g + ' ' + command for g in ('›', '»')]
+        valid = valid and len(footers) == 1 and tail[2].strip() == footers[0]
+        valid = valid and footers[0].split(' · Context ')[0] == expected
+        return 0 if valid else 1
+    if mode == 'menu':
+        title = '  Where should the new conversation run?'
+        starts = [i for i, x in enumerate(rows) if x == title]
+        if len(starts) != 1:
+            return 1
+        i = starts[0]
+        tail = [x for x in rows[i:] if x]
+        wanted = [title, '› 1. Current checkout  Keep using the current working directory', '  2. New worktree      Create an isolated managed checkout', '  enter select · esc back']
+        selected = next((x for x in raw[i:] if '› 1. Current checkout' in x), '')
+        return 0 if tail == wanted and highlighted(selected) else 1
+    return 1
+
+
+try:
+    mode = sys.argv[1]
+    if mode == 'live':
+        socket, pane, mode, expected, cwd, proof, digest = sys.argv[2:]
+        identity = subprocess.run([str(pathlib.Path(__file__).resolve().with_name('codex-model-target-guard')), socket, pane, proof], timeout=.9)
+        if identity.returncode:
+            sys.exit(1)
+        state = subprocess.run(["tmux", "-S", socket, "display-message", "-p", "-t", pane, "#{pane_in_mode}:#{pane_current_path}"], capture_output=True, text=True, timeout=0.6)
+        if state.returncode or state.stdout.rstrip("\n") != "0:" + cwd:
+            sys.exit(1)
+        result = subprocess.run(['tmux', '-S', socket, 'capture-pane', '-p', '-e', '-t', pane], capture_output=True, text=True, timeout=0.6)
+        if hashlib.sha256(result.stdout.rstrip('\n').encode()).hexdigest() != digest:
+            sys.exit(1)
+        sys.exit(1 if result.returncode else check(mode, result.stdout, expected))
+    sys.exit(check(mode, sys.stdin.read(), sys.argv[2] if len(sys.argv) > 2 else ''))
+except (ValueError, IndexError, subprocess.TimeoutExpired):
+    sys.exit(1)

@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/codex-model-sender-label
+# description: Resolve a relay caller to a live pane and its nearest recognized agent ancestor.
+# patched: ignore inherited pane ids and sender overrides; uncertain origins remain neutral
+# date: 2026-09-30
+import pathlib
+import re
+import shlex
+import subprocess
+import sys
+
+
+def ps(*args):
+    return subprocess.run(["ps", "-ww", *args], check=True, capture_output=True,
+                          text=True, timeout=1).stdout
+
+
+def processes():
+    result = {}
+    for row in ps("-ax", "-o", "pid=,ppid=,comm=").splitlines():
+        fields = row.split(None, 2)
+        if len(fields) == 3:
+            result[int(fields[0])] = (int(fields[1]), fields[2])
+    return result
+
+
+def app(pid, command):
+    name = pathlib.Path(command).name
+    if name in ("claude", "codex"):
+        return name
+    if re.search(r"/claude/versions/\d+\.\d+\.\d+(?:[-+][\w.-]+)?$", command):
+        return "claude"
+    if name != "node":
+        return ""
+    argv = shlex.split(ps("-p", str(pid), "-o", "args=").strip())
+    if len(argv) < 2 or argv[1].startswith("-"):
+        return ""
+    entry = str(pathlib.Path(argv[1]).resolve(strict=True))
+    if entry.endswith("/@openai/codex/bin/codex.js"):
+        return "codex"
+    if entry.endswith("/@anthropic-ai/claude-code/cli.js"):
+        return "claude"
+    return ""
+
+
+def origin(pid, panes):
+    table = processes()
+    chain, seen = [], set()
+    while pid > 1 and pid in table and pid not in seen:
+        seen.add(pid)
+        parent, command = table[pid]
+        chain.append((pid, parent, command, app(pid, command)))
+        matches = [row for row in panes if row[-2] == str(pid)]
+        if matches:
+            if (len(matches) != 1 or len(matches[0]) != 6
+                    or not re.fullmatch(r"%\d+", matches[0][0])
+                    or not all(re.fullmatch(r"[A-Za-z0-9_-]+", value) for value in matches[0][1:3])):
+                return None
+            pane, session, window, _, root, _ = matches[0]
+            agent = next((row[3] for row in chain if row[3]), "relay")
+            return (pane, session, window, root, agent), chain
+        pid = parent
+    return None
+
+
+def main():
+    caller = int(sys.argv[1])
+    panes = []
+    for line in pathlib.Path(sys.argv[2]).read_text().splitlines():
+        row = line.split()
+        if len(row) >= 6 and row[-2].isdigit() and row[-1] == "0":
+            panes.append(row)
+    first = origin(caller, panes)
+    if first is not None and origin(caller, panes) == first:
+        print(" ".join(first[0]))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (ValueError, OSError, UnicodeError, subprocess.SubprocessError):
+        pass
