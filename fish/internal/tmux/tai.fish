@@ -1,14 +1,14 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
-# patched: bind all launches to an explicit session or the verified caller pane
+# patched: panel seats on low effort; fable on Sonnet 5.5, astra on gpt-6-luna
 # date: 2026-10-03
 
 # tai all: window name | exact command. Comment a row to disable only that panel slot.
 function __tai_panel
-    printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort high'
-    printf '%s\n' 'astra|codex -m gpt-5.6-luna -c model_reasoning_effort="high"'
-    printf '%s\n' 'fable|cc --model-sonnet --effort low'
-    printf '%s\n' 'deepseek|deepseek --effort low'
+    printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort low'
+    printf '%s\n' 'astra|codex -m gpt-6-luna -c model_reasoning_effort="low"'
+    printf '%s\n' 'fable|cc --settings {"model":"claude-sonnet-5-5"} --effort low'
+    printf '%s\n' 'deepseek|deepseek --settings {"model":"deepseek-flash"} --effort low'
     # printf '%s\n' 'kimi|kimi --auto'
     # printf '%s\n' 'mimo|openrouter --mimo-v2.5'
 end
@@ -169,7 +169,7 @@ function __tai_seat
         case gemini
             set trust_kind agy
             set parts agy --dangerously-skip-permissions
-            set defaults --effort high
+            set defaults --effort low
             __tai_validate gemini $argv
             or return $status
         case astra
@@ -180,12 +180,12 @@ function __tai_seat
         case fable
             set trust_kind claude
             set parts cc
-            set defaults --settings '{"model":"claude-opus-5-5"}' --effort high
+            set defaults --settings '{"model":"claude-sonnet-5-5"}' --effort low
             set isolation --safe-mode --disable-slash-commands
         case deepseek
             set trust_kind deepseek
             set parts deepseek
-            set defaults --settings '{"model":"deepseek-flash"}' --effort high
+            set defaults --settings '{"model":"deepseek-flash"}' --effort low
             set isolation --bare --disable-slash-commands
         case '*'
             echo "tai: seat must be one of gemini astra fable deepseek" >&2
