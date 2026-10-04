@@ -91,6 +91,19 @@ for name, mode in [('codex-new-live-busy-slash', 'busy'), ('codex-new-live-real-
     assert subprocess.run([str(root / 'tools/codex-new-guard'), mode], input=screen, text=True).returncode == 0, name
     checks += 1
 
+guard = str(root / 'tools/codex-new-guard')
+def footer_of(screen):
+    return subprocess.run([guard, 'footer'], input=screen, text=True, capture_output=True)
+for name, fresh_expected in [('codex-new-live-80col-fresh', 0), ('codex-new-live-80col-tail-fresh', 0), ('codex-new-live-80col-used', 1), ('codex-new-live-80col-tail-used', 1)]:
+    screen = (root / f'tests/fixtures/{name}.ansi').read_text()
+    found = footer_of(screen)
+    assert found.returncode == 0, name
+    assert subprocess.run([guard, 'direct-reset', found.stdout.strip()], input=screen, text=True).returncode == fresh_expected, name
+    checks += 1
+cut = (root / 'tests/fixtures/codex-new-live-80col-truncated-used.ansi').read_text()
+assert footer_of(cut).returncode != 0
+checks += 1
+
 manifest = root / 'tests/fixtures/codex-new-cwd-live.json'
 if manifest.exists():
     for case in json.loads(manifest.read_text())['cases']:

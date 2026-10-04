@@ -153,7 +153,7 @@ def check(mode, capture, expected=''):
         cwd = expected.replace("#", "##").replace(",", "#,").replace("}", "#}")
         print("#{&&:" + result + ",#{==:#{pane_current_path}," + cwd + "}}")
         return 0
-    footers = [x.strip() for x in rows if re.fullmatch(r'  Fast (?:on|off) · [^·]+ · (?:~|/)[^·]+ · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?', x)]
+    footers = [x.strip() for x in rows if re.fullmatch(r'  Fast (?:on|off) · [^·]+ · (?:~|/)[^·]+ · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents| · [^·…]*…)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?', x)]
     if mode == 'busy':
         return 0 if any(re.search(r'esc to interrupt|Working \(|Waiting for|background terminals? running|Compacting|Thinking|tab to queue message|context left', x) for x in rows) else 1
     if mode == 'busy-slash':
@@ -187,18 +187,17 @@ def check(mode, capture, expected=''):
         _, model, effort, cwd = footer_parts(expected)
         if len(content) > 2 and re.fullmatch(r'  permissions: [^›•\x00-\x1f]+', content[2][0]):
             content.pop(2)
-        if len(content) == 7:
-            notice = '• Model changed to ' + model.lower() + ' ' + effort + ' for this session only'
-            if content[4][0] != notice:
-                return 1
-            content.pop(4)
-        valid = len(content) == 6
+        notice = '• Model changed to ' + model.lower() + ' ' + effort + ' for this session only'
+        if len(content) > 3 and content[-3][0] == notice:
+            content.pop(-3)
+        middle = [row for row, _ in content[2:-2]]
+        tips = [i for i, row in enumerate(middle) if row.startswith('  Tip: ')]
+        valid = len(content) >= 6 and len(tips) == 1 and tips[0] >= 1
+        valid = valid and all(re.fullmatch(r'  [^›•\x00-\x1f]+', row) for row in middle)
         valid = valid and content[0][0] == '  >_ OpenAI Codex (v0.160.0)'
         valid = valid and content[1][0] == '     ' + cwd
-        valid = valid and re.fullmatch(r'  [^›•\x00-\x1f]+', content[2][0]) is not None
-        valid = valid and content[3][0].startswith('  Tip: ')
-        valid = valid and content[4][0] == '› Ask Codex to do anything'
-        valid = valid and content[5][0].strip() == footers[0]
+        valid = valid and content[-2][0] == '› Ask Codex to do anything'
+        valid = valid and content[-1][0].strip() == footers[0]
         return 0 if valid else 1
     if mode in ('models', 'efforts', 'advanced') or mode.startswith('navigate-'):
         kind = mode.removeprefix('navigate-')
