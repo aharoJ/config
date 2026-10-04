@@ -3,6 +3,8 @@ const [, , start = 'fresh', cwd, log] = process.argv;
 let state = start, used = false, draft = '', buf = '';
 if (state === 'used' || state === 'stale') { used = true; state = 'fresh'; }
 if (state === 'draft') { draft = 'unsent draft'; state = 'fresh'; }
+let blinkOn = false;
+if (state === 'blink') { used = true; state = 'fresh'; const tick = () => { blinkOn = !blinkOn; draw(); setTimeout(tick, blinkOn ? 120 : 900); }; setTimeout(tick, 900); }
 const out = s => process.stdout.write(s);
 const HL = '\x1b[1;7m';
 const footer = () => `  Fast off · GPT-6.1-Sol low · ${cwd} · Context ${used ? 12 : 0}% used`;
@@ -13,7 +15,7 @@ function draw() {
     rows = ['', '  >_ OpenAI Codex (v0.160.0)', '     ' + cwd, '  permissions: YOLO mode', '', '  Bring a question.', '', '  Tip: Use /title.', '', ''];
     if (start === 'stale') rows.unshift(`  Fast off · GPT-6.1-Sol low · ${cwd} · Context 0% used`, '');
     if (used) rows.push('• earlier reply', '');
-    if (state === 'working') rows.push('• Working (3s • esc to interrupt)', '');
+    if (state === 'working' || (start === 'blink' && blinkOn)) rows.push('• Working (3s • esc to interrupt)', '');
     if (state === 'compacting') rows.push('• Compacting context (3s • esc to interrupt)', '');
     if (state === 'slash') rows.push(HL + '› /new  start a new chat during a conversation\x1b[0m', '', '› /new');
     else if (draft) rows.push('› ' + draft);

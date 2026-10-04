@@ -168,10 +168,19 @@ new_observe() {
   after="$(relay_display "$pane" '#{pane_in_mode}:#{pane_dead}:#{pane_pid}:#{pane_current_command}:#{pane_width}:#{pane_height}:#{session_name}:#{window_name}:#{pane_current_path}')" || partial 'cannot recheck target'
   [ "$state" = "$after" ] || partial 'target changed during capture'
 }
+new_withdraw_busy_draft() {
+  printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" busy-slash || return 0
+  new_key busy-slash BSpace4
+  new_observe
+  printf '%s\n' "$new_capture" | perl -pe 's/\e\[[0-9;:]*m//g' | grep -qE '^› /n' && partial 'busy pane: typed /new may remain as a draft'
+  printf 'REFUSE: target %s turned busy during reset; the typed /new was withdrawn and nothing was submitted\n' "$pane" >&2
+  exit 5
+}
 new_wait() {
   local attempts=0
   while [ "$attempts" -lt 40 ]; do
     new_observe
+    [ "$1" = slash ] && new_withdraw_busy_draft
     if printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" "$1" "${2:-$before_footer}"; then return; fi
     attempts=$((attempts + 1))
     sleep 0.1
@@ -197,7 +206,7 @@ new_destination_wait() {
 }
 new_key() {
   local check nested receipt code screen_guard key=${2:-Enter} expected=${3:-$before_footer}
-  case "$key" in Enter|Up|Down|s) ;; *) partial "unsupported restoration key" ;; esac
+  case "$key" in Enter|Up|Down|s) ;; BSpace4) key='BSpace BSpace BSpace BSpace' ;; *) partial "unsupported restoration key" ;; esac
   check="$(python3 - "$relay_script_dir/codex-new-guard" "$relay_target_socket" "$pane" "$1" "$expected" "$before_cwd" "$new_target_proof" <<'PY2'
 import shlex,sys
 print(shlex.join(sys.argv[1:2]+['live']+sys.argv[2:]))
@@ -310,7 +319,18 @@ require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
+new_busy_sweep() {
+  local capture code samples=0
+  while [ "$samples" -lt "${CODEX_NEW_BUSY_SAMPLES:-30}" ]; do
+    capture="$(request capture-pane -p -e -t "$pane")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot capture target $pane"; }
+    printf '%s\n' "$capture" | "$relay_script_dir/codex-new-guard" busy && refuse_draft "$pane" 'an agent busy state'
+    samples=$((samples + 1))
+    sleep 0.05
+  done
+}
 printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" busy && refuse_draft "$pane" 'an agent busy state'
+new_busy_sweep
+require_empty_codex_input
 before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
 if printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$before_footer"; then
   printf 'NEW ok (%s:%s %s); already fresh, no input sent\n' "$target_session" "$window_name" "$pane"

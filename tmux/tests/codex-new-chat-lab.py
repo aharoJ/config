@@ -75,6 +75,7 @@ try:
     case('picker-flipping', start='flip', runs=3, expect=(0, 4, 5), inputs='any', final=None)
     case('draft-at-0pct', start='draft', expect=(5,), final=None)
     case('working', start='working', expect=(5,), final=None)
+    case('working-line-blinks', start='blink', runs=3, expect=(5,), final=None)
     case('compacting', start='compacting', expect=(5,), final=None)
     case('stale-0pct-footer', start='stale', expect=(1,), final=None)
     case('narrow-wrapped', start='used', width=60, expect=(1, 5), final=None)

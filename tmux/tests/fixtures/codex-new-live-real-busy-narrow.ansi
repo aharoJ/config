@@ -1,0 +1,51 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.160.0)[0m
+     [2m~/demo/lab/codex-new-chat-busy[0m
+[2m  permissions: [0;1m[38;5;5mYOLO mode[0m
+
+  [38;2;99;168;248mNice to see you in these parts.[39m
+
+  [1mTip:[0m Use the [1mdesktop app[0m. Run [38;2;166;227;161mcodex app[39m to open it. It
+  installs automatically if needed.
+
+
+[1;2m› [0mRun the shell command sleep 900 in the foreground and
+  wait for it to finish, then say done.
+
+
+[2m• [0mI’ll run [38;2;166;227;161msleep 900[39m in the foreground and wait for it to
+  finish.
+
+[2m• [0m[38;2;166;227;161msleep 900[39m is still running. I’m waiting for it to finish.
+
+[1m[38;2;128;128;128m•[0m [2mWaiting for background terminal[0m [2m(3m 06s • [0;1mesc[0;2m to interrup…
+  └ sleep 900[0m
+
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [38;2;200;169;238mFast off[39m · [38;2;246;226;183mGPT-6.1-Sol low[39m · [38;2;171;223;167m~/demo/lab/codex-new-chat-bu…
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
