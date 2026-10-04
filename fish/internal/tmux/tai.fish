@@ -1,13 +1,13 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
-# patched: panel seats on low effort; fable on Sonnet 5.5, astra on gpt-6-luna
+# patched: panel seats on low effort; fable on Sonnet 5.5 medium, astra on gpt-6-luna
 # date: 2026-10-03
 
 # tai all: window name | exact command. Comment a row to disable only that panel slot.
 function __tai_panel
     printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort low'
     printf '%s\n' 'astra|codex -m gpt-6-luna -c model_reasoning_effort="low"'
-    printf '%s\n' 'fable|cc --settings {"model":"claude-sonnet-5-5"} --effort low'
+    printf '%s\n' 'fable|cc --settings {"model":"claude-sonnet-5-5"} --effort medium'
     printf '%s\n' 'deepseek|deepseek --settings {"model":"deepseek-flash"} --effort low'
     # printf '%s\n' 'kimi|kimi --auto'
     # printf '%s\n' 'mimo|openrouter --mimo-v2.5'
@@ -180,7 +180,7 @@ function __tai_seat
         case fable
             set trust_kind claude
             set parts cc
-            set defaults --settings '{"model":"claude-sonnet-5-5"}' --effort low
+            set defaults --settings '{"model":"claude-sonnet-5-5"}' --effort medium
             set isolation --safe-mode --disable-slash-commands
         case deepseek
             set trust_kind deepseek
