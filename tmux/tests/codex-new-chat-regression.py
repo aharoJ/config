@@ -100,6 +100,10 @@ for name, fresh_expected in [('codex-new-live-80col-fresh', 0), ('codex-new-live
     assert found.returncode == 0, name
     assert subprocess.run([guard, 'direct-reset', found.stdout.strip()], input=screen, text=True).returncode == fresh_expected, name
     checks += 1
+for name in ('codex-new-live-transcript-quotes-busy', 'codex-new-live-real-idle-quoted'):
+    quoted = (root / f'tests/fixtures/{name}.ansi').read_text()
+    assert subprocess.run([guard, 'busy'], input=quoted, text=True).returncode == 1, name
+    checks += 1
 cut = (root / 'tests/fixtures/codex-new-live-80col-truncated-used.ansi').read_text()
 assert footer_of(cut).returncode != 0
 checks += 1

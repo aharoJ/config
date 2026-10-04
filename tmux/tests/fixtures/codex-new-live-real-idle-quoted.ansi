@@ -1,0 +1,51 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.160.0)[0m
+     [2m~/demo/lab/cncq[0m
+[2m  permissions: [0;1m[38;5;5mYOLO mode[0m
+
+  [38;2;99;168;248mThere’s a perfectly good prompt with your name on it.[39m
+
+  [1mTip:[0m You can resume a previous conversation by running [38;2;166;227;161mcodex resume[39m
+
+
+[1;2m› [0mRun exactly: printf '%s\n' '• Working (6m 19s • esc to interrupt)' 'Working \(|esc to interrupt' ; then run sleep 90 in the foreground and wait for it.
+
+
+[2m• [0mI’ll run the exact command, then run [38;2;166;227;161msleep 90[39m in the foreground and wait for it to finish.
+
+[1m[38;5;2m•[0m [1mRan[0m [38;2;137;180;250mprintf[38;2;205;214;244m [38;2;166;227;161m'%s\n'[38;2;205;214;244m [38;2;166;227;161m'• Working (6m 19s • esc to interrupt)'[38;2;205;214;244m [38;2;166;227;161m'Working \(|esc to interrupt'[39m
+[2m  └ • Working (6m 19s • esc to interrupt)
+[0m    [2mWorking \(|esc to interrupt[0m
+
+[2m• [0m[38;2;166;227;161msleep 90[39m is still running; I’m waiting for it to finish.
+
+[1m[38;5;2m•[0m [1mRan[0m [38;2;137;180;250msleep[38;2;205;214;244m 90[39m
+[2m  └ (no output)[0m
+
+[2m• [0mDone. Ran the exact [38;2;166;227;161mprintf[39m command, then waited for foreground [38;2;166;227;161msleep 90[39m to finish. Both exited successfully.
+
+[2m  Worked for 1m 38s • 10:56 PM[0m
+
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [38;2;200;169;238mFast off[39m · [38;2;246;226;183mGPT-6.1-Sol low[39m · [38;2;171;223;167m~/demo/lab/cncq[39m · [38;2;242;181;144mContext 2% used[39m · [1m←[0m for agents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
