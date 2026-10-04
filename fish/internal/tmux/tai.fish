@@ -1,5 +1,7 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
+# patched: bind all launches to an explicit session or the verified caller pane
+# date: 2026-10-03
 
 # tai all: window name | exact command. Comment a row to disable only that panel slot.
 function __tai_panel
@@ -13,8 +15,8 @@ end
 # Kimi exposes no native effort flag. Its wrapper must use --auto, not --yolo.
 
 function __tai_usage
-    echo "usage: tai [codex|gemini|cc|deepseek|mimo|kimi|all] [agent args...]"
-    echo "       tai seat <gemini|astra|fable|deepseek> [agent args...]"
+    echo "usage: tai [--session <session>] [codex|gemini|cc|deepseek|mimo|kimi|all] [agent args...]"
+    echo "       tai [--session <session>] seat <gemini|astra|fable|deepseek> [agent args...]"
     echo "       tai        # same as: tai all"
 end
 
@@ -86,6 +88,29 @@ end
 
 # Leading --env=KEY=VALUE args become tmux window env, since send-keys cannot
 # carry the caller's environment into the new pane.
+function __tai_session
+    set -l session "$argv[1]"
+    if test -z "$session"
+        if not string match -qr '^%[0-9]+$' -- "$TMUX_PANE"
+            echo "tai: --session or a valid TMUX_PANE is required" >&2
+            return 1
+        end
+        set -l identity (tmux display-message -p -t "$TMUX_PANE" '#{pane_id}|#{session_name}')
+        or return 1
+        set -l fields (string split -m 1 '|' -- "$identity")
+        if test (count $fields) -ne 2; or test "$fields[1]" != "$TMUX_PANE"
+            echo "tai: cannot resolve caller session" >&2
+            return 1
+        end
+        set session "$fields[2]"
+    end
+    if test -z "$session"; or not tmux has-session -t "=$session"
+        echo "tai: session '$session' does not exist" >&2
+        return 1
+    end
+    printf '%s\n' "$session"
+end
+
 function __tai_spawn
     set -l window_name $argv[1]
     set -l launch_dir $argv[2]
@@ -98,10 +123,20 @@ function __tai_spawn
     end
 
     set -l env_args
-    while string match -q -- '--env=*' "$argv[1]"
-        set -a env_args -e (string replace -- '--env=' '' "$argv[1]")
+    set -l session
+    while set -q argv[1]
+        switch "$argv[1]"
+            case '--env=*'
+                set -a env_args -e (string replace -- '--env=' '' "$argv[1]")
+            case '--session=*'
+                set session (string replace -- '--session=' '' "$argv[1]")
+            case '*'
+                break
+        end
         set -e argv[1]
     end
+    set session (__tai_session "$session")
+    or return $status
 
     set -l parts
     for arg in $argv
@@ -109,10 +144,11 @@ function __tai_spawn
     end
     set -l commandline (string join ' ' -- $parts)
 
-    set -l pane (tmux new-window -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args "$fish_bin -l")
+    set -l pane (tmux new-window -t "=$session:" -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args "$fish_bin -l")
     or return $status
 
     tmux send-keys -t "$pane" "$commandline" Enter
+    or return $status
     echo "tai: $window_name -> $commandline"
 end
 
@@ -121,8 +157,9 @@ end
 # pre-trusted for that CLI only. Extra args replace the default model/effort
 # args; the isolation flags are always appended.
 function __tai_seat
-    set -l seat $argv[1]
-    set -e argv[1]
+    set -l session $argv[1]
+    set -l seat $argv[2]
+    set -e argv[1..2]
     set -l launch_dir (pwd -P)
     set -l trust_kind
     set -l parts
@@ -166,14 +203,44 @@ function __tai_seat
     $HOME/.config/tmux/tools/panel-seat-trust $trust_kind "$launch_dir"
     or return $status
 
-    __tai_spawn "$seat" "$launch_dir" $parts $args $isolation
+    __tai_spawn "$seat" "$launch_dir" "--session=$session" $parts $args $isolation
 end
 
 function tai --description 'tmux: spawn AI agent window in current directory'
-    if not set -q TMUX
-        echo "tai: run this inside tmux" >&2
-        return 1
+    set -l session
+    set -l remaining
+    while set -q argv[1]
+        switch "$argv[1]"
+            case --
+                set -a remaining $argv
+                break
+            case --session '--session=*'
+                if test -n "$session"
+                    echo "tai: --session may be specified only once" >&2
+                    return 2
+                end
+                if test "$argv[1]" = --session
+                    if not set -q argv[2]; or test -z "$argv[2]"
+                        echo "tai: --session requires a session name" >&2
+                        return 2
+                    end
+                    set session "$argv[2]"
+                    set -e argv[1]
+                else
+                    set session (string replace -- '--session=' '' "$argv[1]")
+                    if test -z "$session"
+                        echo "tai: --session requires a session name" >&2
+                        return 2
+                    end
+                end
+            case '*'
+                set -a remaining "$argv[1]"
+        end
+        set -e argv[1]
     end
+    set argv $remaining
+    set session (__tai_session "$session")
+    or return $status
 
     set -l panel (__tai_panel)
 
@@ -189,7 +256,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
             __tai_usage >&2
             return 2
         end
-        __tai_seat $argv
+        __tai_seat "$session" $argv
         return $status
     end
 
@@ -228,7 +295,7 @@ function tai --description 'tmux: spawn AI agent window in current directory'
     if test "$target" = all
         for row in $panel
             set -l fields (string split -m 1 '|' -- "$row")
-            __tai_spawn "$fields[1]" "$launch_dir" (string split ' ' -- "$fields[2]")
+            __tai_spawn "$fields[1]" "$launch_dir" "--session=$session" (string split ' ' -- "$fields[2]")
             or return $status
         end
     else
@@ -242,12 +309,13 @@ function tai --description 'tmux: spawn AI agent window in current directory'
             case gemini
                 set -a parts --dangerously-skip-permissions
         end
-        __tai_spawn "$window_name" "$launch_dir" $parts $argv
+        __tai_spawn "$window_name" "$launch_dir" "--session=$session" $parts $argv
         or return $status
     end
 end
 
 complete -c tai -e
 complete -c tai -f
+complete -c tai -l session -r -d 'Explicit destination tmux session'
 complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo kimi all seat" -a "codex gemini cc deepseek mimo kimi all seat"
 complete -c tai -n "__fish_seen_subcommand_from seat" -a "gemini astra fable deepseek"
