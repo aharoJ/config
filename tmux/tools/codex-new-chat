@@ -135,7 +135,9 @@ require_empty_codex_input() {
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
 new_pending_screen() {
-  local capture code fresh_footer
+  local capture code fresh_footer mode
+  mode="$(relay_display "$pane" '#{pane_in_mode}')" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot query target mode for $pane"; }
+  [ "$mode" = 0 ] || refuse_copy "$pane"
   capture="$(request capture-pane -p -e -t "$pane")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot capture target $pane"; }
   printf '%s\n' "$capture" | "$relay_script_dir/codex-new-guard" menu || return 0
   new_target_check || fail "Codex process identity changed before picker resolution"
@@ -308,6 +310,7 @@ require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
+printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" busy && refuse_draft "$pane" 'an agent busy state'
 before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
 if printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$before_footer"; then
   printf 'NEW ok (%s:%s %s); already fresh, no input sent\n' "$target_session" "$window_name" "$pane"

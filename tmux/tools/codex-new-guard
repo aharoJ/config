@@ -154,6 +154,8 @@ def check(mode, capture, expected=''):
         print("#{&&:" + result + ",#{==:#{pane_current_path}," + cwd + "}}")
         return 0
     footers = [x.strip() for x in rows if re.fullmatch(r'  Fast (?:on|off) · [^·]+ · (?:~|/)[^·]+ · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?', x)]
+    if mode == 'busy':
+        return 0 if any(re.search(r'esc to interrupt|Compacting|Thinking', x) for x in rows) else 1
     if mode == 'footer':
         if len(footers) != 1:
             return 1
