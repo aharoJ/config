@@ -80,6 +80,11 @@ for screen in [
 check('• Working (1s • esc to interrupt)\n\n' + fresh, 4, cursor_y=6)
 check(fresh, 4, cursor_y=1)
 
+startup = (root / 'tests/fixtures/codex-new-live-startup-residue.ansi').read_text()
+startup_y = next(i for i, row in enumerate(startup.splitlines()) if 'Ask Codex to do anything' in row)
+check(startup, 0, 'FRESH', 'Fast off · GPT-6.1-Sol low · ~/demo/lab/codex-new-chat-smoke', 2, startup_y)
+check(startup.replace('\x1b[38;2;135;161;238mcodex-new-chat-smoke', ' • Working (1s • esc to interrupt) ', 1), 4, '', 'Fast off · GPT-6.1-Sol low · ~/demo/lab/codex-new-chat-smoke', 2, startup_y)
+
 manifest = root / 'tests/fixtures/codex-new-cwd-live.json'
 if manifest.exists():
     for case in json.loads(manifest.read_text())['cases']:
