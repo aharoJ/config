@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-new-chat
 # description: Start a guarded fresh Codex chat in the same checkout.
-# patched: bind node wrappers to a proven foreground Codex entry point throughout reset
-# date: 2026-10-02
+# patched: no-op when already fresh; resolve a pending checkout picker to Current checkout
+# date: 2026-10-03
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -134,82 +134,28 @@ require_empty_codex_input() {
 
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-[ "$#" = 1 ] && [ -n "${1:-}" ] || { printf 'usage: codex-new-chat <window-name>\n' >&2; exit 1; }
-window_name=$1
-message=/new
-[ -n "${TMUX:-}" ] || fail 'TMUX is not set'
-target_session="${CODEX_SEND_SESSION:-}"
-case "$target_session" in
-  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
-esac
-case "$window_name" in
-  ''|*[!A-Za-z0-9_-]*) fail 'window name may contain only letters, digits, underscores, or hyphens' ;;
-esac
-
-list_file="$(mktemp "${TMPDIR:-/tmp}/codex-new-chat-list.XXXXXX")" || fail 'scratch file unavailable'
-if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
-  :
-else
-  code=$?
-  trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
-  list_file=
-  [ "$code" = 75 ] && unresponsive
-  fail 'cannot query tmux panes'
-fi
-target_count="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { n++ } END { print n + 0 }' "$list_file")"
-pane="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { print $1 }' "$list_file")"
-command_name="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { print $4 }' "$list_file")"
-trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
-list_file=
-case "$target_count" in
-  0) fail "no target window $target_session:$window_name" ;;
-  1) ;;
-  *) fail "target window $target_session:$window_name is ambiguous" ;;
-esac
-case "$command_name" in
-  fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Codex; refuse" ;;
-esac
-
-relay_target_window="$window_name"
-relay_glyph="›"
-if acquire_relay_lock; then
-  :
-else
-  code=$?
-  case "$code" in
-    5) busy ;;
-    75) unresponsive ;;
-    *) fail "cannot establish target relay lock" ;;
-  esac
-fi
-case "$command_name" in codex|node) ;; *) fail "target process is not Codex" ;; esac
-new_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane")" || fail "foreground process is not proven Codex"
-new_target_check() {
-  "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" "$new_target_proof"
+new_pending_screen() {
+  local capture code fresh_footer
+  capture="$(request capture-pane -p -e -t "$pane")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot capture target $pane"; }
+  printf '%s\n' "$capture" | "$relay_script_dir/codex-new-guard" menu || return 0
+  new_target_check || fail "Codex process identity changed before picker resolution"
+  new_capture="$capture"
+  before_footer=
+  new_key menu Enter ''
+  local attempts=0
+  while [ "$attempts" -lt 40 ]; do
+    new_observe
+    if fresh_footer="$(printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" footer)" &&
+      printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$fresh_footer"; then
+      new_idle
+      printf 'NEW ok (%s:%s %s); resolved pending checkout picker to Current checkout; fresh context verified (%s)\n' "$target_session" "$window_name" "$pane" "$fresh_footer"
+      exit 0
+    fi
+    attempts=$((attempts + 1))
+    sleep 0.1
+  done
+  partial 'checkout picker was answered but the fresh composer was not verified'
 }
-prepare_payload "$message"
-relay_sender_tier=strict
-require_empty_codex_input
-sleep 0.04
-require_empty_codex_input
-
-before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
-"$relay_script_dir/codex-new-guard" supported-footer "$before_footer" < /dev/null || fail "unsupported model/effort; cannot prove restoration"
-before_cwd="$(relay_display "$pane" "#{pane_current_path}")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot read cwd"; }
-new_target_check || fail "Codex process identity changed before paste"
-if atomic_text "$message"; then
-  :
-else
-  code=$?
-  case "$code" in
-    2) refuse_copy "$pane" ;;
-    3) refuse_draft "$pane" "an unproven composer state" ;;
-    6) fail "target identity changed before paste" ;;
-    7) fail "cannot prepare literal payload before paste" ;;
-    75) unresponsive ;;
-    *) partial "literal delivery outcome is unknown for $pane" ;;
-  esac
-fi
 
 new_observe() {
   local state after code
@@ -300,6 +246,89 @@ new_select() {
   done
   partial 'picker did not reach the required model/effort'
 }
+
+[ "$#" = 1 ] && [ -n "${1:-}" ] || { printf 'usage: codex-new-chat <window-name>\n' >&2; exit 1; }
+window_name=$1
+message=/new
+[ -n "${TMUX:-}" ] || fail 'TMUX is not set'
+target_session="${CODEX_SEND_SESSION:-}"
+case "$target_session" in
+  ''|*[!A-Za-z0-9_-]*) fail 'CODEX_SEND_SESSION is required and may contain only letters, digits, underscores, or hyphens' ;;
+esac
+case "$window_name" in
+  ''|*[!A-Za-z0-9_-]*) fail 'window name may contain only letters, digits, underscores, or hyphens' ;;
+esac
+
+list_file="$(mktemp "${TMPDIR:-/tmp}/codex-new-chat-list.XXXXXX")" || fail 'scratch file unavailable'
+if request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command}' > "$list_file"; then
+  :
+else
+  code=$?
+  trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
+  list_file=
+  [ "$code" = 75 ] && unresponsive
+  fail 'cannot query tmux panes'
+fi
+target_count="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { n++ } END { print n + 0 }' "$list_file")"
+pane="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { print $1 }' "$list_file")"
+command_name="$(awk -v session="$target_session" -v window="$window_name" '("" $2) == ("" session) && ("" $3) == ("" window) { print $4 }' "$list_file")"
+trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
+list_file=
+case "$target_count" in
+  0) fail "no target window $target_session:$window_name" ;;
+  1) ;;
+  *) fail "target window $target_session:$window_name is ambiguous" ;;
+esac
+case "$command_name" in
+  fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Codex; refuse" ;;
+esac
+
+relay_target_window="$window_name"
+relay_glyph="›"
+if acquire_relay_lock; then
+  :
+else
+  code=$?
+  case "$code" in
+    5) busy ;;
+    75) unresponsive ;;
+    *) fail "cannot establish target relay lock" ;;
+  esac
+fi
+case "$command_name" in codex|node) ;; *) fail "target process is not Codex" ;; esac
+new_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane")" || fail "foreground process is not proven Codex"
+new_target_check() {
+  "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" "$new_target_proof"
+}
+prepare_payload "$message"
+relay_sender_tier=strict
+before_cwd="$(relay_display "$pane" "#{pane_current_path}")" || { code=$?; [ "$code" = 75 ] && unresponsive; fail "cannot read cwd"; }
+new_pending_screen
+require_empty_codex_input
+sleep 0.04
+require_empty_codex_input
+
+before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
+if printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$before_footer"; then
+  printf 'NEW ok (%s:%s %s); already fresh, no input sent\n' "$target_session" "$window_name" "$pane"
+  exit 0
+fi
+"$relay_script_dir/codex-new-guard" supported-footer "$before_footer" < /dev/null || fail "unsupported model/effort; cannot prove restoration"
+new_target_check || fail "Codex process identity changed before paste"
+if atomic_text "$message"; then
+  :
+else
+  code=$?
+  case "$code" in
+    2) refuse_copy "$pane" ;;
+    3) refuse_draft "$pane" "an unproven composer state" ;;
+    6) fail "target identity changed before paste" ;;
+    7) fail "cannot prepare literal payload before paste" ;;
+    75) unresponsive ;;
+    *) partial "literal delivery outcome is unknown for $pane" ;;
+  esac
+fi
+
 new_wait slash
 new_key slash
 new_destination_wait

@@ -11,7 +11,7 @@ import tempfile
 
 root = pathlib.Path(__file__).resolve().parents[1]
 helper = (root / 'tools/codex-new-chat').read_text()
-definitions = helper.split('new_observe() {', 1)[1].split('\nnew_wait slash\n', 1)[0]
+definitions = helper.split('new_observe() {', 1)[1].split('\n[ "$#" = 1 ]', 1)[0]
 definitions = 'new_observe() {' + definitions
 delivery = (root / 'tools/relay-delivery.sh').read_text()
 busy = 'relay_busy_preflight() {' + delivery.split('relay_busy_preflight() {', 1)[1].split('\nrelay_refusal_reason()', 1)[0]
