@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-04 — Clear explicitly identified stray drafts safely
+
+`cc-msg --clear-draft --expect <text>` and `codex-send-to <window> --clear-draft --expect <text>` now clear only an exact 1–16 character ASCII draft in a proven idle, single-line composer. The foreground process, full screen, cursor and exact row are re-proved at the keystroke gate under the relay lock. Each clear is durably logged and echoed; refusals exit 8 and partial or unknown clears exit 4. Clears never enter the retry queue. Once the draft is cleared, an existing queued Claude message can resume through its usual guarded worker.
+
 ## 2026-10-04 — Own refused Claude relays through delivery
 
 Every cc-msg attempt now enters a durable per-target inbox. Safe busy, draft and copy-mode refusals return exit 6 and start bounded automatic retries against the original socket, pane and foreground process, including its start time. Retries stop after 30 minutes with a visible failure file. Unknown or partial deliveries never retry. New invocations recover orphaned queued records and mark orphaned in-flight attempts unknown. Persistence or worker launch failures return exit 7; existing literal-payload and composer guards remain in force.

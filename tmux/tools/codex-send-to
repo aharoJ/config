@@ -5,6 +5,24 @@
 # date: 2026-10-02
 set -uo pipefail
 
+if [ "${1:-}" = --help ]; then
+  printf '%s\n' 'usage: CODEX_SEND_SESSION=<session> codex-send-to <window> <text>' '       CODEX_SEND_SESSION=<session> codex-send-to <window> --clear-draft --expect <exact-text>' 'Clear mode requires an exact 1–16 character ASCII draft without brackets, attachments, edge spaces or selection; refusal exits 8. It clears only, never queues a clear, and logs to the inbox.'
+  exit 0
+fi
+
+if [ "${1:-}" = --clear-draft ]; then
+  clear_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("relay-clear-draft"))' "${BASH_SOURCE[0]}")" || exit 7
+  shift
+  exec python3 "$clear_tool" codex "" "$@"
+fi
+
+if [ "${2:-}" = --clear-draft ]; then
+  clear_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("relay-clear-draft"))' "${BASH_SOURCE[0]}")" || exit 7
+  clear_window=$1
+  shift 2
+  exec python3 "$clear_tool" codex "$clear_window" "$@"
+fi
+
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
 refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
 unresponsive() { relay_server_unresponsive=1; printf 'REFUSE: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }

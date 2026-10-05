@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+import fcntl
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import shlex
+import signal
+import subprocess
+import sys
+import time
+import uuid
+
+TOOLS = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader('clear_queue', str(TOOLS / 'cc-msg-queue'))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+queue = importlib.util.module_from_spec(spec)
+loader.exec_module(queue)
+LABEL = runpy.run_path(str(TOOLS / 'relay-sender-label'))
+
+
+class Refused(Exception):
+    pass
+
+
+def request(target, *args):
+    result = subprocess.run([os.environ.get('TMUX_BIN', 'tmux'), '-S', target['socket'], *args], capture_output=True, text=True, timeout=3)
+    if result.returncode != 0:
+        raise Refused('tmux request failed')
+    return result.stdout
+
+
+def snapshot(target):
+    fmt = '#{pane_id}:#{pane_in_mode}:#{cursor_x}:#{cursor_y}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_dead}:#{session_name}:#{window_name}:#{pane_current_command}'
+    before = request(target, 'display-message', '-p', '-t', target['pane'], fmt).strip()
+    capture = request(target, 'capture-pane', '-p', '-e', '-t', target['pane'])
+    after = request(target, 'display-message', '-p', '-t', target['pane'], fmt).strip()
+    if before != after:
+        raise Refused('target changed during capture')
+    fields = before.split(':')
+    if len(fields) != 11 or fields[0] != target['pane'] or fields[1] != '0' or fields[7] != '0' or fields[6] != target['pid']:
+        raise Refused('copy mode or changed target identity')
+    return dict(state=before, capture=capture, x=int(fields[2]), y=int(fields[3]), width=int(fields[4]), fields=fields)
+
+
+def visible(capture):
+    return re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', re.sub(r'\x1b\][^\x1b\x07]*(?:\x07|\x1b\\)', '', capture)).splitlines()
+
+
+def valid_expected(expected):
+    if not 1 <= len(expected) <= 16 or expected != expected.strip(' ') or any(not ' ' <= char <= '~' for char in expected) or '[' in expected or ']' in expected:
+        raise Refused('--expect must be 1–16 printable ASCII characters without edge spaces; no multiline, attachment tokens, or automatic clearing')
+
+
+def styled_cells(row):
+    cells, dim, concealed, reverse = [], False, False, False
+    while row:
+        if row.startswith('\x1b'):
+            match = re.match(r'\x1b\[([0-9;:]*)m', row)
+            if not match:
+                raise Refused('untrusted draft styling')
+            parts = match[1].split(';') if match[1] else ['0']
+            index = 0
+            while index < len(parts):
+                value = int(parts[index].split(':')[0] or '0')
+                if value in (38, 48, 58):
+                    if ':' not in parts[index]:
+                        mode = int(parts[index + 1]) if index + 1 < len(parts) else -1
+                        index += 2 if mode == 5 else 4 if mode == 2 else 1
+                elif value == 0:
+                    dim = concealed = reverse = False
+                elif value == 2:
+                    dim = True
+                elif value == 22:
+                    dim = False
+                elif value == 8:
+                    concealed = True
+                elif value == 28:
+                    concealed = False
+                elif value == 7:
+                    reverse = True
+                elif value == 27:
+                    reverse = False
+                index += 1
+            row = row[match.end():]
+        else:
+            cells.append((row[0], dim, concealed, reverse))
+            row = row[1:]
+    return cells
+
+
+def guard(snapshot, kind, expected):
+    valid_expected(expected)
+    glyph = '❯' if kind == 'claude' else '›'
+    y, x, width = snapshot['y'], snapshot['x'], snapshot['width']
+    raw = snapshot['capture'].splitlines()
+    rows = visible(snapshot['capture'])
+    if not 0 <= y < len(rows):
+        raise Refused('cursor is outside the composer')
+    match = re.fullmatch(r'( *' + glyph + r'[ \u00a0])' + re.escape(expected) + r' ?', rows[y])
+    if not match or x != len(match[1]) + len(expected) or x >= width - 1:
+        raise Refused('draft does not exactly match --expect at the end of a single input line')
+    cells = styled_cells(raw[y])
+    content = cells[len(match[1]):len(match[1]) + len(expected)]
+    if any(dim or concealed or reverse for _, dim, concealed, reverse in content):
+        raise Refused('draft is application text, concealed, or selected')
+    tail = cells[len(match[1]) + len(expected):]
+    if tail and (len(tail) != 1 or tail[0][0] != ' ' or not tail[0][3]):
+        raise Refused('unproven trailing input')
+    active = rows[max(0, y - 6):y + 4]
+    if any(re.search(r'\[(?:Pasted|Image|image|Attachment|File)\b[^\]]*\]', row) for row in active):
+        raise Refused('paste or attachment content is present')
+    if any(re.search(r'esc to interrupt|esc to cancel|tab to queue message|ctrl\+x ctrl\+s to send now|Press up to edit queued messages', row) for row in active):
+        raise Refused('target is busy or has pending messages')
+    if any(re.fullmatch(r'[^\w\s] [^\r\n]*…(?: \([^\r\n]*\))?\s*', row.strip()) for row in active[:-4]):
+        raise Refused('target is busy')
+    if kind == 'claude':
+        preceding = [(index, row.strip()) for index, row in enumerate(rows[:y - 1]) if row.strip()]
+        completed = bool(preceding and re.search(r'^\S .*\bfor [0-9].* · done ', preceding[-1][1]))
+        fresh = any('Claude Code v' in row for row in rows[:y]) and not any(re.match(r'^\s*(?:❯|⏺)', row) for row in rows[:y])
+        if not completed and not fresh:
+            raise Refused('Claude idle state is unproven')
+    virtual = list(raw)
+    virtual[y] = match[1] + ('\x1b[2mboundary proof\x1b[0m' if kind == 'codex' else '')
+    check = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(len(match[1])), str(y), str(width), 'strict'], input='\n'.join(virtual) + '\n', text=True, capture_output=True, timeout=3)
+    if check.returncode != 0:
+        raise Refused('composer boundary, multiline input, or idle footer is unproven')
+    return rows[y]
+
+
+def prove(plan):
+    env, target = plan['environment'], plan['identity']
+    if queue.identity(env) != target:
+        raise Refused('foreground target changed')
+    foreground = target['foreground']
+    if LABEL['app'](int(foreground[0]), foreground[-1]) != plan['kind']:
+        raise Refused('foreground client is not the requested agent')
+    current = snapshot(target)
+    if current != plan['snapshot']:
+        raise Refused('target screen or cursor changed')
+    guard(current, plan['kind'], plan['expected'])
+
+
+def format_guard(plan):
+    checks = []
+    names = ('pane_id', 'pane_in_mode', 'cursor_x', 'cursor_y', 'pane_width', 'pane_height', 'pane_pid', 'pane_dead', 'session_name', 'window_name', 'pane_current_command')
+    for name, value in zip(names, plan['snapshot']['fields']):
+        if not re.fullmatch(r'[A-Za-z0-9_%.-]+', value):
+            raise Refused('unsupported target metadata')
+        checks.append('#{==:#{' + name + '},' + value + '}')
+    row = visible(plan['snapshot']['capture'])[plan['snapshot']['y']]
+    pattern = re.escape(row).replace('\\ ', ' ')
+    pattern = pattern.replace('#', '##').replace(',', '#,').replace('}', '#}')
+    checks.append('#{==:#{C/r:^' + pattern + '$},' + str(plan['snapshot']['y'] + 1) + '}')
+    if 'expires' in plan:
+        checks.extend(['#{==:#{@relay_clear_token},' + plan['token'] + '}', '#{==:#{@relay_clear_clock},%s}', '#{e|<:#{T:@relay_clear_clock},' + str(plan['expires']) + '}'])
+    result = checks[0]
+    for check in checks[1:]:
+        result = '#{&&:' + result + ',' + check + '}'
+    return result
+
+
+def pending_count(folder, target):
+    count = 0
+    for path in folder.glob('*.json'):
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return 'unknown'
+        if not isinstance(data, dict) or 'state' not in data:
+            return 'unknown'
+        if data.get('operation') != 'clear-draft' and data['state'] in ('queued', 'attempting') and (target is None or data.get('identity') == target):
+            count += 1
+    return count
+
+
+def main():
+    os.umask(0o077)
+    if len(sys.argv) == 3 and sys.argv[1] == '--prove':
+        def proof_timeout(signum, frame):
+            raise Refused('keystroke proof exceeded its deadline')
+        signal.signal(signal.SIGALRM, proof_timeout)
+        signal.setitimer(signal.ITIMER_REAL, 1.5)
+        try:
+            plan = json.loads(Path(sys.argv[2]).read_text())
+            if time.time() >= plan['expires']:
+                raise Refused('clear authorization expired')
+            prove(plan)
+            if time.time() >= plan['expires']:
+                raise Refused('clear authorization expired')
+            return 0
+        except (Refused, OSError, ValueError, KeyError, subprocess.SubprocessError):
+            return 1
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+    kind = sys.argv[1] if len(sys.argv) > 1 else ''
+    args = sys.argv[2:]
+    env = dict(os.environ)
+    if kind == 'codex':
+        window, args = (args[0], args[1:]) if args else ('', [])
+        env['CC_MSG_SESSION'], env['CC_MSG_WINDOW'] = env.get('CODEX_SEND_SESSION', ''), window
+        env.pop('CC_MSG_PANE', None)
+    session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
+    expected = args[1] if len(args) == 2 and args[0] == '--expect' else ''
+    socket = env.get('TMUX', '').split(',')[0]
+    key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
+    folder = queue.ROOT / (key + '-' + hashlib.sha256(socket.encode()).hexdigest()[:12])
+    folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+    data = dict(id=uuid.uuid4().hex, operation='clear-draft', kind=kind, message='', expected=expected, created=time.time(), state='clear-inspecting')
+    path = folder / (data['id'] + '.json')
+    audit_lock = path.with_suffix('.lock').open('a')
+    fcntl.flock(audit_lock, fcntl.LOCK_EX)
+    queue.save(path, data)
+    queue.event(folder, data, 'clear-attempt', expected=expected, kind=kind, session=session, window=window)
+    target, lock = None, None
+    sent = False
+    handlers = {}
+    def interrupted(signum, frame):
+        raise RuntimeError(f'clear interrupted by signal {signum}')
+    try:
+        for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+            handlers[signum] = signal.signal(signum, interrupted)
+        if kind not in ('claude', 'codex') or len(args) != 2 or args[0] != '--expect':
+            raise Refused('usage: --clear-draft --expect <exact short draft>; this mode clears only and sends no message')
+        valid_expected(expected)
+        target = queue.identity(env)
+        if not target:
+            raise Refused('explicit target or foreground process cannot be proved')
+        data['identity'] = target
+        stat = os.stat(target['socket'])
+        lock_key = hashlib.sha256(f'{stat.st_dev}:{stat.st_ino}:{target["pane"]}'.encode()).hexdigest()
+        lock_root = Path(env.get('TMUX_RELAY_LOCK_ROOT', f'/private/tmp/tmux-{os.getuid()}/relay-locks'))
+        lock_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        lock = lock_root / lock_key
+        acquired = subprocess.run([env.get('TMUX_RELAY_LOCK_BIN', '/usr/bin/shlock'), '-f', str(lock), '-p', str(os.getpid())], capture_output=True, timeout=3)
+        if acquired.returncode != 0:
+            lock = None
+            raise Refused('another relay owns the target; no clear queued')
+        first = snapshot(target)
+        guard(first, kind, expected)
+        time.sleep(1)
+        second = snapshot(target)
+        if first != second:
+            raise Refused('target screen is changing')
+        plan = dict(environment=env, identity=target, kind=kind, expected=expected, snapshot=second)
+        prove(plan)
+        plan['environment'] = {key: env[key] for key in ('PATH', 'TMUX', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'TMUX_BIN') if key in env}
+        plan['token'], plan['expires'] = data['id'], int(time.time()) + 3
+        request(target, 'set-option', '-p', '-t', target['pane'], '@relay_clear_clock', '%s')
+        request(target, 'set-option', '-p', '-t', target['pane'], '@relay_clear_token', plan['token'])
+        plan_path = folder / (data['id'] + '.plan')
+        queue.save(plan_path, plan)
+        data['pending_messages'] = pending_count(folder, target)
+        queue.event(folder, data, 'clear-authorized', draft=expected, identity=target, pending_messages=data['pending_messages'])
+        data['state'] = 'clear-authorized'
+        queue.save(path, data)
+        pane = target['pane']
+        deliver = f'send-keys -t {pane} ' + ' '.join(['BSpace'] * len(expected)) + f" ; display-message -p -t {pane} '__CLEAR_SENT__:#{'{'}pane_id{'}'}'"
+        blocked = f"display-message -p -t {pane} '__CLEAR_REFUSED__:#{'{'}pane_id{'}'}'"
+        nested = shlex.join(['if-shell', '-F', '-t', pane, format_guard(plan), deliver, blocked])
+        check = shlex.join([sys.executable, str(Path(__file__).resolve()), '--prove', str(plan_path)])
+        sent = True
+        receipt = request(target, 'if-shell', '-t', pane, check, nested, blocked).strip()
+        if receipt == f'__CLEAR_REFUSED__:{pane}':
+            sent = False
+            raise Refused('target changed at the keystroke gate')
+        if receipt != f'__CLEAR_SENT__:{pane}':
+            raise RuntimeError('clear receipt is unconfirmed')
+        for attempt in range(10):
+            time.sleep(.1)
+            if queue.identity(env) != target:
+                raise RuntimeError('target changed after clear')
+            post = snapshot(target)
+            glyph = '❯' if kind == 'claude' else '›'
+            empty = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(post['x']), str(post['y']), str(post['width']), 'strict'], input=post['capture'], capture_output=True, text=True, timeout=3)
+            if empty.returncode == 0:
+                output = f'CLEARED exact draft {json.dumps(expected)}; empty composer verified; {pending_count(folder, target)} queued message(s) may now deliver; inbox {path}'
+                queue.finish(folder, path, data, 'cleared', 0, output)
+                queue.event(folder, data, 'clear-complete', cleared=expected)
+                print(output)
+                return 0
+        raise RuntimeError('empty composer could not be verified; no further keys sent')
+    except (Refused, OSError, ValueError, subprocess.SubprocessError, RuntimeError) as error:
+        code = 4 if sent else 8
+        output = f'clear-draft: {error}; ' + ('clear may be partial; do not retry automatically' if sent else 'no target input was sent; clear was not queued')
+        queue.finish(folder, path, data, 'unknown' if sent else 'clear-refused', code, output)
+        print(f'{output}; {pending_count(folder, target)} queued message(s) pending; inbox {path}', file=sys.stderr)
+        return code
+    finally:
+        for signum, handler in handlers.items():
+            signal.signal(signum, handler)
+        if target is not None and lock is not None:
+            try:
+                if request(target, 'show-options', '-pv', '-t', target['pane'], '@relay_clear_token').strip() == data['id']:
+                    request(target, 'set-option', '-pu', '-t', target['pane'], '@relay_clear_token')
+                    request(target, 'set-option', '-pu', '-t', target['pane'], '@relay_clear_clock')
+            except (Refused, OSError, subprocess.SubprocessError):
+                pass
+        if lock is not None and lock.exists() and lock.read_text().strip() == str(os.getpid()):
+            subprocess.run(['trash', str(lock)], capture_output=True, timeout=3)
+        audit_lock.close()
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, IndexError) as error:
+        print(f'clear-draft: persistence or invocation failure: {error}; review delivery state; exit 7', file=sys.stderr)
+        sys.exit(7)

@@ -5,6 +5,12 @@
 # date: 2026-10-02
 set -uo pipefail
 
+if [ "${1:-}" = --clear-draft ]; then
+  clear_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("relay-clear-draft"))' "${BASH_SOURCE[0]}")" || exit 7
+  shift
+  exec python3 "$clear_tool" claude "$@"
+fi
+
 if [ "${CC_MSG_QUEUE_INTERNAL:-}" != 1 ]; then
   queue_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("cc-msg-queue"))' "${BASH_SOURCE[0]}")" || exit 7
   exec python3 "$queue_tool" "$@"
@@ -19,6 +25,11 @@ refuse_draft() { printf 'cc-msg: target %s has %s; no target input was sent; saf
 usage() {
   cat >&2 <<'EOF'
 usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] [CC_MSG_EXACT=1] cc-msg.sh <text>
+       CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> cc-msg.sh --clear-draft --expect <exact-text>
+
+Clear mode requires an exact 1–16 character ASCII draft; refusal exits 8.
+Brackets, attachments, edge spaces and selected text are refused.
+It clears only, never sends a message or queues a clear, and logs to the inbox.
 
 CC_MSG_PANE is optional.  When a named window has multiple panes, set it to
 one numeric tmux pane id (for example %46).  The id must still belong to the

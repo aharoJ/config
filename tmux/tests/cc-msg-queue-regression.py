@@ -143,6 +143,26 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(json.loads(path.read_text())['state'], 'unknown')
         self.assertTrue(path.with_suffix('.FAILED').exists())
 
+    def test_orphaned_clear_is_unknown_and_never_retried(self):
+        _, path, data, _ = self.send(5)
+        data.update(state='clear-authorized', operation='clear-draft', updated=0)
+        queue.save(path, data)
+        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'launch_worker') as launch:
+            queue.sweep()
+        launch.assert_not_called()
+        self.assertEqual(json.loads(path.read_text())['state'], 'unknown')
+        self.assertTrue(path.with_suffix('.FAILED').exists())
+
+    def test_orphaned_inspection_refuses_without_keys(self):
+        _, path, data, _ = self.send(5)
+        data.update(state='clear-inspecting', operation='clear-draft', created=0)
+        queue.save(path, data)
+        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'launch_worker') as launch:
+            queue.sweep()
+        launch.assert_not_called()
+        self.assertEqual(json.loads(path.read_text())['state'], 'clear-refused')
+        self.assertEqual(json.loads(path.read_text())['code'], 8)
+
     def test_status_sweep_cannot_overwrite_active_worker(self):
         _, path, data, _ = self.send(5)
         data['deadline'] = 0

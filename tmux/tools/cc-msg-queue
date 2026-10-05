@@ -171,9 +171,11 @@ def sweep():
             except BlockingIOError:
                 continue
             data = json.loads(path.read_text())
-            if data['state'] == 'attempting':
+            if data['state'] in ('attempting', 'clear-authorized'):
                 if time.time() - data.get('updated', data['created']) > 70:
                     finish(folder, path, data, 'unknown', 7, 'orphaned attempt; delivery unknown; no automatic resend')
+            elif data['state'] == 'clear-inspecting' and time.time() - data['created'] > 70:
+                finish(folder, path, data, 'clear-refused', 8, 'orphaned clear inspection; no target input was sent; clear not queued')
             elif data['state'] == 'queued':
                 if time.time() >= data['deadline']:
                     finish(folder, path, data, 'expired', 7, 'retry deadline passed; manual review required')
@@ -191,6 +193,8 @@ def main():
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == '--check-binding':
         return 0 if identity(dict(os.environ)) == json.loads(sys.argv[2]) else 1
+    if sys.argv[1:2] == ['--clear-draft']:
+        return subprocess.call([sys.executable, str(TOOL.with_name('relay-clear-draft')), 'claude', *sys.argv[2:]])
     sweep()
     if sys.argv[1:] == ['--status']:
         for path in ROOT.glob('*/*.json'):
