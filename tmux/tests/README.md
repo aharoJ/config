@@ -4,6 +4,14 @@ Published captures use synthetic account identities and directories, with unrela
 
 # Relay guard landing gate
 
+`cc-msg` and `codex-send` default to the caller's tmux session and the `claude` or `codex` window. Explicit session and window overrides remain supported; numeric window indexes resolve to a name before the delivery identity is bound. Oversized messages are preserved under `~/desk/tmp/relay/` and delivered as a short `Read <path>` pointer.
+
+Ordinary sends preserve drafts and queue safe busy/copy-mode refusals for automatic retry. Exit 6 means the queue owns delivery; do not resend. Retries remain bound to the original foreground process, stop after 30 minutes, and never replay uncertain delivery outcomes.
+
+`--operator` / `-O` interrupts an active agent, clears its composer, and submits replacement text. Agents may use this mode only for an explicit operator cut, clear, delete, or erase-and-inject instruction. Agent-to-agent messages use the ordinary guarded path. Operator mode retains target identity and submission verification; an uncertain attempt after clearing is not automatically replayed.
+
+Run `python3 tmux/tests/relay-defaults-regression.py` for private detached-server coverage of defaults, indexes, exact long-message preservation, draft-preserving retry, operator replacement of wrapped input with a cursor inside the draft, interruption of busy input, and explicit operator slash commands. Run `python3 tmux/tests/cc-msg-queue-regression.py` for persistence, target binding, and uncertain-outcome handling.
+
 Every change to `tmux/tools/relay-input-guard` must prove that real empty composers still pass, as well as that drafts refuse. Run `bash tmux/tests/relay-live-capture-regression.sh --fixtures tmux/tests/fixtures/relay-must-accept.json` and `bash tmux/tests/relay-input-guard-regression.sh` before landing. The must-accept set contains sanitized `capture-pane -p -e` output and cursor metadata for the three 2026-10-01 exit-5 panes, fresh/post-turn config panes, and 40- and 19-column DeepSeek panes. The guard regression replays the sanitized DeepSeek divider-shaped multiline draft in `relay-must-refuse.json` that caused a paste into unsent input. It also replays the 19-column pasted payload that previously failed verification.
 
 Relay code must never trust a bare `tmux display-message -t` result: tmux may return exit 0 and another pane's data when the requested target has vanished. Include `#{pane_id}` in every targeted format and require it to equal the resolved pane ID, including paste and Enter receipts. A missing or mismatched identity is a refusal or an unknown delivery outcome according to whether input was already attempted.

@@ -16,15 +16,16 @@ if [ "${CC_MSG_QUEUE_INTERNAL:-}" != 1 ]; then
   exec python3 "$queue_tool" "$@"
 fi
 
-fail() { printf 'cc-msg: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
-refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
+fail() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'cc-msg: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
+refuse_copy() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'cc-msg: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
 unresponsive() { relay_server_unresponsive=1; printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'cc-msg: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'REFUSE: another relay is in progress; no target input was sent; safe to retry after the condition clears\n' >&2; exit 5; }
-refuse_draft() { printf 'cc-msg: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
+refuse_draft() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'cc-msg: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
 usage() {
   cat >&2 <<'EOF'
-usage: CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> [CC_MSG_PANE=%<id>] [CC_MSG_EXACT=1] cc-msg.sh <text>
+usage: cc-msg.sh [--operator|-O] <text>
+       CC_MSG_SESSION=<session> CC_MSG_WINDOW=<name-or-index> [CC_MSG_PANE=%<id>] [CC_MSG_EXACT=1] cc-msg.sh <text>
        CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> cc-msg.sh --clear-draft --expect <exact-text>
 
 Clear mode requires an exact 1–16 character ASCII draft; refusal exits 8.
@@ -284,7 +285,10 @@ case "${CC_MSG_EXACT:-}" in
     ;;
   *) fail 'CC_MSG_EXACT, when set, must be 1' ;;
 esac
+relay_auto_archive=1
 prepare_payload "$payload"
+payload="$relay_prepared_payload"
+relay_operator_prepare
 require_empty_cc_input
 sleep 0.04
 require_empty_cc_input

@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import datetime
+import json
+import os
+from pathlib import Path
+import sys
+import uuid
+
+os.umask(0o077)
+folder = Path.home() / 'desk/tmp/relay'
+folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+record = os.environ.get('RELAY_MESSAGE_RECORD')
+data = json.loads(Path(record).read_text()) if record else None
+created = datetime.datetime.fromtimestamp(data['created'], datetime.timezone.utc) if data else datetime.datetime.now(datetime.timezone.utc)
+identifier = data['id'] if data else uuid.uuid4().hex
+name = created.strftime('%Y%m%dT%H%M%S%f') + '-' + identifier[:8] + '.md'
+path = folder / name
+content = data['message'].encode('utf-8') if data else Path(sys.argv[1]).read_bytes()
+try:
+    with path.open('xb') as stream:
+        stream.write(content)
+        stream.flush()
+        os.fsync(stream.fileno())
+except FileExistsError:
+    if path.read_bytes() != content:
+        raise ValueError('archive content changed')
+descriptor = os.open(folder, os.O_RDONLY)
+try:
+    os.fsync(descriptor)
+finally:
+    os.close(descriptor)
+print('Read ~/desk/tmp/relay/' + name)

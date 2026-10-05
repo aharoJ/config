@@ -5,12 +5,17 @@
 # date: 2026-10-01T23:02:00Z
 set -uo pipefail
 
-fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
-refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
+if [ "${CODEX_SEND_QUEUE_INTERNAL:-}" != 1 ]; then
+  queue_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("cc-msg-queue"))' "${BASH_SOURCE[0]}")" || exit 7
+  exec python3 "$queue_tool" --codex "$@"
+fi
+
+fail() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
+refuse_copy() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'REFUSE: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
 unresponsive() { relay_server_unresponsive=1; printf 'REFUSE: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
 partial() { printf 'UNVERIFIED: delivery may be partial or unconfirmed: %s; do not resend automatically\n' "$1" >&2; exit 4; }
 busy() { printf 'REFUSE: another relay is in progress; no target input was sent; safe to retry after the condition clears\n' >&2; exit 5; }
-refuse_draft() { printf 'REFUSE: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
+refuse_draft() { [ "${relay_operator_ready:-0}" != 1 ] || partial "operator replacement stopped after clear: $1"; printf 'REFUSE: target %s has %s; no target input was sent; safe to retry after the condition clears\n' "$1" "${2:-an unproven composer state}" >&2; exit 5; }
 
 TIMEOUT_BIN="${TIMEOUT_BIN:-$(command -v timeout || command -v gtimeout || true)}"
 TMUX_BIN="${TMUX_BIN:-tmux}"
@@ -75,6 +80,7 @@ request() {
 }
 
 require_empty_codex_input() {
+  require_queue_binding
   local capture state state_after code cursor_x cursor_y in_mode attempts=0
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
@@ -132,15 +138,23 @@ require_empty_codex_input() {
   fail "target composer kept redrawing during inspection; no target input was sent"
 }
 
+require_queue_binding() {
+  [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ] || return 0
+  python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || fail 'queued foreground process changed or cannot be proved'
+}
+
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-[ "$#" = 1 ] && [ -n "${1:-}" ] || { printf 'usage: codex-send <text>\n' >&2; exit 1; }
+[ "$#" -le 1 ] || { printf 'usage: codex-send <text>\n' >&2; exit 1; }
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set'
-message="$(printf '%s' "$1" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
+raw_message="${1:-$(cat)}"
+message="$(printf '%s' "$raw_message" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
+if [ "${RELAY_OPERATOR:-0}" != 1 ]; then
 case "${message:0:1}" in
   '/'|'!') fail 'message starts with "/" or "!", which the receiving CLI would run as a command; rephrase and resend' ;;
 esac
+fi
 target_session="${CODEX_SEND_SESSION:-}"
 target_window="${CODEX_SEND_WINDOW:-codex}"
 case "$target_session" in
@@ -186,12 +200,16 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
+relay_auto_archive=1
 prepare_payload "$message"
+message="$relay_prepared_payload"
 resolve_relay_sender_tier
+relay_operator_prepare
 require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
+require_queue_binding
 if atomic_text "$message"; then
   :
 else
@@ -208,6 +226,7 @@ fi
 verify_payload
 sleep 0.04
 verify_payload
+require_queue_binding
 if atomic_enter; then
   :
 else

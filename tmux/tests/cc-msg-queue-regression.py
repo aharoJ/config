@@ -32,6 +32,40 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(data['identity'], self.identity)
         return result, path, data, launch
 
+    def test_codex_transport_and_operator_are_explicit(self):
+        process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
+        with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
+            queue.deliver(dict(agent='codex', operator=True, message='replace draft', identity=self.identity), self.env)
+        self.assertEqual(launch.call_args.args[0], [str(queue.TOOL.with_name('codex-send'))])
+        env = launch.call_args.kwargs['env']
+        self.assertEqual(env['CODEX_SEND_QUEUE_INTERNAL'], '1')
+        self.assertEqual(env['RELAY_OPERATOR'], '1')
+        self.assertIn('CC_MSG_EXPECT_IDENTITY', env)
+
+    def test_defaults_bind_caller_pane_before_index_resolution(self):
+        response = lambda text: type('Result', (), {'returncode': 0, 'stdout': text})()
+        env = dict(TMUX='/test/socket,1,2', TMUX_PANE='%9', CC_MSG_WINDOW='2')
+        with patch.object(queue.subprocess, 'run', side_effect=[response('%9|caller\n'), response('1|notes\n2|claude\n')]) as request:
+            resolved = queue.resolve_defaults(env, 'claude')
+        self.assertEqual((resolved['CC_MSG_SESSION'], resolved['CC_MSG_WINDOW']), ('caller', 'claude'))
+        self.assertIn('%9', request.call_args_list[0].args[0])
+
+    def test_missing_caller_cannot_default_to_another_pane(self):
+        env = dict(TMUX='/test/socket,1,2', TMUX_PANE='%9')
+        result = type('Result', (), {'returncode': 0, 'stdout': '%1|other\n'})()
+        with patch.object(queue.subprocess, 'run', return_value=result):
+            with self.assertRaises(ValueError):
+                queue.resolve_defaults(env, 'claude')
+
+    def test_operator_unknown_outcome_is_not_queued(self):
+        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(4, 'clear may have happened')) as deliver, patch.object(queue, 'stable_screen', return_value=False), patch.object(queue.subprocess, 'Popen') as launch, patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', '--operator', 'replacement']):
+            self.assertEqual(queue.main(), 4)
+        deliver.assert_called_once()
+        launch.assert_not_called()
+        data = json.loads(next(self.root.glob('*/*.json')).read_text())
+        self.assertTrue(data['operator'])
+        self.assertEqual(data['state'], 'unknown')
+
     def test_safe_refusals_have_retry_owner(self):
         for code in (2, 5):
             result, path, data, launch = self.send(code)

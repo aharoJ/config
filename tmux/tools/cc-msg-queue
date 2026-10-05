@@ -43,6 +43,43 @@ def event(folder, data, state, **extra):
         os.close(descriptor)
 
 
+class RoutingError(ValueError):
+    pass
+
+
+def resolve_defaults(env, agent):
+    prefix = 'CODEX_SEND' if agent == 'codex' else 'CC_MSG'
+    socket = env.get('TMUX', '').split(',')[0]
+    binary = env.get('TMUX_BIN', 'tmux')
+    session = env.get(prefix + '_SESSION', '')
+    if not session:
+        if not socket:
+            raise RoutingError('TMUX is required to resolve the caller session')
+        args = [binary, '-S', socket, 'display-message', '-p']
+        if env.get('TMUX_PANE'):
+            args += ['-t', env['TMUX_PANE']]
+        args += ['#{pane_id}|#{session_name}']
+        result = subprocess.run(args, env=env, capture_output=True, text=True, timeout=5)
+        fields = result.stdout.strip().split('|')
+        if result.returncode or len(fields) != 2 or (env.get('TMUX_PANE') and fields[0] != env['TMUX_PANE']):
+            raise RoutingError('cannot resolve the caller session')
+        session = fields[1]
+    window = env.get(prefix + '_WINDOW') or agent
+    if not all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)):
+        raise RoutingError('invalid session or window')
+    if window.isdigit():
+        result = subprocess.run([binary, '-S', socket, 'list-windows', '-t', '=' + session, '-F', '#{window_index}|#{window_name}'], env=env, capture_output=True, text=True, timeout=5)
+        names = [row.split('|', 1)[1] for row in result.stdout.splitlines() if row.split('|', 1)[0] == window and '|' in row]
+        if result.returncode or len(names) != 1 or not re.fullmatch(r'[A-Za-z0-9_-]+', names[0]):
+            raise RoutingError('window index does not resolve uniquely')
+        window = names[0]
+    env.update(CC_MSG_SESSION=session, CC_MSG_WINDOW=window, RELAY_QUEUE_AGENT=agent)
+    if agent == 'codex':
+        env.update(CODEX_SEND_SESSION=session, CODEX_SEND_WINDOW=window)
+        env.pop('CC_MSG_PANE', None)
+    return env
+
+
 def identity(env):
     session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
     if not all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)):
@@ -72,7 +109,13 @@ def deliver(data, env):
         env['CC_MSG_PANE'] = data['identity']['pane']
         env['CC_MSG_EXPECT_PID'] = data['identity']['pid']
         env['CC_MSG_EXPECT_IDENTITY'] = json.dumps(data['identity'])
-    process = subprocess.Popen([str(TOOL)], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+    agent = data.get('agent', 'claude')
+    tool = TOOL.with_name('codex-send') if agent == 'codex' else TOOL
+    env['CODEX_SEND_QUEUE_INTERNAL'] = '1'
+    env['RELAY_OPERATOR'] = '1' if data.get('operator') else '0'
+    if data.get('record'):
+        env['RELAY_MESSAGE_RECORD'] = data['record']
+    process = subprocess.Popen([str(tool)], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     try:
         stdout, stderr = process.communicate(data['message'], timeout=60)
         return process.returncode, stdout + stderr
@@ -135,7 +178,7 @@ def worker(path):
                 if identity(env) != data['identity']:
                     finish(folder, path, data, 'failed', 1, 'target identity changed or cannot be proved; no resend')
                     return
-                if not stable_screen(env, data['identity']):
+                if not data.get('operator') and not stable_screen(env, data['identity']):
                     continue
                 if time.time() >= data['deadline']:
                     break
@@ -193,31 +236,45 @@ def main():
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == '--check-binding':
         return 0 if identity(dict(os.environ)) == json.loads(sys.argv[2]) else 1
+    agent = os.environ.get('RELAY_QUEUE_AGENT', 'claude')
+    if sys.argv[1:2] == ['--codex']:
+        agent = 'codex'
+        del sys.argv[1]
     if sys.argv[1:2] == ['--clear-draft']:
-        return subprocess.call([sys.executable, str(TOOL.with_name('relay-clear-draft')), 'claude', *sys.argv[2:]])
+        env = resolve_defaults(dict(os.environ), agent)
+        args = [agent] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex' else [])
+        return subprocess.call([sys.executable, str(TOOL.with_name('relay-clear-draft')), *args, *sys.argv[2:]], env=env)
+    operator = sys.argv[1:2] in (['--operator'], ['-O'])
+    if operator:
+        del sys.argv[1]
     sweep()
     if sys.argv[1:] == ['--status']:
         for path in ROOT.glob('*/*.json'):
             print(f"{json.loads(path.read_text())['state']}: {path}")
         return 0
     if sys.argv[1:] in (['-h'], ['--help']):
-        subprocess.run([str(TOOL), '--help'], env=dict(os.environ, CC_MSG_QUEUE_INTERNAL='1'))
+        if agent == 'codex':
+            print('usage: codex-send [--operator|-O] <text>')
+        else:
+            subprocess.run([str(TOOL), '--help'], env=dict(os.environ, CC_MSG_QUEUE_INTERNAL='1'))
+        print('Options: --operator / -O interrupts and replaces input; agents use only for an explicit operator clear-and-inject command. Defaults: caller session, claude/codex window; numeric window indexes accepted.')
         print('Inbox: ~/desk/tmp/inbox/<session>-<window>-<socket-hash>/inbox.jsonl; --status lists durable outcomes; exit 6 = queued (do not resend), exit 7 = persistence/worker failure. Retries stop after 30 minutes; .FAILED files require review.')
         return 0
-    env = dict(os.environ)
+    env = resolve_defaults(dict(os.environ), agent)
     message = ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else sys.stdin.read()
     session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
     key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
     key += '-' + hashlib.sha256(env.get('TMUX', '').split(',')[0].encode()).hexdigest()[:12]
     folder = ROOT / key
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    data = dict(id=uuid.uuid4().hex, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('PATH', 'TMUX', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
+    data = dict(id=uuid.uuid4().hex, operator=operator, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('RELAY_QUEUE_AGENT', 'CODEX_SEND_SESSION', 'CODEX_SEND_WINDOW', 'PATH', 'TMUX', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
     path = folder / (data['id'] + '.json')
+    data['record'] = str(path)
     with path.with_suffix('.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         save(path, data)
         event(folder, data, 'attempt', message=message, session=session, window=window)
-        if data['identity'] and not stable_screen(env, data['identity']):
+        if not operator and data['identity'] and not stable_screen(env, data['identity']):
             code, output = 5, 'cc-msg: target screen is changing or has pending messages; no target input was sent\n'
         else:
             code, output = deliver(data, env)
@@ -241,6 +298,9 @@ def main():
 if __name__ == '__main__':
     try:
         sys.exit(main())
-    except (OSError, ValueError) as error:
+    except RoutingError as error:
+        print(f'relay: {error}; no target input was sent', file=sys.stderr)
+        sys.exit(1)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f'cc-msg: persistence failure: {error}; delivery must be reviewed; exit 7', file=sys.stderr)
         sys.exit(7)

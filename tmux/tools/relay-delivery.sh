@@ -137,6 +137,7 @@ trap 'relay_interrupted SIGPIPE' PIPE
 
 prepare_payload() {
   local dimensions code bytes width height
+  relay_prepared_payload="$1"
   relay_payload_dir="$(mktemp -d "${TMPDIR:-/tmp}/relay-payload.XXXXXX")" || fail 'cannot create payload scratch directory'
   relay_payload_file="$relay_payload_dir/payload"
   printf '%s' "$1" > "$relay_payload_file" || fail 'cannot write payload scratch file'
@@ -158,8 +159,44 @@ prepare_payload() {
   relay_verify_height="$height"
   bytes="$(LC_ALL=C wc -c < "$relay_payload_file" | tr -d ' ')"
   [ "$width" -gt 4 ] && [ "$height" -gt 6 ] || fail 'target pane is too small to verify delivery'
-  [ "$bytes" -le "$(((width - 2) * (height - 6)))" ] || fail 'payload exceeds visible verification capacity; send a short file reference instead'
-  "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph" || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
+  if [ "$bytes" -gt "$(((width - 2) * (height - 6)))" ] || ! "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph"; then
+    [ "${relay_auto_archive:-0}" = 1 ] || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
+    relay_prepared_payload="$(python3 "$relay_script_dir/relay-archive" "$relay_payload_file")" || fail 'cannot archive oversized payload'
+    printf '%s' "$relay_prepared_payload" > "$relay_payload_file" || fail 'cannot write archived payload pointer'
+    "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph" || fail 'target pane cannot fit the archive pointer'
+  fi
+}
+
+relay_operator_prepare() {
+  [ "${RELAY_OPERATOR:-0}" = 1 ] || return 0
+  local condition receipt capture state keys attempts=0 code
+  require_queue_binding
+  condition="#{&&:#{==:#{pane_id},$pane},#{&&:#{==:#{pane_pid},$relay_target_pid},#{&&:#{==:#{pane_current_command},$relay_target_command},#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{==:#{pane_in_mode},0}}}}}}}"
+  while [ "$attempts" -lt 20 ]; do
+    require_queue_binding
+    capture="$(request capture-pane -p -e -t "$pane")" || partial 'operator capture failed'
+    state="$(relay_display "$pane" '#{cursor_y}')" || partial 'operator target changed'
+    (relay_busy_preflight "$capture" "$state") >/dev/null 2>&1
+    code=$?
+    keys='C-e C-u'
+    [ "$code" != 5 ] || keys="Escape $keys"
+    relay_input_attempted=1
+    receipt="$(request if-shell -F -t "$pane" "$condition" "send-keys -t $pane $keys ; display-message -p -t $pane '__OPERATOR_SENT__:#{pane_id}'" "display-message -p -t $pane '__OPERATOR_CHANGED__:#{pane_id}'")" || partial 'operator clear delivery is unknown'
+    [ "$receipt" = "__OPERATOR_SENT__:$pane" ] || partial 'operator target changed during clear'
+    sleep 0.1
+    if [ "$relay_glyph" = '❯' ]; then
+      (require_empty_cc_input) >/dev/null 2>&1
+    else
+      (require_empty_codex_input) >/dev/null 2>&1
+    fi
+    code=$?
+    [ "$code" = 0 ] && { relay_operator_ready=1; return 0; }
+    case "$code" in
+      3|4) partial 'operator clear could not be verified' ;;
+    esac
+    attempts=$((attempts + 1))
+  done
+  partial 'operator clear did not reach an empty composer'
 }
 
 relay_atomic() {

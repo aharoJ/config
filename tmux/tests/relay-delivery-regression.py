@@ -8,6 +8,7 @@ import codecs
 import json
 import os
 os.environ["CC_MSG_QUEUE_INTERNAL"] = "1"
+os.environ["CODEX_SEND_QUEUE_INTERNAL"] = "1"
 import pathlib
 import select
 import shlex
@@ -42,6 +43,10 @@ def fixture(directory, glyph, mode):
     tty.setraw(sys.stdin.fileno())
     directory = pathlib.Path(directory)
     value = "user draft" if mode in ("draft", "codex159-draft") else ""
+    if mode == "operator-draft":
+        value = "left draft right " * 20
+    cursor = 5 if mode == "operator-draft" else len(value)
+    operator_busy = mode == "operator-busy"
     pending = b""
     decoder = codecs.getincrementaldecoder("utf-8")()
     pastes, submissions = [], []
@@ -74,6 +79,11 @@ def fixture(directory, glyph, mode):
             output += f"\x1b[{top - 1};1H\x1b[1m•\x1b[0m \x1b[2mWorking\x1b[0m \x1b[2m(0s • \x1b[0;1mesc\x1b[0;2m to interrupt)\x1b[0m"
             if mode.endswith("-background"):
                 output += " · 1 background terminal running · /ps to view · /stop to close"
+        if operator_busy:
+            if glyph == "❯":
+                output += f"\x1b[{top - 3};1H✳ Hyperspacing…"
+            else:
+                output += f"\x1b[{top - 1};1H• Working (0s · esc to interrupt)"
         if mode == "claude-historical-busy":
             output += f"\x1b[1;1H✳ Hyperspacing…\x1b[{top - 2};1HCompleted earlier turn"
         if mode == "claude-active-busy":
@@ -118,13 +128,17 @@ def fixture(directory, glyph, mode):
         else:
             output += f"\x1b[{top + len(lines) + 1};1H\x1b[49m  \x1b[38;5;215mFast off · test · Context 0% used\x1b[39m"
         cursor_size = cells(visible) if empty_codex else cells(lines[-1])
-        output += f"\x1b[{top + len(lines)};{2 + cursor_size + 1}H"
+        if mode == "operator-draft":
+            prefix_lines = wrap(value[:cursor], width - 2)
+            output += f"\x1b[{top + len(prefix_lines)};{cells(prefix_lines[-1]) + 3}H"
+        else:
+            output += f"\x1b[{top + len(lines)};{2 + cursor_size + 1}H"
         sys.stdout.write(output)
         sys.stdout.flush()
         (directory / "ready").touch()
 
     def insert(data):
-        nonlocal value
+        nonlocal value, cursor
         text = decoder.decode(data)
         if mode == "drop-prefix" and not pastes:
             text = text[10:]
@@ -140,6 +154,7 @@ def fixture(directory, glyph, mode):
         elif mode == "mutate":
             text = text.replace("a", "b")
         value += text
+        cursor = len(value)
         pastes.append(text)
         (directory / "landed.json").write_text(json.dumps(value, ensure_ascii=False))
         draw()
@@ -167,6 +182,19 @@ def fixture(directory, glyph, mode):
                     time.sleep(0.15)
                 insert(pending[6:end])
                 pending = pending[end + 6:]
+            elif pending[:1] == b"\x1b" and mode in ("operator-draft", "operator-busy") and not pending.startswith(b"\x1b[200~"):
+                operator_busy = False
+                pending = pending[1:]
+                draw()
+            elif pending[:1] == b"\x05":
+                cursor = len(value)
+                pending = pending[1:]
+                draw()
+            elif pending[:1] == b"\x15":
+                value = value[cursor:]
+                cursor = 0
+                pending = pending[1:]
+                draw()
             elif pending[:1] in (b"\r", b"\n"):
                 submissions.append(value)
                 (directory / "submitted.json").write_text(json.dumps(submissions, ensure_ascii=False))
@@ -264,7 +292,11 @@ class Matrix:
         landed = json.loads((directory / "landed.json").read_text()) if (directory / "landed.json").exists() else ""
         passed = result.returncode == expected_code
         if expected_code == 0:
-            passed = passed and submitted == [expected_payload]
+            if len(submitted) == 1 and submitted[0].startswith("Read ~/desk/tmp/relay/"):
+                archived = pathlib.Path(submitted[0][5:]).expanduser()
+                passed = passed and archived.read_text() == expected_payload
+            else:
+                passed = passed and submitted == [expected_payload]
         else:
             passed = passed and not submitted
         if no_input:
@@ -288,6 +320,9 @@ class Matrix:
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
             expected = ("relay: " if relay == "cc-msg.sh" else "") + normalized
+            archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "neutral-prefix-at-right-margin", "neutral-prefix-pushes-past-one-row", "drop-space-at-full-wrap")
+            if relay in ("cc-msg.sh", "codex-send") and code == 1 and archive_case:
+                code = 0
             self.record(relay, name, result, code, directory, expected, code in (1, 2, 5))
         finally:
             if not self.frozen:
@@ -443,6 +478,8 @@ class Matrix:
                 raise RuntimeError("sender fixture failed to finish")
             result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
             label = "relay" if rename or linked else f"{agent if agent in ('claude', 'codex') else 'relay'} ({session}:{sender_window})"
+            if name == "prefix-pushes-past-one-row":
+                code = 0
             self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)
         finally:
             if not self.frozen:
