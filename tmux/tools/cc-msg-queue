@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import subprocess
+import sys
+import time
+import uuid
+
+TOOL = Path(__file__).resolve().with_name('cc-msg.sh')
+ROOT = Path(os.environ.get('CC_MSG_INBOX_ROOT', str(Path.home() / 'desk/tmp/inbox')))
+
+
+def save(path, data):
+    temp = path.with_suffix('.new')
+    with temp.open('w') as stream:
+        json.dump(data, stream, ensure_ascii=False)
+        stream.flush()
+        os.fsync(stream.fileno())
+    temp.replace(path)
+    descriptor = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def event(folder, data, state, **extra):
+    row = dict(id=data['id'], time=time.time(), state=state, **extra)
+    with (folder / 'inbox.jsonl').open('a') as stream:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        stream.write(json.dumps(row, ensure_ascii=False) + '\n')
+        stream.flush()
+        os.fsync(stream.fileno())
+    descriptor = os.open(folder, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def identity(env):
+    session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
+    if not all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)):
+        return None
+    socket = env.get('TMUX', '').split(',')[0]
+    if not socket:
+        return None
+    try:
+        stat = os.stat(socket)
+        result = subprocess.run([env.get('TMUX_BIN', 'tmux'), '-S', socket, 'list-panes', '-a', '-F', '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead} #{pane_current_command} #{pane_tty}'], env=env, capture_output=True, text=True, timeout=5)
+        candidates = [row.split() for row in result.stdout.splitlines() if len(row.split()) == 7 and row.split()[5] not in ('fish', 'bash', 'zsh', 'sh', 'dash', 'tmux') and row.split()[1:3] == [session, window] and row.split()[4] == '0' and (not env.get('CC_MSG_PANE') or row.split()[0] == env['CC_MSG_PANE'])]
+        if result.returncode == 0 and len(candidates) == 1:
+            row = candidates[0]
+            processes = subprocess.run(['ps', '-t', row[6].removeprefix('/dev/'), '-o', 'pid=,pgid=,tpgid=,lstart=,comm='], capture_output=True, text=True, timeout=5)
+            leaders = [line.split(None, 8) for line in processes.stdout.splitlines() if len(line.split(None, 8)) == 9 and line.split()[0] == line.split()[1] == line.split()[2]]
+            if processes.returncode != 0 or len(leaders) != 1:
+                return None
+            return dict(socket=socket, device=stat.st_dev, inode=stat.st_ino, pane=row[0], pid=row[3], foreground=leaders[0])
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return None
+
+
+def deliver(data, env):
+    env = dict(env, CC_MSG_QUEUE_INTERNAL='1', TMUX_TIMEOUT_SECONDS='1', TMUX_TIMEOUT_KILL_AFTER='1', CC_MSG_QUEUE_STRICT='1')
+    if data['identity']:
+        env['CC_MSG_PANE'] = data['identity']['pane']
+        env['CC_MSG_EXPECT_PID'] = data['identity']['pid']
+        env['CC_MSG_EXPECT_IDENTITY'] = json.dumps(data['identity'])
+    process = subprocess.Popen([str(TOOL)], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+    try:
+        stdout, stderr = process.communicate(data['message'], timeout=60)
+        return process.returncode, stdout + stderr
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        return 4, 'transport exceeded 60 seconds; delivery unknown; no automatic resend'
+
+
+
+def finish(folder, path, data, state, code, output):
+    data.update(state=state, code=code, output=output, updated=time.time())
+    save(path, data)
+    event(folder, data, state, code=code, output=output)
+    if state in ('failed', 'unknown', 'expired'):
+        marker = folder / (data['id'] + '.FAILED')
+        with marker.open('w') as stream:
+            stream.write(f"{state}: {output}\nRecord: {path}\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+
+
+def stable_screen(env, target):
+    command = [env.get('TMUX_BIN', 'tmux'), '-S', target['socket'], 'capture-pane', '-p', '-e', '-t', target['pane']]
+    try:
+        first = subprocess.run(command, env=env, capture_output=True, timeout=5)
+        time.sleep(1)
+        second = subprocess.run(command, env=env, capture_output=True, timeout=5)
+        if first.returncode != 0 or second.returncode != 0 or first.stdout != second.stdout:
+            return False
+        state = subprocess.run([env.get('TMUX_BIN', 'tmux'), '-S', target['socket'], 'display-message', '-p', '-t', target['pane'], '#{pane_in_mode}:#{cursor_y}'], env=env, capture_output=True, text=True, timeout=5)
+        if state.returncode != 0 or not re.fullmatch(r'0:[0-9]+\n?', state.stdout):
+            return False
+        y = int(state.stdout.strip().split(':')[1])
+        rows = re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', second.stdout).splitlines()
+        active = rows[max(0, y - 4):y + 1]
+        return not any(row.strip() == b'ctrl+x ctrl+s to send now' or b'Press up to edit queued messages' in row for row in active)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def worker(path):
+    folder = path.parent
+    with (folder / (path.stem + '.lock')).open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = json.loads(path.read_text())
+        env = dict(os.environ, **data.get('environment', {}))
+        if data['state'] != 'queued':
+            return
+        previous_handlers = {}
+        def interrupted(signum, frame):
+            raise RuntimeError(f'retry worker interrupted by signal {signum}')
+        for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+            previous_handlers[signum] = signal.signal(signum, interrupted)
+        try:
+            while time.time() < data['deadline']:
+                time.sleep(min(5, max(0, data['deadline'] - time.time())))
+                if time.time() >= data['deadline']:
+                    break
+                if identity(env) != data['identity']:
+                    finish(folder, path, data, 'failed', 1, 'target identity changed or cannot be proved; no resend')
+                    return
+                if not stable_screen(env, data['identity']):
+                    continue
+                if time.time() >= data['deadline']:
+                    break
+                data['state'] = 'attempting'
+                save(path, data)
+                event(folder, data, 'retry')
+                code, output = deliver(data, env)
+                if code not in (2, 5):
+                    finish(folder, path, data, 'delivered' if code == 0 else 'unknown' if code in (3, 4) else 'failed', code, output)
+                    return
+                finish(folder, path, data, 'queued', 6, output)
+            finish(folder, path, data, 'expired', 7, '30-minute retry deadline reached; message remains in inbox; manual review required')
+        except BaseException as error:
+            finish(folder, path, data, 'unknown' if data['state'] == 'attempting' else 'failed', 7, str(error))
+            raise
+        finally:
+            for signum, handler in previous_handlers.items():
+                signal.signal(signum, handler)
+
+
+def launch_worker(folder, path, data):
+    with (folder / (data['id'] + '.worker.log')).open('a') as log:
+        process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--worker', str(path)], env=dict(os.environ, **data.get('environment', {})), stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True)
+    event(folder, data, 'worker-started', pid=process.pid)
+
+
+def sweep():
+    for path in ROOT.glob('*/*.json'):
+        folder = path.parent
+        with (folder / (path.stem + '.lock')).open('a') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                continue
+            data = json.loads(path.read_text())
+            if data['state'] == 'attempting':
+                if time.time() - data.get('updated', data['created']) > 70:
+                    finish(folder, path, data, 'unknown', 7, 'orphaned attempt; delivery unknown; no automatic resend')
+            elif data['state'] == 'queued':
+                if time.time() >= data['deadline']:
+                    finish(folder, path, data, 'expired', 7, 'retry deadline passed; manual review required')
+                else:
+                    try:
+                        launch_worker(folder, path, data)
+                    except OSError as error:
+                        finish(folder, path, data, 'failed', 7, f'cannot recover retry worker: {error}')
+
+
+def main():
+    os.umask(0o077)
+    if len(sys.argv) == 3 and sys.argv[1] == '--worker':
+        worker(Path(sys.argv[2]))
+        return 0
+    if len(sys.argv) == 3 and sys.argv[1] == '--check-binding':
+        return 0 if identity(dict(os.environ)) == json.loads(sys.argv[2]) else 1
+    sweep()
+    if sys.argv[1:] == ['--status']:
+        for path in ROOT.glob('*/*.json'):
+            print(f"{json.loads(path.read_text())['state']}: {path}")
+        return 0
+    if sys.argv[1:] in (['-h'], ['--help']):
+        subprocess.run([str(TOOL), '--help'], env=dict(os.environ, CC_MSG_QUEUE_INTERNAL='1'))
+        print('Inbox: ~/desk/tmp/inbox/<session>-<window>-<socket-hash>/inbox.jsonl; --status lists durable outcomes; exit 6 = queued (do not resend), exit 7 = persistence/worker failure. Retries stop after 30 minutes; .FAILED files require review.')
+        return 0
+    env = dict(os.environ)
+    message = ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else sys.stdin.read()
+    session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
+    key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
+    key += '-' + hashlib.sha256(env.get('TMUX', '').split(',')[0].encode()).hexdigest()[:12]
+    folder = ROOT / key
+    folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+    data = dict(id=uuid.uuid4().hex, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('PATH', 'TMUX', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
+    path = folder / (data['id'] + '.json')
+    with path.with_suffix('.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        save(path, data)
+        event(folder, data, 'attempt', message=message, session=session, window=window)
+        if data['identity'] and not stable_screen(env, data['identity']):
+            code, output = 5, 'cc-msg: target screen is changing or has pending messages; no target input was sent\n'
+        else:
+            code, output = deliver(data, env)
+        if code in (2, 5) and data['identity']:
+            print(output.replace('; safe to retry after the condition clears', '; automatic retry queued; do not resend'), end='')
+            finish(folder, path, data, 'queued', 6, output)
+            try:
+                launch_worker(folder, path, data)
+            except OSError as error:
+                finish(folder, path, data, 'failed', 7, f'worker could not start: {error}')
+                print(f'cc-msg: worker failed; review {path}', file=sys.stderr)
+                return 7
+            print(f'cc-msg: queued for automatic delivery for up to 30 minutes; do not resend; inbox {path}', file=sys.stderr)
+            return 6
+        print(output, end='')
+        finish(folder, path, data, 'delivered' if code == 0 else 'unknown' if code in (3, 4) else 'failed', code, output)
+        print(f'cc-msg: durable inbox record {path}', file=sys.stderr)
+        return code
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except (OSError, ValueError) as error:
+        print(f'cc-msg: persistence failure: {error}; delivery must be reviewed; exit 7', file=sys.stderr)
+        sys.exit(7)

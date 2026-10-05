@@ -4,6 +4,7 @@
 # patched: model Claude's verified idle footer in cleanup stress cases
 # date: 2026-10-02T04:00:00Z
 import os
+os.environ["CC_MSG_QUEUE_INTERNAL"] = "1"
 import pathlib
 import socket
 import shutil

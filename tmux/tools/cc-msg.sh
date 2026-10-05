@@ -5,6 +5,11 @@
 # date: 2026-10-02
 set -uo pipefail
 
+if [ "${CC_MSG_QUEUE_INTERNAL:-}" != 1 ]; then
+  queue_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("cc-msg-queue"))' "${BASH_SOURCE[0]}")" || exit 7
+  exec python3 "$queue_tool" "$@"
+fi
+
 fail() { printf 'cc-msg: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
 refuse_copy() { printf 'cc-msg: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
 unresponsive() { relay_server_unresponsive=1; printf 'cc-msg: tmux server is unresponsive; delivery state is unknown; do not resend automatically\n' >&2; exit 3; }
@@ -92,7 +97,13 @@ request() {
   esac
 }
 
+require_queue_binding() {
+  [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ] || return 0
+  python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || fail 'queued foreground process changed or cannot be proved'
+}
+
 require_empty_cc_input() {
+  require_queue_binding
   local capture state state_after code cursor_x cursor_y in_mode
   if state="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
     :
@@ -209,6 +220,7 @@ else
 fi
 resolve_sender_label
 resolve_relay_sender_tier
+[ "${CC_MSG_QUEUE_STRICT:-}" != 1 ] || relay_sender_tier=strict
 trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
 list_file=
 case "$target_count" in
@@ -224,6 +236,11 @@ esac
 case "$command_name" in
   fish|bash|zsh|sh|dash|tmux) fail "pane $pane is running '$command_name', not Claude Code; refuse" ;;
 esac
+
+if [ -n "${CC_MSG_EXPECT_PID:-}" ]; then
+  expected_pid="$(request display-message -p -t "$pane" '#{pane_pid}')" || fail 'cannot revalidate queued target process'
+  [ "$expected_pid" = "$CC_MSG_EXPECT_PID" ] || fail 'queued target process changed'
+fi
 
 relay_target_window="$target_window"
 relay_glyph="❯"
@@ -261,6 +278,7 @@ require_empty_cc_input
 sleep 0.04
 require_empty_cc_input
 
+require_queue_binding
 if atomic_text "$payload"; then
   :
 else
@@ -277,6 +295,9 @@ fi
 verify_payload
 sleep 0.04
 verify_payload
+if [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ]; then
+  python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || partial 'queued foreground process changed after paste'
+fi
 if atomic_enter; then
   :
 else

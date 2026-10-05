@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-04 — Own refused Claude relays through delivery
+
+Every cc-msg attempt now enters a durable per-target inbox. Safe busy, draft and copy-mode refusals return exit 6 and start bounded automatic retries against the original socket, pane and foreground process, including its start time. Retries stop after 30 minutes with a visible failure file. Unknown or partial deliveries never retry. New invocations recover orphaned queued records and mark orphaned in-flight attempts unknown. Persistence or worker launch failures return exit 7; existing literal-payload and composer guards remain in force.
+
 ## 2026-10-03 — Complete portable home-path cleanup
 
 Replaced remaining literal home paths in recovery shortcuts, archived notes and backup configurations with runtime home expansion or removed redundant examples.

@@ -7,6 +7,7 @@ import argparse
 import codecs
 import json
 import os
+os.environ["CC_MSG_QUEUE_INTERNAL"] = "1"
 import pathlib
 import select
 import shlex

@@ -4,6 +4,7 @@
 # patched: distinguish synthetic native targets from unproven node wrappers
 # date: 2026-10-02
 set -euo pipefail
+export CC_MSG_QUEUE_INTERNAL=1
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 guard="$root/tools/relay-input-guard"
