@@ -17,9 +17,9 @@ relay_sender_tier=strict
 relay_source_json=
 
 relay_shell_join() {
-  local argument
+  local argument escaped="'\\''"
   for argument in "$@"; do
-    printf "'%s' " "${argument//\'/\'\\\'\'}"
+    printf "'%s' " "${argument//\'/$escaped}"
   done
 }
 

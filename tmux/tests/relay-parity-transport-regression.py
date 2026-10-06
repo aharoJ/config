@@ -19,6 +19,7 @@ matrix = transport.Matrix(output)
 tools = output / 'tools'
 shutil.copytree(ROOT / 'tools', tools)
 original = matrix.command
+payload = '(CC) <-> rp / \'single\' "double" $(false) `false` \\ literal'
 try:
     def command(relay, session, window, payload, extra=None):
         argv, env = original(relay, session, window, payload, extra)
@@ -28,8 +29,8 @@ try:
         return argv, env
     matrix.command = command
     for provider in ('codex', 'claude', 'agy', 'gemini'):
-        matrix.sender_case('queued-source-' + provider, provider)
-    matrix.sender_case('queued-node-codex', 'codex', node=True)
+        matrix.sender_case('queued-source-' + provider, provider, payload=payload)
+    matrix.sender_case('queued-node-codex', 'codex', payload=payload, node=True)
     target_session, target_window, target_directory = matrix.start('cc-msg.sh', 'cross-target')
     original_record = matrix.record
     def cross_record(relay, name, result, expected_code, directory, expected_payload=None, no_input=False):
@@ -42,7 +43,7 @@ try:
             argv, env = command(relay, target_session, target_window, payload, extra)
             return argv, env
         matrix.command = cross
-        matrix.sender_case('cross-lead-' + provider, provider)
+        matrix.sender_case('cross-lead-' + provider, provider, payload=payload)
         target_session, target_window, target_directory = matrix.start('cc-msg.sh', 'next-cross-target-' + provider)
     records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json')]
     assert len(records) == 7 and all(row['state'] == 'delivered' for row in records), records

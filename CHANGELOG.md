@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-06 — Repair relay quoting on macOS Bash 3.2
+
+The shared shell quoting helper now stores the apostrophe escape as a variable before substitution, avoiding Bash 3.2 replacement parsing that generated invalid nested tmux commands. Regression checks exercise system and PATH-selected Bash through shell and private tmux parsing, including literal quotes, metacharacters and seeded fuzz. Unknown live records remain unreplayed.
+
 ## 2026-10-06 — Restore explicit UI fixture gates
 
 A copied-root UI runner restores the historical defaults, real-capture and paste-collision checks without disabling installed routing guards. It labels transport-only scope, uses a compiled capture-derived Agy actor instead of starting a model, and verifies the Home-cursor draft race at the same coordinates. The full delivery matrix retains real authority tools for native sender cases and expects renamed or ambiguous sources to refuse. The synthetic worker-label fixture now supplies the verified-source shape used by the shared transport.
