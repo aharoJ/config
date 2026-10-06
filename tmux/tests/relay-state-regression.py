@@ -157,11 +157,11 @@ class StateMatrix(delivery.Matrix):
                 effect = "printf '%s\\n' '__RELAY_DELIVERED__:%99999'"
                 expected, no_input = 4, True
             elif action == "enter-receipt":
-                trigger = '[ "$1" = source-file ]'
+                trigger = '[ "$1" = if-shell ] && [[ "$*" = *enter-composer* ]]'
                 effect = "printf '%s\\n' '__RELAY_DELIVERED__:%99999'"
                 expected, no_input = 4, False
             else:
-                trigger = '[ "$1" = source-file ]'
+                trigger = '[ "$1" = if-shell ] && [[ "$*" = *enter-composer* ]]'
                 effect = f'{real} kill-window -t {shlex.quote(target)}; {real} new-window -d -t {shlex.quote("=" + session)} -n {shlex.quote(window)} {shlex.quote(replacement_command)}'
                 expected, no_input = 4, False
             proxy = directory / "tmux-fallback"
@@ -207,7 +207,7 @@ class StateMatrix(delivery.Matrix):
             proxy.write_text(f'#!/usr/bin/env bash\nif {{ [ "$1" = if-shell ] || [ "$1" = source-file ]; }} && [[ "$*" = *{selected}* ]] && [ ! -f {marker} ]; then touch {marker}; {operation}; fi\nexec {real} "$@"\n')
             proxy.chmod(0o755)
             argv, env = self.command(relay, session, window, "a" * 100, {"TMUX_BIN": str(proxy)})
-            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=20)
+            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             expected = 1 if action == "respawn-paste" else 5 if action in ("draft-paste", "home-draft-paste") else 4
             self.record(relay, action, result, expected, directory, no_input=action.endswith("paste"))
             if action == "home-draft-paste":

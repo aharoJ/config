@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-05 — Red-team relay submission and targeted payload parsing
+
+Independent review reproduced literal `codex-send-to` payloads such as `--status` being consumed as queue options and returning success without delivery. Targeted sends now consume exactly one window and one literal payload before queue option handling; missing or extra arguments refuse.
+
+The final Enter gate now rechecks the full composer and recorded target identity before its cursor and active-row guard. This closes a pre-existing gap where a draft continuation or changed boundary could survive the final row-only check. Historical exact payload duplicates use the active-row fallback for Claude and Agy as well as Codex, preventing unnecessary refusals. Real-capture acceptance, adversarial redraws, queue binding and private transport regressions cover the repairs.
+
 ## 2026-10-05 — Deliver relays through titled Claude composers
 
 Claude payload verification now accepts a full-width conversation title in the upper composer border while retaining exact payload, cursor and solid closing-border checks. Real failure transcripts and an ANSI capture with update, remote-control and background-shell indicators reproduce the defect and verify the repair; derived draft and boundary counterexamples still refuse.

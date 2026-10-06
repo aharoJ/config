@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: recognize timed Claude busy spinners before literal payload delivery
-# date: 2026-10-02
+# patched: prove the full composer before the final guarded Enter
+# date: 2026-10-05
 
 relay_payload_file=
 relay_payload_dir=
@@ -209,17 +209,14 @@ relay_atomic() {
     guarded="#{&&:$guarded,#{&&:#{==:#{cursor_x},$2},#{==:#{cursor_y},$3}}}"
   fi
   if [ -n "${4:-}" ]; then
+    check_command="$("$relay_payload_guard" enter-composer-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$4" "$relay_verify_width" "$relay_verify_height" "$relay_target_pid" "$relay_target_command" "$target_session" "$relay_target_window")" || return 1
     if [ "$relay_enter_duplicate" = 1 ]; then
-      check_command="$("$relay_payload_guard" enter-row-command "$relay_target_socket" "$pane" "$relay_glyph" "$3" "$4")" || return 1
       nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 1
-      receipt="$(request if-shell -t "$pane" "$check_command" "$nested" "$blocked")"
-      code=$?
     else
-      command_file="$relay_payload_dir/send-keys-Enter.tmux"
-      "$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked" > "$command_file" || return 1
-      receipt="$(request source-file "$command_file")"
-      code=$?
+      nested="$("$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked")" || return 1
     fi
+    receipt="$(request if-shell -t "$pane" "$check_command" "$nested" "$blocked")"
+    code=$?
   elif [ -n "${5:-}" ]; then
     if [ "$relay_glyph" = '❯' ]; then
       check_command="$("$relay_payload_guard" cc-prepaste-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$relay_verify_width" "$relay_sender_tier" "$RELAY_INPUT_GUARD")" || return 7
@@ -314,7 +311,7 @@ verify_payload() {
     fi
     if [ "$state" = "$state_after" ] && printf '%s\n' "$capture" | "$relay_payload_guard" compare "$relay_glyph" "$cursor_x" "$cursor_y" "$relay_payload_file" "$relay_verify_width"; then
       relay_enter_duplicate=0
-      if [ "$relay_glyph" = '›' ] && printf '%s\n' "$capture" | "$relay_payload_guard" duplicate "$relay_payload_file" "$relay_glyph" "$cursor_y"; then
+      if printf '%s\n' "$capture" | "$relay_payload_guard" duplicate "$relay_payload_file" "$relay_glyph" "$cursor_y"; then
         relay_enter_duplicate=1
       fi
       relay_verified_cursor_x="$cursor_x"

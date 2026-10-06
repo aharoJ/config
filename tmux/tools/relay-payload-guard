@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-payload-guard
 # description: Validate relay payloads and compare the complete active composer with sent text.
-# patched: accept captured Claude conversation titles in the upper composer border
+# patched: verify the full composer and target identity at the final Enter gate
 # date: 2026-10-05
 import pathlib
 import re
@@ -163,6 +163,28 @@ def main():
         socket, pane, glyph, cursor_y, payload = args
         sys.stdout.write(shlex.join([sys.argv[0], "enter-row", socket, pane, glyph, cursor_y, payload]))
         return 0
+    if mode == "enter-composer-command":
+        sys.stdout.write(shlex.join([sys.argv[0], "enter-composer", *args]))
+        return 0
+    if mode == "enter-composer":
+        socket, pane, glyph, cursor_x, cursor_y, payload, width, height, pid, command, session, window = args
+        expected = f"{pane}:{cursor_x}:{cursor_y}:0:{width}:{height}:{pid}:{command}:{session}:{window}:0"
+        fmt = "#{pane_id}:#{cursor_x}:#{cursor_y}:#{pane_in_mode}:#{pane_width}:#{pane_height}:#{pane_pid}:#{pane_current_command}:#{session_name}:#{window_name}:#{pane_dead}"
+        def query(*request):
+            return subprocess.run(["tmux", "-S", socket, *request], capture_output=True, timeout=0.6)
+        before = query("display-message", "-p", "-t", pane, fmt)
+        if before.returncode or before.stdout.decode("utf-8").strip() != expected:
+            return 1
+        capture = query("capture-pane", "-p", "-e", "-t", pane)
+        if capture.returncode:
+            return 1
+        checked = subprocess.run([sys.argv[0], "compare", glyph, cursor_x, cursor_y, payload, width], input=capture.stdout, capture_output=True, timeout=0.6)
+        if checked.returncode:
+            return 1
+        after = query("display-message", "-p", "-t", pane, fmt)
+        if after.returncode or after.stdout != before.stdout:
+            return 1
+        return subprocess.run([sys.argv[0], "enter-row", socket, pane, glyph, cursor_y, payload], capture_output=True, timeout=0.6).returncode
     if mode == "tmux-nested":
         pane, guarded, deliver, blocked = args
         sys.stdout.write(shlex.join(["if-shell", "-F", "-t", pane, guarded, deliver, blocked]))

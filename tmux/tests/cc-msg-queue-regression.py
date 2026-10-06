@@ -57,6 +57,24 @@ class QueueTests(unittest.TestCase):
         self.assertEqual((resolved['CC_MSG_SESSION'], resolved['CC_MSG_WINDOW']), ('lab-test', 'codex-review'))
         self.assertEqual(resolved['RELAY_QUEUE_AGENT'], 'codex-to')
 
+    def test_targeted_codex_payload_options_remain_literal(self):
+        env = dict(self.env, CODEX_SEND_SESSION='lab-test')
+        for message in ('--status', '--help', '-h', '--operator', '-O', '--codex', '--worker', '', 'two words'):
+            with self.subTest(message=message), patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue, 'deliver', return_value=(0, 'delivered')) as deliver, patch.dict(os.environ, env), patch.object(queue.sys, 'argv', ['queue', '--codex-to', 'codex-review', message]):
+                self.assertEqual(queue.main(), 0)
+            data, transport_env = deliver.call_args.args
+            self.assertEqual(data['message'], message)
+            self.assertEqual(data['agent'], 'codex-to')
+            self.assertFalse(data['operator'])
+            self.assertEqual(transport_env['CODEX_SEND_WINDOW'], 'codex-review')
+
+    def test_targeted_codex_rejects_missing_or_extra_payload_arguments(self):
+        for args in (['queue', '--codex-to', 'codex'], ['queue', '--codex-to', 'codex', 'text', 'extra']):
+            with self.subTest(args=args), patch.object(queue.sys, 'argv', args), patch.object(queue, 'deliver') as deliver:
+                with self.assertRaises(queue.RoutingError):
+                    queue.main()
+            deliver.assert_not_called()
+
     def test_defaults_bind_caller_pane_before_index_resolution(self):
         response = lambda text: type('Result', (), {'returncode': 0, 'stdout': text})()
         env = dict(TMUX='/test/socket,1,2', TMUX_PANE='%9', CC_MSG_WINDOW='2')

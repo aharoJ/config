@@ -369,7 +369,7 @@ class Matrix:
             real = shlex.quote(str(self.tmux_binary))
             pane_id = self.tmux("list-panes", "-t", "=" + session + ":=" + window, "-F", "#{pane_id}")
             receipt = shlex.quote(f"__RELAY_REFUSED__:{pane_id}:0:0:{session}:{window}")
-            proxy.write_text('#!/usr/bin/env bash\nif [ "$1" = source-file ] && [ ! -f ' + shlex.quote(str(trigger)) + ' ]; then\n'
+            proxy.write_text('#!/usr/bin/env bash\nif [ "$1" = if-shell ] && [[ "$*" = *enter-composer* ]] && [ ! -f ' + shlex.quote(str(trigger)) + ' ]; then\n'
                              + '  touch ' + shlex.quote(str(trigger)) + '\n'
                              + "  printf '%s\\n' " + receipt + '\n'
                              + '  exit 0\nfi\nexec ' + real + ' "$@"\n')
