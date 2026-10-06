@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-06 — Add one operator-approved native worker route
+
+The operator policy adds exactly one worker allowance: native Codex in rp-schema:codex may report to review-protocol:claude. Kernel executable identity distinguishes native Codex from Node wrappers and app-server infrastructure; adjacent source/target routes remain denied.
+
+Queue provenance now verifies the actual Python executable and canonical helper script, accepting supported interpreter flags such as -u while refusing code/module launches, mismatched retry records and borrowed CC sources. Retry/proof modes are recognized only in the operation argument, so message text mentioning --worker or --prove does not become a provenance option. Failures include a reason category. An actual -u queue launch reproduces the old refusal and passes the repair; the retained historical rp record does not establish its exact cause.
+
 ## 2026-10-06 — Restore CC hub return routes and bound submission deadlines
 
 Signed config and review-protocol CC hubs can now reach any project’s exact claude window through explicit operator wildcard rules. Cross-session destinations must also have a signed foreground CC runtime; workers and non-CC targets remain denied.

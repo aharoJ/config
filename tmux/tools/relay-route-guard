@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-route-guard
 # description: Cooperative live-source routing guard; same-account hostile bypass is outside its boundary.
-# patched: bound submission jobs and verify signed CC hub return routes
+# patched: authorize one native worker route and verify canonical Python helper invocation
 # date: 2026-10-06
 import argparse
+import ctypes
 import json
 import os
 import pathlib
@@ -191,6 +192,44 @@ def destination_cc(env, session, window):
     return len(candidates) == 1 and signed({'actor': candidates[0]})
 
 
+def process_executable(pid):
+    if sys.platform == 'darwin':
+        buffer = ctypes.create_string_buffer(4096)
+        library = ctypes.CDLL('/usr/lib/libproc.dylib')
+        if library.proc_pidpath(int(pid), buffer, len(buffer)) <= 0:
+            raise ValueError('process executable unavailable')
+        return pathlib.Path(os.fsdecode(buffer.value)).resolve(strict=True)
+    return pathlib.Path('/proc', str(pid), 'exe').resolve(strict=True)
+
+
+def native_codex(source):
+    try:
+        return source['app'] == 'codex' and process_executable(source['actor']).name == 'codex' and ancestors(source['actor'])[0][3] == 'codex'
+    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError):
+        return False
+
+
+def python_script(pid):
+    argv = shlex.split(LABEL['ps']('-p', str(pid), '-o', 'args=').strip())
+    if len(argv) < 2:
+        return None
+    executable = process_executable(pid)
+    if not executable.name.lower().startswith('python') or not pathlib.Path(argv[0]).name.lower().startswith('python'):
+        return None
+    index = 1
+    while index < len(argv) and argv[index].startswith('-'):
+        if argv[index] in ('-u', '-B', '-I', '-E', '-s', '-S', '-O', '-OO'):
+            index += 1
+        elif argv[index] == '--':
+            index += 1
+            break
+        else:
+            return None
+    if index >= len(argv):
+        return None
+    return pathlib.Path(argv[index]).resolve(strict=True), argv[index + 1:]
+
+
 def check(env, source, session, window):
     try:
         rules = policy()
@@ -198,6 +237,9 @@ def check(env, source, session, window):
             return False
         if source['session'] == session:
             return True
+        worker_rule = {'source': ['rp-schema', 'codex'], 'target': ['review-protocol', 'claude'], 'app': 'native-codex'}
+        if source['app'] == 'codex':
+            return (source['session'], source['window'], session, window) == ('rp-schema', 'codex', 'review-protocol', 'claude') and worker_rule in rules and native_codex(source) and destination_cc(env, session, window) and live(env, source)
         if source['app'] != 'claude' or window != 'claude' or not re.fullmatch(r'[A-Za-z0-9_-]+', session):
             return False
         rule = {'source': [source['session'], source['window']], 'target': [session, window]}
@@ -216,18 +258,16 @@ def record_caller(pid, record, source):
     expected = pathlib.Path(record).resolve(strict=True)
     tools = pathlib.Path(__file__).resolve().parent
     for actor_pid, parent, command, app in chain:
-        if not pathlib.Path(command).name.lower().startswith('python'):
-            continue
         try:
-            argv = shlex.split(LABEL['ps']('-p', str(actor_pid), '-o', 'args=').strip())
-            if len(argv) < 2 or argv[1].startswith('-'):
+            invocation = python_script(actor_pid)
+            if invocation is None:
                 continue
-            script = pathlib.Path(argv[1]).resolve(strict=True)
+            script, argv = invocation
             if script not in (tools / 'cc-msg-queue', tools / 'relay-clear-draft'):
                 continue
-            if '--worker' in argv or '--prove' in argv:
-                flag = '--worker' if '--worker' in argv else '--prove'
-                index = argv.index(flag)
+            if len(argv) == 2 and argv[:1] in (['--worker'], ['--prove']):
+                flag = argv[0]
+                index = 0
                 if index + 1 >= len(argv):
                     continue
                 argument = pathlib.Path(argv[index + 1]).resolve(strict=True)
@@ -258,7 +298,9 @@ def main():
             raise ValueError('record target changed')
         source = record['source']
         if not isinstance(source, dict) or not record_caller(args.caller, args.record, source):
-            raise ValueError('record caller provenance refused')
+            nearest = next((row for row in ancestors(args.caller) if row[3]), None)
+            reason = 'source actor mismatch' if nearest is not None and nearest[0] != source.get('actor') else 'canonical queue/clear invocation unavailable or record mismatch'
+            raise ValueError('record caller provenance refused: ' + reason)
     else:
         source = bind(dict(os.environ), args.caller)
     if not check(dict(os.environ), source, args.target_session, args.target_window):

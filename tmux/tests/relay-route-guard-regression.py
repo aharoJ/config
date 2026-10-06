@@ -60,6 +60,7 @@ with tempfile.TemporaryDirectory() as directory:
     record.write_text('{}')
     queue = pathlib.Path(__file__).resolve().parents[1] / 'tools' / 'cc-msg-queue'
     state['ancestors'] = lambda pid: [(201, 1, '/usr/bin/python3', '')]
+    state['process_executable'] = lambda pid: pathlib.Path('/usr/bin/python3').resolve()
     state['LABEL']['ps'] = lambda *args: f'python3 {queue} --worker {record}'
     test('canonical queue exact record', module['record_caller'](201, record, {'actor': 101}), True)
     clear = queue.with_name('relay-clear-draft')
@@ -77,6 +78,7 @@ with tempfile.TemporaryDirectory() as directory:
     state['ancestors'] = lambda pid: [(201, 202, '/usr/bin/python3', ''), (202, 1, '/bin/codex', 'codex')]
     test('worker cannot borrow CC record', module['record_caller'](201, record, {'actor': 101}), False)
     state['ancestors'] = lambda pid: [(201, 1, '/bin/bash', '')]
+    state['process_executable'] = lambda pid: pathlib.Path('/bin/bash')
     test('env only record refused', module['record_caller'](201, record, {'actor': 101}), False)
     path = pathlib.Path(directory) / 'policy.json'
     path.write_text(json.dumps({'version': 1, 'allow': [rule]}))
