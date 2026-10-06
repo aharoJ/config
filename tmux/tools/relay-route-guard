@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-route-guard
 # description: Cooperative live-source routing guard; same-account hostile bypass is outside its boundary.
-# patched: map CC-less native worker sessions to their operator-designated orchestrator
+# patched: permit both directions of the exact operator-designated session relationship
 # date: 2026-10-06
 import argparse
 import ctypes
@@ -210,6 +210,23 @@ def destination_cc(env, session, window):
     return len(candidates) == 1 and signed({'actor': candidates[0]})
 
 
+def destination_client(env, session, window):
+    matches = [row for row in panes(env) if row[1:3] == [session, window]]
+    if len(matches) != 1:
+        return False
+    root = int(matches[0][-2])
+    table = LABEL['processes']()
+    candidates = []
+    for pid, (parent, command) in table.items():
+        lineage = ancestors(pid, table)
+        if not lineage or lineage[0][3] not in ('claude', 'codex', 'agy', 'gemini') or not any(row[0] == root for row in lineage):
+            continue
+        groups = LABEL['ps']('-p', str(pid), '-o', 'pgid=,tpgid=').split()
+        if len(groups) == 2 and str(pid) == groups[0] == groups[1]:
+            candidates.append(pid)
+    return len(candidates) == 1
+
+
 def process_executable(pid):
     if sys.platform == 'darwin':
         buffer = ctypes.create_string_buffer(4096)
@@ -255,9 +272,13 @@ def check(env, source, session, window):
             return False
         if source['session'] == session:
             return True
-        if source['app'] == 'codex':
-            mapping = orchestrators()
-            return mapping.get(source['session']) == [session, window] and not local_claude(env, source['session']) and native_codex(source) and destination_cc(env, session, window) and live(env, source) and orchestrators().get(source['session']) == [session, window] and not local_claude(env, source['session'])
+        mapping = orchestrators()
+        upward = mapping.get(source['session']) == [session, window]
+        downward = mapping.get(session) == [source['session'], source['window']]
+        if upward:
+            return source['app'] in ('claude', 'codex', 'agy', 'gemini') and destination_cc(env, session, window) and live(env, source) and orchestrators().get(source['session']) == [session, window]
+        if downward:
+            return source['app'] == 'claude' and signed(source) and destination_client(env, session, window) and live(env, source) and orchestrators().get(session) == [source['session'], source['window']]
         if source['app'] != 'claude' or window != 'claude' or not re.fullmatch(r'[A-Za-z0-9_-]+', session):
             return False
         rule = {'source': [source['session'], source['window']], 'target': [session, window]}

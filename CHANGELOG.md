@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-06 — Restore both directions of the rp-schema relationship
+
+The exact operator mapping now allows reports from all recognized interactive rp-schema seats to review-protocol:claude and permits that signed orchestrator to brief any live supported rp-schema window, including Codex and Terra Node wrappers. Other sessions retain their existing routing rules. Source, target, policy, queue and composer safeguards remain. This is a narrow urgent hotfix, separate from the uncommitted v2 parity work.
+
 ## 2026-10-06 — Map CC-less sessions to their designated orchestrator
 
 Replaced the rp-schema worker exception with the single operator-owned orchestrator_of mapping: rp-schema to review-protocol:claude. Native Codex workers in that CC-less session can report only to the designated orchestrator. A source session with any claude window cannot use a cross-session mapping, including during retries and final submission checks. Other sessions receive no mapping or new worker allowance.
