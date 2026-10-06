@@ -1,0 +1,10 @@
+{
+  "glyph": "\u276f",
+  "cursor_x": 57,
+  "cursor_y": 46,
+  "pane_width": 215,
+  "expected_payload": "Read ~/desk/tmp/relay/20261006T020335175586-d4eb8c27.md",
+  "expected_compare": 0,
+  "capture_origin": "real plain capture-pane transcript, history cropped and private prose sanitized",
+  "cursor_origin": "inferred end-of-line position; original cursor metadata unavailable"
+}

@@ -1,0 +1,9 @@
+{
+  "glyph": "\u276f",
+  "cursor_x": 2,
+  "cursor_y": 46,
+  "pane_width": 167,
+  "expected_input": 0,
+  "capture_origin": "real stable ANSI capture, private prose and remote URL sanitized",
+  "cursor_origin": "recorded matching before/after tmux metadata"
+}

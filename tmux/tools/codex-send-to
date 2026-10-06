@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: prove node entry points while preserving the established composer guard
-# date: 2026-10-02
+# patched: queue standing instructions while retaining Codex foreground proof
+# date: 2026-10-05
 set -uo pipefail
 
 if [ "${1:-}" = --help ]; then
@@ -21,6 +21,11 @@ if [ "${2:-}" = --clear-draft ]; then
   clear_window=$1
   shift 2
   exec python3 "$clear_tool" codex "$clear_window" "$@"
+fi
+
+if [ "${CODEX_SEND_QUEUE_INTERNAL:-}" != 1 ]; then
+  queue_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("cc-msg-queue"))' "${BASH_SOURCE[0]}")" || exit 7
+  exec python3 "$queue_tool" --codex-to "$@"
 fi
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -93,6 +98,7 @@ request() {
 }
 
 require_empty_codex_input() {
+  require_queue_binding
   local capture state state_after code cursor_x cursor_y in_mode attempts=0
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
@@ -150,11 +156,17 @@ require_empty_codex_input() {
   fail "target composer kept redrawing during inspection; no target input was sent"
 }
 
+require_queue_binding() {
+  [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ] || return 0
+  python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || "${1:-fail}" 'queued foreground process changed or cannot be proved'
+}
+
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-[ "$#" = 2 ] && [ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: codex-send-to <window-name> <text>\n' >&2; exit 1; }
+[ "$#" -ge 1 ] && [ "$#" -le 2 ] && [ -n "${1:-}" ] || { printf 'usage: codex-send-to <window-name> <text>\n' >&2; exit 1; }
 window_name=$1
-message="$(printf '%s' "$2" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
+raw_message="${2:-$(cat)}"
+message="$(printf '%s' "$raw_message" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
 case "${message:0:1}" in
   '/'|'!') fail 'message starts with "/" or "!", which the receiving CLI would run as a command; rephrase and resend' ;;
@@ -217,6 +229,7 @@ require_empty_codex_input
 sleep 0.04
 require_empty_codex_input
 
+require_queue_binding
 send_target_check || fail "Codex process identity changed before paste"
 if atomic_text "$message"; then
   :
@@ -234,6 +247,7 @@ fi
 verify_payload
 sleep 0.04
 verify_payload
+require_queue_binding partial
 send_target_check || partial "Codex process identity changed before Enter"
 if atomic_enter; then
   :

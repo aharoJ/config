@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-payload-guard
 # description: Validate relay payloads and compare the complete active composer with sent text.
-# patched: verify Claude and Agy payload dividers against pane width
-# date: 2026-10-02T04:00:00Z
+# patched: accept captured Claude conversation titles in the upper composer border
+# date: 2026-10-05
 import pathlib
 import re
 import sys
@@ -60,6 +60,15 @@ def codex_structural_footer(raw):
     if re.search(r"\x1b\[(?:49m|38[;:][0-9;:]*m|1m)", raw) is None:
         return False
     return "\x1b" not in re.sub(r"\x1b\[[0-9;:]*m", "", raw)
+
+
+def claude_upper_border(row, width):
+    if row == "─" * width:
+        return True
+    if any(unicodedata.category(c) in ("Cc", "Cf", "Cs", "Zl", "Zp") for c in row):
+        return False
+    size = sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in row)
+    return size == width and re.fullmatch(r"─{8,} \S[^\r\n]* ─+", row) is not None
 
 
 def main():
@@ -205,7 +214,8 @@ def main():
         return 1
     if glyph in ("❯", ">"):
         divider = "─" * width
-        if width < 8 or start == 0 or rows[start - 1] != divider:
+        upper_border = start > 0 and (claude_upper_border(rows[start - 1], width) if glyph == "❯" else rows[start - 1] == divider)
+        if width < 8 or not upper_border:
             return 1
         ends = [i for i in range(cursor_y + 1, len(rows)) if rows[i] == divider]
     elif glyph == "›":

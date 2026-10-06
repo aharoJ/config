@@ -1,0 +1,10 @@
+{
+  "glyph": "\u276f",
+  "cursor_x": 129,
+  "cursor_y": 46,
+  "pane_width": 167,
+  "expected_payload": "relay: slice2 done: 0000000000000000000000000000000000000000 tests 69, full suite pass; slice2: CONVERGED sha=00000000 rounds=2",
+  "expected_compare": 0,
+  "capture_origin": "real plain capture-pane transcript, history cropped and private prose sanitized",
+  "cursor_origin": "inferred end-of-line position; original cursor metadata unavailable"
+}

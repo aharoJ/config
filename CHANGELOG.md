@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-05 — Deliver relays through titled Claude composers
+
+Claude payload verification now accepts a full-width conversation title in the upper composer border while retaining exact payload, cursor and solid closing-border checks. Real failure transcripts and an ANSI capture with update, remote-control and background-shell indicators reproduce the defect and verify the repair; derived draft and boundary counterexamples still refuse.
+
+`codex-send-to` now owns safe busy or draft refusals through the durable queue, returning exit 6 instead of leaving a standing instruction undelivered. Retries retain its foreground Codex proof and original process identity, expire after 30 minutes, and never replay uncertain outcomes. Private detached real-capture replay verifies one submission per message.
+
 ## 2026-10-04 — Clear explicitly identified stray drafts safely
 
 `cc-msg --clear-draft --expect <text>` and `codex-send-to <window> --clear-draft --expect <text>` now clear only an exact 1–16 character ASCII draft in a proven idle, single-line composer. The foreground process, full screen, cursor and exact row are re-proved at the keystroke gate under the relay lock. Each clear is durably logged and echoed; refusals exit 8 and partial or unknown clears exit 4. Clears never enter the retry queue. Once the draft is cleared, an existing queued Claude message can resume through its usual guarded worker.

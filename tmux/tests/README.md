@@ -4,6 +4,8 @@ Published captures use synthetic account identities and directories, with unrela
 
 # Relay guard landing gate
 
+Run `python3 tmux/tests/relay-cc-title-regression.py <output-directory>` for real titled-Claude payload captures, a real ANSI empty composer with update/remote-control/shell indicators, and explicitly derived negative cases. Historical post-paste cursor positions are inferred from visible line endings and marked in metadata; the empty capture has recorded tmux cursor metadata. `relay-cc-title-real.json` records sanitized capture digests. `python3 tmux/tests/relay-real-capture-lab.py <output-directory>` replays those real screens on a private detached server and verifies exactly one Claude submission and an owned targeted Codex retry. Place a real empty Codex capture at `<output-directory>/codex-empty.ansi` before running the replay; terminal replay is transport coverage, not a live-model receipt.
+
 `cc-msg` and `codex-send` default to the caller's tmux session and the `claude` or `codex` window. Explicit session and window overrides remain supported; numeric window indexes resolve to a name before the delivery identity is bound. Oversized messages are preserved under `~/desk/tmp/relay/` and delivered as a short `Read <path>` pointer.
 
 Ordinary sends preserve drafts and queue safe busy/copy-mode refusals for automatic retry. Exit 6 means the queue owns delivery; do not resend. Retries remain bound to the original foreground process, stop after 30 minutes, and never replay uncertain delivery outcomes.

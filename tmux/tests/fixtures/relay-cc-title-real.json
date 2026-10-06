@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "name": "cc-title-pointer",
+      "capture_file": "cc-title-pointer.txt",
+      "meta_file": "cc-title-pointer.json",
+      "capture_sha256": "0e0a9ac37841d51a6f27adf8d514e2dbca30316e43e50668e99922b99faa1017",
+      "meta_sha256": "c758aa2dc242c7a9b8d71223d979acd975fc3d80ab6f417fa2850d8d3833cfa4",
+      "sanitized": true,
+      "source": "/fixtures/real-cc-title/cc-title-pointer"
+    },
+    {
+      "name": "cc-title-report",
+      "capture_file": "cc-title-report.txt",
+      "meta_file": "cc-title-report.json",
+      "capture_sha256": "c76cf436b3906eaf68cc08d6121cba3a58b7c36ee62cecfb60681a6a83335eb5",
+      "meta_sha256": "e981bc46f9285b5f568a874401cabc6fbd3c377a64ef7c2eaff8c7487a181749",
+      "sanitized": true,
+      "source": "/fixtures/real-cc-title/cc-title-report"
+    },
+    {
+      "name": "cc-title-empty",
+      "capture_file": "cc-title-empty.ansi",
+      "meta_file": "cc-title-empty.json",
+      "capture_sha256": "17c46626c945c01de9e911af9ce98a3c010dc05fccc9e13f6c1bdfe03c93d7ed",
+      "meta_sha256": "fbfbe549ebcf245276b8abe8e68a740286c01b6cb1adb824673350734c42ae78",
+      "sanitized": true,
+      "source": "/fixtures/real-cc-title/cc-title-empty"
+    }
+  ]
+}

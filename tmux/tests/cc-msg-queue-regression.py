@@ -16,7 +16,7 @@ loader.exec_module(queue)
 
 class QueueTests(unittest.TestCase):
     def setUp(self):
-        self.root = Path.home() / 'desk/lab/cc-msg-queue-tests' / uuid.uuid4().hex
+        self.root = Path(os.environ.get('RELAY_TEST_ROOT', str(Path.home() / 'desk/lab/cc-msg-queue-tests'))) / uuid.uuid4().hex
         self.root.mkdir(parents=True)
         self.identity = dict(socket='/test/socket', device=1, inode=2, pane='%8', pid='123')
         self.env = dict(CC_MSG_SESSION='lab-test', CC_MSG_WINDOW='claude', TMUX='/test/socket,1,2')
@@ -41,6 +41,21 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(env['CODEX_SEND_QUEUE_INTERNAL'], '1')
         self.assertEqual(env['RELAY_OPERATOR'], '1')
         self.assertIn('CC_MSG_EXPECT_IDENTITY', env)
+
+    def test_targeted_codex_retains_transport_and_binding(self):
+        process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
+        env = dict(self.env, CODEX_SEND_WINDOW='codex-review')
+        with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
+            queue.deliver(dict(agent='codex-to', message='standing instruction', identity=self.identity), env)
+        self.assertEqual(launch.call_args.args[0], [str(queue.TOOL.with_name('codex-send-to')), 'codex-review'])
+        self.assertEqual(json.loads(launch.call_args.kwargs['env']['CC_MSG_EXPECT_IDENTITY']), self.identity)
+        self.assertEqual(launch.call_args.kwargs['env']['CODEX_SEND_QUEUE_INTERNAL'], '1')
+
+    def test_targeted_codex_defaults_use_codex_namespace(self):
+        env = dict(CODEX_SEND_SESSION='lab-test', CODEX_SEND_WINDOW='codex-review', TMUX='/test/socket,1,2')
+        resolved = queue.resolve_defaults(env, 'codex-to')
+        self.assertEqual((resolved['CC_MSG_SESSION'], resolved['CC_MSG_WINDOW']), ('lab-test', 'codex-review'))
+        self.assertEqual(resolved['RELAY_QUEUE_AGENT'], 'codex-to')
 
     def test_defaults_bind_caller_pane_before_index_resolution(self):
         response = lambda text: type('Result', (), {'returncode': 0, 'stdout': text})()

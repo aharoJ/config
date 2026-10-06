@@ -48,7 +48,7 @@ class RoutingError(ValueError):
 
 
 def resolve_defaults(env, agent):
-    prefix = 'CODEX_SEND' if agent == 'codex' else 'CC_MSG'
+    prefix = 'CODEX_SEND' if agent.startswith('codex') else 'CC_MSG'
     socket = env.get('TMUX', '').split(',')[0]
     binary = env.get('TMUX_BIN', 'tmux')
     session = env.get(prefix + '_SESSION', '')
@@ -64,7 +64,7 @@ def resolve_defaults(env, agent):
         if result.returncode or len(fields) != 2 or (env.get('TMUX_PANE') and fields[0] != env['TMUX_PANE']):
             raise RoutingError('cannot resolve the caller session')
         session = fields[1]
-    window = env.get(prefix + '_WINDOW') or agent
+    window = env.get(prefix + '_WINDOW') or ('codex' if agent.startswith('codex') else 'claude')
     if not all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)):
         raise RoutingError('invalid session or window')
     if window.isdigit():
@@ -74,7 +74,7 @@ def resolve_defaults(env, agent):
             raise RoutingError('window index does not resolve uniquely')
         window = names[0]
     env.update(CC_MSG_SESSION=session, CC_MSG_WINDOW=window, RELAY_QUEUE_AGENT=agent)
-    if agent == 'codex':
+    if agent.startswith('codex'):
         env.update(CODEX_SEND_SESSION=session, CODEX_SEND_WINDOW=window)
         env.pop('CC_MSG_PANE', None)
     return env
@@ -110,12 +110,13 @@ def deliver(data, env):
         env['CC_MSG_EXPECT_PID'] = data['identity']['pid']
         env['CC_MSG_EXPECT_IDENTITY'] = json.dumps(data['identity'])
     agent = data.get('agent', 'claude')
-    tool = TOOL.with_name('codex-send') if agent == 'codex' else TOOL
+    tool = TOOL.with_name('codex-send') if agent == 'codex' else TOOL.with_name('codex-send-to') if agent == 'codex-to' else TOOL
     env['CODEX_SEND_QUEUE_INTERNAL'] = '1'
     env['RELAY_OPERATOR'] = '1' if data.get('operator') else '0'
     if data.get('record'):
         env['RELAY_MESSAGE_RECORD'] = data['record']
-    process = subprocess.Popen([str(tool)], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+    command = [str(tool)] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex-to' else [])
+    process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     try:
         stdout, stderr = process.communicate(data['message'], timeout=60)
         return process.returncode, stdout + stderr
@@ -240,6 +241,12 @@ def main():
     if sys.argv[1:2] == ['--codex']:
         agent = 'codex'
         del sys.argv[1]
+    if sys.argv[1:2] == ['--codex-to']:
+        agent = 'codex-to'
+        del sys.argv[1]
+        if len(sys.argv) < 3:
+            raise RoutingError('usage: codex-send-to <window> <text>')
+        os.environ['CODEX_SEND_WINDOW'] = sys.argv.pop(1)
     if sys.argv[1:2] == ['--clear-draft']:
         env = resolve_defaults(dict(os.environ), agent)
         args = [agent] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex' else [])
