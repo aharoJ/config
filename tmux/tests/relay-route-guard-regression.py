@@ -10,6 +10,7 @@ state = check.__globals__
 source = {'session': 'cvmapp', 'window': 'claude', 'app': 'claude'}
 rule = {'source': ['cvmapp', 'claude'], 'target': ['config', 'claude']}
 state['policy'] = lambda: [rule]
+state['orchestrators'] = lambda: {}
 state['live'] = lambda env, value: True
 state['signed'] = lambda value: True
 state['destination_cc'] = lambda env, session, window: True

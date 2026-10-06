@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-06 — Map CC-less sessions to their designated orchestrator
+
+Replaced the rp-schema worker exception with the single operator-owned orchestrator_of mapping: rp-schema to review-protocol:claude. Native Codex workers in that CC-less session can report only to the designated orchestrator. A source session with any claude window cannot use a cross-session mapping, including during retries and final submission checks. Other sessions receive no mapping or new worker allowance.
+
 ## 2026-10-06 — Add one operator-approved native worker route
 
 The operator policy adds exactly one worker allowance: native Codex in rp-schema:codex may report to review-protocol:claude. Kernel executable identity distinguishes native Codex from Node wrappers and app-server infrastructure; adjacent source/target routes remain denied.

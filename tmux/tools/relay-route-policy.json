@@ -100,17 +100,12 @@
         "*",
         "claude"
       ]
-    },
-    {
-      "source": [
-        "rp-schema",
-        "codex"
-      ],
-      "target": [
-        "review-protocol",
-        "claude"
-      ],
-      "app": "native-codex"
     }
-  ]
+  ],
+  "orchestrator_of": {
+    "rp-schema": [
+      "review-protocol",
+      "claude"
+    ]
+  }
 }

@@ -7,9 +7,10 @@ state['live']=lambda env,src:True
 state['destination_cc']=lambda env,s,w:True
 state['process_executable']=lambda pid:pathlib.Path('/lab/codex' if pid==101 else '/lab/node')
 state['ancestors']=lambda pid:[(pid,100,'/lab/codex' if pid==101 else '/lab/node','codex')]
+state['local_claude']=lambda env,session:False
 source={'app':'codex','actor':101,'session':'rp-schema','window':'codex'}
 test('native exact live actor authorized',m['check']({},source,'review-protocol','claude'),True)
-for key,values in [('session',['config','review-protocol','terra','rp-schema-extra']),('window',['terra','claude','batch']),('app',['agy','gemini','relay'])]:
+for key,values in [('session',['config','review-protocol','terra','rp-schema-extra']),('app',['agy','gemini','relay'])]:
  for value in values:test('source '+key+' '+value,m['check']({},dict(source,**{key:value}),'review-protocol','claude'),key=='session' and value=='review-protocol')
 for session,window in [('config','claude'),('review-protocol','codex'),('other','claude'),('review-protocol-extra','claude')]:
  test('target '+session+':'+window,m['check']({'CC_MSG_ALLOW_CROSS_SESSION':'1'},source,session,window),False)
@@ -17,9 +18,24 @@ for actor in [102,103]:test('node or daemon actor '+str(actor),m['check']({},dic
 state['destination_cc']=lambda env,s,w:False
 test('destination not signed CC',m['check']({},source,'review-protocol','claude'),False)
 state['destination_cc']=lambda env,s,w:True
-actualpolicy=state['policy']();test('exactly one worker rule',sum(r.get('app')=='native-codex' for r in actualpolicy),1);state['policy']=lambda:[r for r in actualpolicy if r.get('app')!='native-codex']
+actualmapping=state['orchestrators']();test('exactly one orchestrator mapping',actualmapping,{'rp-schema':['review-protocol','claude']});state['orchestrators']=lambda:{}
 test('missing exact operator rule',m['check']({},source,'review-protocol','claude'),False)
-state['policy']=lambda:actualpolicy
+state['orchestrators']=lambda:actualmapping
+state['local_claude']=lambda env,session:True
+test('own claude window revokes mapping',m['check']({},source,'review-protocol','claude'),False)
+state['local_claude']=lambda env,session:False
+for window in ['codex','terra','batch']:
+ test('mapped native window '+window,m['check']({},dict(source,window=window),'review-protocol','claude'),True)
+windows=iter([False,True]);state['local_claude']=lambda env,session:next(windows)
+test('own claude appears before final proof',m['check']({},source,'review-protocol','claude'),False)
+state['local_claude']=lambda env,session:False
+mappings=iter([actualmapping,{}]);state['orchestrators']=lambda:next(mappings)
+test('mapping removed before final proof',m['check']({},source,'review-protocol','claude'),False)
+state['orchestrators']=lambda:actualmapping
+def query_error(env,session):raise OSError('enumeration unavailable')
+state['local_claude']=query_error
+test('own window query error refuses',m['check']({},source,'review-protocol','claude'),False)
+state['local_claude']=lambda env,session:False
 f=m['record_caller'];exe=pathlib.Path(sys.executable).resolve();state['process_executable']=lambda pid:exe
 state['ancestors']=lambda pid:[(201,202,'/fixture/truncated',''),(202,1,'/fixture/claude','claude')]
 with tempfile.TemporaryDirectory() as d:
