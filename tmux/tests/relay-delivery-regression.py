@@ -226,6 +226,7 @@ class Matrix:
         self.sessions = set()
         self.frozen = False
         self.number = 0
+        self.authority_tools = pathlib.Path(os.environ['RELAY_AUTHORITY_TOOLS']) if os.environ.get('RELAY_AUTHORITY_TOOLS') else None
         self.socket = f"ccmsg-lab-private-{os.getpid()}"
         self.tmux_binary = self.output / "tmux-private"
         self.tmux_binary.write_text("#!/usr/bin/env bash\nexec tmux -L " + shlex.quote(self.socket) + ' -f /dev/null "$@"\n')
@@ -442,6 +443,8 @@ class Matrix:
             target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
             argv, env = self.command(relay, session, window, payload,
                                      {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"})
+            if self.authority_tools is not None:
+                argv[0] = str(self.authority_tools / relay)
             request = dict(argv=argv, env=env)
             (directory / "sender-request.json").write_text(json.dumps(request))
             if rename:
@@ -538,8 +541,8 @@ class Matrix:
         self.sender_case("node-codex-sender", "codex", node=True)
         self.sender_case("unknown-app-known-pane", "bash")
         self.case("cc-msg.sh", "unknown-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
-        self.sender_case("sender-renamed-during-resolution", "claude", rename=True)
-        self.sender_case("ambiguous-linked-sender", "claude", linked=True)
+        self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=1)
+        self.sender_case("ambiguous-linked-sender", "claude", linked=True, code=1)
         self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
         self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, width=80)
         self.case("cc-msg.sh", "claude-active-busy", code=5, mode="claude-active-busy")

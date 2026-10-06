@@ -11,6 +11,7 @@ run="$(mktemp -d "$output_root/relay-paste-collision.XXXXXX")" || exit 90
 socket="${TMUX_LAB_SOCKET:-ccmsg-lab-private-$$}"
 if [ -z "${TMUX_LAB_OWNER_PID:-}" ]; then trap '"$tmux_bin" -L "$socket" kill-server >/dev/null 2>&1 || true' EXIT; fi
 env -u NO_COLOR "$tmux_bin" -L "$socket" -f /dev/null new-session -d -s lab-race -n gemini -x 215 -y 57 "exec $agy_bin" || exit 90
+relay_lab_tmux="$("$tmux_bin" -L "$socket" display-message -p -t '=lab-race:=gemini' '#{socket_path},#{pid},0')" || exit 90
 pane="$("$tmux_bin" -L "$socket" list-panes -t '=lab-race:=gemini' -F '#{pane_id}')" || exit 90
 ready=0
 stable=0
@@ -50,13 +51,14 @@ fi
 exec "$RELAY_RACE_TMUX_BIN" -L "$RELAY_RACE_SOCKET" "$@"
 WRAPPER
 chmod +x "$run/tmux-wrapper"
-RELAY_RACE_RUN="$run" RELAY_RACE_SOCKET="$socket" RELAY_RACE_PANE="$pane" RELAY_RACE_TMUX_BIN="$tmux_bin" TMUX_BIN="$run/tmux-wrapper" AGY_SEND_SESSION=lab-race \
+RELAY_RACE_RUN="$run" RELAY_RACE_SOCKET="$socket" RELAY_RACE_PANE="$pane" RELAY_RACE_TMUX_BIN="$tmux_bin" TMUX="$relay_lab_tmux" TMUX_BIN="$run/tmux-wrapper" AGY_SEND_QUEUE_INTERNAL=1 AGY_SEND_SESSION=lab-race \
   "$script_dir/../tools/agy-send-to" gemini RT-RACE-RELAY > "$run/relay.stdout" 2> "$run/relay.stderr"
 relay_code=$?
 printf '%s\n' "$relay_code" > "$run/relay.exit"
 "$tmux_bin" -L "$socket" capture-pane -p -e -t "$pane" > "$run/after.ansi"
 "$tmux_bin" -L "$socket" display-message -p -t "$pane" '#{pane_id} #{cursor_x}:#{cursor_y} #{pane_in_mode} #{pane_current_command}' > "$run/after.state"
 [ -f "$run/staged" ] || { printf 'race trigger missed; evidence: %s\n' "$run" >&2; exit 1; }
+[ "$(cat "$run/staged.cursor")" = "$(awk '{print $2}' "$run/before.state")" ] || { printf 'race cursor changed; evidence: %s\n' "$run" >&2; exit 1; }
 if [ "$relay_code" != 5 ] && [ "$relay_code" != 1 ]; then printf 'unexpected exit %s; evidence: %s\n' "$relay_code" "$run" >&2; exit 1; fi
 python3 - "$run/after.ansi" <<'ASSERT' || { printf 'draft changed; evidence: %s\n' "$run" >&2; exit 1; }
 import pathlib, re, sys

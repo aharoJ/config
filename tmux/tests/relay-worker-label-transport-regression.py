@@ -12,12 +12,11 @@ output = Path(sys.argv[1]).resolve()
 matrix = transport.Matrix(output)
 tools = output/'tools'
 shutil.copytree(root/'tools',tools)
-(tools/'relay-route-guard').write_text('#!/bin/sh\nprintf "%s\\n" "{}"\n')
-(tools/'relay-sender-label').write_text('#!/bin/sh\nprintf "%s\\n" "%99999 rp-schema codex 101 codex"\n')
+(tools/'relay-route-guard').write_text('#!/bin/sh\nprintf \'%s\\n\' \'{"pane":"%99999","session":"rp-schema","window":"codex","root":101,"app":"codex"}\'\n')
 try:
     session,window,directory = matrix.start('cc-msg.sh','synthetic-rp-schema-label')
     proxy = output/'tmux-identity-fixture'
-    proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *%99999* ]] && [ "$1" = display-message ]; then printf "%s\\n" "%99999 rp-schema codex 101 0"; else exec '+str(matrix.tmux_binary)+' "$@"; fi\n')
+    proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *%99999* ]] && [ "$1" = display-message ]; then printf "%s\\n" "%99999|%99999 rp-schema codex 101 0"; else exec '+str(matrix.tmux_binary)+' "$@"; fi\n')
     proxy.chmod(0o755)
     argv,env = matrix.command('cc-msg.sh',session,window,'allowance lab probe',{'TMUX_BIN':str(proxy)})
     argv[0] = str(tools/'cc-msg.sh')

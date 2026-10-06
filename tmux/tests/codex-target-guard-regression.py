@@ -2,7 +2,7 @@
 # path: ~/.config/tmux/tests/codex-target-guard-regression.py
 # description: Verify foreground ancestry and stable Codex entry-point binding.
 # patched: reject unrelated, background, ambiguous and changed process identities
-# date: 2026-10-02
+# date: 2026-10-06
 import pathlib
 import runpy
 from unittest.mock import patch
@@ -15,7 +15,7 @@ base = '10 1 10 20 fish\n20 10 20 20 node\n21 20 20 20 codex\n'
 checks = 0
 
 
-def check(table, apps, good, alternate=None, args='Thu Oct 2 node /installed/@openai/codex/bin/codex.js'):
+def check(table, apps, good, alternate=None, args='Thu Oct 2 node /installed/@openai/codex/bin/codex.js', applications=('codex',)):
     global checks
     states = iter([identity, alternate or identity])
     label = dict(namespace['LABEL'])
@@ -23,7 +23,7 @@ def check(table, apps, good, alternate=None, args='Thu Oct 2 node /installed/@op
     label['app'] = lambda pid, command: apps.get(pid, '')
     with patch.dict(namespace, LABEL=label, query=lambda *a: next(states)):
         try:
-            value = snapshot('/socket', '%1')
+            value = snapshot('/socket', '%1', applications)
         except ValueError:
             assert not good
         else:
@@ -43,4 +43,8 @@ check(base, {20: 'codex'}, False, ['%1', '10', 'fish', '/dev/ttys099', '0'])
 check(base.replace('20 10', '20 21').replace('21 20', '21 20'), {20: 'codex'}, False)
 assert check(base, {20: 'codex'}, True, args='different process start') != original
 assert check(base.replace('20 10', '30 10').replace('21 20', '21 30'), {30: 'codex'}, True) != original
+check(base, {20: 'agy'}, True, applications=('agy', 'gemini'))
+check(base, {20: 'gemini'}, True, applications=('agy', 'gemini'))
+check(base, {20: 'codex'}, False, applications=('agy', 'gemini'))
+check(base, {20: 'claude'}, False)
 print(f'Codex target guard: {checks} checks PASS')

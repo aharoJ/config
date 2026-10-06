@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-06 — Restore explicit UI fixture gates
+
+A copied-root UI runner restores the historical defaults, real-capture and paste-collision checks without disabling installed routing guards. It labels transport-only scope, uses a compiled capture-derived Agy actor instead of starting a model, and verifies the Home-cursor draft race at the same coordinates. The full delivery matrix retains real authority tools for native sender cases and expects renamed or ambiguous sources to refuse. The synthetic worker-label fixture now supplies the verified-source shape used by the shared transport.
+
 ## 2026-10-06 — Give relay leads equal rights per seat
 
 Relay routing now uses declared lead/worker seats rather than signed-CC or native-Codex permissions. Coupled and standalone leads have provider-independent access, and rp-schema ↔ review-protocol works in both directions. Same-session sends remain open for every bound seat. Cross-session worker reports remain bound to their designated project orchestrator. Source, policy, target-generation, composer, copy/draft and uncertain-delivery protections remain.
