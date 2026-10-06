@@ -63,12 +63,12 @@ def send(relay, name, payload='hello', mode='idle', operator=False, index=False,
     values = json.loads((directory / 'submitted.json').read_text())
     assert len(values) == 1, (name, values)
     if len(payload) > 200:
-        assert values[0].startswith('Read '), values
-        path = Path(values[0][5:]).expanduser()
+        assert ' -- full: ~/desk/tmp/relay/' in values[0], values
+        path = Path(values[0].split(' -- full: ', 1)[1]).expanduser()
         assert path.read_text() == payload, (path, path.read_text())
         assert path.stat().st_mode & 0o077 == 0
     else:
-        expected = ('relay: ' if kind == 'claude' else '') + payload
+        expected = ('' if operator and kind != 'claude' and payload.startswith(('/', '!')) else 'unverified (unverified:unverified) [model/effort unverified]: ') + payload
         assert values == [expected], (name, values, expected)
     print('PASS', relay, name, flush=True)
     matrix.cleanup_session(session)

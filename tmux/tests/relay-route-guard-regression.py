@@ -29,6 +29,10 @@ for app in ('claude', 'codex', 'agy', 'gemini'):
     test('rp-schema upward '+app, check({}, schema, 'review-protocol', 'claude'), True)
     hub = dict(source, session='review-protocol', window='claude', app=app)
     test('rp-schema return '+app, check({}, hub, 'rp-schema', 'codex'), True)
+vetmed = dict(source, session='vetmed-absence-expansion', window='terra')
+test('declared vetmed terra reports to local lead', check({}, vetmed, 'vetmed-absence-expansion', 'claude'), True)
+test('declared vetmed terra cannot skip local lead', check({}, vetmed, 'review-protocol', 'claude'), False)
+test('declared vetmed terra cannot reach config', check({}, vetmed, 'config', 'claude'), False)
 test('unknown session denied', check({}, dict(source, session='unknown'), 'config', 'claude'), False)
 test('unknown destination denied', check({}, source, 'other', 'codex'), False)
 test('unknown destination seat denied', check({}, source, 'config', 'unassigned'), False)
@@ -54,20 +58,20 @@ with tempfile.TemporaryDirectory() as directory:
     queue = pathlib.Path(__file__).resolve().parents[1] / 'tools' / 'cc-msg-queue'
     state['ancestors'] = lambda pid: [(201, 1, '/usr/bin/python3', '')]
     state['process_executable'] = lambda pid: pathlib.Path('/usr/bin/python3').resolve()
-    state['LABEL']['ps'] = lambda *args: f'python3 {queue} --worker {record}'
+    state['LABEL']['process_argv'] = lambda pid: ['python3', str(queue), '--worker', str(record)]
     test('canonical queue exact record', module['record_caller'](201, record, {'actor': 101}), True)
     clear = queue.with_name('relay-clear-draft')
     plan = record.with_suffix('.plan')
     plan.write_text(json.dumps({'record': str(record)}))
-    state['LABEL']['ps'] = lambda *args: f'python3 {clear} --prove {plan}'
+    state['LABEL']['process_argv'] = lambda pid: ['python3', str(clear), '--prove', str(plan)]
     test('canonical clear exact plan record', module['record_caller'](201, record, {'actor': 101}), True)
     plan.write_text(json.dumps({'record': str(queue)}))
     test('clear plan wrong record refused', module['record_caller'](201, record, {'actor': 101}), False)
-    state['LABEL']['ps'] = lambda *args: f'python3 {queue} --worker {queue}'
+    state['LABEL']['process_argv'] = lambda pid: ['python3', str(queue), '--worker', str(queue)]
     test('queue wrong record refused', module['record_caller'](201, record, {'actor': 101}), False)
-    state['LABEL']['ps'] = lambda *args: f'python3 -c {queue}'
+    state['LABEL']['process_argv'] = lambda pid: ['python3', '-c', str(queue)]
     test('python code path claim refused', module['record_caller'](201, record, {'actor': 101}), False)
-    state['LABEL']['ps'] = lambda *args: f'python3 {queue} --worker {record}'
+    state['LABEL']['process_argv'] = lambda pid: ['python3', str(queue), '--worker', str(record)]
     state['ancestors'] = lambda pid: [(201, 202, '/usr/bin/python3', ''), (202, 1, '/bin/codex', 'codex')]
     test('worker cannot borrow CC record', module['record_caller'](201, record, {'actor': 101}), False)
     state['ancestors'] = lambda pid: [(201, 1, '/bin/bash', '')]

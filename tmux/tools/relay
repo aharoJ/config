@@ -4,6 +4,7 @@
 # patched: expose vendor-neutral destinations without per-send role overrides
 # date: 2026-10-06
 import os
+import json
 from pathlib import Path
 import runpy
 import subprocess
@@ -16,11 +17,20 @@ GUARD = runpy.run_path(str(TOOLS / 'relay-route-guard'))
 def main():
     args = sys.argv[1:]
     if args in (['--help'], ['-h']) or not args:
-        print('usage: relay <session>:<seat>|orcha <literal text>\n       relay status [message-id]\n       relay --operator <session>:<seat> <text>\n       relay <session>:<seat> --clear-draft --expect <exact-text>')
+        print('usage: relay <session>:<seat>|orcha <literal text>\n       relay status [message-id]\n       relay --operator <session>:<seat> <text>\n       relay <session>:<seat> --clear-draft --expect <exact-text>\n       relay source\n       relay bind-source --operator <verified-thread-uuid> <exact-session:seat>')
+        return 0
+    if args[0] == 'source':
+        if len(args) != 1:
+            raise ValueError('usage: relay source')
+        print(json.dumps(GUARD['bind'](dict(os.environ), os.getpid()), indent=2))
+        return 0
+    if args[0] == 'bind-source':
+        if len(args) != 4 or args[1] != '--operator':
+            raise ValueError('usage: relay bind-source --operator <verified-thread-uuid> <exact-session:seat>; operator verifies the UUID in that visible pane')
+        print(json.dumps(GUARD['register_source'](dict(os.environ), args[2], args[3]), indent=2))
         return 0
     if args[0] == 'status':
         root = Path(os.environ.get('CC_MSG_INBOX_ROOT', str(Path.home() / 'desk/tmp/inbox')))
-        import json
         for record in root.glob('*/*.json'):
             data = json.loads(record.read_text())
             if len(args) == 1 or data['id'] == args[1]:

@@ -28,10 +28,11 @@ def case(name, start='fresh', runs=1, width=200, session='lab', expect=(0,), cop
     (lab / 'proj').mkdir(parents=True)
     shutil.copytree(ROOT / 'tools', lab / 'tools')
     (lab / 'tools/codex-target-guard').write_text(STUB)
+    (lab / 'tools/relay-route-guard').write_text('#!/bin/sh\nprintf \'%s\\n\' \'{}\'\n')
     log = lab / 'input.log'
     log.touch()
     shown = f'~/desk/lab/{BASE.name}/{name}/proj'
-    cmd = command or f"node {TUI} {start} '{shown}' {log}"
+    cmd = command or f"exec node {TUI} {start} '{shown}' {log}"
     tmux('new-session', '-d', '-s', 'lab', '-n', 'codex', '-x', str(width), '-y', '50', '-c', str(lab / 'proj'), cmd)
     time.sleep(1)
     if copy:

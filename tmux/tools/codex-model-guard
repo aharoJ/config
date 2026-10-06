@@ -108,6 +108,8 @@ def picker(rows, raw, kind, expected):
     if len(starts) != 1:
         raise ValueError('missing or ambiguous picker')
     tail = [(row, raw[i]) for i, row in enumerate(rows) if i >= starts[0] and row]
+    if kind == 'models' and len(tail) == len(MODELS) + 1:
+        choices = {key: value for key, value in MODELS.items() if key != 'GPT-5.5'}
     if len(tail) != len(choices) + len(prelude) + 2:
         raise ValueError('unrecognized picker content')
     if [row for row, _ in tail[1:1+len(prelude)]] != prelude:
@@ -118,7 +120,7 @@ def picker(rows, raw, kind, expected):
         match = re.fullmatch(r'(›| ) ([1-9][0-9]*)\. (.+?) {2,}(.+)', row)
         if not match or int(match[2]) != index + 1 or match[4] != description:
             raise ValueError('unrecognized picker option')
-        plain_label = re.sub(r' \((?:current|default)\)$', '', match[3])
+        plain_label = re.sub(r' (?:\((?:current|default)\)|\(default\) \(current\))$', '', match[3])
         if plain_label != label:
             raise ValueError('unrecognized picker label')
         if match[1] == '›':
@@ -207,7 +209,7 @@ def check(mode, capture, expected=''):
                 return 1
             content.pop(4)
         valid = len(content) == 6
-        valid = valid and content[0][0] == '  >_ OpenAI Codex (v0.160.0)'
+        valid = valid and bool(re.fullmatch(r'  >_ OpenAI Codex \(v0\.160\.[01]\)', content[0][0]))
         valid = valid and content[1][0] == '     ' + cwd
         valid = valid and re.fullmatch(r'  [^›•\x00-\x1f]+', content[2][0]) is not None
         valid = valid and content[3][0].startswith('  Tip: ')

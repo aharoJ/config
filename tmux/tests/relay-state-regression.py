@@ -197,7 +197,7 @@ class StateMatrix(delivery.Matrix):
             elif action.startswith("resize"):
                 operation = f'{real} resize-window -t {target} -x 80 -y 51'
             else:
-                value = ("Q" if action == "home-draft-paste" else "user draft") if action.endswith("paste") else ("relay: " if relay == "cc-msg.sh" else "") + ("b" * 100 if action.startswith("same-draft") else "a" * 100 + "x")
+                value = ("Q" if action == "home-draft-paste" else "user draft") if action.endswith("paste") else "unverified (unverified:unverified) [model/effort unverified]: " + ("b" * 100 if action.startswith("same-draft") else "a" * 100 + "x")
                 control = directory / "control.json"
                 staged = directory / "staged.json"
                 staged.write_text(json.dumps({"value": value, "home": action == "home-draft-paste"}))
@@ -273,7 +273,7 @@ class StateMatrix(delivery.Matrix):
             cwd = directory / "odd $ ; working directory"
             cwd.mkdir()
             result = subprocess.run(argv, env=env, cwd=cwd, capture_output=True, text=True, timeout=20)
-            expected = ("relay: " if relay == "cc-msg.sh" else "") + "- #{pane_id} $ ` ; 漢字"
+            expected = "unverified (unverified:unverified) [model/effort unverified]: " + "- #{pane_id} $ ` ; 漢字"
             self.record(relay, "invoke-" + shell, result, 0, directory, expected)
         finally:
             if not self.frozen:

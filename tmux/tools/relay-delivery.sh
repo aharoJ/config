@@ -24,7 +24,11 @@ relay_shell_join() {
 }
 
 relay_route_command() {
-  local arguments=(env "TMUX=$relay_target_socket,0,0" "TMUX_BIN=$TMUX_BIN" "TMUX_PANE=${TMUX_PANE:-}" "$TIMEOUT_BIN" -k 1 8 "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
+  local arguments=(env "TMUX=$relay_target_socket,0,0" "TMUX_BIN=$TMUX_BIN" "TMUX_PANE=${TMUX_PANE:-}")
+  if [ -n "${CODEX_THREAD_ID:-}" ]; then
+    arguments+=("CODEX_THREAD_ID=$CODEX_THREAD_ID" "CODEX_SESSION_ID=${CODEX_SESSION_ID:-$CODEX_THREAD_ID}")
+  fi
+  arguments+=("$TIMEOUT_BIN" -k 1 8 "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
   relay_shell_join "${arguments[@]}"
   printf ' >/dev/null'
@@ -47,27 +51,18 @@ relay_display() {
 }
 
 resolve_relay_label() {
-  local sender source_pane source_session source_window source_root source_app observed
-  FROM=relay
-  sender="$(printf '%s' "$relay_source_json" | python3 -c 'import json,sys
-source=json.load(sys.stdin)
-if source.get("app") in ("claude","codex","agy","gemini"):
- print(source["pane"],source["session"],source["window"],source["root"],source["app"])')" || fail 'verified source label is unavailable'
-  [ -n "$sender" ] || return 0
-  read -r source_pane source_session source_window source_root source_app <<< "$sender"
-  observed="$(relay_display "$source_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}')" || fail 'source changed before attribution'
-  [ "$observed" = "$source_pane $source_session $source_window $source_root 0" ] || fail 'source changed before attribution'
-  FROM="$source_app ($source_session:$source_window)"
+  FROM="$(printf '%s' "$relay_source_json" | "$relay_script_dir/relay-visible-label")" || fail 'sender seat could not be verified for attribution'
 }
 
 relay_label_message() {
   resolve_relay_label
-  if [ "${RELAY_OPERATOR:-0}" != 1 ]; then
-    [ "$FROM" = relay ] || message="$FROM: $message"
-    case "${message:0:1}" in
-      '/'|'!') fail 'unattributed command-like text; use a bound source for a literal message' ;;
-    esac
+  if [ "${RELAY_OPERATOR:-0}" = 1 ]; then
+    case "${message:0:1}" in '/'|'!') return 0 ;; esac
   fi
+  case "$relay_source_json:${message:0:1}" in
+    *'"app":"relay"'*:/|*'"app":"relay"'*:!|{}:/|{}:!) fail 'unattributed command-like text; use a bound source for a literal message' ;;
+  esac
+  message="$FROM: $message"
 }
 
 resolve_relay_sender_tier() {
@@ -180,7 +175,7 @@ prepare_payload() {
   [ "$width" -gt 4 ] && [ "$height" -gt 6 ] || fail 'target pane is too small to verify delivery'
   if [ "$bytes" -gt "$(((width - 2) * (height - 6)))" ] || ! "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph"; then
     [ "${relay_auto_archive:-0}" = 1 ] || fail 'payload would wrap and cannot be verified byte for byte; send a short file reference instead'
-    relay_prepared_payload="$(python3 "$relay_script_dir/relay-archive" "$relay_payload_file")" || fail 'cannot archive oversized payload'
+    relay_prepared_payload="$(RELAY_VISIBLE_LABEL="$FROM" relay_source_json="$relay_source_json" python3 "$relay_script_dir/relay-archive" "$relay_payload_file" "$width")" || fail 'cannot archive oversized payload'
     printf '%s' "$relay_prepared_payload" > "$relay_payload_file" || fail 'cannot write archived payload pointer'
     "$relay_payload_guard" capacity "$relay_payload_file" "$width" "$relay_glyph" || fail 'target pane cannot fit the archive pointer'
   fi

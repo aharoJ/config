@@ -4,6 +4,8 @@
 # patched: retain verified queue source labels across detached and shared-daemon transports
 # date: 2026-10-06
 import pathlib
+import ctypes
+import struct
 import os
 import json
 import re
@@ -26,6 +28,32 @@ def processes():
     return result
 
 
+def process_argv(pid):
+    if sys.platform != 'darwin':
+        return [os.fsdecode(value) for value in pathlib.Path('/proc', str(pid), 'cmdline').read_bytes().split(b'\0')[:-1]]
+    library = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True)
+    name = (ctypes.c_int * 3)(1, 49, int(pid))
+    size = ctypes.c_size_t()
+    if library.sysctl(name, 3, None, ctypes.byref(size), None, 0) != 0 or not 4 < size.value <= 2097152:
+        raise OSError('process arguments unavailable')
+    buffer = ctypes.create_string_buffer(size.value)
+    if library.sysctl(name, 3, buffer, ctypes.byref(size), None, 0) != 0:
+        raise OSError('process arguments unavailable')
+    data = buffer.raw[:size.value]
+    count = struct.unpack_from('i', data)[0]
+    if not 0 < count <= 65536:
+        raise ValueError('invalid process argument count')
+    cursor = data.index(b'\0', 4) + 1
+    while cursor < len(data) and data[cursor] == 0:
+        cursor += 1
+    result = []
+    for _ in range(count):
+        end = data.index(b'\0', cursor)
+        result.append(os.fsdecode(data[cursor:end]))
+        cursor = end + 1
+    return result
+
+
 def app(pid, command):
     name = pathlib.Path(command).name
     if name in ("claude", "codex", "agy", "gemini"):
@@ -34,7 +62,7 @@ def app(pid, command):
         return "claude"
     if name != "node":
         return ""
-    argv = shlex.split(ps("-p", str(pid), "-o", "args=").strip())
+    argv = process_argv(pid)
     if len(argv) < 2 or argv[1].startswith("-"):
         return ""
     entry = str(pathlib.Path(argv[1]).resolve(strict=True))

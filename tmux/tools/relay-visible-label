@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import sys
+import subprocess
+
+
+
+def model_state(capture, cursor_y, app):
+    matches = []
+    for index, raw in enumerate(capture.splitlines()):
+        if index <= cursor_y or re.search(r'\x1b\[(?:38[;:]|3[0-7](?:m|;)|9[0-7](?:m|;))', raw) is None or '\x1b]' in raw or re.search(r'\x1b\[48[;:]', raw):
+            continue
+        row = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', raw).rstrip()
+        if app == 'codex':
+            match = re.fullmatch(r'  Fast (?:on|off) · ([A-Za-z0-9][A-Za-z0-9._-]*) (low|medium|high|xhigh|max|ultra) · .+ · Context (?:100|[0-9]{1,2})% used(?: · Main \[default\])?(?: · ← for agents)?(?: {2,}⚠ [1-9][0-9]* warnings? · f2 to view)?', row)
+            if match:
+                matches.append(match[1].lower() + ' ' + match[2])
+        elif app == 'claude':
+            match = re.fullmatch(r'  (Opus|Sonnet|Haiku) ([0-9]+(?:\.[0-9]+)+) +\| +context .+ \| +effort (low|medium|high|max)(?: +\| +v[0-9.]+.*)?', row)
+            if match:
+                matches.append(match[1].lower() + '-' + match[2] + ' ' + match[3])
+        elif app in ('agy', 'gemini'):
+            match = re.fullmatch(r'\s*\? for shortcuts\s+([A-Za-z][A-Za-z0-9 ._-]*) · (low|medium|high|xhigh|max|ultra)', row)
+            if match:
+                matches.append(re.sub(r'\s+', '-', match[1].strip().lower()) + ' ' + match[2])
+    return matches[0] if len(matches) == 1 else 'model/effort unverified'
+
+
+def label(source, state):
+    session = source.get('session', 'unverified')
+    window = source.get('window', 'unverified')
+    return f'{window} ({session}:{window}) [{state}]'
+
+
+def main():
+    source = json.load(sys.stdin)
+    if not source:
+        print(label(source, 'model/effort unverified'))
+        return
+    GUARD = runpy.run_path(str(Path(__file__).with_name('relay-route-guard')))
+    env = dict(os.environ)
+    if not GUARD['live'](env, source):
+        raise ValueError('sender seat changed before model attribution')
+    position = GUARD['run'](env, 'tmux', 'display-message', '-p', '-t', source['pane'], '#{cursor_y}:#{pane_in_mode}')
+    capture = GUARD['run'](env, 'tmux', 'capture-pane', '-p', '-e', '-t', source['pane'])
+    after = GUARD['run'](env, 'tmux', 'display-message', '-p', '-t', source['pane'], '#{cursor_y}:#{pane_in_mode}')
+    if not GUARD['live'](env, source):
+        raise ValueError('sender seat changed during model attribution')
+    state = model_state(capture, int(position.split(':')[0]), source['app']) if position == after and position.endswith(':0') else 'model/effort unverified'
+    print(label(source, state))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)

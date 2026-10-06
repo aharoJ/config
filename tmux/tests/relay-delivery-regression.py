@@ -294,9 +294,10 @@ class Matrix:
         landed = json.loads((directory / "landed.json").read_text()) if (directory / "landed.json").exists() else ""
         passed = result.returncode == expected_code
         if expected_code == 0:
-            if len(submitted) == 1 and submitted[0].startswith("Read ~/desk/tmp/relay/"):
-                archived = pathlib.Path(submitted[0][5:]).expanduser()
-                passed = passed and archived.read_text() == expected_payload
+            if len(submitted) == 1 and " -- full: ~/desk/tmp/relay/" in submitted[0]:
+                archived = pathlib.Path(submitted[0].split(" -- full: ", 1)[1]).expanduser()
+                label = submitted[0].split(": ", 1)[0] + ": "
+                passed = passed and expected_payload.startswith(label) and archived.read_text() in (expected_payload, expected_payload.removeprefix(label))
             else:
                 passed = passed and submitted == [expected_payload]
         else:
@@ -321,7 +322,7 @@ class Matrix:
             argv, env = self.command(relay, selected, window, payload, extra)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
-            expected = ("relay: " if relay == "cc-msg.sh" else "") + normalized
+            expected = "unverified (unverified:unverified) [model/effort unverified]: " + normalized
             archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "neutral-prefix-at-right-margin", "neutral-prefix-pushes-past-one-row", "drop-space-at-full-wrap")
             if code == 1 and archive_case:
                 code = 0
@@ -379,7 +380,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            expected = ("relay: " if relay == "cc-msg.sh" else "") + payload
+            expected = "unverified (unverified:unverified) [model/effort unverified]: " + payload
             self.record(relay, "codex159-atomic-refusal-retry", result, 0, directory, expected)
         finally:
             if not self.frozen:
@@ -395,7 +396,7 @@ class Matrix:
             second = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             stdout, stderr = first.communicate(timeout=45)
             result = subprocess.CompletedProcess(argv, first.returncode, stdout, stderr)
-            expected = ("relay: " if relay == "cc-msg.sh" else "") + message
+            expected = "unverified (unverified:unverified) [model/effort unverified]: " + message
             self.record(relay, "concurrent-winner", result, 0, directory, expected)
             passed = second.returncode == 5 and "another relay" in second.stderr and "no target input was sent" in second.stderr
             self.results.append(dict(relay=relay, case="concurrent-loser", passed=passed, exit=second.returncode,
@@ -479,9 +480,10 @@ class Matrix:
                     break
                 time.sleep(0.1)
             else:
+                (directory / "sender-timeout.txt").write_text(self.tmux("capture-pane", "-p", "-t", "=" + session + ":=" + sender_window))
                 raise RuntimeError("sender fixture failed to finish")
             result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
-            label = "relay" if rename or linked or agent not in ('claude', 'codex', 'agy', 'gemini') else f"{agent} ({session}:{sender_window})"
+            label = f"{sender_window} ({session}:{sender_window}) [model/effort unverified]"
             if name == "prefix-pushes-past-one-row":
                 code = 0
             self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)

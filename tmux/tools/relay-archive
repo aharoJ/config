@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import sys
 import uuid
+import unicodedata
 
 os.umask(0o077)
 folder = Path.home() / 'desk/tmp/relay'
@@ -29,4 +30,18 @@ try:
     os.fsync(descriptor)
 finally:
     os.close(descriptor)
-print('Read ~/desk/tmp/relay/' + name)
+source = data['source'] if data else json.loads(os.environ['relay_source_json'])
+label = os.environ.get('RELAY_VISIBLE_LABEL')
+if not label:
+    raise ValueError('verified visible label is required')
+message = data['message'] if data else content.decode('utf-8')
+message = message.removeprefix(label + ': ')
+suffix = ' -- full: ~/desk/tmp/relay/' + name
+summary = ' '.join(message.split())[:48].rstrip()
+if len(sys.argv) > 2:
+    def cells(value):
+        return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in value)
+    budget = int(sys.argv[2]) - 4 - cells(label + ': ' + suffix)
+    while summary and cells(summary) > budget:
+        summary = summary[:-1]
+print(label + ': ' + summary.rstrip() + suffix)

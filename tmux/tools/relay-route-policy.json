@@ -16,7 +16,8 @@
     },
     "vetmed-absence-expansion": {
       "claude": "lead",
-      "codex": "lead"
+      "codex": "lead",
+      "terra": "worker"
     },
     "rp-schema": {
       "codex": "lead"

@@ -12,6 +12,7 @@ output = Path(sys.argv[1]).resolve()
 matrix = transport.Matrix(output)
 tools = output/'tools'
 shutil.copytree(root/'tools',tools)
+(tools/'relay-visible-label').write_text('#!/bin/sh\nprintf \'%s\\n\' \'codex (rp-schema:codex) [model/effort unverified]\'\n')
 (tools/'relay-route-guard').write_text('#!/bin/sh\nprintf \'%s\\n\' \'{"pane":"%99999","session":"rp-schema","window":"codex","root":101,"app":"codex"}\'\n')
 try:
     session,window,directory = matrix.start('cc-msg.sh','synthetic-rp-schema-label')
@@ -21,7 +22,7 @@ try:
     argv,env = matrix.command('cc-msg.sh',session,window,'allowance lab probe',{'TMUX_BIN':str(proxy)})
     argv[0] = str(tools/'cc-msg.sh')
     result = subprocess.run(argv,env=env,capture_output=True,text=True,timeout=30)
-    matrix.record('cc-msg.sh','synthetic-rp-schema-label',result,0,directory,'codex (rp-schema:codex): allowance lab probe')
+    matrix.record('cc-msg.sh','synthetic-rp-schema-label',result,0,directory,'codex (rp-schema:codex) [model/effort unverified]: allowance lab probe')
 finally:
     matrix.close()
 assert all(row['passed'] for row in matrix.results),matrix.results

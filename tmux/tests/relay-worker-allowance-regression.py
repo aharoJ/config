@@ -22,11 +22,13 @@ f=m['record_caller'];exe=pathlib.Path(sys.executable).resolve();state['process_e
 state['ancestors']=lambda pid:[(201,202,'/fixture/truncated',''),(202,1,'/fixture/claude','claude')]
 with tempfile.TemporaryDirectory() as d:
  record=pathlib.Path(d)/'record.json';record.write_text('{}');queue=TOOLS/'cc-msg-queue';bound={'actor':202}
- def argv(values):state['LABEL']['ps']=lambda *args:shlex.join([str(exe),*map(str,values)])
+ def argv(values):state['LABEL']['process_argv']=lambda pid:[str(exe),*map(str,values)]
  for flags in [[],['-u'],['-B'],['-I'],['-E'],['-s'],['-S'],['-O'],['-OO'],['--'],['-u','-B','--']]:
   argv([*flags,queue,'--worker',record]);test('canonical Python flags '+str(flags),f(201,record,bound),True)
  for flags in [['-c'],['-m'],['-X','dev'],['--garbage']]:
   argv([*flags,queue,'--worker',record]);test('non-script invocation '+str(flags),f(201,record,bound),False)
+ for payload in ["unmatched'", 'unmatched"', 'trailing'+chr(92)]:
+  argv([queue,payload]);test('literal raw argv '+payload,f(201,record,bound),True)
  argv([queue,'ordinary message contains --worker /wrong']);test('literal worker flag payload accepted',f(201,record,bound),True)
  argv([queue,'ordinary','--prove',queue]);test('later literal prove flag accepted',f(201,record,bound),True)
  argv([queue,'--worker',queue]);test('other record refused',f(201,record,bound),False)

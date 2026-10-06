@@ -98,4 +98,11 @@ for mode, screen, footer in [('menu', menu, 'Fast off · GPT-6-Astra low · ~/.c
 for mode in ('models', 'efforts', 'advanced'):
     live = (root / ('tests/fixtures/codex-new-colored-' + mode + '.ansi')).read_text()
     check(mode, live, 0, 'Fast off · GPT-5.6-Terra max · ~/.config')
+live1601 = (root / 'tests/fixtures/codex-1601-models.ansi').read_text()
+check('models', live1601, 0)
+check('models', live1601.replace('GPT-5.6-Luna', 'Unknown-model'), 1)
+check('models', live1601.replace('  7. GPT-5.6-Luna', '  8. GPT-5.6-Luna'), 1)
+liveeffort = (root / 'tests/fixtures/codex-1601-efforts.ansi').read_text()
+check('efforts', liveeffort, 0, 'Fast off · GPT-6.1-Sol low · ~/.config')
+check('efforts', liveeffort.replace('(default) (current)', '(default) (current) (current)'), 1, 'Fast off · GPT-6.1-Sol low · ~/.config')
 print(f'codex new guard: {checks} checks PASS')

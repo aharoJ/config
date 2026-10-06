@@ -126,7 +126,7 @@ def run(output):
                     break
                 time.sleep(.1)
             assert records and json.loads(records[0].read_text())['state'] == 'delivered'
-            expected = 'relay: Real titled composer receipt' if kind == 'claude' else 'Standing instruction after work'
+            expected = 'unverified (unverified:unverified) [model/effort unverified]: ' + ('Real titled composer receipt' if kind == 'claude' else 'Standing instruction after work')
             assert json.loads((folder/'submitted.json').read_text()) == [expected]
             (folder/'capture-after.ansi').write_text(tmux('capture-pane','-p','-e','-t','='+session+':='+kind)+'\n')
             print('PASS',kind,'real-capture replay; one confirmed submission',flush=True)

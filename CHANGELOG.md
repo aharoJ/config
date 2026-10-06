@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-06 — Repair relay source proof, provenance and uniform labels
+
+Relay provenance reads native process arguments instead of interpreting rendered ps text as shell syntax, preserving unmatched quotes and empty arguments. Shared Codex app-server calls require an explicitly verified thread-to-live-seat binding; inherited pane hints cannot select their routing source. Runtime bindings retain process/socket generations and one active thread per pane. The operator-confirmed Vetmed Terra seat is declared as a worker under its existing local lead. Legacy ambiguous Codex records refuse without replay.
+
+All ordinary adapters and operator prose use the verified window/session/window plus live footer model and effort. Hidden or ambiguous model state is explicitly unverified. The same label remains including archived messages with a short summary and full path. The legacy unlabelled CC_MSG_EXACT mode refuses; explicit operator CLI commands remain actions. Codex reset/model guards recognize observed 0.160.1 headers, its seven-model picker and combined default/current effort markers while retaining strict screen and draft checks.
+
 ## 2026-10-06 — Repair relay quoting on macOS Bash 3.2
 
 The shared shell quoting helper now stores the apostrophe escape as a variable before substitution, avoiding Bash 3.2 replacement parsing that generated invalid nested tmux commands. Regression checks exercise system and PATH-selected Bash through shell and private tmux parsing, including literal quotes, metacharacters and seeded fuzz. Unknown live records remain unreplayed.
