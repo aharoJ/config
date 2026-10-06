@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: revalidate cooperative source routing before clear, paste and Enter
-# date: 2026-10-05
+# patched: bound submission jobs and verify signed CC hub return routes
+# date: 2026-10-06
 
 relay_payload_file=
 relay_payload_dir=
@@ -16,7 +16,7 @@ relay_payload_guard="$relay_script_dir/relay-payload-guard"
 relay_sender_tier=strict
 
 relay_route_command() {
-  local arguments=(env "TMUX=$relay_target_socket,0,0" "TMUX_BIN=$TMUX_BIN" "TMUX_PANE=${TMUX_PANE:-}" "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
+  local arguments=(env "TMUX=$relay_target_socket,0,0" "TMUX_BIN=$TMUX_BIN" "TMUX_PANE=${TMUX_PANE:-}" "$TIMEOUT_BIN" -k 1 8 "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
   python3 -c 'import shlex,sys; print(shlex.join(sys.argv[1:]) + " >/dev/null")' "${arguments[@]}"
 }
@@ -256,6 +256,7 @@ relay_atomic() {
     code=$?
   fi
   [ "$code" = 75 ] && return 75
+  [ "$code" != 76 ] || partial 'input gate deadline exceeded; delivery state unknown; do not resend'
   [ "$code" = 0 ] || return 1
   [ "$receipt" = "__RELAY_DELIVERED__:$pane" ] && return 0
   [ "$receipt" = "__RELAY_REFUSED__:$pane:1:0:$target_session:$relay_target_window" ] && return 2

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/agy-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: revalidate cooperative source routing before target input
-# date: 2026-10-05
+# patched: bound submission jobs and verify signed CC hub return routes
+# date: 2026-10-06
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -66,10 +66,12 @@ acquire_relay_lock() {
 trap release_relay_lock EXIT
 
 request() {
-  "$TIMEOUT_BIN" -k "$TMUX_TIMEOUT_KILL_AFTER" "$TMUX_TIMEOUT_SECONDS" "$TMUX_BIN" "$@"
+  local deadline="$TMUX_TIMEOUT_SECONDS"
+  [ "${1:-}" != if-shell ] || deadline=15
+  "$TIMEOUT_BIN" -k "$TMUX_TIMEOUT_KILL_AFTER" "$deadline" "$TMUX_BIN" "$@"
   local code=$?
   case "$code" in
-    124|137|143) return 75 ;;
+    124|137|143) [ "${1:-}" != if-shell ] || return 76; return 75 ;;
     *) return "$code" ;;
   esac
 }

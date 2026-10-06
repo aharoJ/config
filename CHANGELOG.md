@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-06 — Restore CC hub return routes and bound submission deadlines
+
+Signed config and review-protocol CC hubs can now reach any project’s exact claude window through explicit operator wildcard rules. Cross-session destinations must also have a signed foreground CC runtime; workers and non-CC targets remain denied.
+
+Live route verification took about 1.49 seconds, exceeding the one-second tmux request limit and producing a false server-unresponsive outcome. Submission jobs now bound route verification to eight seconds and use a separate fifteen-second client deadline; ordinary queries retain their short deadline. A client submission deadline remains an unknown outcome, without falsely diagnosing the server or automatically resending. Private slow-allow, delayed-denial and deadline tests cover the correction.
+
 ## 2026-10-05 — Bind cooperative relay routes to live sources
 
 Relays now refuse unresolved sources and cross-session worker sends with exit 1 before input or queue recovery. Same-session sends require a live source; cross-session allowances require a signed Claude orchestrator and an exact operator policy rule to config:claude or review-protocol:claude. Source pane, process starts and socket identity persist with queued messages and are revalidated on retry; legacy unbound records fail closed. Clearing, operator replacement, paste and Enter also check routing inside their submission gates.

@@ -12,6 +12,7 @@ rule = {'source': ['cvmapp', 'claude'], 'target': ['config', 'claude']}
 state['policy'] = lambda: [rule]
 state['live'] = lambda env, value: True
 state['signed'] = lambda value: True
+state['destination_cc'] = lambda env, session, window: True
 cases = []
 
 def test(name, actual, expected):
@@ -26,6 +27,17 @@ for app in ('codex', 'agy', 'gemini', 'relay'):
 test('non allowlisted source', check({}, dict(source, session='unknown'), 'config', 'claude'), False)
 test('wrong destination window', check({}, source, 'config', 'codex'), False)
 test('wrong destination session', check({}, source, 'other', 'claude'), False)
+hub = dict(source,session='config')
+state['policy'] = lambda: [rule,{'source':['config','claude'],'target':['*','claude']}]
+test('hub to new project signed CC',check({},hub,'new-project','claude'),True)
+test('hub wrong project window',check({},hub,'new-project','codex'),False)
+test('nonhub wildcard cannot self grant',check({},source,'new-project','claude'),False)
+for app in ('codex','agy','gemini','relay'):
+    test('hub worker cross refused '+app,check({},dict(hub,app=app),'new-project','claude'),False)
+state['destination_cc'] = lambda env,session,window: False
+test('hub nonCC destination refused',check({},hub,'new-project','claude'),False)
+state['destination_cc'] = lambda env,session,window: True
+state['policy'] = lambda: [rule]
 state['signed'] = lambda value: False
 test('unsigned claimed CC', check({}, source, 'config', 'claude'), False)
 state['live'] = lambda env, value: False

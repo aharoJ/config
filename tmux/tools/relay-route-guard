@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-route-guard
 # description: Cooperative live-source routing guard; same-account hostile bypass is outside its boundary.
-# patched: bind queued routes to pane, process start, socket and operator policy
-# date: 2026-10-05
+# patched: bound submission jobs and verify signed CC hub return routes
+# date: 2026-10-06
 import argparse
 import json
 import os
 import pathlib
 import re
 import runpy
-import shlex
 import shlex
 import stat
 import subprocess
@@ -173,6 +172,25 @@ def signed(source):
     return result.returncode == 0 and fields.get('Identifier') == 'com.anthropic.claude-code' and fields.get('TeamIdentifier') == 'Q6L2SF6YDW'
 
 
+def destination_cc(env, session, window):
+    matches = [row for row in panes(env) if row[1:3] == [session, window]]
+    if len(matches) != 1:
+        return False
+    root = int(matches[0][-2])
+    table = LABEL['processes']()
+    candidates = []
+    for pid, (parent, command) in table.items():
+        if not re.search(r'(?:/claude|/claude/versions/[^/]+)$', command):
+            continue
+        chain = ancestors(pid, table)
+        if not any(row[0] == root for row in chain):
+            continue
+        groups = LABEL['ps']('-p', str(pid), '-o', 'pgid=,tpgid=').split()
+        if len(groups) == 2 and str(pid) == groups[0] == groups[1]:
+            candidates.append(pid)
+    return len(candidates) == 1 and signed({'actor': candidates[0]})
+
+
 def check(env, source, session, window):
     try:
         rules = policy()
@@ -180,10 +198,12 @@ def check(env, source, session, window):
             return False
         if source['session'] == session:
             return True
-        if source['app'] != 'claude' or (session, window) not in (('config', 'claude'), ('review-protocol', 'claude')):
+        if source['app'] != 'claude' or window != 'claude' or not re.fullmatch(r'[A-Za-z0-9_-]+', session):
             return False
         rule = {'source': [source['session'], source['window']], 'target': [session, window]}
-        return rule in rules and signed(source) and live(env, source)
+        hub_rule = {'source': [source['session'], source['window']], 'target': ['*', 'claude']}
+        allowed = rule in rules or (source['session'] in ('config', 'review-protocol') and source['window'] == 'claude' and hub_rule in rules)
+        return allowed and signed(source) and destination_cc(env, session, window) and live(env, source)
     except (OSError, ValueError, TypeError, KeyError, IndexError, subprocess.SubprocessError):
         return False
 

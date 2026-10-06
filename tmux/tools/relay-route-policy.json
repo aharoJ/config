@@ -80,6 +80,26 @@
         "review-protocol",
         "claude"
       ]
+    },
+    {
+      "source": [
+        "config",
+        "claude"
+      ],
+      "target": [
+        "*",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "review-protocol",
+        "claude"
+      ],
+      "target": [
+        "*",
+        "claude"
+      ]
     }
   ]
 }
