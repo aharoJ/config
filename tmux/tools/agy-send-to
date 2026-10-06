@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/agy-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bound submission jobs and verify signed CC hub return routes
+# patched: apply seat parity with verified queued source and draft-safe submission
 # date: 2026-10-06
 set -uo pipefail
+
+if [ "${AGY_SEND_QUEUE_INTERNAL:-}" != 1 ]; then
+  queue_tool="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve().with_name("cc-msg-queue"))' "${BASH_SOURCE[0]}")" || exit 7
+  if [ "${2:-}" = --clear-draft ]; then
+    clear_window=$1
+    shift 2
+    exec python3 "$(dirname "$queue_tool")/relay-clear-draft" agy "$clear_window" "$@"
+  fi
+  exec python3 "$queue_tool" --agy-to "$@"
+fi
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
 refuse_copy() { printf 'REFUSE: target %s is in copy mode; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 2; }
@@ -77,6 +87,7 @@ request() {
 }
 
 require_empty_agy_input() {
+  require_queue_binding
   local capture state state_after code cursor_x cursor_y in_mode attempts=0
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
@@ -134,15 +145,18 @@ require_empty_agy_input() {
   fail "target composer kept redrawing during inspection; no target input was sent"
 }
 
+require_queue_binding() {
+  [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ] || return 0
+  python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || "${1:-fail}" 'queued foreground process changed or cannot be proved'
+}
+
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-[ "$#" = 2 ] && [ -n "${1:-}" ] && [ -n "${2:-}" ] || { printf 'usage: agy-send-to <window-name> <text>\n' >&2; exit 1; }
+[ "$#" -ge 1 ] && [ "$#" -le 2 ] && [ -n "${1:-}" ] || { printf 'usage: agy-send-to <window-name> <text>\n' >&2; exit 1; }
 window_name=$1
-message="$(printf '%s' "$2" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
+raw_message="${2:-$(cat)}"
+message="$(printf '%s' "$raw_message" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
-case "${message:0:1}" in
-  '/'|'!') fail 'message starts with "/" or "!", which the receiving CLI would run as a command; rephrase and resend' ;;
-esac
 [ -n "${TMUX:-}" ] || fail 'TMUX is not set'
 target_session="${AGY_SEND_SESSION:-}"
 case "$target_session" in
@@ -176,7 +190,10 @@ case "$target_count" in
   1) ;;
   *) fail "target window $target_session:$window_name is ambiguous" ;;
 esac
-[ "$command_name" = agy ] || fail "pane $pane is running '$command_name', not Agy; refuse"
+case "$command_name" in
+  agy|gemini|node) ;;
+  *) fail "pane $pane is running '$command_name', not Agy/Gemini; refuse" ;;
+esac
 
 relay_target_window="$window_name"
 relay_require_route
@@ -191,13 +208,25 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
+send_target_proof=
+if [ "$command_name" = node ]; then
+  send_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" --agy)" || fail "foreground node process is not proven Agy/Gemini"
+fi
+require_target_process() {
+  [ -z "$send_target_proof" ] || "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" --agy "$send_target_proof"
+}
+require_target_process || fail 'target agent process changed'
+relay_label_message
+relay_auto_archive=1
 prepare_payload "$message"
+relay_operator_prepare
 resolve_relay_sender_tier
 require_empty_agy_input
 sleep 0.04
 require_empty_agy_input
+require_target_process || fail 'target agent process changed before paste'
 
-if atomic_text "$message"; then
+if atomic_text "$relay_prepared_payload"; then
   :
 else
   code=$?
@@ -211,8 +240,8 @@ else
   esac
 fi
 verify_payload
-sleep 0.04
-verify_payload
+require_queue_binding partial
+require_target_process || partial 'target agent process changed before Enter'
 if atomic_enter; then
   :
 else

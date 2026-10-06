@@ -21,8 +21,9 @@ def fixture(folder, kind):
         glyph = '❯'
         base = empty
     else:
-        empty = (folder.parent / 'codex-empty.ansi').read_text().splitlines()
-        y = 48
+        case = next(row for row in json.loads((ROOT / 'tests/fixtures/relay-codex-live-160.json').read_text())['cases'] if row['name'] == 'sol-truecolor-fresh')
+        empty = case['capture'].splitlines()
+        y = case['cursor_y']
         glyph = '›'
         base = (ROOT / 'tests/fixtures/codex-new-live-real-busy-draft.ansi').read_text().splitlines()
     value = ''
@@ -136,4 +137,6 @@ if __name__ == '__main__':
     if sys.argv[1:2] == ['--fixture']:
         fixture(*sys.argv[2:])
     else:
+        if len(sys.argv) > 2:
+            ROOT = Path(sys.argv[2]).resolve()
         run(sys.argv[1])

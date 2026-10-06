@@ -35,6 +35,21 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(data['identity'], self.identity)
         return result, path, data, launch
 
+    def test_operator_options_keep_legacy_codex_order_and_targeted_literals(self):
+        for arguments, expected_operator in [(['--codex', '-O', 'payload'], True),
+                                             (['--codex', '--operator', 'payload'], True),
+                                             (['--operator', '--codex', 'payload'], True),
+                                             (['--codex-to', 'codex', '--operator'], False)]:
+            with self.subTest(arguments=arguments):
+                root = self.root / uuid.uuid4().hex
+                env = dict(self.env, CODEX_SEND_SESSION='lab-test', CODEX_SEND_WINDOW='codex')
+                with patch.object(queue, 'ROOT', root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(0, 'test outcome')) as deliver, patch.object(queue, 'stable_screen', return_value=True), patch.dict(os.environ, env), patch.object(queue.sys, 'argv', ['queue', *arguments]):
+                    self.assertEqual(queue.main(), 0)
+                data = json.loads(next(root.glob('*/*.json')).read_text())
+                self.assertEqual(data['operator'], expected_operator)
+                self.assertEqual(data['message'], 'payload' if expected_operator else '--operator')
+                self.assertEqual(deliver.call_args.args[1]['RELAY_OPERATOR'], '1' if expected_operator else '0')
+
     def test_codex_transport_and_operator_are_explicit(self):
         process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
         with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:

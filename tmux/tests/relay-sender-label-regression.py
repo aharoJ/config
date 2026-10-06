@@ -37,7 +37,7 @@ try:
     for agent in ['codex','agy','gemini','bash']:
         matrix.sender_case('verified-'+agent,agent)
     matrix.sender_case('codex-node','codex',node=True)
-    matrix.sender_case('renamed-codex','codex',rename=True)
+    matrix.sender_case('renamed-codex','codex',rename=True,code=1)
     matrix.sender_case('ambiguous-codex','codex',linked=True,code=1)
 finally:
     matrix.close()

@@ -4,12 +4,15 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 source = Path(__file__).with_name('relay-delivery-regression.py')
 spec = importlib.util.spec_from_file_location('fixtures', source)
 fixtures = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fixtures)
+if len(sys.argv) > 1:
+    fixtures.ROOT = Path(sys.argv[1]).resolve()
 os.environ.pop('CC_MSG_QUEUE_INTERNAL', None)
 os.environ.pop('CODEX_SEND_QUEUE_INTERNAL', None)
 os.environ.pop('TMUX_PANE', None)

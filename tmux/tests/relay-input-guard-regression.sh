@@ -6,6 +6,7 @@
 set -euo pipefail
 export CC_MSG_QUEUE_INTERNAL=1
 export CODEX_SEND_QUEUE_INTERNAL=1
+export AGY_SEND_QUEUE_INTERNAL=1
 
 root="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 guard="$root/tools/relay-input-guard"

@@ -9,6 +9,7 @@ import json
 import os
 os.environ["CC_MSG_QUEUE_INTERNAL"] = "1"
 os.environ["CODEX_SEND_QUEUE_INTERNAL"] = "1"
+os.environ["AGY_SEND_QUEUE_INTERNAL"] = "1"
 import pathlib
 import select
 import shlex
@@ -321,7 +322,7 @@ class Matrix:
             normalized = re_normalize(payload)
             expected = ("relay: " if relay == "cc-msg.sh" else "") + normalized
             archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "neutral-prefix-at-right-margin", "neutral-prefix-pushes-past-one-row", "drop-space-at-full-wrap")
-            if relay in ("cc-msg.sh", "codex-send") and code == 1 and archive_case:
+            if code == 1 and archive_case:
                 code = 0
             self.record(relay, name, result, code, directory, expected, code in (1, 2, 5))
         finally:

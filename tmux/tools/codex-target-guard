@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/codex-target-guard
 # description: Bind a selected pane to its foreground Codex process and entry point.
-# patched: recognize Codex node wrappers without trusting arbitrary node panes
-# date: 2026-10-02
+# patched: recognize canonical interactive Node adapters without using them as role authority
+# date: 2026-10-06
 import hashlib
 import json
 import pathlib
@@ -13,18 +13,18 @@ import sys
 LABEL = runpy.run_path(str(pathlib.Path(__file__).resolve().with_name('relay-sender-label')))
 
 
-def query(socket, pane):
+def query(socket, pane, applications):
     p = subprocess.run(['tmux', '-S', socket, 'display-message', '-p', '-t', pane,
                         '#{pane_id}|#{pane_pid}|#{pane_current_command}|#{pane_tty}|#{pane_dead}'],
                        check=True, text=True, capture_output=True, timeout=.6)
     fields = p.stdout.rstrip('\n').split('|')
-    if len(fields) != 5 or fields[0] != pane or fields[4] != '0' or fields[2] not in ('node', 'codex'):
+    if len(fields) != 5 or fields[0] != pane or fields[4] != '0' or fields[2] not in ('node', *applications):
         raise ValueError('unrecognized target identity')
     return fields
 
 
-def snapshot(socket, pane):
-    identity = query(socket, pane)
+def snapshot(socket, pane, applications):
+    identity = query(socket, pane, applications)
     root, command, tty = int(identity[1]), identity[2], identity[3]
     if not tty.startswith('/dev/'):
         raise ValueError('missing target tty')
@@ -46,11 +46,11 @@ def snapshot(socket, pane):
             if current == root:
                 break
             current = table[current][0]
-        if not chain or chain[-1] != root or LABEL['app'](pid, executable) != 'codex':
+        if not chain or chain[-1] != root or LABEL['app'](pid, executable) not in applications:
             continue
         args = LABEL['ps']('-p', str(pid), '-o', 'lstart=,args=').strip()
         candidates.append((pid, args))
-    if len(candidates) != 1 or query(socket, pane) != identity:
+    if len(candidates) != 1 or query(socket, pane, applications) != identity:
         raise ValueError('ambiguous or changed foreground identity')
     return hashlib.sha256(json.dumps([identity, foreground, candidates], sort_keys=True).encode()).hexdigest()
 
@@ -58,8 +58,12 @@ def snapshot(socket, pane):
 if __name__ == '__main__':
     try:
         socket, pane, *expected = sys.argv[1:]
-        first = snapshot(socket, pane)
-        if snapshot(socket, pane) != first or (expected and expected != [first]):
+        applications = ('codex',)
+        if expected[:1] == ['--agy']:
+            applications = ('agy', 'gemini')
+            expected = expected[1:]
+        first = snapshot(socket, pane, applications)
+        if snapshot(socket, pane, applications) != first or (expected and expected != [first]):
             sys.exit(1)
         if not expected:
             print(first)

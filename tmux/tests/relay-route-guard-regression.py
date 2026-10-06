@@ -7,43 +7,35 @@ import tempfile
 module = runpy.run_path(str(pathlib.Path(__file__).resolve().parents[1] / 'tools' / 'relay-route-guard'))
 check = module['check']
 state = check.__globals__
-source = {'session': 'cvmapp', 'window': 'claude', 'app': 'claude'}
-rule = {'source': ['cvmapp', 'claude'], 'target': ['config', 'claude']}
-state['policy'] = lambda: [rule]
-state['orchestrators'] = lambda: {}
-state['live'] = lambda env, value: True
-state['signed'] = lambda value: True
-state['destination_cc'] = lambda env, session, window: True
 cases = []
 
 def test(name, actual, expected):
     assert actual == expected, name
     cases.append(name)
 
-
-test('same session worker', check({}, dict(source, app='codex'), 'cvmapp', 'claude'), True)
-test('signed allowlisted CC', check({}, source, 'config', 'claude'), True)
-for app in ('codex', 'agy', 'gemini', 'relay'):
-    test('cross refused '+app, check({'CC_MSG_ALLOW_CROSS_SESSION': '1'}, dict(source, app=app), 'config', 'claude'), False)
-test('non allowlisted source', check({}, dict(source, session='unknown'), 'config', 'claude'), False)
-test('wrong destination window', check({}, source, 'config', 'codex'), False)
-test('wrong destination session', check({}, source, 'other', 'claude'), False)
-hub = dict(source,session='config')
-state['policy'] = lambda: [rule,{'source':['config','claude'],'target':['*','claude']}]
-test('hub to new project signed CC',check({},hub,'new-project','claude'),True)
-test('hub wrong project window',check({},hub,'new-project','codex'),False)
-test('nonhub wildcard cannot self grant',check({},source,'new-project','claude'),False)
-for app in ('codex','agy','gemini','relay'):
-    test('hub worker cross refused '+app,check({},dict(hub,app=app),'new-project','claude'),False)
-state['destination_cc'] = lambda env,session,window: False
-test('hub nonCC destination refused',check({},hub,'new-project','claude'),False)
-state['destination_cc'] = lambda env,session,window: True
-state['policy'] = lambda: [rule]
-state['signed'] = lambda value: False
-test('unsigned claimed CC', check({}, source, 'config', 'claude'), False)
+source = {'session': 'cvmapp', 'window': 'codex', 'app': 'codex'}
+state['live'] = lambda env, value: True
+for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
+    for window in ('claude', 'codex'):
+        seat = dict(source, app=app, window=window)
+        test('lead provider parity '+app+window, check({}, seat, 'config', 'codex'), app != 'relay')
+        test('lead to lead '+app+window, check({}, seat, 'review-protocol', 'claude'), app != 'relay')
+    worker = dict(source, app=app, window='terra')
+    test('worker local '+app, check({}, worker, 'cvmapp', 'codex'), True)
+    test('worker cannot skip project orcha '+app, check({}, worker, 'review-protocol', 'claude'), False)
+    test('worker unrelated project '+app, check({}, worker, 'config', 'claude'), False)
+for app in ('claude', 'codex', 'agy', 'gemini'):
+    schema = dict(source, session='rp-schema', window='codex', app=app)
+    test('rp-schema upward '+app, check({}, schema, 'review-protocol', 'claude'), True)
+    hub = dict(source, session='review-protocol', window='claude', app=app)
+    test('rp-schema return '+app, check({}, hub, 'rp-schema', 'codex'), True)
+test('unknown session denied', check({}, dict(source, session='unknown'), 'config', 'claude'), False)
+test('unknown destination denied', check({}, source, 'other', 'codex'), False)
+test('unknown destination seat denied', check({}, source, 'config', 'unassigned'), False)
+test('vendor name grants no worker privilege', check({}, dict(source, window='worker', app='claude'), 'config', 'claude'), False)
 state['live'] = lambda env, value: False
-test('dead queued source same session', check({}, source, 'cvmapp', 'claude'), False)
-test('dead queued source cross', check({}, source, 'config', 'claude'), False)
+test('dead source local', check({}, source, 'cvmapp', 'claude'), False)
+test('dead source cross', check({}, source, 'config', 'codex'), False)
 bound = {'version': 1, 'socket': {'inode': 7}, 'pane': '%4', 'session': 'cvmapp', 'window': 'claude', 'root': 100, 'root_identity': 'root-start', 'actor': 101, 'actor_identity': 'actor-start', 'app': 'claude'}
 state['socket'] = lambda env: {'inode': 7}
 state['panes'] = lambda env: [['%4', 'cvmapp', 'claude', '', '100', '0']]
@@ -82,10 +74,10 @@ with tempfile.TemporaryDirectory() as directory:
     state['process_executable'] = lambda pid: pathlib.Path('/bin/bash')
     test('env only record refused', module['record_caller'](201, record, {'actor': 101}), False)
     path = pathlib.Path(directory) / 'policy.json'
-    path.write_text(json.dumps({'version': 1, 'allow': [rule]}))
+    path.write_text(json.dumps({'version': 2, 'seats': {'cvmapp': {'codex': 'lead'}}}))
     path.chmod(0o600)
     original['POLICY'] = path
-    test('operator policy valid', module['policy'](), [rule])
+    test('operator policy valid', module['policy'](), {'cvmapp': {'codex': 'lead'}})
     path.chmod(0o666)
     try:
         module['policy']()

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# path: ~/.config/tmux/tools/cc-msg-queue
+# description: Persist bound relay attempts and retry only confirmed no-input deferrals.
+# patched: unify CC, Codex and Agy queue behavior and retain source context
+# date: 2026-10-06
 import fcntl
 import hashlib
 import json
@@ -48,7 +52,7 @@ class RoutingError(ValueError):
 
 
 def resolve_defaults(env, agent):
-    prefix = 'CODEX_SEND' if agent.startswith('codex') else 'CC_MSG'
+    prefix = 'CODEX_SEND' if agent.startswith('codex') else 'AGY_SEND' if agent == 'agy' else 'CC_MSG'
     socket = env.get('TMUX', '').split(',')[0]
     binary = env.get('TMUX_BIN', 'tmux')
     session = env.get(prefix + '_SESSION', '')
@@ -64,7 +68,7 @@ def resolve_defaults(env, agent):
         if result.returncode or len(fields) != 2 or (env.get('TMUX_PANE') and fields[0] != env['TMUX_PANE']):
             raise RoutingError('cannot resolve the caller session')
         session = fields[1]
-    window = env.get(prefix + '_WINDOW') or ('codex' if agent.startswith('codex') else 'claude')
+    window = env.get(prefix + '_WINDOW') or ('codex' if agent.startswith('codex') else 'agy' if agent == 'agy' else 'claude')
     if not all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)):
         raise RoutingError('invalid session or window')
     if window.isdigit():
@@ -77,6 +81,10 @@ def resolve_defaults(env, agent):
     if agent.startswith('codex'):
         env.update(CODEX_SEND_SESSION=session, CODEX_SEND_WINDOW=window)
         env.pop('CC_MSG_PANE', None)
+    if agent == 'agy':
+        env.update(AGY_SEND_SESSION=session, AGY_SEND_WINDOW=window)
+        if env.get('AGY_SEND_PANE'):
+            env['CC_MSG_PANE'] = env['AGY_SEND_PANE']
     return env
 
 
@@ -87,13 +95,15 @@ def routing_source(env, record=None):
     try:
         result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=5)
         if result.returncode != 0:
-            raise RoutingError('cross-session send refused')
+            raise RoutingError(result.stderr.strip() or 'route refused')
         source = json.loads(result.stdout)
         if not isinstance(source, dict):
             raise RoutingError('cross-session send refused')
         return source
+    except RoutingError:
+        raise
     except (OSError, ValueError, subprocess.SubprocessError) as error:
-        raise RoutingError('cross-session send refused') from error
+        raise RoutingError('source binding unavailable; identify the live calling seat with TMUX_PANE') from error
 
 
 def identity(env):
@@ -126,12 +136,13 @@ def deliver(data, env):
         env['CC_MSG_EXPECT_PID'] = data['identity']['pid']
         env['CC_MSG_EXPECT_IDENTITY'] = json.dumps(data['identity'])
     agent = data.get('agent', 'claude')
-    tool = TOOL.with_name('codex-send') if agent == 'codex' else TOOL.with_name('codex-send-to') if agent == 'codex-to' else TOOL
+    tool = TOOL.with_name('codex-send') if agent == 'codex' else TOOL.with_name('codex-send-to') if agent == 'codex-to' else TOOL.with_name('agy-send-to') if agent == 'agy' else TOOL
+    env['AGY_SEND_QUEUE_INTERNAL'] = '1'
     env['CODEX_SEND_QUEUE_INTERNAL'] = '1'
     env['RELAY_OPERATOR'] = '1' if data.get('operator') else '0'
     if data.get('record'):
         env['RELAY_MESSAGE_RECORD'] = data['record']
-    command = [str(tool)] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex-to' else [])
+    command = [str(tool)] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex-to' else [env['AGY_SEND_WINDOW']] if agent == 'agy' else [])
     process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     try:
         stdout, stderr = process.communicate(data['message'], timeout=60)
@@ -161,13 +172,17 @@ def stable_screen(env, target):
         first = subprocess.run(command, env=env, capture_output=True, timeout=5)
         time.sleep(1)
         second = subprocess.run(command, env=env, capture_output=True, timeout=5)
-        if first.returncode != 0 or second.returncode != 0 or first.stdout != second.stdout:
+        if first.returncode != 0 or second.returncode != 0:
             return False
         state = subprocess.run([env.get('TMUX_BIN', 'tmux'), '-S', target['socket'], 'display-message', '-p', '-t', target['pane'], '#{pane_in_mode}:#{cursor_y}'], env=env, capture_output=True, text=True, timeout=5)
         if state.returncode != 0 or not re.fullmatch(r'0:[0-9]+\n?', state.stdout):
             return False
         y = int(state.stdout.strip().split(':')[1])
         rows = re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', second.stdout).splitlines()
+        first_rows = first.stdout.splitlines()
+        second_rows = second.stdout.splitlines()
+        if first_rows[max(0, y - 1):y + 2] != second_rows[max(0, y - 1):y + 2]:
+            return False
         active = rows[max(0, y - 4):y + 1]
         return not any(row.strip() == b'ctrl+x ctrl+s to send now' or b'Press up to edit queued messages' in row for row in active)
     except (OSError, subprocess.TimeoutExpired):
@@ -227,13 +242,44 @@ def worker(path):
 
 
 def launch_worker(folder, path, data):
-    with (folder / (data['id'] + '.worker.log')).open('a') as log:
-        process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--worker', str(path)], env=dict(os.environ, **data.get('environment', {})), stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True)
-    event(folder, data, 'worker-started', pid=process.pid)
+    with (folder / '.dispatch.lock').open('a') as dispatch:
+        fcntl.flock(dispatch, fcntl.LOCK_EX)
+        with (folder / '.scheduler.lock').open('a') as ownership:
+            try:
+                fcntl.flock(ownership, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                event(folder, data, 'worker-active')
+                return
+            with (folder / '.scheduler.log').open('a') as log:
+                process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--schedule', str(folder), str(ownership.fileno())], env=dict(os.environ, **data.get('environment', {})), stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True, pass_fds=(ownership.fileno(),))
+            event(folder, data, 'worker-started', pid=process.pid)
 
 
-def sweep():
-    for path in ROOT.glob('*/*.json'):
+def schedule(folder, descriptor):
+    folder = folder.resolve(strict=True)
+    if folder.parent != ROOT.resolve(strict=True):
+        raise RoutingError('scheduler folder is outside its inbox')
+    info = os.fstat(descriptor)
+    expected = (folder / '.scheduler.lock').stat()
+    if (info.st_dev, info.st_ino) != (expected.st_dev, expected.st_ino):
+        raise RoutingError('scheduler ownership changed')
+    try:
+        while True:
+            with (folder / '.dispatch.lock').open('a') as dispatch:
+                fcntl.flock(dispatch, fcntl.LOCK_EX)
+                pending = [(json.loads(path.read_text()).get('created', 0), path) for path in folder.glob('*.json') if json.loads(path.read_text()).get('state') == 'queued']
+                if not pending:
+                    os.close(descriptor)
+                    descriptor = -1
+                    return
+            worker(min(pending)[1])
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def sweep(folder=None):
+    for path in (folder.glob('*.json') if folder else ROOT.glob('*/*.json')):
         folder = path.parent
         with (folder / (path.stem + '.lock')).open('a') as lock:
             try:
@@ -251,11 +297,6 @@ def sweep():
                     finish(folder, path, data, 'expired', 7, 'retry deadline passed; manual review required')
                 else:
                     try:
-                        routing_source(dict(os.environ, **data.get('environment', {})), path)
-                    except RoutingError as error:
-                        finish(folder, path, data, 'failed', 1, str(error) + '; no target input was sent')
-                        continue
-                    try:
                         launch_worker(folder, path, data)
                     except OSError as error:
                         finish(folder, path, data, 'failed', 7, f'cannot recover retry worker: {error}')
@@ -263,16 +304,32 @@ def sweep():
 
 def main():
     os.umask(0o077)
+    if len(sys.argv) == 4 and sys.argv[1] == '--schedule':
+        schedule(Path(sys.argv[2]), int(sys.argv[3]))
+        return 0
     if len(sys.argv) == 3 and sys.argv[1] == '--worker':
         worker(Path(sys.argv[2]))
         return 0
     if len(sys.argv) == 3 and sys.argv[1] == '--check-binding':
         return 0 if identity(dict(os.environ)) == json.loads(sys.argv[2]) else 1
+    operator = sys.argv[1:2] in (['--operator'], ['-O'])
+    if operator:
+        del sys.argv[1]
     agent = os.environ.get('RELAY_QUEUE_AGENT', 'claude')
     targeted_message = None
     if sys.argv[1:2] == ['--codex']:
         agent = 'codex'
         del sys.argv[1]
+        if sys.argv[1:2] in (['--operator'], ['-O']):
+            operator = True
+            del sys.argv[1]
+    if sys.argv[1:2] == ['--agy-to']:
+        agent = 'agy'
+        if len(sys.argv) != 4:
+            raise RoutingError('usage: agy-send-to <window> <text>')
+        os.environ['AGY_SEND_WINDOW'] = sys.argv[2]
+        targeted_message = sys.argv[3]
+        del sys.argv[1:]
     if sys.argv[1:2] == ['--codex-to']:
         agent = 'codex-to'
         if len(sys.argv) != 4:
@@ -284,9 +341,6 @@ def main():
         env = resolve_defaults(dict(os.environ), agent)
         args = [agent] + ([env['CODEX_SEND_WINDOW']] if agent == 'codex' else [])
         return subprocess.call([sys.executable, str(TOOL.with_name('relay-clear-draft')), *args, *sys.argv[2:]], env=env)
-    operator = sys.argv[1:2] in (['--operator'], ['-O'])
-    if operator:
-        del sys.argv[1]
     if sys.argv[1:] == ['--status']:
         for path in ROOT.glob('*/*.json'):
             print(f"{json.loads(path.read_text())['state']}: {path}")
@@ -300,27 +354,28 @@ def main():
         print('Inbox: ~/desk/tmp/inbox/<session>-<window>-<socket-hash>/inbox.jsonl; --status lists durable outcomes; exit 6 = queued (do not resend), exit 7 = persistence/worker failure. Retries stop after 30 minutes; .FAILED files require review.')
         return 0
     env = resolve_defaults(dict(os.environ), agent)
+    env['RELAY_OPERATOR'] = '1' if operator else '0'
     source = routing_source(env)
-    sweep()
     message = targeted_message if targeted_message is not None else ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else sys.stdin.read()
     session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
     key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
     key += '-' + hashlib.sha256(env.get('TMUX', '').split(',')[0].encode()).hexdigest()[:12]
     folder = ROOT / key
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    data = dict(source=source, id=uuid.uuid4().hex, operator=operator, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('RELAY_QUEUE_AGENT', 'CODEX_SEND_SESSION', 'CODEX_SEND_WINDOW', 'PATH', 'TMUX', 'TMUX_PANE', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
+    sweep(folder)
+    data = dict(source=source, id=uuid.uuid4().hex, operator=operator, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('RELAY_QUEUE_AGENT', 'CODEX_SEND_SESSION', 'CODEX_SEND_WINDOW', 'AGY_SEND_SESSION', 'AGY_SEND_WINDOW', 'AGY_SEND_PANE', 'PATH', 'TMUX', 'TMUX_PANE', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
     path = folder / (data['id'] + '.json')
     data['record'] = str(path)
     with path.with_suffix('.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         save(path, data)
         event(folder, data, 'attempt', message=message, session=session, window=window)
-        if not operator and data['identity'] and not stable_screen(env, data['identity']):
+        backlog = any(other != path and json.loads(other.read_text()).get('state') == 'queued' for other in folder.glob('*.json'))
+        if data['identity'] and (backlog or not operator and not stable_screen(env, data['identity'])):
             code, output = 5, 'cc-msg: target screen is changing or has pending messages; no target input was sent\n'
         else:
             code, output = deliver(data, env)
         if code in (2, 5) and data['identity']:
-            print(output.replace('; safe to retry after the condition clears', '; automatic retry queued; do not resend'), end='')
             finish(folder, path, data, 'queued', 6, output)
             try:
                 launch_worker(folder, path, data)
@@ -328,11 +383,16 @@ def main():
                 finish(folder, path, data, 'failed', 7, f'worker could not start: {error}')
                 print(f'cc-msg: worker failed; review {path}', file=sys.stderr)
                 return 7
-            print(f'cc-msg: queued for automatic delivery for up to 30 minutes; do not resend; inbox {path}', file=sys.stderr)
+            print(f'relay: queued {data["id"]}; automatic retry up to 30 minutes, no action needed; do not resend; record {path}')
             return 6
-        print(output, end='')
         finish(folder, path, data, 'delivered' if code == 0 else 'unknown' if code in (3, 4) else 'failed', code, output)
-        print(f'cc-msg: durable inbox record {path}', file=sys.stderr)
+        if code == 0:
+            print(f'relay: delivered {data["id"]} to {session}:{window}; composer verified (not an acknowledgment); record {path}')
+        elif code in (3, 4):
+            print(f'relay: unknown {data["id"]}; inspect target and relay status {data["id"]} before an explicit resend; record {path}')
+        else:
+            reason = " ".join(output.split())
+            print(f'relay: refused {data["id"]}: {reason}; review named target and record {path}')
         return code
 
 

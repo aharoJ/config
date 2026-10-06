@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bound submission jobs and verify signed CC hub return routes
+# patched: apply seat parity with verified queued source and draft-safe submission
 # date: 2026-10-06
 set -uo pipefail
 
@@ -152,11 +152,6 @@ source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is r
 raw_message="${1:-$(cat)}"
 message="$(printf '%s' "$raw_message" | "$relay_payload_guard" normalize)" || fail 'invalid message; printable UTF-8 is required'
 [ -n "$message" ] || fail 'empty message'
-if [ "${RELAY_OPERATOR:-0}" != 1 ]; then
-case "${message:0:1}" in
-  '/'|'!') fail 'message starts with "/" or "!", which the receiving CLI would run as a command; rephrase and resend' ;;
-esac
-fi
 target_session="${CODEX_SEND_SESSION:-}"
 target_window="${CODEX_SEND_WINDOW:-codex}"
 case "$target_session" in
@@ -203,6 +198,7 @@ else
     *) fail "cannot establish target relay lock" ;;
   esac
 fi
+relay_label_message
 relay_auto_archive=1
 prepare_payload "$message"
 message="$relay_prepared_payload"
@@ -226,8 +222,6 @@ else
     *) partial "literal delivery outcome is unknown for $pane" ;;
   esac
 fi
-verify_payload
-sleep 0.04
 verify_payload
 require_queue_binding
 if atomic_enter; then

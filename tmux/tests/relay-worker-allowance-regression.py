@@ -4,8 +4,6 @@ def test(name,actual,expected):
  assert actual==expected,(name,actual,expected)
  cases.append(name)
 state['live']=lambda env,src:True
-state['destination_cc']=lambda env,s,w:True
-state['signed']=lambda source:True
 source={'app':'codex','actor':101,'session':'rp-schema','window':'codex'}
 for app in ('claude','codex','agy','gemini'):
  for actor in (101,102,103):
@@ -35,6 +33,18 @@ with tempfile.TemporaryDirectory() as d:
  argv([queue,'--worker',record]);state['ancestors']=lambda pid:[(201,203,'/fixture/truncated',''),(203,202,'/real/codex','codex'),(202,1,'/real/claude','claude')]
  test('nested native worker cannot borrow CC actor',f(201,record,bound),False)
  state['ancestors']=lambda pid:[(201,202,'/fixture/truncated',''),(202,1,'/real/claude','claude')]
+ state['process_executable']=lambda pid:exe if pid==204 else pathlib.Path('/bin/bash')
+ state['ancestors']=lambda pid:[(201,204,'/fixture/truncated',''),(204,202,'/fixture/scheduler',''),(202,1,'/real/codex','codex')]
+ bound={'actor':303}
+ argv([queue,'--schedule',record.parent,'3']);test('shared scheduler accepts other bound source',f(201,record,bound),True)
+ argv([queue,'--schedule',TOOLS,'3']);test('scheduler other target folder refused',f(201,record,bound),False)
+ argv([queue,'--schedule',record.parent,'2']);test('scheduler invalid owner descriptor refused',f(201,record,bound),False)
+ argv([queue,'--schedule',record.parent,'3','extra']);test('scheduler extra args refused',f(201,record,bound),False)
+ argv([queue,'--worker',record]);test('ordinary worker cannot borrow another source',f(201,record,bound),False)
+ argv([queue,'--schedule',record.parent,'3']);state['ancestors']=lambda pid:[(201,203,'/fixture/truncated',''),(203,204,'/real/agy','agy'),(204,202,'/fixture/scheduler',''),(202,1,'/real/codex','codex')]
+ test('native actor below scheduler cannot borrow source',f(201,record,bound),False)
+ state['ancestors']=lambda pid:[(201,202,'/fixture/truncated',''),(202,1,'/real/claude','claude')]
+ bound={'actor':202}
  state['process_executable']=lambda pid:pathlib.Path('/bin/bash')
  test('bash claiming queue script refused',f(201,record,bound),False)
 print(json.dumps({'passed':len(cases),'cases':cases},indent=2))

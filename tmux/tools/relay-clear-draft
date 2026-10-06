@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# path: ~/.config/tmux/tools/relay-clear-draft
+# description: Clear an explicitly expected single-line draft without queueing or replay.
+# patched: support the same explicit clearing action across interactive adapters
+# date: 2026-10-06
 import fcntl
 import hashlib
 import importlib.machinery
@@ -52,8 +56,8 @@ def visible(capture):
 
 
 def valid_expected(expected):
-    if not 1 <= len(expected) <= 16 or expected != expected.strip(' ') or any(not ' ' <= char <= '~' for char in expected) or '[' in expected or ']' in expected:
-        raise Refused('--expect must be 1–16 printable ASCII characters without edge spaces; no multiline, attachment tokens, or automatic clearing')
+    if not 1 <= len(expected) <= 4096 or expected != expected.strip(' ') or any(not ' ' <= char <= '~' for char in expected) or '[' in expected or ']' in expected:
+        raise Refused('--expect must be printable ASCII characters fitting one input line without edge spaces; no multiline, attachment tokens, or automatic clearing')
 
 
 def styled_cells(row):
@@ -95,7 +99,7 @@ def styled_cells(row):
 
 def guard(snapshot, kind, expected):
     valid_expected(expected)
-    glyph = '❯' if kind == 'claude' else '›'
+    glyph = '❯' if kind == 'claude' else '>' if kind in ('agy', 'gemini') else '›'
     y, x, width = snapshot['y'], snapshot['x'], snapshot['width']
     raw = snapshot['capture'].splitlines()
     rows = visible(snapshot['capture'])
@@ -125,7 +129,18 @@ def guard(snapshot, kind, expected):
         if not completed and not fresh:
             raise Refused('Claude idle state is unproven')
     virtual = list(raw)
-    virtual[y] = match[1] + ('\x1b[2mboundary proof\x1b[0m' if kind == 'codex' else '')
+    prefix, count, index = '', 0, 0
+    while count < len(match[1]):
+        escape = re.match(r'\x1b\[[0-9;:]*m', raw[y][index:])
+        part = escape[0] if escape else raw[y][index:index + 1]
+        if not part:
+            raise Refused('draft prefix is unproven')
+        prefix += part
+        index += len(part)
+        count += 0 if escape else 1
+    if kind in ('agy', 'gemini'):
+        prefix = prefix.rstrip(' \u00a0')
+    virtual[y] = prefix + ('\x1b[2mboundary proof\x1b[0m' if kind == 'codex' else '')
     check = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(len(match[1])), str(y), str(width), 'strict'], input='\n'.join(virtual) + '\n', text=True, capture_output=True, timeout=3)
     if check.returncode != 0:
         raise Refused('composer boundary, multiline input, or idle footer is unproven')
@@ -204,9 +219,9 @@ def main():
     kind = sys.argv[1] if len(sys.argv) > 1 else ''
     args = sys.argv[2:]
     env = dict(os.environ)
-    if kind == 'codex':
+    if kind in ('codex', 'agy', 'gemini'):
         window, args = (args[0], args[1:]) if args else ('', [])
-        env['CC_MSG_SESSION'], env['CC_MSG_WINDOW'] = env.get('CODEX_SEND_SESSION', ''), window
+        env['CC_MSG_SESSION'], env['CC_MSG_WINDOW'] = env.get('CODEX_SEND_SESSION' if kind == 'codex' else 'AGY_SEND_SESSION', ''), window
         env.pop('CC_MSG_PANE', None)
     session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
     expected = args[1] if len(args) == 2 and args[0] == '--expect' else ''
@@ -219,7 +234,7 @@ def main():
     key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
     folder = queue.ROOT / (key + '-' + hashlib.sha256(socket.encode()).hexdigest()[:12])
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    data = dict(source=source, session=session, window=window, id=uuid.uuid4().hex, operation='clear-draft', kind=kind, message='', expected=expected, created=time.time(), state='clear-inspecting')
+    data = dict(operator=env.get('RELAY_OPERATOR') == '1', source=source, session=session, window=window, id=uuid.uuid4().hex, operation='clear-draft', kind=kind, message='', expected=expected, created=time.time(), state='clear-inspecting')
     path = folder / (data['id'] + '.json')
     audit_lock = path.with_suffix('.lock').open('a')
     fcntl.flock(audit_lock, fcntl.LOCK_EX)
@@ -233,7 +248,7 @@ def main():
     try:
         for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
             handlers[signum] = signal.signal(signum, interrupted)
-        if kind not in ('claude', 'codex') or len(args) != 2 or args[0] != '--expect':
+        if kind not in ('claude', 'codex', 'agy', 'gemini') or len(args) != 2 or args[0] != '--expect':
             raise Refused('usage: --clear-draft --expect <exact short draft>; this mode clears only and sends no message')
         valid_expected(expected)
         target = queue.identity(env)
@@ -284,7 +299,7 @@ def main():
             if queue.identity(env) != target:
                 raise RuntimeError('target changed after clear')
             post = snapshot(target)
-            glyph = '❯' if kind == 'claude' else '›'
+            glyph = '❯' if kind == 'claude' else '>' if kind in ('agy', 'gemini') else '›'
             empty = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(post['x']), str(post['y']), str(post['width']), 'strict'], input=post['capture'], capture_output=True, text=True, timeout=3)
             if empty.returncode == 0:
                 output = f'CLEARED exact draft {json.dumps(expected)}; empty composer verified; {pending_count(folder, target)} queued message(s) may now deliver; inbox {path}'

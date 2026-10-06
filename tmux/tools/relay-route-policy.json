@@ -1,108 +1,62 @@
 {
-  "version": 1,
-  "allow": [
-    {
-      "source": [
-        "config",
-        "claude"
-      ],
-      "target": [
-        "config",
-        "claude"
-      ]
+  "version": 2,
+  "seats": {
+    "config": {
+      "claude": "lead",
+      "codex": "lead",
+      "terra": "worker"
     },
-    {
-      "source": [
-        "config",
-        "claude"
-      ],
-      "target": [
-        "review-protocol",
-        "claude"
-      ]
+    "review-protocol": {
+      "claude": "lead",
+      "codex": "lead"
     },
-    {
-      "source": [
-        "review-protocol",
-        "claude"
-      ],
-      "target": [
-        "config",
-        "claude"
-      ]
+    "cvmapp": {
+      "claude": "lead",
+      "codex": "lead"
     },
-    {
-      "source": [
-        "review-protocol",
-        "claude"
-      ],
-      "target": [
-        "review-protocol",
-        "claude"
-      ]
+    "vetmed-absence-expansion": {
+      "claude": "lead",
+      "codex": "lead"
     },
-    {
-      "source": [
-        "cvmapp",
-        "claude"
-      ],
-      "target": [
-        "config",
-        "claude"
-      ]
-    },
-    {
-      "source": [
-        "cvmapp",
-        "claude"
-      ],
-      "target": [
-        "review-protocol",
-        "claude"
-      ]
-    },
-    {
-      "source": [
-        "vetmed-absence-expansion",
-        "claude"
-      ],
-      "target": [
-        "config",
-        "claude"
-      ]
-    },
-    {
-      "source": [
-        "vetmed-absence-expansion",
-        "claude"
-      ],
-      "target": [
-        "review-protocol",
-        "claude"
-      ]
-    },
-    {
-      "source": [
-        "config",
-        "claude"
-      ],
-      "target": [
-        "*",
-        "claude"
-      ]
-    },
-    {
-      "source": [
-        "review-protocol",
-        "claude"
-      ],
-      "target": [
-        "*",
-        "claude"
-      ]
+    "rp-schema": {
+      "codex": "lead"
     }
-  ],
+  },
   "orchestrator_of": {
+    "config": [
+      "review-protocol",
+      "claude"
+    ],
+    "cvmapp": [
+      "review-protocol",
+      "claude"
+    ],
+    "vetmed-absence-expansion": [
+      "review-protocol",
+      "claude"
+    ],
+    "rp-schema": [
+      "review-protocol",
+      "claude"
+    ]
+  },
+  "worker_orchestrator": {
+    "config": [
+      "config",
+      "claude"
+    ],
+    "cvmapp": [
+      "cvmapp",
+      "claude"
+    ],
+    "vetmed-absence-expansion": [
+      "vetmed-absence-expansion",
+      "claude"
+    ],
+    "review-protocol": [
+      "review-protocol",
+      "claude"
+    ],
     "rp-schema": [
       "review-protocol",
       "claude"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: bound submission jobs and verify signed CC hub return routes
+# patched: apply seat parity with verified queued source and draft-safe submission
 # date: 2026-10-06
 set -uo pipefail
 
@@ -28,7 +28,7 @@ usage: cc-msg.sh [--operator|-O] <text>
        CC_MSG_SESSION=<session> CC_MSG_WINDOW=<name-or-index> [CC_MSG_PANE=%<id>] [CC_MSG_EXACT=1] cc-msg.sh <text>
        CC_MSG_SESSION=<session> CC_MSG_WINDOW=<window> cc-msg.sh --clear-draft --expect <exact-text>
 
-Clear mode requires an exact 1–16 character ASCII draft; refusal exits 8.
+Clear mode requires an exact single-line ASCII draft fitting the visible composer; refusal exits 8.
 Brackets, attachments, edge spaces and selected text are refused.
 It clears only, never sends a message or queues a clear, and logs to the inbox.
 
@@ -170,25 +170,6 @@ require_empty_cc_input() {
 
 source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
 
-resolve_sender_label() {
-  local sender sender_pane sender_session sender_window sender_pid sender_app identity code
-  FROM=relay
-  sender="$("$relay_script_dir/relay-sender-label" "$$" "$list_file")" || return 0
-  [ -n "$sender" ] || return 0
-  read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
-  case "$sender_app" in
-    claude|codex|agy|gemini) ;;
-    *) return 0 ;;
-  esac
-  if identity="$(request display-message -p -t "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}')"; then
-    [ "$identity" = "$sender_pane $sender_session $sender_window $sender_pid 0" ] || return 0
-  else
-    code=$?
-    [ "$code" = 75 ] && unresponsive
-    return 0
-  fi
-  FROM="$sender_app ($sender_session:$sender_window)"
-}
 
 [ -x "$relay_script_dir/relay-sender-label" ] || fail 'relay sender resolver is required'
 target_session="${CC_MSG_SESSION:-}"
@@ -236,9 +217,7 @@ else
   pane="$(awk -v session="$target_session" -v window="$target_window" '("" $2) == ("" session) && ("" $3) == ("" window) { print $1 }' "$list_file")"
   command_name="$(awk -v session="$target_session" -v window="$target_window" '("" $2) == ("" session) && ("" $3) == ("" window) { print $4 }' "$list_file")"
 fi
-resolve_sender_label
 resolve_relay_sender_tier
-[ "${CC_MSG_QUEUE_STRICT:-}" != 1 ] || relay_sender_tier=strict
 trash "$list_file" || printf 'relay: list scratch cleanup is unconfirmed; may remain at %s\n' "$list_file" >&2
 list_file=
 case "$target_count" in
@@ -262,6 +241,7 @@ fi
 
 relay_target_window="$target_window"
 relay_require_route
+resolve_relay_label
 relay_glyph="❯"
 if acquire_relay_lock; then
   :
@@ -314,8 +294,6 @@ else
     *) partial 'literal delivery outcome is unknown' ;;
   esac
 fi
-verify_payload
-sleep 0.04
 verify_payload
 if [ -n "${CC_MSG_EXPECT_IDENTITY:-}" ]; then
   python3 "$relay_script_dir/cc-msg-queue" --check-binding "$CC_MSG_EXPECT_IDENTITY" || partial 'queued foreground process changed after paste'

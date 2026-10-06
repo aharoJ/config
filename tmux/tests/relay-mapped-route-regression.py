@@ -24,12 +24,11 @@ for window in ('codex', 'terra', 'batch', 'claude'):
 for source_seat in [('review-protocol', 'codex'), ('config', 'codex'), ('config', 'claude')]:
     assert not check({}, dict(source, session=source_seat[0], window=source_seat[1], app='claude'), 'rp-schema', 'terra')
     cases += 1
-state['signed'] = lambda source: False
+state['live'] = lambda env, source: False
 assert not check({}, dict(source, session='review-protocol', window='claude', app='claude'), 'rp-schema', 'codex')
 cases += 1
-state['signed'] = lambda source: True
-state['destination_client'] = lambda env, session, window: False
-assert not check({}, dict(source, session='review-protocol', window='claude', app='claude'), 'rp-schema', 'terra')
+state['live'] = lambda env, source: True
+assert not check({}, dict(source, app='relay'), 'review-protocol', 'claude')
 cases += 1
 assert not check({}, dict(source, session='unmapped'), 'review-protocol', 'claude')
 cases += 1

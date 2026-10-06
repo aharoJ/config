@@ -30,10 +30,30 @@ class ClearGuardTests(unittest.TestCase):
         for kind in ('claude', 'codex'):
             self.assertIn('y=', clear.guard(fixture(kind), kind, 'y='))
 
+    def test_agy_expected_draft_uses_real_empty_boundary(self):
+        case = next(row for row in json.loads((FIXTURES / 'relay-must-accept.json').read_text())['cases'] if row['name'] == 'agy-fresh')
+        rows = (FIXTURES / case['capture_file']).read_text().splitlines()
+        rows[case['cursor_y']] = '\x1b[94m>\x1b[39m y='
+        snap = dict(capture='\n'.join(rows) + '\n', x=4, y=case['cursor_y'], width=case['pane_width'])
+        clear.guard(snap, 'agy', 'y=')
+        with self.assertRaises(clear.Refused):
+            clear.guard(snap, 'agy', 'x=')
+
     def test_expected_text_is_mandatory_and_short(self):
-        for value in ('', 'x' * 17, 'first\nsecond', ' y=', 'y= ', '\x03', 'é', '[Pasted text #1]', '[Image #1]', '[a]'):
+        for value in ('', 'x' * 4097, 'first\nsecond', ' y=', 'y= ', '\x03', 'é', '[Pasted text #1]', '[Image #1]', '[a]'):
             with self.assertRaises(clear.Refused):
                 clear.valid_expected(value)
+
+    def test_longer_exact_draft_passes_but_wrapping_refuses(self):
+        for kind in ('claude', 'codex'):
+            snap = fixture(kind)
+            value = 'x' * 24
+            snap['capture'] = snap['capture'].replace('y=', value)
+            snap['x'] = 2 + len(value)
+            clear.guard(snap, kind, value)
+            snap['width'] = len(value) + 2
+            with self.assertRaises(clear.Refused):
+                clear.guard(snap, kind, value)
 
     def test_operator_text_mismatch_and_cursor_home_refuse(self):
         for kind in ('claude', 'codex'):

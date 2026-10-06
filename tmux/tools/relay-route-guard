@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-route-guard
 # description: Cooperative live-source routing guard; same-account hostile bypass is outside its boundary.
-# patched: permit both directions of the exact operator-designated session relationship
+# patched: apply vendor-neutral seat roles and bidirectional orchestrator relationships
 # date: 2026-10-06
 import argparse
 import ctypes
@@ -14,6 +14,7 @@ import shlex
 import stat
 import subprocess
 import sys
+import time
 
 LABEL = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-sender-label')))
 POLICY = pathlib.Path(__file__).with_name('relay-route-policy.json')
@@ -158,73 +159,35 @@ def policy_document():
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
         raise ValueError('unsafe routing policy')
     data = json.loads(POLICY.read_text())
-    if data.get('version') != 1 or not isinstance(data.get('allow'), list):
+    if data.get('version') != 2 or not isinstance(data.get('seats'), dict):
         raise ValueError('invalid routing policy')
     mapping = data.get('orchestrator_of', {})
+    workers = data.get('worker_orchestrator', {})
+    if not isinstance(workers, dict):
+        raise ValueError('invalid worker orchestrator mapping')
     if not isinstance(mapping, dict):
         raise ValueError('invalid orchestrator mapping')
-    for session, target in mapping.items():
-        if not re.fullmatch(r'[A-Za-z0-9_-]+', session) or not isinstance(target, list) or len(target) != 2 or target[1] != 'claude' or not re.fullmatch(r'[A-Za-z0-9_-]+', target[0]):
+    for session, target in [*mapping.items(), *workers.items()]:
+        if not re.fullmatch(r'[A-Za-z0-9_-]+', session) or not isinstance(target, list) or len(target) != 2 or not all(isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_-]+', name) for name in target):
             raise ValueError('invalid orchestrator mapping')
+    for session, seats in data['seats'].items():
+        if not isinstance(session, str) or not re.fullmatch(r'[A-Za-z0-9_-]+', session) or not isinstance(seats, dict):
+            raise ValueError('invalid seat session')
+        for seat, role in seats.items():
+            if not isinstance(seat, str) or not re.fullmatch(r'[A-Za-z0-9_-]+', seat) or role not in ('lead', 'worker'):
+                raise ValueError('invalid seat role')
+    for target in [*mapping.values(), *workers.values()]:
+        if data['seats'].get(target[0], {}).get(target[1]) != 'lead':
+            raise ValueError('orchestrator must be a declared lead')
     return data
 
 
 def policy():
-    return policy_document()['allow']
+    return policy_document()['seats']
 
 
 def orchestrators():
     return policy_document().get('orchestrator_of', {})
-
-
-def local_claude(env, session):
-    return 'claude' in run(env, 'tmux', 'list-windows', '-t', '=' + session, '-F', '#{window_name}').splitlines()
-
-
-def signed(source):
-    command = ancestors(source['actor'])[0][2]
-    result = subprocess.run(['codesign', '--verify', '--strict', command], capture_output=True, text=True, timeout=3)
-    if result.returncode:
-        return False
-    result = subprocess.run(['codesign', '-dv', '--verbose=4', command], capture_output=True, text=True, timeout=3)
-    fields = dict(line.split('=', 1) for line in result.stderr.splitlines() if '=' in line)
-    return result.returncode == 0 and fields.get('Identifier') == 'com.anthropic.claude-code' and fields.get('TeamIdentifier') == 'Q6L2SF6YDW'
-
-
-def destination_cc(env, session, window):
-    matches = [row for row in panes(env) if row[1:3] == [session, window]]
-    if len(matches) != 1:
-        return False
-    root = int(matches[0][-2])
-    table = LABEL['processes']()
-    candidates = []
-    for pid, (parent, command) in table.items():
-        if not re.search(r'(?:/claude|/claude/versions/[^/]+)$', command):
-            continue
-        chain = ancestors(pid, table)
-        if not any(row[0] == root for row in chain):
-            continue
-        groups = LABEL['ps']('-p', str(pid), '-o', 'pgid=,tpgid=').split()
-        if len(groups) == 2 and str(pid) == groups[0] == groups[1]:
-            candidates.append(pid)
-    return len(candidates) == 1 and signed({'actor': candidates[0]})
-
-
-def destination_client(env, session, window):
-    matches = [row for row in panes(env) if row[1:3] == [session, window]]
-    if len(matches) != 1:
-        return False
-    root = int(matches[0][-2])
-    table = LABEL['processes']()
-    candidates = []
-    for pid, (parent, command) in table.items():
-        lineage = ancestors(pid, table)
-        if not lineage or lineage[0][3] not in ('claude', 'codex', 'agy', 'gemini') or not any(row[0] == root for row in lineage):
-            continue
-        groups = LABEL['ps']('-p', str(pid), '-o', 'pgid=,tpgid=').split()
-        if len(groups) == 2 and str(pid) == groups[0] == groups[1]:
-            candidates.append(pid)
-    return len(candidates) == 1
 
 
 def process_executable(pid):
@@ -235,13 +198,6 @@ def process_executable(pid):
             raise ValueError('process executable unavailable')
         return pathlib.Path(os.fsdecode(buffer.value)).resolve(strict=True)
     return pathlib.Path('/proc', str(pid), 'exe').resolve(strict=True)
-
-
-def native_codex(source):
-    try:
-        return source['app'] == 'codex' and process_executable(source['actor']).name == 'codex' and ancestors(source['actor'])[0][3] == 'codex'
-    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError):
-        return False
 
 
 def python_script(pid):
@@ -267,42 +223,50 @@ def python_script(pid):
 
 def check(env, source, session, window):
     try:
-        rules = policy()
-        if not live(env, source):
+        document = policy_document()
+        if not live(env, source) or not all(re.fullmatch(r'[A-Za-z0-9_-]+', name) for name in (session, window)):
             return False
-        if source['session'] == session:
+        if source['session'] == session or env.get('RELAY_OPERATOR') == '1':
             return True
-        mapping = orchestrators()
-        upward = mapping.get(source['session']) == [session, window]
-        downward = mapping.get(session) == [source['session'], source['window']]
-        if upward:
-            return source['app'] in ('claude', 'codex', 'agy', 'gemini') and destination_cc(env, session, window) and live(env, source) and orchestrators().get(source['session']) == [session, window]
-        if downward:
-            return source['app'] == 'claude' and signed(source) and destination_client(env, session, window) and live(env, source) and orchestrators().get(session) == [source['session'], source['window']]
-        if source['app'] != 'claude' or window != 'claude' or not re.fullmatch(r'[A-Za-z0-9_-]+', session):
+        if source.get('app') not in ('claude', 'codex', 'agy', 'gemini'):
             return False
-        rule = {'source': [source['session'], source['window']], 'target': [session, window]}
-        hub_rule = {'source': [source['session'], source['window']], 'target': ['*', 'claude']}
-        allowed = rule in rules or (source['session'] in ('config', 'review-protocol') and source['window'] == 'claude' and hub_rule in rules)
-        return allowed and signed(source) and destination_cc(env, session, window) and live(env, source)
+        seats = document['seats']
+        source_role = seats.get(source['session'], {}).get(source['window'], 'worker')
+        target_role = seats.get(session, {}).get(window, 'worker')
+        mapping = document.get('orchestrator_of', {})
+        workers = document.get('worker_orchestrator', {})
+        source_mapping = mapping if source_role == 'lead' else workers
+        target_mapping = mapping if target_role == 'lead' else workers
+        upward = source_mapping.get(source['session']) == [session, window]
+        downward = target_mapping.get(session) == [source['session'], source['window']]
+        return bool((source_role == target_role == 'lead' or upward or downward) and live(env, source))
     except (OSError, ValueError, TypeError, KeyError, IndexError, subprocess.SubprocessError):
         return False
 
 
-def record_caller(pid, record, source):
+def record_caller_once(pid, record, source):
     chain = ancestors(pid)
     nearest = next((row for row in chain if row[3]), None)
-    if nearest is not None and nearest[0] != source.get('actor'):
-        return False
+    mismatch = nearest is not None and nearest[0] != source.get('actor')
     expected = pathlib.Path(record).resolve(strict=True)
     tools = pathlib.Path(__file__).resolve().parent
-    for actor_pid, parent, command, app in chain:
+    for chain_index, (actor_pid, parent, command, app) in enumerate(chain):
         try:
             invocation = python_script(actor_pid)
             if invocation is None:
                 continue
             script, argv = invocation
             if script not in (tools / 'cc-msg-queue', tools / 'relay-clear-draft'):
+                continue
+            if argv[:1] == ['--schedule']:
+                if script != tools / 'cc-msg-queue' or len(argv) != 3 or not argv[2].isdigit() or int(argv[2]) < 3:
+                    continue
+                if pathlib.Path(argv[1]).resolve(strict=True) != expected.parent:
+                    continue
+                if mismatch and chain.index(nearest) <= chain_index:
+                    continue
+                return True
+            if mismatch:
                 continue
             if len(argv) == 2 and argv[:1] in (['--worker'], ['--prove']):
                 flag = argv[0]
@@ -324,6 +288,15 @@ def record_caller(pid, record, source):
     return False
 
 
+def record_caller(pid, record, source):
+    for attempt in range(3):
+        if record_caller_once(pid, record, source):
+            return True
+        if attempt < 2:
+            time.sleep(.02)
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--caller', type=int, default=os.getppid())
@@ -342,7 +315,10 @@ def main():
             raise ValueError('record caller provenance refused: ' + reason)
     else:
         source = bind(dict(os.environ), args.caller)
-    if not check(dict(os.environ), source, args.target_session, args.target_window):
+    env = dict(os.environ)
+    if args.record:
+        env['RELAY_OPERATOR'] = '1' if record.get('operator') else '0'
+    if not check(env, source, args.target_session, args.target_window):
         raise ValueError('route not allowed')
     print(json.dumps(source, separators=(',', ':'), sort_keys=True))
 
@@ -351,5 +327,5 @@ if __name__ == '__main__':
     try:
         main()
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
-        print('cross-session send refused: ' + str(error), file=sys.stderr)
+        print('relay route refused: ' + str(error), file=sys.stderr)
         sys.exit(1)

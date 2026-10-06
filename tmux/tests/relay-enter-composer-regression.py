@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -38,7 +39,7 @@ try:
                 time.sleep(.01)
             pid,command=tmux('display-message','-p','-t',pane,'#{pane_pid}:#{pane_current_command}').split(':')
             socket_path=tmux('display-message','-p','-t',pane,'#{socket_path}')
-            assignments=dict(relay_script_dir=str(root/'tools'),TMUX_TIMEOUT_SECONDS='2',TMUX_TIMEOUT_KILL_AFTER='1',pane=pane,relay_target_pid=pid,relay_target_command=command,target_session=session,relay_target_window='claude',relay_verify_width=str(w),relay_verify_height='51',relay_glyph='❯',relay_target_socket=socket_path)
+            assignments=dict(TMUX_BIN='tmux',TIMEOUT_BIN=shutil.which('timeout') or shutil.which('gtimeout'),relay_script_dir=str(root/'tools'),TMUX_TIMEOUT_SECONDS='2',TMUX_TIMEOUT_KILL_AFTER='1',pane=pane,relay_target_pid=pid,relay_target_command=command,target_session=session,relay_target_window='claude',relay_verify_width=str(w),relay_verify_height='51',relay_glyph='❯',relay_target_socket=socket_path)
             harness=folder/'atomic.sh'
             script='request() { tmux -S '+shlex.quote(socket_path)+' "$@"; }\nfail() { echo "$@" >&2; exit 1; }\nrelease_relay_lock() { :; }\n'
             script+='\n'.join(k+'='+shlex.quote(v) for k,v in assignments.items())+'\n'

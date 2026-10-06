@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-sender-label
 # description: Resolve a relay caller to a live pane and its nearest recognized agent ancestor.
-# patched: recognize pane-bound Codex, Agy and Gemini without trusting sender overrides
-# date: 2026-10-05
+# patched: retain verified queue source labels across detached and shared-daemon transports
+# date: 2026-10-06
 import pathlib
+import os
+import json
 import re
 import shlex
 import subprocess
@@ -72,6 +74,16 @@ def main():
         row = line.split()
         if len(row) >= 6 and row[-2].isdigit() and row[-1] == "0":
             panes.append(row)
+    record = os.environ.get('RELAY_MESSAGE_RECORD')
+    if record:
+        guard = pathlib.Path(__file__).resolve().with_name('relay-route-guard')
+        result = subprocess.run([str(guard), '--caller', str(caller), '--record', record,
+                                 '--target-session', os.environ.get('CC_MSG_SESSION', ''),
+                                 '--target-window', os.environ.get('CC_MSG_WINDOW', '')],
+                                check=True, capture_output=True, text=True, timeout=8)
+        source = json.loads(result.stdout)
+        print(source['pane'], source['session'], source['window'], source['root'], source['app'])
+        return
     first = origin(caller, panes)
     if first is not None and origin(caller, panes) == first:
         print(" ".join(first[0]))
@@ -80,5 +92,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (ValueError, OSError, UnicodeError, subprocess.SubprocessError):
+    except (KeyError, TypeError, ValueError, OSError, UnicodeError, subprocess.SubprocessError):
         pass

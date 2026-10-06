@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-06 — Give relay leads equal rights per seat
+
+Relay routing now uses declared lead/worker seats rather than signed-CC or native-Codex permissions. Coupled and standalone leads have provider-independent access, and rp-schema ↔ review-protocol works in both directions. Same-session sends remain open for every bound seat. Cross-session worker reports remain bound to their designated project orchestrator. Source, policy, target-generation, composer, copy/draft and uncertain-delivery protections remain.
+
+Verified queued source context preserves Terra's Codex label through detached transports. Sender parsing is uniformly draft-safe; redundant payload scans are consolidated while Enter still checks the fresh composer. Targeted Codex and Agy gain automatic archive/queue parity. A target-local scheduler owns retries and public outcomes report one line. The new relay command resolves named destinations or the caller's orchestrator and exposes explicit operator/expected-draft actions without vendor-specific privileges. No pushes or operator-coordinated live route tests are included in landing validation.
+
 ## 2026-10-06 — Restore both directions of the rp-schema relationship
 
 The exact operator mapping now allows reports from all recognized interactive rp-schema seats to review-protocol:claude and permits that signed orchestrator to brief any live supported rp-schema window, including Codex and Terra Node wrappers. Other sessions retain their existing routing rules. Source, target, policy, queue and composer safeguards remain. This is a narrow urgent hotfix, separate from the uncommitted v2 parity work.

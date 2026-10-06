@@ -58,16 +58,22 @@ class RouteTests(unittest.TestCase):
                 deliver.assert_not_called()
             self.assertEqual(json.loads(path.read_text())['code'], 1)
 
-    def test_recovery_refuses_legacy_before_worker_launch(self):
+    def test_recovery_proves_record_source_in_its_worker(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             target = root / 'target'
             target.mkdir()
             path = target / 'legacy.json'
             path.write_text(json.dumps(dict(id='legacy', state='queued', deadline=time.time() + 60, environment={})))
-            with patch.object(queue, 'ROOT', root), patch.object(queue, 'routing_source', side_effect=queue.RoutingError('cross-session send refused')), patch.object(queue, 'launch_worker') as launch:
+            with patch.object(queue, 'ROOT', root), patch.object(queue, 'routing_source', side_effect=queue.RoutingError('cross-session send refused')) as route, patch.object(queue, 'launch_worker') as launch:
                 queue.sweep()
-                launch.assert_not_called()
+                route.assert_not_called()
+                launch.assert_called_once()
+                self.assertEqual(json.loads(path.read_text())['state'], 'queued')
+                with patch.object(queue, 'deliver') as deliver, patch.object(queue, 'identity') as identity:
+                    queue.worker(path)
+                    deliver.assert_not_called()
+                    identity.assert_not_called()
             self.assertEqual(json.loads(path.read_text())['code'], 1)
 
     def test_denied_clear_precedes_persistence(self):

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/relay-delivery.sh
 # description: Bracketed relay transport with complete composer verification before submission.
-# patched: bound submission jobs and verify signed CC hub return routes
+# patched: preserve uniform draft-safe transport for every sender seat
 # date: 2026-10-06
 
 relay_payload_file=
@@ -14,19 +14,28 @@ relay_enter_duplicate=0
 relay_empty_capture=
 relay_payload_guard="$relay_script_dir/relay-payload-guard"
 relay_sender_tier=strict
+relay_source_json=
+
+relay_shell_join() {
+  local argument
+  for argument in "$@"; do
+    printf "'%s' " "${argument//\'/\'\\\'\'}"
+  done
+}
 
 relay_route_command() {
   local arguments=(env "TMUX=$relay_target_socket,0,0" "TMUX_BIN=$TMUX_BIN" "TMUX_PANE=${TMUX_PANE:-}" "$TIMEOUT_BIN" -k 1 8 "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
-  python3 -c 'import shlex,sys; print(shlex.join(sys.argv[1:]) + " >/dev/null")' "${arguments[@]}"
+  relay_shell_join "${arguments[@]}"
+  printf ' >/dev/null'
 }
 
 relay_require_route() {
   local arguments=(--caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
-  if ! "$relay_script_dir/relay-route-guard" "${arguments[@]}" >/dev/null; then
-    [ "$relay_input_attempted" = 0 ] || partial 'cross-session send refused after input preparation; do not resend'
-    fail 'cross-session send refused'
+  if ! relay_source_json="$("$relay_script_dir/relay-route-guard" "${arguments[@]}")"; then
+    [ "$relay_input_attempted" = 0 ] || partial 'route refused after input preparation; do not resend'
+    fail 'route refused'
   fi
 }
 
@@ -37,37 +46,32 @@ relay_display() {
   printf '%s\n' "${response#*|}"
 }
 
-resolve_relay_sender_tier() {
-  local sender_file sender sender_pane sender_session sender_window sender_pid sender_app identity sender_command capture model
-  relay_sender_tier=strict
-  [ -x "$relay_script_dir/relay-sender-label" ] || return 0
-  sender_file="$(mktemp "${TMPDIR:-/tmp}/relay-sender-list.XXXXXX")" || return 0
-  if ! request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$sender_file"; then
-    trash "$sender_file" >/dev/null 2>&1
-    return 0
-  fi
-  sender="$("$relay_script_dir/relay-sender-label" "$$" "$sender_file")"
-  trash "$sender_file" >/dev/null 2>&1
+resolve_relay_label() {
+  local sender source_pane source_session source_window source_root source_app observed
+  FROM=relay
+  sender="$(printf '%s' "$relay_source_json" | python3 -c 'import json,sys
+source=json.load(sys.stdin)
+if source.get("app") in ("claude","codex","agy","gemini"):
+ print(source["pane"],source["session"],source["window"],source["root"],source["app"])')" || fail 'verified source label is unavailable'
   [ -n "$sender" ] || return 0
-  read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
-  [ "$sender_app" = claude ] || return 0
-  identity="$(relay_display "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead} #{pane_current_command}')" || return 0
-  case "$identity" in
-    "$sender_pane $sender_session $sender_window $sender_pid 0 "*) ;;
-    *) return 0 ;;
-  esac
-  sender_command="${identity##* }"
-  [ "$sender_command" != claude.exe ] || return 0
-  capture="$(request capture-pane -p -t "$sender_pane")" || return 0
-  model="$(printf '%s\n' "$capture" | python3 -c 'import re,sys
-rows=sys.stdin.read().splitlines()
-for index in range(len(rows)-2,-1,-1):
-    if re.fullmatch("─{8,}", rows[index]):
-        status=rows[index+1]
-        if re.match(r"^  (?:Sonnet|Opus|Haiku)(?:\s|$)",status) and re.search(r"\bv[0-9]+\.[0-9]+\.[0-9]+\b",status):
-            print("claude")
-        break')" || return 0
-  [ "$model" = claude ] && relay_sender_tier=relaxed
+  read -r source_pane source_session source_window source_root source_app <<< "$sender"
+  observed="$(relay_display "$source_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}')" || fail 'source changed before attribution'
+  [ "$observed" = "$source_pane $source_session $source_window $source_root 0" ] || fail 'source changed before attribution'
+  FROM="$source_app ($source_session:$source_window)"
+}
+
+relay_label_message() {
+  resolve_relay_label
+  if [ "${RELAY_OPERATOR:-0}" != 1 ]; then
+    [ "$FROM" = relay ] || message="$FROM: $message"
+    case "${message:0:1}" in
+      '/'|'!') fail 'unattributed command-like text; use a bound source for a literal message' ;;
+    esac
+  fi
+}
+
+resolve_relay_sender_tier() {
+  relay_sender_tier=strict
 }
 
 relay_busy_preflight() {
@@ -98,7 +102,7 @@ sys.exit(2)' "$relay_glyph" "$cursor_y"
   code=$?
   case "$code" in
     0)
-      [ "$relay_sender_tier" = relaxed ] && [ "$relay_glyph" = '❯' ] || refuse_draft "$pane" 'an agent busy state'
+      refuse_draft "$pane" 'an agent busy state'
       ;;
     1) ;;
     *) refuse_draft "$pane" 'an unproven agent state' ;;
@@ -198,13 +202,15 @@ relay_operator_prepare() {
     [ "$code" != 5 ] || keys="Escape $keys"
     relay_require_route
     relay_input_attempted=1
-    route_command="$(relay_route_command)" || fail 'cross-session send refused'
+    route_command="$(relay_route_command)" || fail 'route refused'
     nested="$("$relay_payload_guard" tmux-nested "$pane" "$condition" "send-keys -t $pane $keys ; display-message -p -t $pane '__OPERATOR_SENT__:#{pane_id}'" "display-message -p -t $pane '__OPERATOR_CHANGED__:#{pane_id}'")" || fail 'cannot construct operator gate'
     receipt="$(request if-shell -t "$pane" "$route_command" "$nested" "display-message -p -t $pane '__OPERATOR_CHANGED__:#{pane_id}'")" || partial 'operator clear delivery is unknown'
     [ "$receipt" = "__OPERATOR_SENT__:$pane" ] || partial 'operator target changed during clear'
     sleep 0.1
     if [ "$relay_glyph" = '❯' ]; then
       (require_empty_cc_input) >/dev/null 2>&1
+    elif [ "$relay_glyph" = '>' ]; then
+      (require_empty_agy_input) >/dev/null 2>&1
     else
       (require_empty_codex_input) >/dev/null 2>&1
     fi
@@ -220,7 +226,6 @@ relay_operator_prepare() {
 
 relay_atomic() {
   local deliver=$1 blocked receipt code identity guarded command_file row_guard check_command nested route_command
-  relay_require_route
   route_command="$(relay_route_command)" || return 1
   blocked="display-message -p -t $pane '__RELAY_REFUSED__:#{pane_id}:#{pane_in_mode}:#{pane_dead}:#{session_name}:#{window_name}'"
   identity="#{&&:#{==:#{pane_id},$pane},#{&&:#{==:#{session_name},$target_session},#{&&:#{==:#{window_name},$relay_target_window},#{&&:#{==:#{pane_dead},0},#{&&:#{==:#{pane_pid},$relay_target_pid},#{==:#{pane_current_command},$relay_target_command}}}}}}"
@@ -230,9 +235,9 @@ relay_atomic() {
     guarded="#{&&:$guarded,#{&&:#{==:#{cursor_x},$2},#{==:#{cursor_y},$3}}}"
   fi
   if [ -n "${4:-}" ]; then
-    check_command="$("$relay_payload_guard" enter-composer-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$4" "$relay_verify_width" "$relay_verify_height" "$relay_target_pid" "$relay_target_command" "$target_session" "$relay_target_window")" || return 1
+    check_command="$(relay_shell_join "$relay_payload_guard" enter-composer "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$4" "$relay_verify_width" "$relay_verify_height" "$relay_target_pid" "$relay_target_command" "$target_session" "$relay_target_window")" || return 1
     if [ "$relay_enter_duplicate" = 1 ]; then
-      nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 1
+      nested="$(relay_shell_join if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")" || return 1
     else
       nested="$("$relay_payload_guard" tmux-enter "$4" "$relay_glyph" "$3" "$guarded" "$pane" "$deliver" "$blocked")" || return 1
     fi
@@ -241,17 +246,17 @@ relay_atomic() {
   elif [ -n "${5:-}" ]; then
     if [ "$relay_glyph" = '❯' ]; then
       check_command="$("$relay_payload_guard" cc-prepaste-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$relay_verify_width" "$relay_sender_tier" "$RELAY_INPUT_GUARD")" || return 7
-      nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 7
+      nested="$(relay_shell_join if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")" || return 7
       receipt="$(request if-shell -t "$pane" "$route_command && $check_command" "$nested" "$blocked")"
     else
       row_guard="$("$relay_payload_guard" tmux-paste "$5" "$relay_glyph" "$3")" || return 7
       guarded="#{&&:$guarded,$row_guard}"
-      nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 7
+      nested="$(relay_shell_join if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")" || return 7
       receipt="$(request if-shell -t "$pane" "$route_command" "$nested" "$blocked")"
     fi
     code=$?
   else
-    nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 7
+    nested="$(relay_shell_join if-shell -F -t "$pane" "$guarded" "$deliver" "$blocked")" || return 7
     receipt="$(request if-shell -t "$pane" "$route_command" "$nested" "$blocked")"
     code=$?
   fi

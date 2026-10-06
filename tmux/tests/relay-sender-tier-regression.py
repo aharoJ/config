@@ -49,7 +49,7 @@ printf '%s\n' "$relay_sender_tier"
             }
             divider = "─" * 80
             cases = (
-                ("verified-claude", "  Sonnet 4.6 | context 1k | v2.1.287", {}, "relaxed"),
+                ("verified-claude", "  Sonnet 4.6 | context 1k | v2.1.287", {}, "strict"),
                 ("deepseek-model", "  deepseek-flash | context 1k | v2.1.153", {}, "strict"),
                 ("deepseek-wrapper", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_IDENTITY": "%421 rt2 fable 25993 0 claude.exe"}, "strict"),
                 ("identity-drift", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_IDENTITY": "%421 rt2 other 25993 0 2.1.287"}, "strict"),
@@ -103,15 +103,15 @@ relay_busy_preflight "$MOCK_CAPTURE" "$MOCK_CURSOR_Y"
             codex_historical = "\n".join(["• Working (0s • esc to interrupt)", "Completed", "", "", "› Ask Codex to do anything", "  Fast off"])
             cases = (
                 ("cc-strict-busy", "❯", "strict", cc_busy, 5, 5),
-                ("cc-relaxed-busy", "❯", "relaxed", cc_busy, 5, 0),
+                ("cc-relaxed-busy", "❯", "relaxed", cc_busy, 5, 5),
                 ("cc-historical", "❯", "strict", cc_historical, 4, 0),
                 ("cc-busy-timed", "❯", "strict", cc_busy.replace('Hyperspacing…', 'Whirlpooling… (2s · thinking with high effort)'), 5, 5),
-                ("cc-busy-timed-relaxed", "❯", "relaxed", cc_busy.replace('Hyperspacing…', 'Whirlpooling… (2s · thinking with high effort)'), 5, 0),
+                ("cc-busy-timed-relaxed", "❯", "relaxed", cc_busy.replace('Hyperspacing…', 'Whirlpooling… (2s · thinking with high effort)'), 5, 5),
                 ("cc-timed-historical", "❯", "strict", cc_historical.replace('Hyperspacing…', 'Whirlpooling… (2s · thinking with high effort)'), 4, 0),
                 ("cc-real-hashing-strict", "❯", "strict", real_cc_busy, 52, 5),
-                ("cc-real-hashing-relaxed", "❯", "relaxed", real_cc_busy, 52, 0),
+                ("cc-real-hashing-relaxed", "❯", "relaxed", real_cc_busy, 52, 5),
                 ("cc-real-warping-strict", "❯", "strict", real_cc_warping, 52, 5),
-                ("cc-real-warping-relaxed", "❯", "relaxed", real_cc_warping, 52, 0),
+                ("cc-real-warping-relaxed", "❯", "relaxed", real_cc_warping, 52, 5),
                 ("codex-strict-busy", "›", "strict", codex_busy, 4, 5),
                 ("codex-strict-busy-hms", "›", "strict", codex_busy_hms, 4, 5),
                 ("codex-background-busy", "›", "strict", codex_busy.replace('esc to interrupt)', 'esc to interrupt) · 1 background terminal running · /ps to view · /stop to close'), 4, 5),
