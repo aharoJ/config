@@ -150,6 +150,7 @@ new_pending_screen() {
     if fresh_footer="$(printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" footer)" &&
       printf '%s\n' "$new_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$fresh_footer"; then
       new_idle
+      new_bind_source
       printf 'NEW ok (%s:%s %s); resolved pending checkout picker to Current checkout; fresh context verified (%s)\n' "$target_session" "$window_name" "$pane" "$fresh_footer"
       exit 0
     fi
@@ -157,6 +158,11 @@ new_pending_screen() {
     sleep 0.1
   done
   partial 'checkout picker was answered but the fresh composer was not verified'
+}
+
+new_bind_source() {
+  release_relay_lock
+  "$relay_script_dir/relay-codex-source-probe" --bind "$target_session:$window_name" >/dev/null || partial "fresh chat exists but automatic source proof failed; do not repeat the reset"
 }
 
 new_observe() {
@@ -333,7 +339,8 @@ new_busy_sweep
 require_empty_codex_input
 before_footer="$(printf "%s\n" "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" footer)" || fail "unrecognized model/cwd footer"
 if printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-new-guard" direct-reset "$before_footer"; then
-  printf 'NEW ok (%s:%s %s); already fresh, no input sent\n' "$target_session" "$window_name" "$pane"
+  new_bind_source
+  printf 'NEW ok (%s:%s %s); already fresh, source binding verified\n' "$target_session" "$window_name" "$pane"
   exit 0
 fi
 "$relay_script_dir/codex-new-guard" supported-footer "$before_footer" < /dev/null || fail "unsupported model/effort; cannot prove restoration"
@@ -382,4 +389,5 @@ fi
 new_wait fresh
 new_wait direct-reset
 new_idle
+new_bind_source
 printf 'NEW ok (%s:%s %s); fresh context, model and cwd verified\n' "$target_session" "$window_name" "$pane"

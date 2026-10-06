@@ -1,5 +1,9 @@
 # Changelog
 
+## Worktree candidate — automatic Codex source binding (#8; deployment stopped)
+
+Shared-daemon source discovery queries kernel-verified native Codex panes through guarded local `/status` commands, requires fresh pane output and a unique current thread, and records a binding generation. Reset/resume cannot reactivate queued work from an older generation. Codex reset completion invokes the same verification path. Unavailable or ambiguous source panes refuse binding. This candidate is isolated, has not passed the independent deployment gate, and is not installed.
+
 ## 2026-10-06 — Repair relay source proof, provenance and uniform labels
 
 Relay provenance reads native process arguments instead of interpreting rendered ps text as shell syntax, preserving unmatched quotes and empty arguments. Shared Codex app-server calls require an explicitly verified thread-to-live-seat binding; inherited pane hints cannot select their routing source. Runtime bindings retain process/socket generations and one active thread per pane. The operator-confirmed Vetmed Terra seat is declared as a worker under its existing local lead. Legacy ambiguous Codex records refuse without replay.

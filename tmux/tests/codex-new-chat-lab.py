@@ -28,6 +28,8 @@ def case(name, start='fresh', runs=1, width=200, session='lab', expect=(0,), cop
     (lab / 'proj').mkdir(parents=True)
     shutil.copytree(ROOT / 'tools', lab / 'tools')
     (lab / 'tools/codex-target-guard').write_text(STUB)
+    (lab / 'tools/relay-codex-source-probe').write_text('#!/bin/sh\nexit 0\n')
+    (lab / 'tools/relay-codex-source-probe').chmod(0o700)
     (lab / 'tools/relay-route-guard').write_text('#!/bin/sh\nprintf \'%s\\n\' \'{}\'\n')
     log = lab / 'input.log'
     log.touch()

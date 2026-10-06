@@ -16,6 +16,15 @@ g['panes'] = lambda env: [[source['pane'], source['session'], source['window'], 
 g['identity'] = lambda pid: 'root' if pid == 100 else 'actor'
 g['ancestors'] = lambda pid: [(101, 100, '/bin/codex', 'codex'), (100, 1, '/bin/fish', '')]
 g['foreground'] = lambda *args: True
+g['thread_retired'] = lambda *args: False
+def no_status(env, thread):
+    data = module['source_bindings']()
+    if thread == first and thread in data['bindings']:
+        bound = dict(data['bindings'][thread], thread_id=thread)
+        if module['live'](env, bound):
+            return bound
+    raise ValueError('no fresh native status in this unit fixture')
+g['automatic_source'] = no_status
 with tempfile.TemporaryDirectory() as directory:
     path = pathlib.Path(directory) / 'bindings.json'
     g['SOURCE_BINDINGS'] = path

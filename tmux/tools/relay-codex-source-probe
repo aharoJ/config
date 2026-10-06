@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import shlex
+import subprocess
+import sys
+import tempfile
+import time
+
+TOOLS = Path(__file__).resolve().parent
+GUARD = runpy.run_path(str(TOOLS / 'relay-route-guard'))
+FORMAT = '#{cursor_x}:#{cursor_y}:#{pane_width}:#{pane_height}:#{pane_in_mode}'
+
+
+def capture(env, source, history=False):
+    command = [env.get('TMUX_BIN', 'tmux'), '-S', source['socket']['path'], 'capture-pane', '-p', '-e', '-t', source['pane']]
+    if history:
+        command += ['-S', '-400']
+    return subprocess.run(command, env=env, check=True, capture_output=True, text=True, timeout=3).stdout
+
+
+def observe(env, source):
+    if not GUARD['live'](env, source):
+        raise ValueError('status source generation changed')
+    position = GUARD['run'](env, 'tmux', 'display-message', '-p', '-t', source['pane'], FORMAT)
+    screen = capture(env, source)
+    if position != GUARD['run'](env, 'tmux', 'display-message', '-p', '-t', source['pane'], FORMAT):
+        raise ValueError('status composer changed')
+    x, y, width, height, mode = position.split(':')
+    if mode != '0':
+        raise ValueError('status source is in copy mode')
+    return position, screen
+
+
+def check(env, source, mode, payload):
+    position, capture = observe(env, source)
+    x, y, width, height, _ = position.split(':')
+    if mode == 'empty':
+        command = [str(TOOLS / 'relay-input-guard'), '›', x, y, width, 'strict']
+    else:
+        command = [str(TOOLS / 'relay-payload-guard'), 'compare', '›', x, y, str(payload), width]
+    if subprocess.run(command, input=capture, text=True, capture_output=True, timeout=2).returncode:
+        raise ValueError('status composer is not verified ' + mode)
+    return position
+
+
+def status_cards(capture):
+    rows = capture.splitlines()
+    plain = [re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', row) for row in rows]
+    result = []
+    for index, row in enumerate(plain):
+        if not re.fullmatch(r'  >_ OpenAI Codex \(v0\.160\.[01]\)', row):
+            continue
+        marker = next((i for i in range(index - 1, -1, -1) if plain[i].strip()), None)
+        if marker is None or plain[marker].strip() != '/status' or re.search(r'\x1b\[(?:35m|38;5;5m)', rows[marker]) is None:
+            continue
+        end = next((i for i in range(index + 1, len(rows)) if plain[i].startswith('›') or re.fullmatch(r'  >_ OpenAI Codex \(v[^)]+\)', plain[i])), len(rows))
+        block = plain[index:end]
+        sessions = [(i, re.fullmatch(r'  Session: +([0-9a-f-]{36})', plain[i])) for i in range(index + 1, end)]
+        sessions = [(i, match[1]) for i, match in sessions if match]
+        if len(sessions) != 1 or not any(re.fullmatch(r'  Server: +Local background server', line) for line in block):
+            continue
+        i, thread = sessions[0]
+        if not rows[index].startswith('  \x1b[38;2;99;168;248m>_ ') or not rows[i].startswith('\x1b[2m  Session:') or '\x1b[0m' not in rows[i]:
+            continue
+        result.append((index, thread))
+    return result
+
+
+class OutputProof:
+    def __init__(self, env, source):
+        self.pane = source['pane'].encode()
+        self.buffer = b''
+        self.events = b''
+        self.process = subprocess.Popen([env.get('TMUX_BIN', 'tmux'), '-S', source['socket']['path'], '-C', 'attach-session', '-f', 'ignore-size', '-t', '=' + source['session']], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        os.set_blocking(self.process.stdout.fileno(), False)
+        for _ in range(20):
+            self.read()
+            if b'%end ' in self.buffer:
+                break
+            time.sleep(.05)
+        else:
+            self.close()
+            raise ValueError('native pane output observer unavailable')
+        self.buffer = b''
+        self.events = b''
+
+    def read(self):
+        try:
+            while True:
+                chunk = os.read(self.process.stdout.fileno(), 65536)
+                if not chunk:
+                    break
+                self.buffer += chunk
+        except BlockingIOError:
+            pass
+        rows = self.buffer.split(b'\n')
+        self.buffer = rows.pop()
+        for row in rows:
+            if row.startswith(b'%end '):
+                self.buffer += row + b'\n'
+            prefix = b'%output ' + self.pane + b' '
+            if row.startswith(prefix):
+                encoded = row[len(prefix):]
+                self.events += re.sub(rb'\\([0-7]{3})', lambda match: bytes([int(match[1], 8)]), encoded)
+        return self.events
+
+    def reset(self):
+        self.read()
+        self.events = b''
+
+    def close(self):
+        self.process.terminate()
+        try:
+            self.process.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
+            self.process.communicate(timeout=2)
+
+
+def probe(env, source):
+    if source['app'] != 'codex' or 'thread_id' in source:
+        raise ValueError('status needs a bare live Codex seat')
+    key = hashlib.sha256((str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']).encode()).hexdigest()
+    locks = Path(env.get('TMUX_RELAY_LOCK_ROOT', '/private/tmp/tmux-' + str(os.getuid()) + '/relay-locks'))
+    locks.mkdir(mode=0o700, parents=True, exist_ok=True)
+    lock = locks / key
+    if subprocess.run(['/usr/bin/shlock', '-f', str(lock), '-p', str(os.getpid())], capture_output=True).returncode:
+        raise ValueError('status source has another relay in progress')
+    observer = None
+    try:
+        observer = OutputProof(env, source)
+        with tempfile.TemporaryDirectory(prefix='relay-status-') as folder:
+            plan = Path(folder) / 'plan.json'
+            payload = Path(folder) / 'payload'
+            payload.write_text('/status')
+            plan.write_text(json.dumps({'source': source, 'environment': {k: env[k] for k in ('TMUX', 'TMUX_BIN') if k in env}, 'payload': str(payload)}))
+            check(env, source, 'empty', payload)
+            command = shlex.join([str(Path(__file__).resolve()), '--act', str(plan), 'empty'])
+            receipt = GUARD['run'](env, 'tmux', 'if-shell', '-t', source['pane'], command, 'display-message -p __STATUS_SENT__', 'display-message -p __STATUS_WITHHELD__')
+            if receipt != '__STATUS_SENT__':
+                raise ValueError('status preflight refused before typing')
+            for _ in range(20):
+                try:
+                    check(env, source, 'payload', payload)
+                    break
+                except ValueError:
+                    time.sleep(.05)
+            else:
+                raise ValueError('status literal could not be verified; do not clear or resend')
+            observer.reset()
+            command = shlex.join([str(Path(__file__).resolve()), '--act', str(plan), 'payload'])
+            receipt = GUARD['run'](env, 'tmux', 'if-shell', '-t', source['pane'], command, 'display-message -p __STATUS_SENT__', 'display-message -p __STATUS_WITHHELD__')
+            if receipt != '__STATUS_SENT__':
+                raise ValueError('status Enter withheld; do not clear or resend')
+            for _ in range(20):
+                after = capture(env, source, True)
+                current = status_cards(after)
+                emitted = observer.read()
+                if current:
+                    try:
+                        check(env, source, 'empty', payload)
+                    except ValueError:
+                        time.sleep(.05)
+                        continue
+                    thread = current[-1][1]
+                    if thread.encode() in emitted and b'Session:' in emitted and b'/status' in emitted:
+                        return thread
+                time.sleep(.05)
+            raise ValueError('fresh native status proof unavailable')
+    finally:
+        if observer is not None:
+            observer.close()
+        if lock.exists() and lock.read_text().strip() == str(os.getpid()):
+            lock.unlink()
+
+
+if __name__ == '__main__':
+    try:
+        if sys.argv[1:2] == ['--act']:
+            data = json.loads(Path(sys.argv[2]).read_text())
+            env = dict(os.environ, **data['environment'])
+            source = data['source']
+            mode = sys.argv[3]
+            position = check(env, source, mode, Path(data['payload']))
+            _, screen = observe(env, source)
+            x, y, width, height, _ = position.split(':')
+            snapshot = Path(sys.argv[2]).with_suffix('.capture')
+            snapshot.write_text(screen)
+            row_condition = subprocess.check_output([str(TOOLS / 'relay-payload-guard'), 'tmux-paste', str(snapshot), '›', y], text=True).strip()
+            footer = screen.splitlines()[int(y) + 2]
+            footer = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', footer).rstrip()
+            pattern = ''.join('\\' + c if c in '.^$[]()|*+?{}\\' else c for c in footer).replace('#', '##').replace(',', '#,').replace('}', '#}')
+            footer_condition = '#{==:#{C/r:^' + pattern + ' *$},' + str(int(y) + 3) + '}'
+            row_condition = '#{&&:' + row_condition + ',' + footer_condition + '}'
+            condition = '#{&&:' + row_condition + ',#{==:#{cursor_x}:#{cursor_y}:#{pane_width}:#{pane_height}:#{pane_in_mode}:#{pane_id}:#{pane_pid}:#{session_name}:#{window_name},' + position + ':' + source['pane'] + ':' + str(source['root']) + ':' + source['session'] + ':' + source['window'] + '}}'
+            if not GUARD['live'](env, source):
+                raise ValueError('status source changed before action')
+            action = 'send-keys -t ' + source['pane'] + (' -l /status' if mode == 'empty' else ' Enter') + ' ; display-message -p __STATUS_SENT__'
+            receipt = GUARD['run'](env, 'tmux', 'if-shell', '-F', '-t', source['pane'], condition, action, 'display-message -p __STATUS_WITHHELD__')
+            if receipt != '__STATUS_SENT__':
+                sys.exit(1)
+        elif sys.argv[1:2] == ['--bind']:
+            env = dict(os.environ)
+            target = sys.argv[2].split(':')
+            if len(sys.argv) != 3 or len(target) != 2:
+                raise ValueError('name one exact source seat')
+            rows = [row for row in GUARD['panes'](env) if row[1:3] == target]
+            if len(rows) != 1:
+                raise ValueError('source seat is missing or ambiguous')
+            source = GUARD['pane_source'](env, rows[0])
+            started = time.time()
+            thread = probe(env, source)
+            registered = GUARD['automatic_source'](env, thread)
+            if {k: v for k, v in registered.items() if k not in ('binding_epoch', 'thread_id')} != source or not GUARD['live'](env, registered):
+                raise ValueError('source changed during verified bind')
+            print(thread)
+        else:
+            print(probe(dict(os.environ), json.load(sys.stdin)))
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)
