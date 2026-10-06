@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+# path: ~/.config/tmux/tools/relay-route-guard
+# description: Cooperative live-source routing guard; same-account hostile bypass is outside its boundary.
+# patched: bind queued routes to pane, process start, socket and operator policy
+# date: 2026-10-05
+import argparse
+import json
+import os
+import pathlib
+import re
+import runpy
+import shlex
+import shlex
+import stat
+import subprocess
+import sys
+
+LABEL = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-sender-label')))
+POLICY = pathlib.Path(__file__).with_name('relay-route-policy.json')
+
+
+def run(env, *args):
+    if args[0] == 'tmux':
+        args = (env.get('TMUX_BIN', 'tmux'), *args[1:])
+        if env.get('TMUX'):
+            args = (args[0], '-S', env['TMUX'].split(',', 1)[0], *args[1:])
+    return subprocess.run(args, env=env, check=True, capture_output=True, text=True, timeout=3).stdout.strip()
+
+
+def socket(env):
+    value = run(env, 'tmux', 'display-message', '-p', '#{socket_path}')
+    path = pathlib.Path(value).resolve(strict=True)
+    info = path.stat()
+    if not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid():
+        raise ValueError('invalid tmux socket')
+    return {'path': str(path), 'device': info.st_dev, 'inode': info.st_ino}
+
+
+def panes(env):
+    result = []
+    for line in run(env, 'tmux', 'list-panes', '-a', '-F', '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}').splitlines():
+        row = line.split()
+        if len(row) == 5 and row[4] == '0':
+            result.append([row[0], row[1], row[2], '', row[3], row[4]])
+    return result
+
+
+def identity(pid):
+    return LABEL['ps']('-p', str(pid), '-o', 'lstart=,comm=').strip()
+
+
+def ancestors(pid, table=None):
+    table = LABEL['processes']() if table is None else table
+    result, seen = [], set()
+    while pid > 1 and pid in table and pid not in seen:
+        seen.add(pid)
+        parent, command = table[pid]
+        try:
+            app_name = LABEL['app'](pid, command)
+            if app_name == 'codex':
+                argv = shlex.split(LABEL['ps']('-p', str(pid), '-o', 'args=').strip())
+                if len(argv) > 1 and argv[1] == 'app-server':
+                    app_name = ''
+        except (OSError, ValueError, subprocess.SubprocessError):
+            app_name = ''
+        result.append((pid, parent, command, app_name))
+        pid = parent
+    return result
+
+
+def bind(env, pid):
+    rows = panes(env)
+    origin = LABEL['origin'](pid, rows)
+    if origin is not None:
+        (pane, session, window, root, app), chain = origin
+        actor = next((row for row in chain if row[3]), chain[-1])
+    else:
+        chain = ancestors(pid)
+        if any(row[-2] == str(item[0]) for row in rows for item in chain):
+            raise ValueError('ambiguous source pane')
+        nearest = next((row for row in chain if row[3]), None)
+        hint = env.get('TMUX_PANE', '')
+        matches = [row for row in rows if row[0] == hint]
+        if len(matches) != 1:
+            raise ValueError('unresolved source')
+        row = matches[0]
+        pane, session, window, _, root, _ = row
+        candidates = []
+        table = LABEL['processes']()
+        for actor_pid, (parent, command) in table.items():
+            cursor, seen = actor_pid, set()
+            while cursor > 1 and cursor in table and cursor not in seen and cursor != int(root):
+                seen.add(cursor)
+                cursor = table[cursor][0]
+            if cursor != int(root):
+                continue
+            lineage = ancestors(actor_pid, table)
+            app_name = lineage[0][3]
+            if not app_name:
+                continue
+            groups = LABEL['ps']('-p', str(actor_pid), '-o', 'pgid=,tpgid=').split()
+            if len(groups) == 2 and str(actor_pid) == groups[0] == groups[1]:
+                candidates.append((actor_pid, parent, command, app_name))
+        if len(candidates) != 1:
+            raise ValueError('unresolved foreground source')
+        actor = candidates[0]
+        app = actor[3]
+        if nearest is not None and nearest[0] != actor[0]:
+            raise ValueError('source runtime mismatch')
+    if actor is None or not re.fullmatch(r'%\d+', pane) or not all(re.fullmatch(r'[A-Za-z0-9_-]+', name) for name in (session, window)):
+        raise ValueError('unresolved source')
+    source = {'version': 1, 'pane': pane, 'session': session, 'window': window,
+              'root': int(root), 'root_identity': identity(int(root)), 'app': app,
+              'actor': actor[0], 'actor_identity': identity(actor[0]), 'socket': socket(env)}
+    if not live(env, source):
+        raise ValueError('source changed')
+    return source
+
+
+def foreground(actor, root):
+    rows = LABEL['ps']('-ax', '-o', 'pid=,ppid=,pgid=,tpgid=').splitlines()
+    table = {}
+    active = []
+    for row in rows:
+        fields = row.split()
+        if len(fields) == 4 and all(value.lstrip('-').isdigit() for value in fields):
+            pid, parent, group, terminal = map(int, fields)
+            table[pid] = parent
+            if group > 0 and group == terminal:
+                active.append(pid)
+    for pid in active:
+        seen = set()
+        while pid > 1 and pid in table and pid not in seen:
+            if pid == actor:
+                return True
+            seen.add(pid)
+            pid = table[pid]
+    return False
+
+
+def live(env, source):
+    try:
+        if source['version'] != 1 or source['socket'] != socket(env):
+            return False
+        expected = [source['pane'], source['session'], source['window'], '', str(source['root']), '0']
+        if panes(env).count(expected) != 1:
+            return False
+        if identity(source['root']) != source['root_identity'] or identity(source['actor']) != source['actor_identity']:
+            return False
+        lineage = ancestors(source['actor'])
+        return bool(lineage and (lineage[0][3] or 'relay') == source['app'] and any(row[0] == source['root'] for row in lineage) and foreground(source['actor'], source['root']))
+    except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError):
+        return False
+
+
+def policy():
+    info = POLICY.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise ValueError('unsafe routing policy')
+    data = json.loads(POLICY.read_text())
+    if data.get('version') != 1 or not isinstance(data.get('allow'), list):
+        raise ValueError('invalid routing policy')
+    return data['allow']
+
+
+def signed(source):
+    command = ancestors(source['actor'])[0][2]
+    result = subprocess.run(['codesign', '--verify', '--strict', command], capture_output=True, text=True, timeout=3)
+    if result.returncode:
+        return False
+    result = subprocess.run(['codesign', '-dv', '--verbose=4', command], capture_output=True, text=True, timeout=3)
+    fields = dict(line.split('=', 1) for line in result.stderr.splitlines() if '=' in line)
+    return result.returncode == 0 and fields.get('Identifier') == 'com.anthropic.claude-code' and fields.get('TeamIdentifier') == 'Q6L2SF6YDW'
+
+
+def check(env, source, session, window):
+    try:
+        rules = policy()
+        if not live(env, source):
+            return False
+        if source['session'] == session:
+            return True
+        if source['app'] != 'claude' or (session, window) not in (('config', 'claude'), ('review-protocol', 'claude')):
+            return False
+        rule = {'source': [source['session'], source['window']], 'target': [session, window]}
+        return rule in rules and signed(source) and live(env, source)
+    except (OSError, ValueError, TypeError, KeyError, IndexError, subprocess.SubprocessError):
+        return False
+
+
+def record_caller(pid, record, source):
+    chain = ancestors(pid)
+    nearest = next((row for row in chain if row[3]), None)
+    if nearest is not None and nearest[0] != source.get('actor'):
+        return False
+    expected = pathlib.Path(record).resolve(strict=True)
+    tools = pathlib.Path(__file__).resolve().parent
+    for actor_pid, parent, command, app in chain:
+        if not pathlib.Path(command).name.lower().startswith('python'):
+            continue
+        try:
+            argv = shlex.split(LABEL['ps']('-p', str(actor_pid), '-o', 'args=').strip())
+            if len(argv) < 2 or argv[1].startswith('-'):
+                continue
+            script = pathlib.Path(argv[1]).resolve(strict=True)
+            if script not in (tools / 'cc-msg-queue', tools / 'relay-clear-draft'):
+                continue
+            if '--worker' in argv or '--prove' in argv:
+                flag = '--worker' if '--worker' in argv else '--prove'
+                index = argv.index(flag)
+                if index + 1 >= len(argv):
+                    continue
+                argument = pathlib.Path(argv[index + 1]).resolve(strict=True)
+                if flag == '--worker' and argument != expected:
+                    continue
+                if flag == '--prove':
+                    if script.name != 'relay-clear-draft' or argument != expected.with_suffix('.plan'):
+                        continue
+                    plan = json.loads(argument.read_text())
+                    if pathlib.Path(plan.get('record', '')).resolve(strict=True) != expected:
+                        continue
+            return True
+        except (OSError, ValueError, subprocess.SubprocessError):
+            continue
+    return False
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--caller', type=int, default=os.getppid())
+    parser.add_argument('--target-session', required=True)
+    parser.add_argument('--target-window', required=True)
+    parser.add_argument('--record')
+    args = parser.parse_args()
+    if args.record:
+        record = json.loads(pathlib.Path(args.record).read_text())
+        if (record.get('session'), record.get('window')) != (args.target_session, args.target_window):
+            raise ValueError('record target changed')
+        source = record['source']
+        if not isinstance(source, dict) or not record_caller(args.caller, args.record, source):
+            raise ValueError('record caller provenance refused')
+    else:
+        source = bind(dict(os.environ), args.caller)
+    if not check(dict(os.environ), source, args.target_session, args.target_window):
+        raise ValueError('route not allowed')
+    print(json.dumps(source, separators=(',', ':'), sort_keys=True))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        print('cross-session send refused: ' + str(error), file=sys.stderr)
+        sys.exit(1)

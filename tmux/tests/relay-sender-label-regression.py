@@ -38,7 +38,7 @@ try:
         matrix.sender_case('verified-'+agent,agent)
     matrix.sender_case('codex-node','codex',node=True)
     matrix.sender_case('renamed-codex','codex',rename=True)
-    matrix.sender_case('ambiguous-codex','codex',linked=True)
+    matrix.sender_case('ambiguous-codex','codex',linked=True,code=1)
 finally:
     matrix.close()
 assert all(row['passed'] for row in matrix.results), matrix.results

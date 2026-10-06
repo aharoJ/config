@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-05 — Bind cooperative relay routes to live sources
+
+Relays now refuse unresolved sources and cross-session worker sends with exit 1 before input or queue recovery. Same-session sends require a live source; cross-session allowances require a signed Claude orchestrator and an exact operator policy rule to config:claude or review-protocol:claude. Source pane, process starts and socket identity persist with queued messages and are revalidated on retry; legacy unbound records fail closed. Clearing, operator replacement, paste and Enter also check routing inside their submission gates.
+
+This prevents routing mistakes and environment grant flags within the cooperative helper workflow. Hostile same-account tool edits, forged state or direct tmux access are outside its boundary. Shared-daemon calls need a validated live TMUX_PANE hint or refuse; sender labels remain independent of routing authority.
+
 ## 2026-10-05 — Preserve verified worker sender labels
 
 Sender attribution recognizes native Agy and Gemini processes and canonical Gemini Node entry points alongside Claude and Codex. A proven live pane renders `codex (<session>:<window>)`, `agy (...)` or `gemini (...)`; unknown processes and unresolved shared-daemon calls retain plain `relay:`. Labels do not grant routing authority or relaxed parsing. Private transport regressions and independent ancestry review cover spoofed environment, ambiguous panes, renamed executables and nested workers.

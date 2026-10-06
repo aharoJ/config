@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "allow": [
+    {
+      "source": [
+        "config",
+        "claude"
+      ],
+      "target": [
+        "config",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "config",
+        "claude"
+      ],
+      "target": [
+        "review-protocol",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "review-protocol",
+        "claude"
+      ],
+      "target": [
+        "config",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "review-protocol",
+        "claude"
+      ],
+      "target": [
+        "review-protocol",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "cvmapp",
+        "claude"
+      ],
+      "target": [
+        "config",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "cvmapp",
+        "claude"
+      ],
+      "target": [
+        "review-protocol",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "vetmed-absence-expansion",
+        "claude"
+      ],
+      "target": [
+        "config",
+        "claude"
+      ]
+    },
+    {
+      "source": [
+        "vetmed-absence-expansion",
+        "claude"
+      ],
+      "target": [
+        "review-protocol",
+        "claude"
+      ]
+    }
+  ]
+}

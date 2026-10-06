@@ -64,6 +64,14 @@ expect_delivery() {
 
 tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/relay-input-guard.XXXXXX")"
 trap 'trash "$tmpdir"' EXIT
+cp -R "$root/tools" "$tmpdir/tools"
+printf '%s\n' '#!/bin/sh' 'printf "{}\n"' > "$tmpdir/tools/relay-route-guard"
+chmod +x "$tmpdir/tools/relay-route-guard"
+guard="$tmpdir/tools/relay-input-guard"
+cc_relay="$tmpdir/tools/cc-msg.sh"
+codex_relay="$tmpdir/tools/codex-send"
+codex_to_relay="$tmpdir/tools/codex-send-to"
+agy_relay="$tmpdir/tools/agy-send-to"
 mkdir -p "$tmpdir/bin"
 : > "$tmpdir/socket"
 export PATH="$tmpdir/bin:$PATH"

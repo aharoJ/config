@@ -134,6 +134,10 @@ def guard(snapshot, kind, expected):
 
 def prove(plan):
     env, target = plan['environment'], plan['identity']
+    try:
+        queue.routing_source(env, plan['record'])
+    except queue.RoutingError as error:
+        raise Refused(str(error)) from error
     if queue.identity(env) != target:
         raise Refused('foreground target changed')
     foreground = target['foreground']
@@ -207,10 +211,15 @@ def main():
     session, window = env.get('CC_MSG_SESSION', ''), env.get('CC_MSG_WINDOW', '')
     expected = args[1] if len(args) == 2 and args[0] == '--expect' else ''
     socket = env.get('TMUX', '').split(',')[0]
+    try:
+        source = queue.routing_source(env)
+    except queue.RoutingError as error:
+        print(f'clear-draft: {error}; no target input was sent', file=sys.stderr)
+        return 1
     key = f'{session}-{window}' if all(re.fullmatch(r'[A-Za-z0-9_-]+', value) for value in (session, window)) else 'invalid-target'
     folder = queue.ROOT / (key + '-' + hashlib.sha256(socket.encode()).hexdigest()[:12])
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    data = dict(id=uuid.uuid4().hex, operation='clear-draft', kind=kind, message='', expected=expected, created=time.time(), state='clear-inspecting')
+    data = dict(source=source, session=session, window=window, id=uuid.uuid4().hex, operation='clear-draft', kind=kind, message='', expected=expected, created=time.time(), state='clear-inspecting')
     path = folder / (data['id'] + '.json')
     audit_lock = path.with_suffix('.lock').open('a')
     fcntl.flock(audit_lock, fcntl.LOCK_EX)
@@ -246,9 +255,9 @@ def main():
         second = snapshot(target)
         if first != second:
             raise Refused('target screen is changing')
-        plan = dict(environment=env, identity=target, kind=kind, expected=expected, snapshot=second)
+        plan = dict(record=str(path), environment=env, identity=target, kind=kind, expected=expected, snapshot=second)
         prove(plan)
-        plan['environment'] = {key: env[key] for key in ('PATH', 'TMUX', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'TMUX_BIN') if key in env}
+        plan['environment'] = {key: env[key] for key in ('PATH', 'TMUX', 'TMUX_PANE', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'TMUX_BIN') if key in env}
         plan['token'], plan['expires'] = data['id'], int(time.time()) + 3
         request(target, 'set-option', '-p', '-t', target['pane'], '@relay_clear_clock', '%s')
         request(target, 'set-option', '-p', '-t', target['pane'], '@relay_clear_token', plan['token'])

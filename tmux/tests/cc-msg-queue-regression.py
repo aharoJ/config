@@ -16,6 +16,9 @@ loader.exec_module(queue)
 
 class QueueTests(unittest.TestCase):
     def setUp(self):
+        route = patch.object(queue, 'routing_source', return_value=dict(session='lab-test', window='codex', pane='%1'))
+        route.start()
+        self.addCleanup(route.stop)
         self.root = Path(os.environ.get('RELAY_TEST_ROOT', str(Path.home() / 'desk/lab/cc-msg-queue-tests'))) / uuid.uuid4().hex
         self.root.mkdir(parents=True)
         self.identity = dict(socket='/test/socket', device=1, inode=2, pane='%8', pid='123')

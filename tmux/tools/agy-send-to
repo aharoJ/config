@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/agy-send-to
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: verify the live Agy composer before and after delivery
-# date: 2026-10-02T04:00:00Z
+# patched: revalidate cooperative source routing before target input
+# date: 2026-10-05
 set -uo pipefail
 
 fail() { printf 'REFUSE: %s; no target input was sent; safe to retry after the condition clears\n' "$1" >&2; exit 1; }
@@ -177,6 +177,7 @@ esac
 [ "$command_name" = agy ] || fail "pane $pane is running '$command_name', not Agy; refuse"
 
 relay_target_window="$window_name"
+relay_require_route
 relay_glyph=">"
 if acquire_relay_lock; then
   :

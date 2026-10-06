@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: Preserve verified Claude, Codex, Agy and Gemini pane labels; unknown senders remain relay
+# patched: revalidate cooperative source routing before target input
 # date: 2026-10-05
 set -uo pipefail
 
@@ -259,6 +259,7 @@ if [ -n "${CC_MSG_EXPECT_PID:-}" ]; then
 fi
 
 relay_target_window="$target_window"
+relay_require_route
 relay_glyph="❯"
 if acquire_relay_lock; then
   :

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/codex-send
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: tolerate transient Codex redraws while retaining fail-closed draft checks
-# date: 2026-10-01T23:02:00Z
+# patched: revalidate cooperative source routing before target input
+# date: 2026-10-05
 set -uo pipefail
 
 if [ "${CODEX_SEND_QUEUE_INTERNAL:-}" != 1 ]; then
@@ -189,6 +189,7 @@ case "$command_name" in
 esac
 
 relay_target_window="$target_window"
+relay_require_route
 relay_glyph="›"
 if acquire_relay_lock; then
   :

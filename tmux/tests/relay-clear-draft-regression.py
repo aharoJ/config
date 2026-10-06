@@ -21,6 +21,11 @@ def fixture(kind):
 
 
 class ClearGuardTests(unittest.TestCase):
+    def setUp(self):
+        route = patch.object(clear.queue, 'routing_source', return_value=dict(session='lab', window='codex', pane='%1'))
+        route.start()
+        self.addCleanup(route.stop)
+
     def test_real_typed_single_lines_pass(self):
         for kind in ('claude', 'codex'):
             self.assertIn('y=', clear.guard(fixture(kind), kind, 'y='))
@@ -112,7 +117,7 @@ class ClearGuardTests(unittest.TestCase):
 
     def test_changed_identity_or_capture_refuses_at_keystroke_proof(self):
         target = dict(foreground=['123', '/claude'])
-        plan = dict(environment={}, identity=target, kind='claude', expected='y=', snapshot=fixture('claude'))
+        plan = dict(record='/test/record', environment={}, identity=target, kind='claude', expected='y=', snapshot=fixture('claude'))
         with patch.object(clear.queue, 'identity', return_value=None):
             with self.assertRaises(clear.Refused):
                 clear.prove(plan)
