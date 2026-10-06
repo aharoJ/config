@@ -477,7 +477,7 @@ class Matrix:
             else:
                 raise RuntimeError("sender fixture failed to finish")
             result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
-            label = "relay" if rename or linked else f"{agent if agent in ('claude', 'codex') else 'relay'} ({session}:{sender_window})"
+            label = "relay" if rename or linked or agent not in ('claude', 'codex', 'agy', 'gemini') else f"{agent} ({session}:{sender_window})"
             if name == "prefix-pushes-past-one-row":
                 code = 0
             self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)

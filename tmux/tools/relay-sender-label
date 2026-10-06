@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tools/relay-sender-label
 # description: Resolve a relay caller to a live pane and its nearest recognized agent ancestor.
-# patched: ignore inherited pane ids and sender overrides; uncertain origins remain neutral
-# date: 2026-09-30
+# patched: recognize pane-bound Codex, Agy and Gemini without trusting sender overrides
+# date: 2026-10-05
 import pathlib
 import re
 import shlex
@@ -26,7 +26,7 @@ def processes():
 
 def app(pid, command):
     name = pathlib.Path(command).name
-    if name in ("claude", "codex"):
+    if name in ("claude", "codex", "agy", "gemini"):
         return name
     if re.search(r"/claude/versions/\d+\.\d+\.\d+(?:[-+][\w.-]+)?$", command):
         return "claude"
@@ -40,6 +40,8 @@ def app(pid, command):
         return "codex"
     if entry.endswith("/@anthropic-ai/claude-code/cli.js"):
         return "claude"
+    if entry.endswith("/@google/gemini-cli/bundle/gemini.js") or entry.endswith("/@google/gemini-cli/dist/index.js"):
+        return "gemini"
     return ""
 
 

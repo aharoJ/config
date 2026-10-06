@@ -53,6 +53,9 @@ printf '%s\n' "$relay_sender_tier"
                 ("deepseek-model", "  deepseek-flash | context 1k | v2.1.153", {}, "strict"),
                 ("deepseek-wrapper", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_IDENTITY": "%421 rt2 fable 25993 0 claude.exe"}, "strict"),
                 ("identity-drift", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_IDENTITY": "%421 rt2 other 25993 0 2.1.287"}, "strict"),
+                ("codex-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 codex"}, "strict"),
+                ("agy-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 agy"}, "strict"),
+                ("gemini-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 gemini"}, "strict"),
                 ("unresolved", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": ""}, "strict"),
             )
             for name, status, override, expected in cases:

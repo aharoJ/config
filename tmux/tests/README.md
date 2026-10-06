@@ -29,3 +29,5 @@ The same gate covers live Agy startup, post-turn, wide, 40-column and 19-column 
 The must-accept gate also includes the empty DeepSeek composer with the transient `Ctrl+Y to paste deleted text` status hint observed in blind live testing. Unknown hint text remains a refusal.
 
 `relay-live-capture-regression.sh --manifest <tsv>` is the separate current Codex six-state gate. Run it only against detached `lab-*` sessions on a `ccmsg-lab-private-<pid>` server. It requires three idle and three draft states from actual Codex panes.
+
+Run `python3 tmux/tests/relay-sender-label-regression.py <output-directory>` for nine ancestry checks and seven private sender-label transport cases. Verified Codex, Agy and Gemini panes retain their source identity; unknown processes, renamed executables and ambiguous pane ancestry remain plain `relay:`. Shared-daemon invocations without pane ancestry also remain unresolved. Executable recognition is cooperative attribution, not an authorization boundary.

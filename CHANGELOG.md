@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-05 — Preserve verified worker sender labels
+
+Sender attribution recognizes native Agy and Gemini processes and canonical Gemini Node entry points alongside Claude and Codex. A proven live pane renders `codex (<session>:<window>)`, `agy (...)` or `gemini (...)`; unknown processes and unresolved shared-daemon calls retain plain `relay:`. Labels do not grant routing authority or relaxed parsing. Private transport regressions and independent ancestry review cover spoofed environment, ambiguous panes, renamed executables and nested workers.
+
 ## 2026-10-05 — Red-team relay submission and targeted payload parsing
 
 Independent review reproduced literal `codex-send-to` payloads such as `--status` being consumed as queue options and returning success without delivery. Targeted sends now consume exactly one window and one literal payload before queue option handling; missing or extra arguments refuse.

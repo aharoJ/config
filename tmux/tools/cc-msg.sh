@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # path: ~/.config/tmux/tools/cc-msg.sh
 # description: Deliver text to an explicitly selected agent with fail-closed payload verification.
-# patched: CC_MSG_EXACT=1 sends an unlabelled payload to agentic audit seats only
-# date: 2026-10-02
+# patched: Preserve verified Claude, Codex, Agy and Gemini pane labels; unknown senders remain relay
+# date: 2026-10-05
 set -uo pipefail
 
 if [ "${1:-}" = --clear-draft ]; then
@@ -174,6 +174,10 @@ resolve_sender_label() {
   sender="$("$relay_script_dir/relay-sender-label" "$$" "$list_file")" || return 0
   [ -n "$sender" ] || return 0
   read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
+  case "$sender_app" in
+    claude|codex|agy|gemini) ;;
+    *) return 0 ;;
+  esac
   if identity="$(request display-message -p -t "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead}')"; then
     [ "$identity" = "$sender_pane $sender_session $sender_window $sender_pid 0" ] || return 0
   else
