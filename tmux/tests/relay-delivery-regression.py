@@ -43,7 +43,7 @@ def wrap(text, width):
 def fixture(directory, glyph, mode):
     tty.setraw(sys.stdin.fileno())
     directory = pathlib.Path(directory)
-    value = "user draft" if mode in ("draft", "codex159-draft") else ""
+    value = "user draft" if mode in ("draft", "codex159-draft", "codex161-native", "codex161-extra") else ""
     if mode == "operator-draft":
         value = "left draft right " * 20
     cursor = 5 if mode == "operator-draft" else len(value)
@@ -55,6 +55,18 @@ def fixture(directory, glyph, mode):
     redraw_tick = 0
 
     def draw():
+        if mode.startswith('codex161-'):
+            rows = (ROOT / 'tests/fixtures/codex-161-native-postpaste.ansi').read_text().splitlines()
+            meta = json.loads((ROOT / 'tests/fixtures/codex-161-native-postpaste.json').read_text())
+            y = meta['cursor_y']
+            rows[y] = '\x1b[1m\x1b[38;2;255;178;66m›\x1b[0m ' + (value or '\x1b[2mAsk Codex to do anything\x1b[0m')
+            output = '\x1b[?2004h\x1b[2J\x1b[H'
+            output += ''.join(f'\x1b[{i+1};1H' + row for i, row in enumerate(rows))
+            output += f'\x1b[{y+1};{cells(value[:cursor])+3}H'
+            sys.stdout.write(output)
+            sys.stdout.flush()
+            (directory / 'ready').touch()
+            return
         visible = value
         if mode in ("hidden", "codex159-busy-hidden") and visible:
             visible = "[Pasted text #1]"
@@ -150,7 +162,7 @@ def fixture(directory, glyph, mode):
         elif mode == "tail-only":
             value = ""
             text = text[-30:]
-        elif mode in ("extra", "codex159-busy-extra") and not pastes:
+        elif mode in ("extra", "codex159-busy-extra", "codex161-extra") and not pastes:
             text += "unexpected"
         elif mode == "mutate":
             text = text.replace("a", "b")

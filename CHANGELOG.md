@@ -349,3 +349,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Add native 0.161.0 composer replay and draft mutation checks for the Enter-withheld investigation; isolate the binding hook in the UI timing lab.
 
 - Finalize an interrupted initial queue attempt as unknown and stop its transport process group. Never queue or resend partial/uncertain input; retain sweep recovery for uncatchable termination.
+
+- Exercise queued codex-send-to against the native 0.161.0 capture-derived composer: one Enter on valid delivery, unknown with zero Enter/no replay when content changes after paste.
