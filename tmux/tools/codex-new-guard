@@ -197,7 +197,7 @@ def check(mode, capture, expected=''):
             content.pop(-3)
         middle = [row for row, _ in content[2:-2]]
         tips = [i for i, row in enumerate(middle) if row.startswith('  Tip: ')]
-        valid = len(content) >= 6 and len(tips) == 1 and tips[0] >= 1
+        valid = len(content) >= 5 and len(tips) == 1 and tips[0] >= 0
         valid = valid and all(re.fullmatch(r'  [^›•\x00-\x1f]+', row) for row in middle)
         valid = valid and bool(re.fullmatch(r'  >_ OpenAI Codex \(v[0-9]+\.[0-9]+\.[0-9]+\)', content[0][0]))
         valid = valid and content[1][0] == '     ' + cwd

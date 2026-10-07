@@ -19,7 +19,7 @@ for guard in ['codex-model-guard', 'codex-new-guard']:
         assert p.returncode == 1, (guard, bad)
         checks += 1
 fresh = (ROOT / 'tests/fixtures/codex-new-live-config-main-after.ansi').read_text()
-for screen in [fresh, fresh.replace('v0.160.0', 'v0.160.1'), fresh.replace('v0.160.0', 'v0.161.0')]:
+for screen in [fresh, fresh.replace('v0.160.0', 'v0.160.1'), fresh.replace('v0.160.0', 'v0.161.0'), '\n'.join(row for row in fresh.replace('v0.160.0', 'v0.161.0').splitlines() if 'conversational potential' not in row)]:
     p = subprocess.run([str(ROOT / 'tools/codex-model-guard'), 'settling-reset', footer], input=screen, text=True, capture_output=True)
     assert p.returncode == 0, p.stderr
     checks += 1
@@ -36,3 +36,11 @@ for screen in [fresh, fresh.replace('v0.160.0', 'v0.160.1'), fresh.replace('v0.1
         assert p.returncode == 1, (bad, p.stderr)
         checks += 1
 print(f'PASS {checks} picker and strict settling-reset rejection checks')
+
+native = (ROOT / 'tests/fixtures/codex-161-native-reset.ansi').read_text()
+p = subprocess.run([str(ROOT / 'tools/codex-model-guard'), 'footer'], input=native, text=True, capture_output=True)
+assert p.returncode == 0
+for guard, mode in [('codex-model-guard', 'settling-reset'), ('codex-new-guard', 'direct-reset')]:
+    result = subprocess.run([str(ROOT / 'tools' / guard), mode, p.stdout.strip()], input=native, text=True, capture_output=True)
+    assert result.returncode == 0, (guard, result.stderr)
+print('PASS native 0.161.0 fresh-reset screens')
