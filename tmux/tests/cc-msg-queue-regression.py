@@ -7,6 +7,10 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 import uuid
+import signal
+import subprocess
+import sys
+import time
 
 loader = importlib.machinery.SourceFileLoader('queue', str(Path(__file__).resolve().parents[1] / 'tools/cc-msg-queue'))
 spec = importlib.util.spec_from_loader(loader.name, loader)
@@ -34,6 +38,42 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(events[0]['message'], 'payload')
         self.assertEqual(data['identity'], self.identity)
         return result, path, data, launch
+
+    def test_interrupted_initial_attempt_is_unknown_and_never_queued(self):
+        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue, 'deliver', side_effect=InterruptedError('transport interrupted after possible paste')), patch.object(queue, 'launch_worker') as launch, patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', 'payload']):
+            self.assertEqual(queue.main(), 4)
+        data = json.loads(next(self.root.glob('*/*.json')).read_text())
+        self.assertEqual(data['state'], 'unknown')
+        self.assertEqual(data['code'], 4)
+        self.assertIn('interrupted', data['output'])
+        launch.assert_not_called()
+
+    def test_initial_sigterm_stops_transport_and_persists_unknown(self):
+        marker = self.root / 'possible-paste-marker'
+        transport = self.root / 'transport'
+        transport.write_text('#!' + sys.executable + "\nimport os,time,pathlib\npathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()))\ntime.sleep(120)\n")
+        transport.chmod(0o700)
+        driver = self.root / 'driver.py'
+        driver.write_text("import importlib.machinery,pathlib,os,sys\nq=importlib.machinery.SourceFileLoader('queue', " + repr(str(Path(queue.__file__))) + ").load_module()\nq.ROOT=pathlib.Path(" + repr(str(self.root / 'inbox')) + ")\nq.TOOL=pathlib.Path(" + repr(str(transport)) + ")\nq.routing_source=lambda *a:dict(session='lab-test',window='codex',pane='%1')\nq.resolve_defaults=lambda e,a:e\nq.identity=lambda e:" + repr(self.identity) + "\nq.stable_screen=lambda *a:True\nos.environ.update(" + repr(self.env) + ")\nsys.argv=['queue','payload']\nsys.exit(q.main())\n")
+        process = subprocess.Popen([sys.executable, str(driver)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            until = time.monotonic() + 5
+            while not marker.exists() and time.monotonic() < until:
+                time.sleep(.02)
+            self.assertTrue(marker.exists())
+            child = int(marker.read_text())
+            process.send_signal(signal.SIGTERM)
+            stdout, stderr = process.communicate(timeout=5)
+            self.assertEqual(process.returncode, 4, stdout + stderr)
+            data = json.loads(next((self.root / 'inbox').glob('*/*.json')).read_text())
+            self.assertEqual(data['state'], 'unknown')
+            self.assertIn('signal', data['output'])
+            with self.assertRaises(ProcessLookupError):
+                os.kill(child, 0)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
 
     def test_operator_options_keep_legacy_codex_order_and_targeted_literals(self):
         for arguments, expected_operator in [(['--codex', '-O', 'payload'], True),

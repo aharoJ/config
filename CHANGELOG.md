@@ -347,3 +347,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Bind final transport route checks to the source used for attribution so a renamed sender refuses before input. Keep cleanup stress tests explicitly isolated from routing authority.
 
 - Add native 0.161.0 composer replay and draft mutation checks for the Enter-withheld investigation; isolate the binding hook in the UI timing lab.
+
+- Finalize an interrupted initial queue attempt as unknown and stop its transport process group. Never queue or resend partial/uncertain input; retain sweep recovery for uncatchable termination.

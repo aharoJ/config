@@ -151,6 +151,17 @@ def deliver(data, env):
         os.killpg(process.pid, signal.SIGKILL)
         process.communicate()
         return 4, 'transport exceeded 60 seconds; delivery unknown; no automatic resend'
+    except BaseException:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+            process.communicate(timeout=3)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.communicate()
+        raise
 
 
 
@@ -374,7 +385,20 @@ def main():
         if data['identity'] and (backlog or not operator and not stable_screen(env, data['identity'])):
             code, output = 5, 'cc-msg: target screen is changing or has pending messages; no target input was sent\n'
         else:
-            code, output = deliver(data, env)
+            previous_handlers = {}
+            def interrupted(signum, frame):
+                raise RuntimeError(f'initial attempt interrupted by signal {signum}; delivery unknown; no automatic resend')
+            for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+                previous_handlers[signum] = signal.signal(signum, interrupted)
+            try:
+                code, output = deliver(data, env)
+            except BaseException as error:
+                finish(folder, path, data, 'unknown', 4, str(error) + '; inspect target before an explicit resend')
+                print(f'relay: unknown {data["id"]}; initial attempt interrupted; review {path}; no automatic resend', file=sys.stderr)
+                return 4
+            finally:
+                for signum, handler in previous_handlers.items():
+                    signal.signal(signum, handler)
         if code in (2, 5) and data['identity']:
             finish(folder, path, data, 'queued', 6, output)
             try:
