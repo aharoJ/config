@@ -22,7 +22,7 @@ let settling = false, incomplete = false, lateWarning = false;
 let used = scenario === 'reset' || scenario === 'reset-picker-timing', draft = scenario === 'draft' ? 'owned draft' : '';
 const hl = '\x1b[1;7m';
 function draw() {
-  const rows = ['', '  \x1b[38;2;99;168;248m>_ \x1b[1m\x1b[39mOpenAI Codex\x1b[0;2m (v0.160.1)\x1b[0m', '     \x1b[2m' + cwd + '\x1b[0m', '  permissions: YOLO mode', '', '  Bring a question.', '', '  Tip: Use /title.', '', ''];
+  const rows = ['', '  \x1b[38;2;99;168;248m>_ \x1b[1m\x1b[39mOpenAI Codex\x1b[0;2m (v0.161.0)\x1b[0m', '     \x1b[2m' + cwd + '\x1b[0m', '  permissions: YOLO mode', '', '  Bring a question.', '', '  Tip: Use /title.', '', ''];
   let cursor = [0, 0];
   if (state === 'fresh' || state === 'slash') {
     if (scenario === 'reset-cursor-warning' || lateWarning) rows.push('  ⚠ Unknown warning');

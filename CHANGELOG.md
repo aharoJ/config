@@ -4,6 +4,8 @@
 
 Shared-daemon source discovery queries kernel-verified native Codex panes through guarded local `/status` commands, requires fresh pane output and a unique current thread, and records a binding generation. Reset/resume cannot reactivate queued work from an older generation. Codex reset completion invokes the same verification path. Unavailable or ambiguous source panes refuse binding. This candidate is isolated, has not passed the independent deployment gate, and is not installed.
 ## Isolated investigation — Codex 0.160.1 model/reset picker
+- Carry the fresh-reset screen digest and strict recognition into the model pre-paste gate; refuse late row replacements. Recognize semantic version headers, including Codex 0.161.0, while retaining screen content checks.
+
 ## Isolated candidate — wait for a fresh-reset Codex cursor
 
 A freshly reset Codex 0.160.1 screen can be drawn before its composer cursor settles. `codex-model` now waits within its bounded preflight loop only when a separate settling-reset predicate accepts the whole screen, then performs the normal cursor and draft checks before typing. The settling predicate enumerates known header/cwd, optional YOLO permission, greeting, tip, composer and footer rows. It rejects extra warning/title/status rows and remains active through both preflight reads. Open pickers, drafts and persistent unsettled cursors refuse with zero input. Private timing fixtures reproduce the earlier exit-5 glyph refusal and verify delayed readiness, a draft arriving during the wait, and reset restoration through a partially rendered model picker. This candidate is not installed; STOP and the independent gate still apply.

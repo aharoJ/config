@@ -186,6 +186,12 @@ relay_atomic() {
   elif [ -n "${5:-}" ]; then
     if [[ "$relay_glyph" = '❯' || "$relay_glyph" = '›' || "$relay_glyph" = '»' ]]; then
       check_command="$("$relay_payload_guard" cc-prepaste-command "$relay_target_socket" "$pane" "$relay_glyph" "$2" "$3" "$relay_verify_width" "$relay_sender_tier" "$RELAY_INPUT_GUARD")" || return 7
+      if [ -n "${model_settle_footer:-}" ]; then
+        local reset_digest reset_command
+        reset_digest="$(printf '%s\n' "$relay_empty_capture" | "$relay_script_dir/codex-model-guard" digest)" || return 7
+        reset_command="$(python3 -c 'import shlex,sys;print(shlex.join(sys.argv[1:]))' "$relay_script_dir/codex-model-guard" live "$relay_target_socket" "$pane" settling-reset "$model_settle_footer" "$before_cwd" "$new_target_proof" "$reset_digest")" || return 7
+        check_command="$check_command && $reset_command"
+      fi
       nested="$("$relay_payload_guard" tmux-nested "$pane" "$guarded" "$deliver" "$blocked")" || return 7
       receipt="$(request if-shell -t "$pane" "$check_command" "$nested" "$blocked")"
     else
