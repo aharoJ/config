@@ -93,7 +93,7 @@ def routing_source(env, record=None):
     if record is not None:
         command += ['--record', str(record)]
     try:
-        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=5)
+        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120 if record is None else 5)
         if result.returncode != 0:
             raise RoutingError(result.stderr.strip() or 'route refused')
         source = json.loads(result.stdout)
@@ -102,6 +102,9 @@ def routing_source(env, record=None):
         return source
     except RoutingError:
         raise
+    except subprocess.TimeoutExpired as error:
+        phase = "initial source discovery" if record is None else "bound route verification"
+        raise RoutingError(phase + " exceeded its deadline; message delivery was not requested by this check") from error
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         raise RoutingError('source binding unavailable; identify the live calling seat with TMUX_PANE') from error
 

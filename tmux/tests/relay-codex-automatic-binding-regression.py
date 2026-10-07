@@ -33,7 +33,7 @@ void draw(const char *path, int status) {
     char thread[80]; FILE *f=fopen(path,"r"); fgets(thread,sizeof(thread),f); fclose(f); thread[strcspn(thread,"\r\n")]=0;
     printf("\033[2J\033[H");
     if(status) printf("\033[35m/status\033[39m\n\n  \033[38;2;99;168;248m>_ \033[1m\033[39mOpenAI Codex\033[0;2m (v0.160.1)\033[0m\n\n\033[2m  Server:                     \033[0mLocal background server\n\033[2m  Model:                      \033[0mGPT-6.1-Sol\n\033[2m  Session:                    \033[0m%s\n\n",thread);
-    printf("• Working (1s • esc to interrupt)\n\n\033[48;2;57;57;71m\n\033[1m›\033[0m\033[48;2;57;57;71m %s\n\n\033[49m  \033[38;2;135;140;164mFast off · GPT-6.1-Sol low · ~/fixture · Context 0%% used\033[39m",value[0]?value:"\033[2mAsk Codex to do anything\033[0m");
+    printf("%s\n\n\033[48;2;57;57;71m\n\033[1m›\033[0m\033[48;2;57;57;71m %s\n\n\033[49m  \033[38;2;135;140;164mFast off · GPT-6.1-Sol low · ~/fixture · Context 0%% used\033[39m",getenv("BINDING_TEST_IDLE")?"":"• Working (1s • esc to interrupt)",value[0]?value:"\033[2mAsk Codex to do anything\033[0m");
     printf("\033[%d;%dH",status?12:4,(int)strlen(value)+3); fflush(stdout);
 }
 int main(int argc,char **argv) {
@@ -72,6 +72,7 @@ def run(output):
     text = guard.read_text()
     text = text.replace("SOURCE_BINDINGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.local/state/relay/source-bindings.json'", 'SOURCE_BINDINGS = pathlib.Path(' + repr(str(bindings)) + ')')
     text = text.replace("RUNTIME_LOGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.codex/logs_2.sqlite'", 'RUNTIME_LOGS = pathlib.Path(' + repr(str(logs)) + ')')
+    text = text.replace("    args = parser.parse_args()", "    args = parser.parse_args()\n    if not args.record and os.environ.get('BINDING_TEST_DISCOVERY_DELAY'):\n        time.sleep(float(os.environ['BINDING_TEST_DISCOVERY_DELAY']))")
     guard.write_text(text)
     database = sqlite3.connect(logs)
     database.execute('CREATE TABLE logs (ts INTEGER, ts_nanos INTEGER, feedback_log_body TEXT, thread_id TEXT, target TEXT)')
@@ -194,8 +195,8 @@ def run(output):
         message_caller = output / 'message-call.py'
         message_caller.write_text('import subprocess,os,json,sys\nr=subprocess.run([sys.executable,' + repr(str(tools / 'cc-msg-queue')) + ',os.environ["BINDING_TEST_MESSAGE"]],capture_output=True,text=True)\nprint(json.dumps({"code":r.returncode,"out":r.stdout,"err":r.stderr}),flush=True)\n')
         inbox = output / 'inbox'
-        def send(thread, text):
-            sender = subprocess.Popen([str(output / 'codex'), 'app-server', str(message_caller)], env=dict(env, TMUX_PANE=first['pane'], CC_MSG_SESSION='config', CC_MSG_WINDOW='claude', CC_MSG_INBOX_ROOT=str(inbox), TMPDIR=str(output), BINDING_TEST_MESSAGE=text), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        def send(thread, text, extra=None):
+            sender = subprocess.Popen([str(output / 'codex'), 'app-server', str(message_caller)], env=dict(env, TMUX_PANE=first['pane'], CC_MSG_SESSION='config', CC_MSG_WINDOW='claude', CC_MSG_INBOX_ROOT=str(inbox), TMPDIR=str(output), BINDING_TEST_MESSAGE=text, **(extra or {})), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = sender.communicate(thread + '\n', timeout=30)
             rows = stdout.splitlines()
             assert rows[-1] == '__DONE__:0', (stdout, stderr)
@@ -226,6 +227,23 @@ def run(output):
         submitted = (output / 'claude.input').read_text().splitlines()
         assert submitted == ['codex (config:codex) [gpt-6.1-sol low]: fresh replacement thread receipt'], submitted
         print('PASS fresh replacement automatically binds and delivers exactly once through native adapters', flush=True)
+        started = time.monotonic()
+        delayed = send(SECOND, 'slow initial native discovery receipt', {'BINDING_TEST_DISCOVERY_DELAY': '6'})
+        assert delayed['code'] == 0 and time.monotonic() - started >= 6, delayed
+        submitted = (output / 'claude.input').read_text().splitlines()
+        assert submitted == ['codex (config:codex) [gpt-6.1-sol low]: fresh replacement thread receipt', 'codex (config:codex) [gpt-6.1-sol low]: slow initial native discovery receipt'], submitted
+        print('PASS source discovery beyond five seconds; authenticated record route checks stay fast and deliver exactly once', flush=True)
+        tmux('respawn-pane', '-k', '-t', '=config:=terra', 'exec env BINDING_TEST_IDLE=1 ' + str(output / 'codex') + ' ' + str(output / 'terra.thread') + ' ' + str(output / 'terra.input'))
+        time.sleep(.1)
+        native_caller = output / 'native-message-call.py'
+        native_caller.write_text('import subprocess,os,json,sys\nr=subprocess.run([sys.executable,' + repr(str(tools / 'cc-msg-queue')) + ',"--codex-to","terra","native recipient bound-record Enter receipt"],capture_output=True,text=True)\nprint(json.dumps({"code":r.returncode,"out":r.stdout,"err":r.stderr}),flush=True)\n')
+        native_sender = subprocess.Popen([str(output / 'codex'), 'app-server', str(native_caller)], env=dict(env, CODEX_SEND_SESSION='config', CC_MSG_INBOX_ROOT=str(inbox), TMPDIR=str(output)), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = native_sender.communicate(SECOND + '\n', timeout=30)
+        reply = json.loads(stdout.splitlines()[0])
+        assert reply['code'] == 0, (reply, stderr)
+        native_inputs = (output / 'terra.input').read_text().splitlines()
+        assert native_inputs.count('codex (config:codex) [gpt-6.1-sol low]: native recipient bound-record Enter receipt') == 1, native_inputs
+        print('PASS native Codex recipient uses bound-record route proof after paste and receives exactly one Enter', flush=True)
         state = json.loads(bindings.read_text())
         (output / 'results.json').write_text(json.dumps({'passed': True, 'bindings': state}, indent=2) + '\n')
     finally:
