@@ -23,7 +23,7 @@ else:
     def execute(request):
         data = json.loads(request.read_text())
         try:
-            result = subprocess.run(data['argv'], env=data['env'], text=True, capture_output=True, timeout=45)
+            result = subprocess.run(data['argv'], env=data['env'], stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=45)
             value = dict(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
         except Exception as error:
             value = dict(returncode=99, stdout='', stderr=repr(error))
