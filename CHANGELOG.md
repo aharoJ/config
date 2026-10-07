@@ -1,5 +1,9 @@
 # Changelog
 
+## Isolated gate repair — validated broad-matrix sources
+
+Direct delivery-matrix cases now execute under a compiled synthetic sender in the same private tmux session, exercising production source validation before transport checks. Concurrent cases share that source while retaining independent requests. No production transport changes or installation.
+
 ## Worktree candidate — automatic Codex source binding (#8; deployment stopped)
 
 Shared-daemon source discovery queries kernel-verified native Codex panes through guarded local `/status` commands, requires fresh pane output and a unique current thread, and records a binding generation. Reset/resume cannot reactivate queued work from an older generation. Codex reset completion invokes the same verification path. Unavailable or ambiguous source panes refuse binding. This candidate is isolated, has not passed the independent deployment gate, and is not installed.

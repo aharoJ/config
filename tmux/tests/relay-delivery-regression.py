@@ -238,6 +238,8 @@ class Matrix:
         self.sessions = set()
         self.frozen = False
         self.number = 0
+        self.source_requests = 0
+        self.source_sessions = set()
         self.authority_tools = pathlib.Path(os.environ['RELAY_AUTHORITY_TOOLS']) if os.environ.get('RELAY_AUTHORITY_TOOLS') else None
         self.socket = f"ccmsg-lab-private-{os.getpid()}"
         self.tmux_binary = self.output / "tmux-private"
@@ -283,7 +285,7 @@ class Matrix:
             raise RuntimeError("fixture failed to start")
         return session, window, directory
 
-    def command(self, relay, session, window, payload, extra=None):
+    def command(self, relay, session, window, payload, extra=None, source=True):
         env = {**os.environ, "CC_MSG_SESSION": session, "CC_MSG_WINDOW": window,
                "CODEX_SEND_SESSION": session, "CODEX_SEND_WINDOW": window,
                "TMUX": self.server_address, "TMUX_BIN": str(self.tmux_binary),
@@ -294,7 +296,33 @@ class Matrix:
         if relay == "codex-send-to":
             argv.append(window)
         argv.append(payload)
+        if source:
+            actual_session = next(item for item in self.sessions if item == session or session.startswith(item + "-missing") or item.upper() == session)
+            self.ensure_source(actual_session)
+            self.source_requests += 1
+            folder = self.output / (actual_session + "-source")
+            request = folder / f"request-{self.source_requests}.json"
+            request.write_text(json.dumps(dict(argv=argv, env=env)))
+            argv = [sys.executable, str(ROOT / "tests/relay-matrix-source.py"), "client", str(request)]
         return argv, env
+
+    def ensure_source(self, session):
+        if session in self.source_sessions:
+            return
+        folder = self.output / (session + "-source")
+        folder.mkdir()
+        actor = self.output / "matrix-actor" / "claude"
+        if not actor.exists():
+            actor.parent.mkdir(exist_ok=True)
+            source = actor.with_suffix('.c')
+            source.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(int n,char **v){pid_t p=fork();if(!p){execvp(v[1],v+1);_exit(127);}int s;waitpid(p,&s,0);return 0;}\n')
+            subprocess.run(["cc", str(source), "-o", str(actor)], check=True, capture_output=True)
+        command = shlex.join(["exec", str(actor), sys.executable, str(ROOT / "tests/relay-matrix-source.py"), "worker", str(folder)])
+        self.tmux("new-window", "-d", "-t", "=" + session, "-n", "sender", command)
+        self.source_sessions.add(session)
+
+    def label(self, session):
+        return f"sender ({session}:sender) [model/effort unverified]: "
 
     def record(self, relay, name, result, expected_code, directory, expected_payload=None, no_input=False):
         submitted = []
@@ -334,7 +362,7 @@ class Matrix:
             argv, env = self.command(relay, selected, window, payload, extra)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
-            expected = "unverified (unverified:unverified) [model/effort unverified]: " + normalized
+            expected = self.label(session) + normalized
             archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "drop-space-at-full-wrap")
             if code == 1 and archive_case:
                 code = 0
@@ -349,7 +377,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            self.record(relay, "codex159-redraw-payload", result, 0, directory, "unverified (unverified:unverified) [model/effort unverified]: " + payload)
+            self.record(relay, "codex159-redraw-payload", result, 0, directory, self.label(session) + payload)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -368,7 +396,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            self.record(relay, "codex159-redraw-input", result, 0, directory, "unverified (unverified:unverified) [model/effort unverified]: " + payload)
+            self.record(relay, "codex159-redraw-input", result, 0, directory, self.label(session) + payload)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -392,7 +420,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            expected = "unverified (unverified:unverified) [model/effort unverified]: " + payload
+            expected = self.label(session) + payload
             self.record(relay, "codex159-atomic-refusal-retry", result, 0, directory, expected)
         finally:
             if not self.frozen:
@@ -408,7 +436,7 @@ class Matrix:
             second = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             stdout, stderr = first.communicate(timeout=45)
             result = subprocess.CompletedProcess(argv, first.returncode, stdout, stderr)
-            expected = "unverified (unverified:unverified) [model/effort unverified]: " + message
+            expected = self.label(session) + message
             self.record(relay, "concurrent-winner", result, 0, directory, expected)
             passed = second.returncode == 5 and "another relay" in second.stderr and "no target input was sent" in second.stderr
             self.results.append(dict(relay=relay, case="concurrent-loser", passed=passed, exit=second.returncode,
@@ -455,7 +483,7 @@ class Matrix:
                 subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)
             target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
             argv, env = self.command(relay, session, window, payload,
-                                     {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"})
+                                     {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"}, source=False)
             if self.authority_tools is not None:
                 argv[0] = str(self.authority_tools / relay)
             request = dict(argv=argv, env=env)
@@ -552,7 +580,7 @@ class Matrix:
         self.sender_case("node-cc-sender", "claude", node=True)
         self.sender_case("node-codex-sender", "codex", node=True)
         self.sender_case("unknown-app-known-pane", "bash")
-        self.case("cc-msg.sh", "unknown-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
+        self.case("cc-msg.sh", "bound-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
         self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=5)
         self.sender_case("ambiguous-linked-sender", "claude", linked=True, code=1)
         self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
