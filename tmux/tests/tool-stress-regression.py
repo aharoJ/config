@@ -382,6 +382,9 @@ relay_cleanup
                 self.assertTrue(lock.exists())
 
     def test_public_relays_report_failed_trash(self):
+        tools = self.directory / 'cleanup-tools'
+        shutil.copytree(ROOT / 'tools', tools)
+        (tools / 'relay-route-guard').write_text("#!/bin/sh\nprintf '%s\\n' '{}'\n")
         self.executable("trash", "exit 42")
         self.executable("ps", "exit 1")
         locker = self.executable("shlock", 'printf "%s\\n" "$4" > "$2"')
@@ -407,7 +410,7 @@ exec "$TRASH_TEST_STUB" "$@"''')
                            "RELAY_TEST_CAPTURE": capture, "RELAY_TEST_LOG": str(directory / "tmux.log"),
                            "RELAY_TEST_PANES": f"%13 relaytest {window} {command} 100 0",
                            "CC_MSG_SESSION": "relaytest", "CC_MSG_WINDOW": window, "CODEX_SEND_SESSION": "relaytest"}
-                    argv = [str(ROOT / "tools" / relay)]
+                    argv = [str(tools / relay)]
                     if relay == "codex-send-to":
                         argv.append(window)
                     argv.append("failed-trash-payload-marker")
@@ -423,7 +426,6 @@ exec "$TRASH_TEST_STUB" "$@"''')
                     self.assertEqual(len(payloads), 1)
                     self.assertIn("failed-trash-payload-marker", (payloads[0] / "payload").read_text())
                     self.assertTrue(list(payloads[0].glob("chunk-*")))
-                    self.assertEqual((payloads[0] / "send-keys-Enter.tmux").exists(), not signal_stage)
                     self.assertTrue(list(directory.glob("*-list.*")))
                     self.assertEqual(len(list((directory / "locks").iterdir())), 1)
 

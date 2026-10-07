@@ -30,6 +30,7 @@ relay_route_command() {
   fi
   arguments+=("$TIMEOUT_BIN" -k 1 8 "$relay_script_dir/relay-route-guard" --caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
+  [ -z "$relay_source_json" ] || arguments+=(--expect-source "$relay_source_json")
   relay_shell_join "${arguments[@]}"
   printf ' >/dev/null'
 }

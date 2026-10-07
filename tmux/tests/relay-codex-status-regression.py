@@ -13,3 +13,9 @@ for rejected in [re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', card), card.replace('35m
 print('PASS native local status card; plain, reset-only, unrequested, unknown, OSC and duplicate session rows refuse')
 
 assert m["status_cards"](card.replace("v0.160.1", "v0.161.0"))
+
+native = (Path(__file__).resolve().parent / 'fixtures/codex-161-native-status.ansi').read_text()
+assert len(m['status_cards'](native)) == 1
+for bad in [re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', native), native.replace('/status', '/unknown'), native.replace('Model provider:             ', 'Unknown provider:           '), native.replace('Session:', 'Session:\x1b]8;;x\x07')]:
+    assert not m['status_cards'](bad)
+print('PASS native 0.161.0 status and altered-card refusals')

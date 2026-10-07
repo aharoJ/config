@@ -341,3 +341,7 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Accept the observed native 0.161.0 fresh-reset layout with no greeting; retain strict row admission.
 
 - Recognize semantic Codex versions in automatic status discovery; document the operator-accepted cooperative thread identity limit.
+
+- Cover native 0.161.0 styled and no-color status cards with guarded fresh-output proof; update roll-forward expectations and rename-race fixture targeting.
+
+- Bind final transport route checks to the source used for attribution so a renamed sender refuses before input. Keep cleanup stress tests explicitly isolated from routing authority.

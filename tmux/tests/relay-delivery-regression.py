@@ -451,7 +451,7 @@ class Matrix:
             if rename:
                 proxy = directory / "tmux-sender-proxy"
                 trigger = directory / "sender-renamed"
-                proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *pane_pid* ]] && [ "$1" = display-message ] && [ ! -f '
+                proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *pane_pid* ]] && [[ "$*" = *display-message* ]] && [ ! -f '
                                  + shlex.quote(str(trigger)) + ' ]; then ' + shlex.quote(str(self.tmux_binary))
                                  + " rename-window -t " + shlex.quote("=" + session + ":=" + sender_window)
                                  + ' lab-renamed; touch ' + shlex.quote(str(trigger)) + '; fi\nexec '
@@ -543,7 +543,7 @@ class Matrix:
         self.sender_case("node-codex-sender", "codex", node=True)
         self.sender_case("unknown-app-known-pane", "bash")
         self.case("cc-msg.sh", "unknown-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
-        self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=1)
+        self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=5)
         self.sender_case("ambiguous-linked-sender", "claude", linked=True, code=1)
         self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
         self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, width=80)

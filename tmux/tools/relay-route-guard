@@ -473,6 +473,7 @@ def main():
     parser.add_argument('--target-session', required=True)
     parser.add_argument('--target-window', required=True)
     parser.add_argument('--record')
+    parser.add_argument('--expect-source')
     args = parser.parse_args()
     if args.record:
         record = json.loads(pathlib.Path(args.record).read_text())
@@ -487,6 +488,8 @@ def main():
             raise ValueError('record caller provenance refused: ' + reason)
     else:
         source = bind(dict(os.environ), args.caller)
+    if args.expect_source and source != json.loads(args.expect_source):
+        raise ValueError('source changed after attribution')
     env = dict(os.environ)
     if args.record:
         env['RELAY_OPERATOR'] = '1' if record.get('operator') else '0'
