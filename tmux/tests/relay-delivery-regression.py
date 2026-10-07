@@ -335,7 +335,7 @@ class Matrix:
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
             expected = "unverified (unverified:unverified) [model/effort unverified]: " + normalized
-            archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "neutral-prefix-at-right-margin", "neutral-prefix-pushes-past-one-row", "drop-space-at-full-wrap")
+            archive_case = name.startswith("size-") or name in ("utf8", "utf8-C-locale", "unbroken-unicode", "drop-space-at-full-wrap")
             if code == 1 and archive_case:
                 code = 0
             self.record(relay, name, result, code, directory, expected, code in (1, 2, 5))
@@ -349,7 +349,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            self.record(relay, "codex159-redraw-payload", result, 0, directory, payload)
+            self.record(relay, "codex159-redraw-payload", result, 0, directory, "unverified (unverified:unverified) [model/effort unverified]: " + payload)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -368,7 +368,7 @@ class Matrix:
             payload = "redraw-safe payload"
             argv, env = self.command(relay, session, window, payload, {"TMUX_BIN": str(proxy)})
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
-            self.record(relay, "codex159-redraw-input", result, 0, directory, payload)
+            self.record(relay, "codex159-redraw-input", result, 0, directory, "unverified (unverified:unverified) [model/effort unverified]: " + payload)
         finally:
             if not self.frozen:
                 self.cleanup_session(session)
@@ -496,8 +496,6 @@ class Matrix:
                 raise RuntimeError("sender fixture failed to finish")
             result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
             label = f"{sender_window} ({session}:{sender_window}) [model/effort unverified]"
-            if name == "prefix-pushes-past-one-row":
-                code = 0
             self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)
         finally:
             if not self.frozen:
@@ -558,7 +556,7 @@ class Matrix:
         self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=5)
         self.sender_case("ambiguous-linked-sender", "claude", linked=True, code=1)
         self.sender_case("prefix-pushes-past-one-row", "claude", "a" * 65, code=1, width=80)
-        self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, width=80)
+        self.case("cc-msg.sh", "neutral-prefix-last-verifiable-column", "a" * 70, code=1, width=80)
         self.case("cc-msg.sh", "claude-active-busy", code=5, mode="claude-active-busy")
         self.case("cc-msg.sh", "claude-active-busy-hashing", code=5, mode="claude-active-busy-hashing")
         self.case("cc-msg.sh", "claude-active-busy-warping", code=5, mode="claude-active-busy-warping")

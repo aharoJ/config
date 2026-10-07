@@ -351,3 +351,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Finalize an interrupted initial queue attempt as unknown and stop its transport process group. Never queue or resend partial/uncertain input; retain sweep recovery for uncatchable termination.
 
 - Exercise queued codex-send-to against the native 0.161.0 capture-derived composer: one Enter on valid delivery, unknown with zero Enter/no replay when content changes after paste.
+
+- Align transport matrix expectations with uniform labels and safe refusal when a complete labeled archive pointer cannot fit; retain exact-once and zero-input assertions.
