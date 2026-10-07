@@ -365,3 +365,7 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Exercise queued codex-send-to against the native 0.161.0 capture-derived composer: one Enter on valid delivery, unknown with zero Enter/no replay when content changes after paste.
 
 - Align transport matrix expectations with uniform labels and safe refusal when a complete labeled archive pointer cannot fit; retain exact-once and zero-input assertions.
+
+## 2026-10-07 P0 identity-input stop
+
+- Disable automatic native source discovery and every legacy status-probe entry point. Identity discovery refuses without typing keys into any pane; stable remains rolled back pending reviewed read-only redesign and config CC go.

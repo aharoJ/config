@@ -175,35 +175,7 @@ def thread_retired(thread, since):
 
 
 def automatic_source(env, thread):
-    candidates = []
-    unavailable = []
-    policy_document()
-    for row in panes(env):
-        source = None
-        try:
-            source = pane_source(env, row)
-            if source['app'] != 'codex':
-                continue
-            started = time.time()
-            result = subprocess.run([str(pathlib.Path(__file__).with_name('relay-codex-source-probe'))], input=json.dumps(source), env=env, capture_output=True, text=True, timeout=12)
-            if result.returncode != 0:
-                unavailable.append(source['session'] + ':' + source['window'])
-            elif result.stdout.strip() == thread:
-                candidates.append((source, started))
-        except (ValueError, OSError, subprocess.SubprocessError):
-            if source and source['app'] == 'codex':
-                unavailable.append(source['session'] + ':' + source['window'])
-            continue
-    if unavailable or len(candidates) != 1:
-        raise ValueError('native current-thread status is missing or ambiguous; source not bound; no relay target input was sent')
-    source, started = candidates[0]
-    registered = register_source(env, thread, source['session'] + ':' + source['window'], verified=True, verified_since=started)
-    if {k: v for k, v in registered.items() if k != 'binding_epoch'} != source:
-        raise ValueError('source generation changed during automatic binding')
-    bound = dict(registered, thread_id=thread)
-    if not live(env, bound):
-        raise ValueError('thread retired during automatic binding')
-    return bound
+    raise ValueError('automatic source discovery disabled by P0: identity proof must be read-only; operator binding or reviewed read-only proof required')
 
 
 def daemon_source(env, chain):
