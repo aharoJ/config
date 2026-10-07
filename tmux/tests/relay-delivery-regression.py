@@ -433,10 +433,25 @@ class Matrix:
         session, window, directory = self.start(relay, "concurrent")
         try:
             message = "a" * 100
-            argv, env = self.command(relay, session, window, message)
+            held, release = directory / "first-held", directory / "release-first"
+            proxy = directory / "tmux-concurrent"
+            proxy.write_text('#!/usr/bin/env bash\nif [[ "$*" = *if-shell* && "$*" = *paste-buffer* ]]; then touch '
+                             + shlex.quote(str(held)) + '; for ((i=0;i<1000;i++)); do [ -f '
+                             + shlex.quote(str(release)) + ' ] && break; /bin/sleep 0.02; done; fi\nexec '
+                             + shlex.quote(str(self.tmux_binary)) + ' "$@"\n')
+            proxy.chmod(0o755)
+            argv, env = self.command(relay, session, window, message, {"TMUX_BIN": str(proxy)})
             first = subprocess.Popen(argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            time.sleep(0.08)
-            second = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
+            try:
+                until = time.monotonic() + 15
+                while not held.exists():
+                    if first.poll() is not None or time.monotonic() > until:
+                        raise RuntimeError("first relay did not reach held pre-paste gate")
+                    time.sleep(.02)
+                second_argv, second_env = self.command(relay, session, window, message)
+                second = subprocess.run(second_argv, env=second_env, capture_output=True, text=True, timeout=15)
+            finally:
+                release.touch()
             stdout, stderr = first.communicate(timeout=45)
             result = subprocess.CompletedProcess(argv, first.returncode, stdout, stderr)
             expected = self.label(session) + message
