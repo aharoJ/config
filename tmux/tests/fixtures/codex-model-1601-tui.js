@@ -1,5 +1,5 @@
 const fs = require('fs');
-const [,, cwd, log, scenario = 'model'] = process.argv;
+const [,, cwd, log, scenario = 'model', timingMarker] = process.argv;
 const models = [
   ['GPT-6.1-Sol', 'Latest workhorse model for coding and everyday work.'],
   ['GPT-6-Astra', 'Frontier intelligence for the most demanding work.'],
@@ -18,7 +18,8 @@ const levels = [
 ];
 const advanced = [['Max', 'For difficult problems when quality matters more than speed · higher usage'], ['Ultra', 'For demanding work using multiple agents · highest usage']];
 let state = 'fresh', model = 'GPT-5.6-Terra', effort = 'max', selected = 5, command = '', notice = '';
-let used = scenario === 'reset', draft = scenario === 'draft' ? 'owned draft' : '';
+let settling = false, incomplete = false;
+let used = scenario === 'reset' || scenario === 'reset-picker-timing', draft = scenario === 'draft' ? 'owned draft' : '';
 const hl = '\x1b[1;7m';
 function draw() {
   const rows = ['', '  \x1b[38;2;99;168;248m>_ \x1b[1m\x1b[39mOpenAI Codex\x1b[0;2m (v0.160.1)\x1b[0m', '     \x1b[2m' + cwd + '\x1b[0m', '  permissions: YOLO mode', '', '  Bring a question.', '', '  Tip: Use /title.', '', ''];
@@ -45,6 +46,8 @@ function draw() {
     });
     rows.push('', '  ' + hint);
   }
+  if (settling) cursor = [0, 0];
+  if (incomplete) rows.splice(rows.length - 5, 4);
   process.stdout.write('\x1b[2J\x1b[H' + rows.join('\r\n') + `\x1b[${cursor[1] + 1};${cursor[0] + 1}H`);
 }
 process.stdin.setRawMode(true);
@@ -55,9 +58,10 @@ process.stdin.on('data', data => {
   else for (const ch of text) {
     if (ch === '\r') {
       if (state === 'slash') { state = command === '/new' ? 'menu' : 'models'; selected = state === 'menu' ? 0 : models.findIndex(x => x[0] === model); }
-      else if (state === 'menu') { state = 'fresh'; used = false; model = 'GPT-6.1-Sol'; effort = 'low'; }
+      else if (state === 'menu') { state = 'fresh'; used = false; model = 'GPT-6.1-Sol'; effort = 'low'; settling = scenario.startsWith('reset-cursor-'); }
       else if (state === 'models') { model = models[selected][0]; state = 'efforts'; selected = 0; }
       else if (state === 'efforts' && selected === 4) { state = 'advanced'; selected = 0; }
+      if (state === 'models' && scenario === 'reset-picker-timing') { incomplete = true; setTimeout(() => { incomplete = false; draw(); }, 250); }
       command = '';
     } else if (state === 'models' && /^[1-7]$/.test(ch)) { model = models[Number(ch) - 1][0]; state = 'efforts'; selected = 0; }
     else if (state === 'efforts' && ch === '5') { state = 'advanced'; selected = 0; }
@@ -69,3 +73,12 @@ process.stdin.on('data', data => {
   draw();
 });
 draw();
+
+if (timingMarker) {
+  const timer = setInterval(() => {
+    if (settling && fs.existsSync(timingMarker)) {
+      clearInterval(timer);
+      if (scenario === 'reset-cursor-settles' || scenario === 'reset-cursor-draft') setTimeout(() => { settling = false; if (scenario === 'reset-cursor-draft') draft = 'owned after reset'; draw(); }, 120);
+    }
+  }, 10);
+}

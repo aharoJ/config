@@ -77,7 +77,7 @@ request() {
 }
 
 require_empty_codex_input() {
-  local capture state state_after code cursor_x cursor_y in_mode attempts=0
+  local capture state state_after code cursor_x cursor_y in_mode fresh_footer attempts=0 settle_deadline=0
   while [ "$attempts" -lt 24 ]; do
     attempts=$((attempts + 1))
     if state="$(relay_display "$pane" '#{pane_in_mode}:#{cursor_x}:#{cursor_y}')"; then
@@ -118,7 +118,14 @@ require_empty_codex_input() {
       sleep 0.01
       continue
     fi
-    relay_glyph="$(printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" glyph "$cursor_y")" || refuse_draft "$pane" 'an unrecognized composer glyph'
+    if ! relay_glyph="$(printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" glyph "$cursor_y")"; then
+      fresh_footer="$(printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" footer)" || refuse_draft "$pane" 'an unrecognized composer glyph'
+      printf '%s\n' "$capture" | "$relay_script_dir/codex-new-guard" direct-reset "$fresh_footer" || refuse_draft "$pane" 'an unrecognized composer glyph'
+      [ "$settle_deadline" != 0 ] || settle_deadline=$((SECONDS+2))
+      [ "$attempts" -lt 24 ] && [ "$SECONDS" -lt "$settle_deadline" ] || refuse_draft "$pane" 'an unsettled fresh-reset composer'
+      sleep 0.01
+      continue
+    fi
     relay_busy_preflight "$capture" "$cursor_y"
     printf '%s\n' "$capture" | "$RELAY_INPUT_GUARD" "$relay_glyph" "$cursor_x" "$cursor_y" "$relay_verify_width" "$relay_sender_tier"
     code=$?
