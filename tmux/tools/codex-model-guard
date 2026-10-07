@@ -214,6 +214,7 @@ def check(mode, capture, expected=''):
         }
         tips = {
             '  Tip: Use /title.',
+            '  Tip: When worktree support is available, use /worktree to start or continue a conversation in a separate Git worktree.',
             '  Tip: Use the desktop app. Run codex app to open it. It installs automatically if needed.',
         }
         if len(content) == 5:

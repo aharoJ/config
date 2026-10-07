@@ -22,6 +22,10 @@ try:
         shutil.copytree(ROOT / 'tools', case / 'tools')
         if tool == 'codex-new-chat':
             (case / 'tools/relay-route-guard').write_text("#!/bin/sh\nprintf '%s\\n' '{}'\n")
+            probe = case / 'tools/relay-codex-source-probe'
+            if probe.exists():
+                probe.write_text("#!/bin/sh\nexit 0\n")
+                probe.chmod(0o700)
         actor = case / '@openai/codex/bin/codex.js'
         actor.parent.mkdir(parents=True)
         shutil.copy2(ROOT / 'tests/fixtures/codex-model-1601-tui.js', actor)

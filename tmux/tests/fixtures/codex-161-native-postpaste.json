@@ -1,0 +1,8 @@
+{
+  "cursor_x": 68,
+  "cursor_y": 8,
+  "pane_width": 200,
+  "pane_height": 50,
+  "expected_payload": "codex (lab:codex) [gpt-6.1-sol low]: Read ~/desk/lab/relay-test.md",
+  "provenance": "Native 0.161.0 private pane, bracketed paste without Enter; cwd sanitized. No model turn or incident reconstruction."
+}
