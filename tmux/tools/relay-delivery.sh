@@ -37,6 +37,7 @@ relay_route_command() {
 
 relay_require_route() {
   local arguments=(--caller "$$" --target-session "$target_session" --target-window "$relay_target_window")
+  [ -z "$relay_source_json" ] || arguments+=(--expect-source "$relay_source_json")
   [ -z "${RELAY_MESSAGE_RECORD:-}" ] || arguments+=(--record "$RELAY_MESSAGE_RECORD")
   if ! relay_source_json="$("$relay_script_dir/relay-route-guard" "${arguments[@]}")"; then
     [ "$relay_input_attempted" = 0 ] || partial 'route refused after input preparation; do not resend'
