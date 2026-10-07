@@ -230,11 +230,12 @@ def fixture(directory, glyph, mode):
 
 
 class Matrix:
-    def __init__(self, output):
+    def __init__(self, output, validated_sources=False):
         os.umask(0o077)
         self.output = pathlib.Path(output).resolve()
         self.output.mkdir(parents=True, exist_ok=True)
         self.results = []
+        self.validated_sources = validated_sources
         self.sessions = set()
         self.frozen = False
         self.number = 0
@@ -296,7 +297,7 @@ class Matrix:
         if relay == "codex-send-to":
             argv.append(window)
         argv.append(payload)
-        if source:
+        if source and self.validated_sources:
             actual_session = next(item for item in self.sessions if item == session or session.startswith(item + "-missing") or item.upper() == session)
             self.ensure_source(actual_session)
             self.source_requests += 1
@@ -322,6 +323,8 @@ class Matrix:
         self.source_sessions.add(session)
 
     def label(self, session):
+        if not self.validated_sources:
+            return "unverified (unverified:unverified) [model/effort unverified]: "
         return f"sender ({session}:sender) [model/effort unverified]: "
 
     def record(self, relay, name, result, expected_code, directory, expected_payload=None, no_input=False):
@@ -353,13 +356,13 @@ class Matrix:
         (directory / "result.json").write_text(json.dumps(row, indent=2))
         print(f"{'PASS' if passed else 'FAIL'} {relay} {name} exit={result.returncode}", flush=True)
 
-    def case(self, relay, name, payload="relay payload", code=0, mode="idle", target=None, setup=None, extra=None, width=192, height=51):
+    def case(self, relay, name, payload="relay payload", code=0, mode="idle", target=None, setup=None, extra=None, width=192, height=51, source=True):
         session, window, directory = self.start(relay, name, mode, width, height)
         try:
             if setup:
                 setup(session, window)
             selected = target(session) if target else session
-            argv, env = self.command(relay, selected, window, payload, extra)
+            argv, env = self.command(relay, selected, window, payload, extra, source=source)
             result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=45)
             normalized = re_normalize(payload)
             expected = self.label(session) + normalized
@@ -563,6 +566,7 @@ class Matrix:
                 self.cleanup_session(session)
 
     def run(self):
+        self.case("cc-msg.sh", "unbound-source-refused", code=1, source=False)
         for relay in ("codex-send", "codex-send-to"):
             for mode in ("fresh", "idle", "busy", "startup-tip", "model-change", "main-default", "reconnected-main-default", "no-context"):
                 self.case(relay, "codex159-" + mode, mode="codex159-" + mode)
@@ -669,7 +673,7 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("--output", default=None)
         args = parser.parse_args()
-        matrix = Matrix(args.output or tempfile.mkdtemp(prefix="ccmsg-evidence-"))
+        matrix = Matrix(args.output or tempfile.mkdtemp(prefix="ccmsg-evidence-"), validated_sources=True)
         try:
             sys.exit(matrix.run())
         finally:
