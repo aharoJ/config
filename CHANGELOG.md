@@ -3,6 +3,9 @@
 ## Worktree candidate — automatic Codex source binding (#8; deployment stopped)
 
 Shared-daemon source discovery queries kernel-verified native Codex panes through guarded local `/status` commands, requires fresh pane output and a unique current thread, and records a binding generation. Reset/resume cannot reactivate queued work from an older generation. Codex reset completion invokes the same verification path. Unavailable or ambiguous source panes refuse binding. This candidate is isolated, has not passed the independent deployment gate, and is not installed.
+## Isolated investigation — Codex 0.160.1 model/reset picker
+
+Add private transport coverage for Terra-to-Sol model selection and fresh-chat restoration of Terra/max through the seven-model picker, retaining real target identity and UI guards. A derived Terra-selected terminal capture exercises both picker recognizers and hostile menu variants. These checks do not reproduce the reported live failure and do not establish a production fix. No deployment is authorized under STOP.
 
 ## 2026-10-06 — Repair relay source proof, provenance and uniform labels
 
