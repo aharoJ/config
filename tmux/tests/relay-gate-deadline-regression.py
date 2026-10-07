@@ -19,8 +19,8 @@ try:
         guard = tools/'relay-route-guard'
         guard.write_text('#!/usr/bin/env python3\nimport os,subprocess,time,sys\nparent=subprocess.check_output(["ps","-p",str(os.getppid()),"-o","comm="],text=True).strip()\nif "timeout" in parent:\n time.sleep('+str(delay)+')\n sys.exit('+str(status)+')\nprint("{}")\n')
         guard.chmod(0o755)
-        def command(relay, session, window, payload, extra=None):
-            argv, env = original(relay,session,window,payload,extra)
+        def command(relay, session, window, payload, extra=None, source=True):
+            argv, env = original(relay,session,window,payload,extra,source=source)
             argv[0] = str(tools/relay)
             return argv,env
         matrix.command = command

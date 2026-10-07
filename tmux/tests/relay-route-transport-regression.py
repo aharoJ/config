@@ -13,8 +13,8 @@ matrix = transport.Matrix(output)
 try:
     target_session, target_window, target_directory = matrix.start('cc-msg.sh','cross-target')
     command = matrix.command
-    def cross(relay, session, window, payload, extra=None):
-        argv, env = command(relay, target_session, target_window, payload, extra)
+    def cross(relay, session, window, payload, extra=None, source=True):
+        argv, env = command(relay, target_session, target_window, payload, extra, source=source)
         env.update(CC_MSG_QUEUE_INTERNAL='0', CC_MSG_INBOX_ROOT=str(output/'inbox'))
         env.pop('RELAY_MESSAGE_RECORD', None)
         return argv, env
@@ -22,8 +22,8 @@ try:
     for agent in ['codex','agy','gemini','claude']:
         matrix.sender_case('cross-refused-'+agent,agent,code=1)
     assert not list((output/'inbox').glob('*/*.json'))
-    def local(relay, session, window, payload, extra=None):
-        argv, env = command(relay,session,window,payload,extra)
+    def local(relay, session, window, payload, extra=None, source=True):
+        argv, env = command(relay,session,window,payload,extra,source=source)
         env.update(CC_MSG_QUEUE_INTERNAL='0',CC_MSG_INBOX_ROOT=str(output/'inbox'))
         env.pop('RELAY_MESSAGE_RECORD',None)
         return argv,env

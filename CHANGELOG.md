@@ -1,5 +1,9 @@
 # Changelog
 
+## Final suite fixture compatibility
+
+Queue, route, deadline, and adapter fixture overrides now accept and forward the broad matrix source-mode argument. Production tools and the independently passed broad matrix are unchanged.
+
 ## Isolated gate repair — validated broad-matrix sources
 
 Direct delivery-matrix cases now execute under a compiled synthetic sender in the same private tmux session, exercising production source validation before transport checks. Concurrent cases share that source while retaining independent requests, with the first relay held at pre-paste until the second checks its lock. Fixture subprocess stdin is closed so empty-payload checks cannot read the private terminal. No production transport changes or installation.

@@ -21,8 +21,8 @@ shutil.copytree(ROOT / 'tools', tools)
 original = matrix.command
 payload = '(CC) <-> rp / \'single\' "double" $(false) `false` \\ literal'
 try:
-    def command(relay, session, window, payload, extra=None):
-        argv, env = original(relay, session, window, payload, extra)
+    def command(relay, session, window, payload, extra=None, source=True):
+        argv, env = original(relay, session, window, payload, extra, source=source)
         argv[0] = str(tools / Path(argv[0]).name)
         env.update(CC_MSG_QUEUE_INTERNAL='0', CC_MSG_INBOX_ROOT=str(output / 'inbox'))
         env.pop('RELAY_MESSAGE_RECORD', None)
@@ -37,10 +37,10 @@ try:
         return original_record(relay, name, result, expected_code, target_directory, expected_payload, no_input)
     matrix.record = cross_record
     for provider in ('codex', 'claude'):
-        def cross(relay, session, window, payload, extra=None):
+        def cross(relay, session, window, payload, extra=None, source=True):
             policy = {'version': 2, 'seats': {session: {'lab-sender-' + provider: 'lead'}, target_session: {target_window: 'lead'}}, 'orchestrator_of': {session: [target_session, target_window]}}
             (tools / 'relay-route-policy.json').write_text(json.dumps(policy))
-            argv, env = command(relay, target_session, target_window, payload, extra)
+            argv, env = command(relay, target_session, target_window, payload, extra, source=source)
             return argv, env
         matrix.command = cross
         matrix.sender_case('cross-lead-' + provider, provider, payload=payload)

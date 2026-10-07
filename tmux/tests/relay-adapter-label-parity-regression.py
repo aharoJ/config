@@ -22,10 +22,10 @@ try:
         for archived in (False, True):
             target_session, target_window, target_directory = matrix.start(adapter, provider + ('-archive' if archived else '-direct'), width=260)
             payload = ("literal sender's quote " + ('long archive payload ' * 90 if archived else 'direct')).rstrip()
-            def command(relay, session, window, message, extra=None):
+            def command(relay, session, window, message, extra=None, source=True):
                 policy = dict(version=2, seats={session:{'lab-sender-' + provider:'lead'}, target_session:{target_window:'lead'}}, orchestrator_of={session:[target_session,target_window]})
                 (tools / 'relay-route-policy.json').write_text(json.dumps(policy))
-                argv, env = base_command(adapter, target_session, target_window, message, extra)
+                argv, env = base_command(adapter, target_session, target_window, message, extra, source=source)
                 argv[0] = str(tools / adapter)
                 env.update(CC_MSG_QUEUE_INTERNAL='0', CODEX_SEND_QUEUE_INTERNAL='0', AGY_SEND_QUEUE_INTERNAL='0', CC_MSG_INBOX_ROOT=str(output / 'inbox'))
                 env.pop('RELAY_MESSAGE_RECORD', None)

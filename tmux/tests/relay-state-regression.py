@@ -115,9 +115,9 @@ class StateMatrix(delivery.Matrix):
             raise RuntimeError("Agy fixture failed to start")
         return session, "lab-agy", directory
 
-    def command(self, relay, session, window, payload, extra=None):
+    def command(self, relay, session, window, payload, extra=None, source=True):
         if relay != "agy-send-to":
-            return super().command(relay, session, window, payload, extra)
+            return super().command(relay, session, window, payload, extra, source=source)
         env = {**os.environ, "AGY_SEND_SESSION": session, "TMUX": self.server_address,
                "TMUX_BIN": str(self.tmux_binary), "TMUX_RELAY_LOCK_ROOT": str(self.output / "relay-locks")}
         if extra:
