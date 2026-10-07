@@ -339,3 +339,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Pre-commit hook "bashisms" (false positive — hook is pure POSIX sh)
 
 - Accept the observed native 0.161.0 fresh-reset layout with no greeting; retain strict row admission.
+
+- Recognize semantic Codex versions in automatic status discovery; document the operator-accepted cooperative thread identity limit.
