@@ -16,7 +16,7 @@ def tmux(*args):
     return subprocess.check_output(['tmux', '-L', server, '-f', '/dev/null', *args], text=True)
 results = []
 try:
-    for name, tool, scenario, expected in [('model-terra-to-sol', 'codex-model', 'model', 0), ('new-chat-restore-terra', 'codex-new-chat', 'reset', 0), ('model-owned-draft', 'codex-model', 'draft', 5), ('fresh-reset-cursor-settles', 'codex-model', 'reset-cursor-settles', 0), ('fresh-reset-cursor-stuck', 'codex-model', 'reset-cursor-stuck', 5), ('fresh-reset-draft-arrives', 'codex-model', 'reset-cursor-draft', 5), ('fresh-reset-picker-open', 'codex-model', 'reset-picker-open', 5), ('new-chat-picker-settles', 'codex-new-chat', 'reset-picker-timing', 0)]:
+    for name, tool, scenario, expected in [('model-terra-to-sol', 'codex-model', 'model', 0), ('new-chat-restore-terra', 'codex-new-chat', 'reset', 0), ('model-owned-draft', 'codex-model', 'draft', 5), ('fresh-reset-cursor-settles', 'codex-model', 'reset-cursor-settles', 0), ('fresh-reset-cursor-stuck', 'codex-model', 'reset-cursor-stuck', 5), ('fresh-reset-draft-arrives', 'codex-model', 'reset-cursor-draft', 5), ('fresh-reset-picker-open', 'codex-model', 'reset-picker-open', 5), ('fresh-reset-unknown-warning', 'codex-model', 'reset-cursor-warning', 5), ('fresh-reset-model-title', 'codex-model', 'reset-cursor-model-title', 5), ('fresh-reset-checkout-title', 'codex-model', 'reset-cursor-checkout-title', 5), ('fresh-reset-unknown-status', 'codex-model', 'reset-cursor-status', 5), ('fresh-reset-warning-arrives', 'codex-model', 'reset-cursor-late-warning', 5), ('new-chat-picker-settles', 'codex-new-chat', 'reset-picker-timing', 0)]:
         case = output / name
         case.mkdir()
         shutil.copytree(ROOT / 'tools', case / 'tools')

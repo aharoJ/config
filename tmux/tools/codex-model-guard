@@ -198,6 +198,29 @@ def check(mode, capture, expected=''):
         current = footer_parts(footers[0].split(' · Context ')[0])
         previous = footer_parts(expected)
         return 0 if current[0] == previous[0] and current[3] == previous[3] else 1
+    if mode == 'settling-reset':
+        if len(footers) != 1 or footers[0].split(' · Context ')[0] != expected or ' · Context 0% used' not in footers[0]:
+            return 1
+        _, _, _, cwd = footer_parts(expected)
+        if any(re.search(r'[\x00-\x1f\x7f]', re.sub(r'\x1b\[[0-9;:]*m', '', row)) for row in raw):
+            return 1
+        content = [row for row in rows if row]
+        if len(content) == 7 and content[2] == '  permissions: YOLO mode':
+            content.pop(2)
+        greetings = {
+            '  Bring a question.',
+            '  Here for a quick fix or the extended edition?',
+            '  This terminal has excellent conversational potential.',
+        }
+        tips = {
+            '  Tip: Use /title.',
+            '  Tip: Use the desktop app. Run codex app to open it. It installs automatically if needed.',
+        }
+        valid = len(content) == 6
+        valid = valid and re.fullmatch(r'  >_ OpenAI Codex \(v0\.160\.[01]\)', content[0]) is not None
+        valid = valid and content[1] == '     ' + cwd and content[2] in greetings and content[3] in tips
+        valid = valid and content[4] == '› Ask Codex to do anything' and content[5].strip() == footers[0]
+        return 0 if valid else 1
     if mode == 'direct-reset':
         if check('reset', capture, expected):
             return 1

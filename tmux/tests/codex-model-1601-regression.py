@@ -18,4 +18,21 @@ for guard in ['codex-model-guard', 'codex-new-guard']:
         p = subprocess.run([str(ROOT / 'tools' / guard), 'models', footer], input=bad, text=True, capture_output=True)
         assert p.returncode == 1, (guard, bad)
         checks += 1
-print(f'PASS {checks} Terra-selected derived picker and rejection checks for both guards')
+fresh = (ROOT / 'tests/fixtures/codex-new-live-config-main-after.ansi').read_text()
+for screen in [fresh, fresh.replace('v0.160.0', 'v0.160.1')]:
+    p = subprocess.run([str(ROOT / 'tools/codex-model-guard'), 'settling-reset', footer], input=screen, text=True, capture_output=True)
+    assert p.returncode == 0, p.stderr
+    checks += 1
+    for row in ['  Unexpected status text', '  ⚠ Unknown warning', '  Select Model and Effort', '  Where should the new conversation run?', '› 1. Unknown choice', '  Tip: Unknown command', '  Unknown greeting']:
+        bad = screen.replace('\n\x1b[1m›', '\n' + row + '\n\x1b[1m›')
+        assert bad != screen
+        p = subprocess.run([str(ROOT / 'tools/codex-model-guard'), 'settling-reset', footer], input=bad, text=True, capture_output=True)
+        assert p.returncode == 1, (row, p.stdout, p.stderr)
+        checks += 1
+    for bad in [screen.replace('excellent conversational potential', 'unknown greeting'), screen.replace('desktop app', 'unknown action'), screen.replace('Context 0%', 'Context 1%'), screen.replace('YOLO mode', 'Unknown mode'), screen.replace('>_ OpenAI', '\x1b]8;;https://example.test\x07>_ OpenAI')]:
+        if bad == screen:
+            continue
+        p = subprocess.run([str(ROOT / 'tools/codex-model-guard'), 'settling-reset', footer], input=bad, text=True, capture_output=True)
+        assert p.returncode == 1, (bad, p.stderr)
+        checks += 1
+print(f'PASS {checks} picker and strict settling-reset rejection checks')

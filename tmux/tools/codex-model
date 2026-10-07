@@ -118,9 +118,13 @@ require_empty_codex_input() {
       sleep 0.01
       continue
     fi
+    if [ -n "$model_settle_footer" ]; then
+      printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" settling-reset "$model_settle_footer" || refuse_draft "$pane" 'an unrecognized fresh-reset transition'
+    fi
     if ! relay_glyph="$(printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" glyph "$cursor_y")"; then
       fresh_footer="$(printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" footer)" || refuse_draft "$pane" 'an unrecognized composer glyph'
-      printf '%s\n' "$capture" | "$relay_script_dir/codex-new-guard" direct-reset "$fresh_footer" || refuse_draft "$pane" 'an unrecognized composer glyph'
+      printf '%s\n' "$capture" | "$relay_script_dir/codex-model-guard" settling-reset "$fresh_footer" || refuse_draft "$pane" 'an unrecognized composer glyph'
+      model_settle_footer="$fresh_footer"
       [ "$settle_deadline" != 0 ] || settle_deadline=$((SECONDS+2))
       [ "$attempts" -lt 24 ] && [ "$SECONDS" -lt "$settle_deadline" ] || refuse_draft "$pane" 'an unsettled fresh-reset composer'
       sleep 0.01
@@ -202,6 +206,7 @@ new_target_check() {
   "$relay_script_dir/codex-model-target-guard" "$relay_target_socket" "$pane" "$new_target_proof"
 }
 prepare_payload "$message"
+model_settle_footer=
 relay_sender_tier=strict
 require_empty_codex_input
 require_empty_codex_input

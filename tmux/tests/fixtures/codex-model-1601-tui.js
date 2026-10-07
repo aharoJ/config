@@ -18,13 +18,17 @@ const levels = [
 ];
 const advanced = [['Max', 'For difficult problems when quality matters more than speed · higher usage'], ['Ultra', 'For demanding work using multiple agents · highest usage']];
 let state = 'fresh', model = 'GPT-5.6-Terra', effort = 'max', selected = 5, command = '', notice = '';
-let settling = false, incomplete = false;
+let settling = false, incomplete = false, lateWarning = false;
 let used = scenario === 'reset' || scenario === 'reset-picker-timing', draft = scenario === 'draft' ? 'owned draft' : '';
 const hl = '\x1b[1;7m';
 function draw() {
   const rows = ['', '  \x1b[38;2;99;168;248m>_ \x1b[1m\x1b[39mOpenAI Codex\x1b[0;2m (v0.160.1)\x1b[0m', '     \x1b[2m' + cwd + '\x1b[0m', '  permissions: YOLO mode', '', '  Bring a question.', '', '  Tip: Use /title.', '', ''];
   let cursor = [0, 0];
   if (state === 'fresh' || state === 'slash') {
+    if (scenario === 'reset-cursor-warning' || lateWarning) rows.push('  ⚠ Unknown warning');
+    if (scenario === 'reset-cursor-model-title') rows.push('  Select Model and Effort');
+    if (scenario === 'reset-cursor-checkout-title') rows.push('  Where should the new conversation run?');
+    if (scenario === 'reset-cursor-status') rows.push('  Unexpected status text');
     if (used) rows.push('• earlier reply', '');
     if (notice) rows.push(notice, '');
     if (state === 'slash') rows.push(hl + '› ' + command + '  ' + (command === '/model' ? 'choose what model and reasoning effort to use' : 'start a new chat during a conversation') + '\x1b[0m', '', '› ' + command);
@@ -78,7 +82,7 @@ if (timingMarker) {
   const timer = setInterval(() => {
     if (settling && fs.existsSync(timingMarker)) {
       clearInterval(timer);
-      if (scenario === 'reset-cursor-settles' || scenario === 'reset-cursor-draft') setTimeout(() => { settling = false; if (scenario === 'reset-cursor-draft') draft = 'owned after reset'; draw(); }, 120);
+      if (scenario !== 'reset-cursor-stuck') setTimeout(() => { settling = false; if (scenario === 'reset-cursor-draft') draft = 'owned after reset'; if (scenario === 'reset-cursor-late-warning') lateWarning = true; draw(); }, 120);
     }
   }, 10);
 }
