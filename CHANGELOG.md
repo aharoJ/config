@@ -369,3 +369,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 ## 2026-10-07 P0 identity-input stop
 
 - Disable automatic native source discovery and every legacy status-probe entry point. Identity discovery refuses without typing keys into any pane; stable remains rolled back pending reviewed read-only redesign and config CC go.
+
+- Read-only shared-daemon attribution now requires an explicit operator binding plus existing live process/socket/generation and thread-retirement checks. Reject status-derived bindings; absent or retired proof refuses without discovery input.

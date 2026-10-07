@@ -175,7 +175,15 @@ def thread_retired(thread, since):
 
 
 def automatic_source(env, thread):
-    raise ValueError('automatic source discovery disabled by P0: identity proof must be read-only; operator binding or reviewed read-only proof required')
+    data = source_bindings()
+    source = data['bindings'].get(thread)
+    proof = data.get('proofs', {}).get(thread, {})
+    if source is None or proof.get('kind') != 'operator' or source.get('app') != 'codex' or source.get('version') != 2:
+        raise ValueError('read-only source proof unavailable; operator must bind the exact current thread and live seat; status-derived bindings are not accepted')
+    bound = dict(source, thread_id=thread)
+    if not live(env, bound):
+        raise ValueError('read-only source binding retired or generation changed; operator must rebind the live seat')
+    return bound
 
 
 def daemon_source(env, chain):
