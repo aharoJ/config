@@ -190,9 +190,10 @@ def finish(folder, path, data, state, code, output):
             data['watch_baseline'] = STARTED['snapshot'](globals(), dict(os.environ, **data.get('environment', {})), data['identity'])
         except Exception as error:
             data['watch_error'] = str(error)
+            data['watch_baseline_error'] = str(error)
     save(path, data)
     event(folder, data, state, code=code, output=output)
-    if state == 'delivered' and data.get('watch_baseline') and not data.get('watch_notification'):
+    if state == 'delivered' and data.get('watch_minutes') and not data.get('watch_notification'):
         launch_watch(path, data)
     if data.get('watch_error'):
         print('relay: HARD WARNING: not started yet; watch unavailable: ' + data['watch_error'])
@@ -356,7 +357,7 @@ def sweep(folder=None):
                         launch_worker(folder, path, data)
                     except OSError as error:
                         finish(folder, path, data, 'failed', 7, f'cannot recover retry worker: {error}')
-            elif data['state'] == 'delivered' and data.get('watch_baseline') and not data.get('watch_notification'):
+            elif data['state'] == 'delivered' and data.get('watch_minutes') and not data.get('watch_notification'):
                 receipt = path.with_suffix('.watch.json')
                 if not receipt.exists() or json.loads(receipt.read_text()).get('state') == 'notification-planned':
                     launch_watch(path, data)

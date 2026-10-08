@@ -96,10 +96,14 @@ def watch(queue, path):
             return
         env = dict(os.environ, **data.get('environment', {}))
         try:
-            baseline = data['watch_baseline']
-            deadline = data['updated'] + data['watch_minutes'] * 60
             observation_error = None
             try:
+                # A missing initial baseline is already an unverified start,
+                # not permission to take a later baseline and hide that gap.
+                if data.get('watch_baseline_error') or not data.get('watch_baseline'):
+                    raise ValueError(data.get('watch_baseline_error') or 'initial watch baseline unavailable')
+                baseline = data['watch_baseline']
+                deadline = data['updated'] + data['watch_minutes'] * 60
                 while True:
                     if snapshot(queue, env, data['identity']) != baseline:
                         outcome('output-observed')

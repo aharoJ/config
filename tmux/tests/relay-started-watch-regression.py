@@ -46,10 +46,34 @@ with patch.dict(g, snapshot=unavailable):
     module['watch'](queue,path)
 assert json.loads(path.with_suffix('.watch.json').read_text())['state'] == 'notification-queued'
 assert len(launches) == 2 and 'start unverified' in launches[-1][1]['message']
+# Initial observation failure and legacy missing-baseline recovery both notify
+# once without capturing a later baseline or typing into the observed target.
+for name, initial_error in (('initial-unavailable', 'initial exact-pane capture raced'), ('missing-baseline', None)):
+    path = record(name)
+    data = json.loads(path.read_text())
+    del data['watch_baseline']
+    if initial_error:
+        data['watch_baseline_error'] = initial_error
+    save(path, data)
+    before = len(launches)
+    def forbidden_snapshot(*args):
+        raise AssertionError('must not replace missing initial baseline')
+    with patch.dict(g, snapshot=forbidden_snapshot):
+        module['watch'](queue, path)
+        module['watch'](queue, path)
+    assert len(launches) == before + 1
+    assert 'start unverified' in launches[-1][1]['message']
+    assert (initial_error or 'initial watch baseline unavailable') in launches[-1][1]['message']
+    assert json.loads(path.with_suffix('.watch.json').read_text())['state'] == 'notification-queued'
 # Abrupt death before plan, after plan, after alert and after launch must leave
 # one stable logical alert. Recovery must never rewind unknown delivery.
-for boundary in ('before-plan','after-plan','after-alert','after-launch'):
-    path = record('crash-' + boundary)
+for kind, boundary in [(kind, boundary) for kind in ('baseline', 'initial-error') for boundary in ('before-plan','after-plan','after-alert','after-launch')]:
+    path = record('crash-' + kind + '-' + boundary)
+    if kind == 'initial-error':
+        data = json.loads(path.read_text())
+        del data['watch_baseline']
+        data['watch_baseline_error'] = 'initial capture unavailable'
+        save(path, data)
     receipt = path.with_suffix('.watch.json')
     before = len(launches)
     def crashing_save(destination, data):
