@@ -19,6 +19,28 @@ loader.exec_module(queue)
 
 
 class QueueTests(unittest.TestCase):
+    def test_unbound_warning_preserves_delivery_and_queue_exit_codes(self):
+        for code, expected in ((0, 0), (5, 6)):
+            with self.subTest(code=code):
+                self.root = self.root / uuid.uuid4().hex
+                warning = 'target lab-test:claude is unbound: it cannot reply until bound'
+                with patch.dict(os.environ, RELAY_REPLY_WARNING='1'), patch.dict(queue.STARTED, reply_warning=lambda *args:warning):
+                    result, path, data, launch = self.send(code)
+                self.assertEqual(result, expected)
+                self.assertEqual(data['reply_warning'], warning)
+
+    def test_watch_only_arms_after_verified_delivery(self):
+        with patch.dict(os.environ, RELAY_WATCH_MINUTES='1'), patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
+            result, path, data, launch = self.send(0)
+        self.assertEqual(result, 0)
+        self.assertEqual(data['watch_baseline'], 'baseline')
+        self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
+        self.root = self.root / uuid.uuid4().hex
+        with patch.dict(os.environ, RELAY_WATCH_MINUTES='1'), patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
+            result, path, data, launch = self.send(5)
+        self.assertEqual(result, 6)
+        self.assertNotIn('watch_baseline', data)
+
     def setUp(self):
         route = patch.object(queue, 'routing_source', return_value=dict(session='lab-test', window='codex', pane='%1'))
         route.start()

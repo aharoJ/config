@@ -1,0 +1,117 @@
+"""Read-only recipient observation and generation-bound sender notifications."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import subprocess
+import time
+import uuid
+
+
+def reply_warning(env, session, window):
+    try:
+        guard = runpy.run_path(str(Path(__file__).with_name('relay-route-guard')))
+        rows = [row for row in guard['panes'](env) if row[1:3] == [session, window]]
+        if len(rows) != 1:
+            return 'target ' + session + ':' + window + ' reply binding could not be verified'
+        source = guard['pane_source'](env, rows[0])
+        if source['app'] != 'codex':
+            return None  # Other interactive agents use kernel-backed source proof.
+        state = guard['source_bindings']()
+        key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
+        thread = state['active'].get(key)
+        if thread:
+            bound = dict(state['bindings'].get(thread, {}), thread_id=thread)
+            if guard['live'](env, bound):
+                return None
+            # Same continuity proof used by a subsequent send; no identity input.
+            text = guard['VISIBLE']['capture'](env, source, guard['run'])
+            turns = guard['VISIBLE']['stored_turns']()
+            matches = [thread for thread, turn in turns.items() if turn == text]
+            if len(matches) == 1:
+                rebound = guard['automatic_source'](env, matches[0])
+                if rebound['pane'] == source['pane'] and rebound['socket'] == source['socket']:
+                    return None
+        return 'target ' + session + ':' + window + ' is unbound: it cannot reply until bound'
+    except Exception:
+        # Advisory only: never rewrite a successful transport outcome.
+        return 'target ' + session + ':' + window + ' reply binding could not be verified'
+
+
+def snapshot(queue, env, target):
+    if not target or queue['identity'](env) != target:
+        raise ValueError('watch target generation changed or unavailable')
+    base = [env.get('TMUX_BIN', 'tmux'), '-S', target['socket']]
+    def read(*args):
+        result = subprocess.run([*base, *args], env=env, capture_output=True, timeout=5)
+        if result.returncode:
+            raise ValueError('watch observation unavailable')
+        return result.stdout
+    expected = (target['pane'] + '|0|0\n').encode()
+    def metadata():
+        return read('display-message', '-p', '-t', target['pane'], '#{pane_id}|#{pane_in_mode}|#{alternate_on}')
+    if metadata() != expected:
+        raise ValueError('watch target is in copy/alternate mode')
+    screen = read('capture-pane', '-p', '-J', '-S', '-2000', '-t', target['pane'])
+    if metadata() != expected or queue['identity'](env) != target:
+        raise ValueError('watch observation raced a generation/mode change')
+    return hashlib.sha256(screen).hexdigest()
+
+
+def watch(queue, path):
+    """One durable watch owner. Never types into the observed recipient."""
+    import fcntl
+    with path.with_suffix('.watch.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        data = json.loads(path.read_text())
+        if data.get('state') != 'delivered' or not data.get('watch_minutes'):
+            return
+        receipt = path.with_suffix('.watch.json')
+        if receipt.exists():
+            return
+        def outcome(state, **extra):
+            queue['save'](receipt, dict(id=data['id'], state=state, time=time.time(), **extra))
+        env = dict(os.environ, **data.get('environment', {}))
+        try:
+            baseline = data['watch_baseline']
+            deadline = data['updated'] + data['watch_minutes'] * 60
+            while True:
+                if snapshot(queue, env, data['identity']) != baseline:
+                    outcome('output-observed')
+                    return
+                if time.time() >= deadline:
+                    break
+                time.sleep(min(5, max(0, deadline - time.time())))
+            source = data['source']
+            if source['pane'] == data['identity']['pane']:
+                raise ValueError('watch cannot notify the observed target')
+            # A canonical --worker rechecks this original source proof, socket,
+            # actor generation and binding epoch before any notification input.
+            session, window = source['session'], source['window']
+            notify_env = dict(env, CC_MSG_SESSION=session, CC_MSG_WINDOW=window, CC_MSG_PANE=source['pane'], RELAY_OPERATOR='0')
+            app = source['app']
+            agent = {'claude':'claude', 'codex':'codex-to', 'agy':'agy', 'gemini':'agy'}[app]
+            if app == 'codex':
+                notify_env.update(CODEX_SEND_SESSION=session, CODEX_SEND_WINDOW=window)
+            elif agent == 'agy':
+                notify_env.update(AGY_SEND_SESSION=session, AGY_SEND_WINDOW=window, AGY_SEND_PANE=source['pane'])
+            target = queue['identity'](notify_env)
+            if not target or target['pane'] != source['pane']:
+                raise ValueError('watch sender unavailable')
+            folder = queue['ROOT'] / (session + '-' + window + '-' + hashlib.sha256(target['socket'].encode()).hexdigest()[:12])
+            folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+            alert_id = uuid.uuid4().hex
+            alert_path = folder / (alert_id + '.json')
+            message = 'relay watch: target ' + data['session'] + ':' + data['window'] + ' showed no new output for ' + str(data['watch_minutes']) + ' minutes after delivery ' + data['id'] + '; check whether it started.'
+            allowed = set(data.get('environment', {})) | {'CC_MSG_SESSION','CC_MSG_WINDOW','CC_MSG_PANE','CODEX_SEND_SESSION','CODEX_SEND_WINDOW','AGY_SEND_SESSION','AGY_SEND_WINDOW','AGY_SEND_PANE','RELAY_OPERATOR'}
+            alert = dict(id=alert_id, source=source, operator=False, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time()+1800, state='queued', identity=target, environment={key:notify_env[key] for key in allowed if key in notify_env}, record=str(alert_path))
+            queue['save'](alert_path, alert)
+            # Persist once-only decision before starting notification delivery.
+            outcome('notification-queued', record=str(alert_path))
+            queue['launch_worker'](folder, alert_path, alert)
+        except Exception as error:
+            outcome('stopped', reason=str(error))

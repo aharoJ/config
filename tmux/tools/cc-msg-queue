@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import signal
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import uuid
 
 TOOL = Path(__file__).resolve().with_name('cc-msg.sh')
 ROOT = Path(os.environ.get('CC_MSG_INBOX_ROOT', str(Path.home() / 'desk/tmp/inbox')))
+STARTED = runpy.run_path(str(TOOL.with_name('relay-started-watch')))
 
 
 def save(path, data):
@@ -170,8 +172,28 @@ def deliver(data, env):
 
 def finish(folder, path, data, state, code, output):
     data.update(state=state, code=code, output=output, updated=time.time())
+    if state == 'delivered' and data.get('reply_warning_requested') and not data.get('reply_warning_checked'):
+        env = dict(os.environ, **data.get('environment', {}))
+        warning = STARTED['reply_warning'](env, data['session'], data['window'])
+        if warning:
+            data['reply_warning'] = warning
+            print(warning)
+    if state == 'delivered' and data.get('watch_minutes'):
+        try:
+            data['watch_baseline'] = STARTED['snapshot'](globals(), dict(os.environ, **data.get('environment', {})), data['identity'])
+        except Exception as error:
+            data['watch_error'] = str(error)
     save(path, data)
     event(folder, data, state, code=code, output=output)
+    if state == 'delivered' and data.get('watch_baseline'):
+        try:
+            with path.with_suffix('.watch.log').open('a') as log:
+                subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--watch-worker', str(path)], stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True)
+        except OSError as error:
+            data['watch_error'] = str(error)
+            save(path, data)
+    if data.get('watch_error'):
+        print('relay: delivered, but watch unavailable: ' + data['watch_error'])
     if state in ('failed', 'unknown', 'expired'):
         marker = folder / (data['id'] + '.FAILED')
         with marker.open('w') as stream:
@@ -318,6 +340,9 @@ def sweep(folder=None):
 
 def main():
     os.umask(0o077)
+    if len(sys.argv) == 3 and sys.argv[1] == '--watch-worker':
+        STARTED['watch'](globals(), Path(sys.argv[2]))
+        return 0
     if len(sys.argv) == 4 and sys.argv[1] == '--schedule':
         schedule(Path(sys.argv[2]), int(sys.argv[3]))
         return 0
@@ -378,6 +403,17 @@ def main():
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
     sweep(folder)
     data = dict(source=source, id=uuid.uuid4().hex, operator=operator, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('RELAY_QUEUE_AGENT', 'CODEX_SEND_SESSION', 'CODEX_SEND_WINDOW', 'AGY_SEND_SESSION', 'AGY_SEND_WINDOW', 'AGY_SEND_PANE', 'PATH', 'TMUX', 'TMUX_PANE', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
+    data['reply_warning_requested'] = env.get('RELAY_REPLY_WARNING') == '1'
+    if data['reply_warning_requested']:
+        warning = STARTED['reply_warning'](env, session, window)
+        data['reply_warning_checked'] = True
+        if warning:
+            data['reply_warning'] = warning
+            print(warning)
+    if env.get('RELAY_WATCH_MINUTES'):
+        data['watch_minutes'] = int(env['RELAY_WATCH_MINUTES'])
+        if not 1 <= data['watch_minutes'] <= 1440 or not data['identity'] or source.get('pane') == data['identity']['pane']:
+            raise RoutingError('watch requires 1..1440 minutes and a distinct live target')
     path = folder / (data['id'] + '.json')
     data['record'] = str(path)
     with path.with_suffix('.lock').open('a') as lock:

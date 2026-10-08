@@ -9,6 +9,7 @@ import sqlite3
 import subprocess
 import tempfile
 import time
+from unittest.mock import patch
 
 TOOLS = pathlib.Path(__file__).resolve().parents[1] / 'tools'
 FIRST = '00000000-0000-4000-8000-000000000001'
@@ -80,7 +81,7 @@ try:
     subprocess.run(['cc',str(root / 'fixture.c'),'-o',str(root / 'codex')],check=True,capture_output=True)
     (root / 'turn').write_text('first native unique turn\n')
     command = 'exec ' + shlex.quote(str(root / 'codex')) + ' ' + shlex.quote(str(root / 'turn')) + ' ' + shlex.quote(str(root / 'wire'))
-    pane = tmux('new-session','-d','-s','config','-n','codex','-x','100','-y','30','-P','-F','#{pane_id}',command)
+    pane = tmux('new-session','-d','-s','config','-n','lala','-x','100','-y','30','-P','-F','#{pane_id}',command)
     tmux('set-option','-w','-t',pane,'automatic-rename','off')
     address = tmux('display-message','-p','-t',pane,'#{socket_path},#{pid},0')
     env = dict(os.environ,TMUX=address)
@@ -102,14 +103,28 @@ try:
     while 'first native unique turn' not in tmux('capture-pane','-p','-t',pane):
         assert time.monotonic() < deadline
         time.sleep(.02)
-    guard['register_source'](env,FIRST,'config:codex')
+    started = runpy.run_path(str(TOOLS / 'relay-started-watch'))
+    with patch.object(started['reply_warning'].__globals__['runpy'], 'run_path', lambda path:guard):
+        assert started['reply_warning'](env,'config','lala') == 'target config:lala is unbound: it cannot reply until bound'
+    guard['register_source'](env,FIRST,'config:lala')
+    with patch.object(started['reply_warning'].__globals__['runpy'], 'run_path', lambda path:guard):
+        assert started['reply_warning'](env,'config','lala') is None
+    queue = runpy.run_path(str(TOOLS / 'cc-msg-queue'))
+    target_env = dict(env, CC_MSG_SESSION='config', CC_MSG_WINDOW='lala')
+    target_identity = queue['identity'](target_env)
+    baseline = started['snapshot'](queue,target_env,target_identity)
+    source = dict(guard['source_bindings']()['bindings'][FIRST], thread_id=FIRST)
+    assert guard['check'](env, source, 'config', 'claude')
+    assert not guard['check'](env, source, 'cvmapp', 'claude')
     add_turn(SECOND,'replacement native unique turn')
     (root / 'turn').write_text('replacement native unique turn\n')
     while 'replacement native unique turn' not in tmux('capture-pane','-p','-t',pane):
         assert time.monotonic() < deadline
         time.sleep(.02)
     bound = guard['automatic_source'](env,SECOND)
+    assert started['snapshot'](queue,target_env,target_identity) != baseline
     assert bound['pane'] == pane and bound['thread_id'] == SECOND
+    assert bound['window'] == 'lala'
     assert guard['live'](env,bound)
     assert guard['source_bindings']()['proofs'][SECOND]['kind'] == 'visible-turn'
     assert not guard['live'](env,dict(guard['source_bindings']()['bindings'][FIRST],thread_id=FIRST))
