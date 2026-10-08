@@ -376,3 +376,5 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 
 - Reset completion no longer calls the disabled identity probe or reports a false partial after a successful or already-fresh reset. It verifies model/cwd and releases the lock without claiming source binding; automatic read-only thread-to-seat discovery remains unresolved.
 - Add parallel fast logic and private-tmux tiers with per-worker scratch under ~/desk, bounded process-group cleanup on timeout, and short hashed socket paths. Full matrix remains required before installation.
+
+- Fix independently reproduced private-worker timeout leaks: allocate unique worker socket directories, stop and verify each worker's owned servers after completion/timeout, fail unverified cleanup, and record cleanup receipts. Regression verifies a real detached server is stopped while an unrelated private control server stays alive.
