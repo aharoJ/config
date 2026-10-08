@@ -71,10 +71,29 @@ def watch(queue, path):
         if data.get('state') != 'delivered' or not data.get('watch_minutes'):
             return
         receipt = path.with_suffix('.watch.json')
-        if receipt.exists():
-            return
         def outcome(state, **extra):
             queue['save'](receipt, dict(id=data['id'], state=state, time=time.time(), **extra))
+        def dispatch(plan):
+            alert_path = Path(plan['record'])
+            alert = plan['alert']
+            if alert_path.exists():
+                persisted = json.loads(alert_path.read_text())
+                if any(persisted.get(key) != alert.get(key) for key in ('id','source','identity','message','session','window')):
+                    raise ValueError('watch notification record changed')
+                alert = persisted  # Never reset delivered/attempting/unknown state.
+            else:
+                queue['save'](alert_path, alert)
+            if alert['state'] == 'queued':
+                queue['launch_worker'](alert_path.parent, alert_path, alert)
+            outcome('notification-queued', record=str(alert_path))
+        if receipt.exists():
+            plan = json.loads(receipt.read_text())
+            if plan.get('state') == 'notification-planned':
+                try:
+                    dispatch(plan)
+                except Exception as error:
+                    outcome('stopped', reason=str(error), record=plan.get('record'))
+            return
         env = dict(os.environ, **data.get('environment', {}))
         try:
             baseline = data['watch_baseline']
@@ -104,14 +123,15 @@ def watch(queue, path):
                 raise ValueError('watch sender unavailable')
             folder = queue['ROOT'] / (session + '-' + window + '-' + hashlib.sha256(target['socket'].encode()).hexdigest()[:12])
             folder.mkdir(mode=0o700, parents=True, exist_ok=True)
-            alert_id = uuid.uuid4().hex
+            alert_id = uuid.uuid5(uuid.NAMESPACE_URL, str(path.resolve()) + ':' + data['id'] + ':started-watch').hex
             alert_path = folder / (alert_id + '.json')
             message = 'relay watch: target ' + data['session'] + ':' + data['window'] + ' showed no new output for ' + str(data['watch_minutes']) + ' minutes after delivery ' + data['id'] + '; check whether it started.'
             allowed = set(data.get('environment', {})) | {'CC_MSG_SESSION','CC_MSG_WINDOW','CC_MSG_PANE','CODEX_SEND_SESSION','CODEX_SEND_WINDOW','AGY_SEND_SESSION','AGY_SEND_WINDOW','AGY_SEND_PANE','RELAY_OPERATOR'}
             alert = dict(id=alert_id, source=source, operator=False, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time()+1800, state='queued', identity=target, environment={key:notify_env[key] for key in allowed if key in notify_env}, record=str(alert_path))
-            queue['save'](alert_path, alert)
-            # Persist once-only decision before starting notification delivery.
-            outcome('notification-queued', record=str(alert_path))
-            queue['launch_worker'](folder, alert_path, alert)
+            # The durable plan precedes the alert. Recovery uses one stable ID
+            # and never rewinds an existing transport outcome or creates a
+            # second logical notification, even across abrupt worker death.
+            outcome('notification-planned', record=str(alert_path), alert=alert)
+            dispatch(dict(record=str(alert_path), alert=alert))
         except Exception as error:
             outcome('stopped', reason=str(error))
