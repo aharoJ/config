@@ -371,3 +371,8 @@ Multi-model audit (lead_triage, deepseek, gemini-lite, gpt-nano, grok) across 2 
 - Disable automatic native source discovery and every legacy status-probe entry point. Identity discovery refuses without typing keys into any pane; stable remains rolled back pending reviewed read-only redesign and config CC go.
 
 - Read-only shared-daemon attribution now requires an explicit operator binding plus existing live process/socket/generation and thread-retirement checks. Reject status-derived bindings; absent or retired proof refuses without discovery input.
+
+## 2026-10-07 isolated next relay round
+
+- Reset completion no longer calls the disabled identity probe or reports a false partial after a successful or already-fresh reset. It verifies model/cwd and releases the lock without claiming source binding; automatic read-only thread-to-seat discovery remains unresolved.
+- Add parallel fast logic and private-tmux tiers with per-worker scratch under ~/desk, bounded process-group cleanup on timeout, and short hashed socket paths. Full matrix remains required before installation.
