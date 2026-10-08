@@ -20,7 +20,7 @@ try:
     assert result.returncode == 1, result
     receipt = json.loads((output / 'results.json').read_text())
     assert any(row['exit'] == 124 for row in receipt['results']), receipt
-    assert len({row['sockets'] for row in receipt['results']}) == 3
+    assert len({row['sockets'] for row in receipt['results']}) == len(receipt['results']) == 5
     cleanups = [item for row in receipt['results'] for item in row['cleanup']]
     assert cleanups and all(item['state'] == 'stopped' for item in cleanups), receipt
     assert any(item['kill_exit'] == 0 for item in cleanups), receipt

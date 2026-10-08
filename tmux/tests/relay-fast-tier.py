@@ -13,7 +13,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parent
-CASES = ['relay-visible-source-regression.py', 'relay-reset-no-identity-regression.py', 'relay-identity-no-input-regression.py', 'queue-route-regression.py',
+CASES = ['relay-visible-findings-regression.py', 'relay-visible-source-regression.py', 'relay-reset-no-identity-regression.py', 'relay-identity-no-input-regression.py', 'queue-route-regression.py',
          'relay-route-guard-regression.py', 'relay-native-argv-regression.py',
          'codex-footer-compat-regression.py', 'codex-new-guard-regression.py',
          'codex-target-guard-regression.py', 'relay-request-deadline-regression.py']
@@ -29,7 +29,7 @@ if not output.is_relative_to(Path.home() / 'desk') or not 1 <= args.workers <= 8
 output.mkdir(parents=True, exist_ok=True)
 
 if args.private_tmux:
-    CASES = ['relay-shell-quote-regression.py', 'relay-paste-row-regression.py', 'relay-duplicate-enter-regression.py']
+    CASES = ['relay-shell-quote-regression.py', 'relay-paste-row-regression.py', 'relay-duplicate-enter-regression.py', 'relay-visible-pane-regression.py', 'relay-visible-native-regression.py']
 
 def execute(case):
     directory = output / Path(case).stem

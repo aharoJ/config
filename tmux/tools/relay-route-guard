@@ -84,7 +84,7 @@ def source_bindings():
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
         raise ValueError('unsafe source bindings')
     data = json.loads(SOURCE_BINDINGS.read_text())
-    if data.get('version') != 1 or not isinstance(data.get('bindings'), dict) or not isinstance(data.get('active'), dict) or not isinstance(data.get('proofs', {}), dict):
+    if data.get('version') != 1 or not isinstance(data.get('bindings'), dict) or not isinstance(data.get('active'), dict) or not isinstance(data.get('proofs', {}), dict) or not isinstance(data.get('lineage', {}), dict):
         raise ValueError('invalid source bindings')
     return data
 
@@ -126,6 +126,9 @@ def register_source_unlocked(env, thread, seat, verified=False, verified_since=N
     data = source_bindings()
     previous = data['bindings'].get(thread, {})
     key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
+    predecessor_thread = data['active'].get(key)
+    predecessor = data['bindings'].get(predecessor_thread, {})
+    predecessor_kind = data.get('proofs', {}).get(predecessor_thread, {}).get('kind')
     same = {k: v for k, v in previous.items() if k != 'binding_epoch'} == source and data['active'].get(key) == thread
     if same and previous.get('binding_epoch'):
         since = data.get('proofs', {}).get(thread, {}).get('since', SOURCE_BINDINGS.stat().st_mtime)
@@ -133,6 +136,13 @@ def register_source_unlocked(env, thread, seat, verified=False, verified_since=N
     source['binding_epoch'] = previous['binding_epoch'] if same and previous.get('binding_epoch') else uuid.uuid4().hex
     data['bindings'][thread] = source
     data.setdefault('proofs', {})[thread] = {'since': verified_since if verified_since is not None else time.time(), 'kind': verified if isinstance(verified, str) else ('native-status' if verified else 'operator')}
+    lineage = data.setdefault('lineage', {})
+    predecessor_epoch = predecessor.get('binding_epoch')
+    if predecessor_epoch and predecessor_epoch != source['binding_epoch']:
+        lineage.setdefault(predecessor_epoch, {'thread': predecessor_thread, 'source': predecessor, 'kind': predecessor_kind})
+    lineage.setdefault(source['binding_epoch'], {'thread': thread, 'source': source,
+                        'kind': data['proofs'][thread]['kind'],
+                        'predecessor_epoch': predecessor_epoch if predecessor_epoch != source['binding_epoch'] else None})
     key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
     data['active'][key] = thread
     SOURCE_BINDINGS.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -184,7 +194,7 @@ def automatic_source(env, thread):
         if live(env, bound):
             return bound
     source = visible_source(env, thread)
-    registered = register_source(env, thread, source['session'] + ':' + source['window'], verified='visible-turn')
+    registered = register_source(env, thread, source['session'] + ':' + source['window'], verified='visible-turn', verified_since=VISIBLE['latest_user_time'](thread))
     if {key: value for key, value in registered.items() if key != 'binding_epoch'} != source:
         raise ValueError('source generation changed during automatic registration')
     bound = dict(registered, thread_id=thread)
@@ -203,8 +213,50 @@ def codex_panes(env):
     return [row for row in panes(env) if int(row[4]) in roots]
 
 
+def operator_lineage(data, thread, bound):
+    epoch, seen = bound.get('binding_epoch'), set()
+    first = True
+    while epoch and epoch not in seen:
+        seen.add(epoch)
+        node = data.get('lineage', {}).get(epoch)
+        if not isinstance(node, dict) or node.get('kind') not in ('operator','visible-turn'):
+            return False
+        if first and (node.get('thread') != thread or node.get('source') != bound):
+            return False
+        first = False
+        if node['kind'] == 'operator':
+            return True
+        epoch = node.get('predecessor_epoch')
+    return False
+
+
 def visible_source(env, thread):
-    return VISIBLE['discover'](env, thread, run, codex_panes, pane_source, live)
+    data = source_bindings()
+    since = VISIBLE['latest_user_time'](thread)
+    if thread_retired(thread, since):
+        raise ValueError('requested thread retired after its latest user turn')
+    def continuity(source, turns, text):
+        key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
+        previous_thread = data['active'].get(key)
+        previous = data['bindings'].get(previous_thread, {})
+        kind = data.get('proofs', {}).get(previous_thread, {}).get('kind')
+        if kind not in ('operator', 'visible-turn') or any(previous.get(key) != source.get(key) for key in ('version','app','socket','pane','session','window')) or previous_thread not in turns:
+            raise ValueError('automatic source continuity unavailable; operator must bind this generation')
+        if kind == 'visible-turn' and not operator_lineage(data, previous_thread, previous):
+            raise ValueError('automatic source has no verified operator bootstrap chain')
+        for field in ('root','actor'):
+            if previous.get(field) != source.get(field) or previous.get(field + '_identity') != source.get(field + '_identity'):
+                try:
+                    old_identity = identity(previous[field])
+                except subprocess.CalledProcessError as error:
+                    if error.returncode != 1 or error.stdout.strip() or error.stderr.strip():
+                        raise
+                    old_identity = ''
+                if old_identity == previous[field + '_identity']:
+                    raise ValueError('prior source generation is still alive; operator must resolve it')
+        if previous_thread != thread and VISIBLE['thread_has_turn'](previous_thread, text):
+            raise ValueError('replacement turn reuses prior pane history; operator must bind the current thread')
+    return VISIBLE['discover'](env, thread, run, codex_panes, pane_source, live, continuity)
 
 
 def daemon_source(env, chain):

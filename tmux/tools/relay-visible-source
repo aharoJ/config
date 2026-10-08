@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Passive, cooperative visible-turn correlation. Never issues terminal input."""
 import json
+import datetime
 import os
 import pathlib
 import re
@@ -63,7 +64,7 @@ def user_text(item, strict=True):
     return normalized('\n'.join(part['text'] for part in content if part.get('type') == 'text'))
 
 
-def rollout_turn(path, deadline):
+def rollout_turn(path, deadline, with_time=False):
     """Read backwards, including complete lines only; truncated writes refuse."""
     path = pathlib.Path(path)
     info = path.lstat()
@@ -71,6 +72,10 @@ def rollout_turn(path, deadline):
         raise ValueError('unsafe rollout')
     with path.open('rb') as stream:
         position = info.st_size
+        if position:
+            stream.seek(position - 1)
+            if stream.read(1) != b'\n':
+                raise ValueError('unterminated rollout record')
         carry = b''
         while position:
             if time.monotonic() > deadline:
@@ -87,17 +92,74 @@ def rollout_turn(path, deadline):
                 event = json.loads(line)
                 payload = event.get('payload', {})
                 if event.get('type') == 'event_msg' and payload.get('type') == 'user_message':
+                    if payload.get('images') or payload.get('local_images'):
+                        raise ValueError('non-text rollout turn')
                     if fingerprint(path.stat()) != fingerprint(info):
                         raise ValueError('rollout changed while reading')
-                    return normalized(payload['message'])
+                    text = normalized(payload['message'])
+                    return (text, event['timestamp']) if with_time else text
                 if event.get('type') == 'response_item' and payload.get('role') == 'user':
                     content = payload.get('content', [])
                     if any(part.get('type') != 'input_text' for part in content):
                         raise ValueError('non-text rollout turn')
                     if fingerprint(path.stat()) != fingerprint(info):
                         raise ValueError('rollout changed while reading')
-                    return normalized('\n'.join(part['text'] for part in content))
+                    text = normalized('\n'.join(part['text'] for part in content))
+                    return (text, event['timestamp']) if with_time else text
     return None
+
+
+def thread_record(thread):
+    with readonly(STATE) as connection:
+        row = connection.execute('SELECT rollout_path,history_mode FROM threads WHERE id=?', (thread,)).fetchone()
+    if row is None:
+        raise ValueError('prior thread history is missing')
+    return row
+
+
+def latest_user_time(thread):
+    path, mode = thread_record(thread)
+    if mode == 'paginated':
+        with readonly(HISTORY) as connection:
+            row = connection.execute("SELECT created_at_ms FROM thread_items WHERE thread_id=? AND item_type='userMessage' ORDER BY rollout_ordinal DESC LIMIT 1", (thread,)).fetchone()
+        if row is None or row[0] <= 0:
+            raise ValueError('user turn timestamp unavailable')
+        return row[0] / 1000
+    if mode == 'legacy':
+        evidence = rollout_turn(path, time.monotonic() + 3, with_time=True)
+        if evidence is None:
+            raise ValueError('user turn timestamp unavailable')
+        return datetime.datetime.fromisoformat(evidence[1].replace('Z', '+00:00')).timestamp()
+    raise ValueError('unknown thread history mode')
+
+
+def thread_has_turn(thread, text):
+    """A replacement cannot borrow any retained turn of the known old thread."""
+    path, mode = thread_record(thread)
+    if mode == 'paginated':
+        with readonly(HISTORY) as connection:
+            rows = connection.execute("SELECT item_json FROM thread_items WHERE thread_id=? AND item_type='userMessage'", (thread,)).fetchall()
+        if not rows:
+            raise ValueError('prior thread turns unavailable')
+        return any(user_text(json.loads(item), strict=False) == text for item, in rows)
+    if mode != 'legacy':
+        raise ValueError('unknown prior history mode')
+    # Validate EOF and permissions even if an early historical turn matches.
+    rollout_turn(path, time.monotonic() + 3)
+    deadline = time.monotonic() + 3
+    with pathlib.Path(path).open() as stream:
+        for line in stream:
+            if time.monotonic() > deadline:
+                raise ValueError('prior history scan deadline exceeded')
+            event = json.loads(line)
+            payload = event.get('payload', {})
+            if event.get('type') == 'event_msg' and payload.get('type') == 'user_message' and normalized(payload['message']) == text:
+                return True
+            if event.get('type') == 'response_item' and payload.get('role') == 'user':
+                value = normalized('\n'.join(part['text'] for part in payload.get('content', []) if part.get('type') == 'input_text'))
+                if value == text:
+                    return True
+    return False
 
 
 def stored_turns(requested=None):
@@ -162,15 +224,22 @@ def visible_turn(screen):
 
 
 def capture(env, source, run):
-    target = '=' + source['session'] + ':=' + source['window']
-    meta = run(env, 'tmux', 'display-message', '-p', '-t', target,
-               '#{pane_id}|#{pane_in_mode}|#{alternate_on}')
-    if meta != source['pane'] + '|0|0':
+    target = source['pane']
+    if not re.fullmatch(r'%\d+', target):
+        raise ValueError('invalid exact source pane')
+    def metadata():
+        return run(env, 'tmux', 'display-message', '-p', '-t', target,
+                   '#{pane_id}|#{pane_in_mode}|#{alternate_on}')
+    expected = source['pane'] + '|0|0'
+    if metadata() != expected:
         raise ValueError('source capture is in copy/alternate mode or changed')
-    return visible_turn(run(env, 'tmux', 'capture-pane', '-p', '-J', '-t', target))
+    screen = run(env, 'tmux', 'capture-pane', '-p', '-J', '-t', target)
+    if metadata() != expected:
+        raise ValueError('source capture identity or mode changed')
+    return visible_turn(screen)
 
 
-def discover(env, thread, run, panes, pane_source, live):
+def discover(env, thread, run, panes, pane_source, live, continuity=None):
     turns = stored_turns(thread)
     text = turns.get(thread)
     if not text or [key for key, value in turns.items() if value == text] != [thread]:
@@ -184,6 +253,8 @@ def discover(env, thread, run, panes, pane_source, live):
             # uniqueness. Do not silently discard an unavailable seat.
             raise ValueError('cannot establish uniqueness across live panes')
         if source['app'] == 'codex':
+            if continuity is not None:
+                continuity(source, turns, text)
             seats.append((source, capture(env, source, run)))
     matches = [source for source, value in seats if value == text]
     if len(matches) != 1:

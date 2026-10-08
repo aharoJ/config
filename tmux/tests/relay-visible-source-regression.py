@@ -28,8 +28,8 @@ for bad in ['› draft\n', '› draft\n› empty\n', screen.replace('Ask Codex t
 source = dict(version=2, app='codex', pane='%1', session='config', window='codex')
 other = dict(source, pane='%2', window='terra')
 calls = []
-screens = {'=config:=codex': screen, '=config:=terra': screen.replace('Unique', 'Other')}
-metadata = {'=config:=codex': '%1|0|0', '=config:=terra': '%2|0|0'}
+screens = {'%1': screen, '%2': screen.replace('Unique', 'Other')}
+metadata = {'%1': '%1|0|0', '%2': '%2|0|0'}
 
 
 def run(env, *args):
@@ -47,15 +47,15 @@ def discover(turns, seats=(source, other)):
 assert discover({'thread': text}) == source
 refuses(lambda: discover({}))
 refuses(lambda: discover({'thread': text, 'copied': text}))
-screens['=config:=terra'] = screen
+screens['%2'] = screen
 refuses(lambda: discover({'thread': text}))
-screens['=config:=terra'] = screen.replace('Unique', 'Other')
+screens['%2'] = screen.replace('Unique', 'Other')
 for mode in ('%1|1|0', '%1|0|1', '%99|0|0'):
-    metadata['=config:=codex'] = mode
+    metadata['%1'] = mode
     refuses(lambda: discover({'thread': text}))
-metadata['=config:=codex'] = '%1|0|0'
+metadata['%1'] = '%1|0|0'
 refuses(lambda: discover({'thread': 'fresh after reset'}))
-screens['=config:=codex'] = screen.replace('Unique', 'Reset')
+screens['%1'] = screen.replace('Unique', 'Reset')
 assert discover({'new-thread': text, 'thread': text.replace('Unique', 'Reset')}) == source
 
 with tempfile.TemporaryDirectory() as directory:
@@ -65,14 +65,20 @@ with tempfile.TemporaryDirectory() as directory:
         db.execute('CREATE TABLE threads (id TEXT,rollout_path TEXT,history_mode TEXT)')
         db.executemany('INSERT INTO threads VALUES (?,?,?)', [('thread', str(rollout), 'paginated'), ('legacy', str(rollout), 'legacy')])
     with sqlite3.connect(history) as db:
-        db.execute('CREATE TABLE thread_items (thread_id TEXT,item_json TEXT,item_type TEXT,rollout_ordinal INTEGER)')
-        db.execute('INSERT INTO thread_items VALUES (?,?,?,?)', ('thread', json.dumps(dict(type='userMessage',content=[dict(type='text',text=text)])), 'userMessage', 1))
+        db.execute('CREATE TABLE thread_items (thread_id TEXT,item_json TEXT,item_type TEXT,rollout_ordinal INTEGER,created_at_ms INTEGER)')
+        db.execute('INSERT INTO thread_items VALUES (?,?,?,?,?)', ('thread', json.dumps(dict(type='userMessage',content=[dict(type='text',text='ancestor turn')])), 'userMessage', 0, 1000))
+        db.execute('INSERT INTO thread_items VALUES (?,?,?,?,?)', ('thread', json.dumps(dict(type='userMessage',content=[dict(type='text',text=text)])), 'userMessage', 1, 2000))
     rollout.write_text(json.dumps(dict(type='event_msg',payload=dict(type='user_message',message='legacy distinct'))) + '\n')
     for path in (state, history, rollout):
         path.chmod(0o600)
     with patch.dict(g, STATE=state, HISTORY=history, CACHE=root / 'cache.json'):
         assert module['stored_turns']('thread') == {'thread': text, 'legacy': 'legacy distinct'}
+        assert module['latest_user_time']('thread') == 2
+        assert module['thread_has_turn']('thread', 'ancestor turn')
+        assert not module['thread_has_turn']('thread', 'unknown turn')
         rollout.write_text(rollout.read_text() + '{"partial":')
+        refuses(lambda: module['stored_turns']('thread'))
+        rollout.write_text(json.dumps(dict(type='event_msg',payload=dict(type='user_message',message='valid but not committed'))))
         refuses(lambda: module['stored_turns']('thread'))
 
 guard = runpy.run_path(str(TOOLS / 'relay-route-guard'))
@@ -80,7 +86,8 @@ gg = guard['automatic_source'].__globals__
 registered = dict(source, binding_epoch='epoch')
 with patch.dict(gg, source_bindings=lambda: {'bindings': {}, 'proofs': {}}, visible_source=lambda env, thread: source,
                 register_source=lambda *args, **kwargs: registered, live=lambda *args: True):
-    assert guard['automatic_source']({}, 'thread') == dict(registered, thread_id='thread')
+    with patch.dict(gg['VISIBLE'], latest_user_time=lambda thread:1):
+        assert guard['automatic_source']({}, 'thread') == dict(registered, thread_id='thread')
 full = dict(registered, root=100, root_identity='root', actor=101, actor_identity='actor', socket=dict(device=1,inode=2))
 data = dict(bindings={'thread': full}, active={'1:2:%1': 'thread'}, proofs={'thread': dict(kind='visible-turn',since=1)})
 with tempfile.TemporaryDirectory() as directory:
@@ -99,5 +106,27 @@ with tempfile.TemporaryDirectory() as directory:
             assert not guard['live']({}, dict(full,thread_id='thread'))
         data['active']['1:2:%1'] = 'replacement'
         assert not guard['live']({}, dict(full,thread_id='thread'))
+current = {key: value for key, value in full.items() if key != 'binding_epoch'}
+prior = dict(bindings={'old':full},active={'1:2:%1':'old'},proofs={'old':dict(kind='operator')})
+vg = gg['VISIBLE']['discover'].__globals__
+target_text = text.replace('Unique','Reset')
+with patch.dict(gg, source_bindings=lambda: prior, thread_retired=lambda *args: False,
+                codex_panes=lambda env:[current], pane_source=lambda env,row:row, live=lambda *args:True, run=run):
+    with patch.dict(gg['VISIBLE'], latest_user_time=lambda thread: 1, thread_has_turn=lambda *args: False):
+        with patch.dict(vg, stored_turns=lambda requested:{'new':target_text,'old':'prior distinct turn'}):
+            assert guard['visible_source']({},'new') == current
+            with patch.dict(gg, thread_retired=lambda *args:True):
+                refuses(lambda:guard['visible_source']({},'new'))
+            with patch.dict(gg['VISIBLE'], thread_has_turn=lambda *args:True):
+                refuses(lambda:guard['visible_source']({},'new'))
+            with patch.dict(gg, source_bindings=lambda:dict(bindings={},active={},proofs={})):
+                refuses(lambda:guard['visible_source']({},'new'))
+            prior['proofs']['old']['kind'] = 'visible-turn'
+            refuses(lambda:guard['visible_source']({},'new'))
+            prior['proofs']['old']['kind'] = 'operator'
+        with patch.dict(vg, stored_turns=lambda requested:{'new':target_text}):
+            refuses(lambda:guard['visible_source']({},'new'))
 assert all(call[1] in ('capture-pane', 'display-message') for call in calls)
+assert all(call[call.index('-t') + 1] in ('%1','%2') for call in calls)
+assert not guard['operator_lineage']({'lineage':{'epoch':dict(thread='thread',source=registered,kind='visible-turn',predecessor_epoch='epoch')}},'thread',registered)
 print('PASS passive uniqueness, identical/copy/reset seats, copy/alternate mode, cropped turns, SQLite/JSONL and partial writes; no input commands')
