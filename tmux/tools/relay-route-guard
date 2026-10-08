@@ -22,6 +22,7 @@ import fcntl
 import sqlite3
 
 LABEL = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-sender-label')))
+VISIBLE = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-visible-source')))
 POLICY = pathlib.Path(__file__).with_name('relay-route-policy.json')
 SOURCE_BINDINGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.local/state/relay/source-bindings.json'
 RUNTIME_LOGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.codex/logs_2.sqlite'
@@ -131,7 +132,7 @@ def register_source_unlocked(env, thread, seat, verified=False, verified_since=N
         same = not thread_retired(thread, since)
     source['binding_epoch'] = previous['binding_epoch'] if same and previous.get('binding_epoch') else uuid.uuid4().hex
     data['bindings'][thread] = source
-    data.setdefault('proofs', {})[thread] = {'since': verified_since if verified_since is not None else time.time(), 'kind': 'native-status' if verified else 'operator'}
+    data.setdefault('proofs', {})[thread] = {'since': verified_since if verified_since is not None else time.time(), 'kind': verified if isinstance(verified, str) else ('native-status' if verified else 'operator')}
     key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
     data['active'][key] = thread
     SOURCE_BINDINGS.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -178,12 +179,32 @@ def automatic_source(env, thread):
     data = source_bindings()
     source = data['bindings'].get(thread)
     proof = data.get('proofs', {}).get(thread, {})
-    if source is None or proof.get('kind') != 'operator' or source.get('app') != 'codex' or source.get('version') != 2:
-        raise ValueError('read-only source proof unavailable; operator must bind the exact current thread and live seat; status-derived bindings are not accepted')
-    bound = dict(source, thread_id=thread)
+    if source is not None and proof.get('kind') == 'operator' and source.get('app') == 'codex' and source.get('version') == 2:
+        bound = dict(source, thread_id=thread)
+        if live(env, bound):
+            return bound
+    source = visible_source(env, thread)
+    registered = register_source(env, thread, source['session'] + ':' + source['window'], verified='visible-turn')
+    if {key: value for key, value in registered.items() if key != 'binding_epoch'} != source:
+        raise ValueError('source generation changed during automatic registration')
+    bound = dict(registered, thread_id=thread)
     if not live(env, bound):
-        raise ValueError('read-only source binding retired or generation changed; operator must rebind the live seat')
+        raise ValueError('automatic source changed during registration')
     return bound
+
+
+def codex_panes(env):
+    table = LABEL['processes']()
+    roots = set()
+    for pid in table:
+        chain = ancestors(pid, table)
+        if chain and chain[0][3] == 'codex':
+            roots.update(item[0] for item in chain)
+    return [row for row in panes(env) if int(row[4]) in roots]
+
+
+def visible_source(env, thread):
+    return VISIBLE['discover'](env, thread, run, codex_panes, pane_source, live)
 
 
 def daemon_source(env, chain):
@@ -293,6 +314,10 @@ def live(env, source):
             since = data.get('proofs', {}).get(thread, {}).get('since', SOURCE_BINDINGS.stat().st_mtime)
             if thread_retired(thread, since):
                 return False
+            if data.get('proofs', {}).get(thread, {}).get('kind') == 'visible-turn':
+                current = visible_source(env, thread)
+                if current != {key: value for key, value in bound.items() if key != 'binding_epoch'}:
+                    return False
         expected = [source['pane'], source['session'], source['window'], '', str(source['root']), '0']
         if panes(env).count(expected) != 1:
             return False

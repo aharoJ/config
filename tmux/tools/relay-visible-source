@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Passive, cooperative visible-turn correlation. Never issues terminal input."""
+import json
+import os
+import pathlib
+import re
+import sqlite3
+import stat
+import tempfile
+import time
+
+HOME = pathlib.Path.home() / '.codex'
+STATE = HOME / 'state_5.sqlite'
+HISTORY = HOME / 'thread_history_1.sqlite'
+CACHE = pathlib.Path.home() / '.local/state/relay/visible-rollout-cache.json'
+
+
+def fingerprint(info):
+    return [info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
+
+
+def load_cache():
+    if not CACHE.exists():
+        return {}
+    info = CACHE.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        raise ValueError('unsafe rollout cache')
+    return json.loads(CACHE.read_text())
+
+
+def save_cache(cache):
+    CACHE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    info = CACHE.parent.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise ValueError('unsafe rollout cache directory')
+    fd, name = tempfile.mkstemp(prefix='.visible-cache-', dir=CACHE.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(cache, stream)
+        os.replace(name, CACHE)
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+
+
+def readonly(path):
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise ValueError('unsafe thread evidence')
+    return sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=.5)
+
+
+def normalized(text):
+    return ' '.join(text.split())
+
+
+def user_text(item, strict=True):
+    if item.get('type') != 'userMessage':
+        raise ValueError('unsupported user evidence')
+    content = item.get('content', [])
+    if strict and (not content or any(part.get('type') != 'text' for part in content)):
+        raise ValueError('non-text turn cannot prove source')
+    return normalized('\n'.join(part['text'] for part in content if part.get('type') == 'text'))
+
+
+def rollout_turn(path, deadline):
+    """Read backwards, including complete lines only; truncated writes refuse."""
+    path = pathlib.Path(path)
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise ValueError('unsafe rollout')
+    with path.open('rb') as stream:
+        position = info.st_size
+        carry = b''
+        while position:
+            if time.monotonic() > deadline:
+                raise ValueError('thread evidence scan deadline exceeded')
+            size = min(position, 65536)
+            position -= size
+            stream.seek(position)
+            block = stream.read(size) + carry
+            lines = block.split(b'\n')
+            carry = lines.pop(0) if position else b''
+            for line in reversed(lines):
+                if not line:
+                    continue
+                event = json.loads(line)
+                payload = event.get('payload', {})
+                if event.get('type') == 'event_msg' and payload.get('type') == 'user_message':
+                    if fingerprint(path.stat()) != fingerprint(info):
+                        raise ValueError('rollout changed while reading')
+                    return normalized(payload['message'])
+                if event.get('type') == 'response_item' and payload.get('role') == 'user':
+                    content = payload.get('content', [])
+                    if any(part.get('type') != 'input_text' for part in content):
+                        raise ValueError('non-text rollout turn')
+                    if fingerprint(path.stat()) != fingerprint(info):
+                        raise ValueError('rollout changed while reading')
+                    return normalized('\n'.join(part['text'] for part in content))
+    return None
+
+
+def stored_turns(requested=None):
+    deadline = time.monotonic() + 12
+    with readonly(STATE) as connection:
+        # No cwd, source, archive or recency filter: resumed/copied histories count.
+        threads = connection.execute('SELECT id, rollout_path, history_mode FROM threads').fetchall()
+    with readonly(HISTORY) as connection:
+        items = connection.execute("SELECT i.thread_id,i.item_json FROM thread_items i JOIN (SELECT thread_id,MAX(rollout_ordinal) AS n FROM thread_items WHERE item_type='userMessage' GROUP BY thread_id) x ON i.thread_id=x.thread_id AND i.rollout_ordinal=x.n").fetchall()
+    latest = {thread: user_text(json.loads(item), strict=thread == requested) for thread, item in items}
+    cache = load_cache()
+    updated = {}
+    result = {}
+    for thread, path, mode in threads:
+        if time.monotonic() > deadline:
+            raise ValueError('thread evidence scan deadline exceeded')
+        if mode == 'paginated':
+            if thread in latest:
+                result[thread] = latest[thread]
+        elif mode == 'legacy':
+            info = pathlib.Path(path).lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+                raise ValueError('unsafe rollout')
+            stamp = fingerprint(info)
+            cached = cache.get(path, {})
+            text = cached.get('text') if cached.get('stamp') == stamp else rollout_turn(path, deadline)
+            updated[path] = {'stamp': stamp, 'text': text}
+            if text:
+                result[thread] = text
+        else:
+            raise ValueError('unknown thread history mode')
+    if updated != cache:
+        save_cache(updated)
+    return result
+
+
+def visible_turn(screen):
+    if '\x1b' in screen:
+        raise ValueError('unexpected control sequences')
+    lines = screen.splitlines()
+    starts = [i for i, line in enumerate(lines) if line.startswith('› ')]
+    if len(starts) < 2:
+        raise ValueError('no complete visible submitted turn')
+    if lines[starts[-1]] != '› Ask Codex to do anything':
+        raise ValueError('source composer is not a recognized empty prompt')
+    start = starts[-2]
+    end = starts[-1]
+    # A blank separator then native response marker distinguishes a submitted
+    # turn from the composer. Indented transcript quotations never qualify.
+    stop = next((i for i in range(start + 1, end) if lines[i].startswith('• ')), None)
+    if stop is None:
+        raise ValueError('submitted turn boundary unavailable')
+    turn = [lines[start][2:]]
+    for line in lines[start + 1:stop]:
+        if line and not line.startswith('  '):
+            raise ValueError('cropped or unsupported turn rendering')
+        turn.append(line[2:] if line.startswith('  ') else '')
+    text = normalized('\n'.join(turn))
+    if not text or '[Pasted Content' in text or '…' in text:
+        raise ValueError('incomplete visible turn')
+    return text
+
+
+def capture(env, source, run):
+    target = '=' + source['session'] + ':=' + source['window']
+    meta = run(env, 'tmux', 'display-message', '-p', '-t', target,
+               '#{pane_id}|#{pane_in_mode}|#{alternate_on}')
+    if meta != source['pane'] + '|0|0':
+        raise ValueError('source capture is in copy/alternate mode or changed')
+    return visible_turn(run(env, 'tmux', 'capture-pane', '-p', '-J', '-t', target))
+
+
+def discover(env, thread, run, panes, pane_source, live):
+    turns = stored_turns(thread)
+    text = turns.get(thread)
+    if not text or [key for key, value in turns.items() if value == text] != [thread]:
+        raise ValueError('stored turn is missing or ambiguous; use manual bind-source')
+    seats = []
+    for row in panes(env):
+        try:
+            source = pane_source(env, row)
+        except ValueError:
+            # A foreground source that cannot be identified cannot establish
+            # uniqueness. Do not silently discard an unavailable seat.
+            raise ValueError('cannot establish uniqueness across live panes')
+        if source['app'] == 'codex':
+            seats.append((source, capture(env, source, run)))
+    matches = [source for source, value in seats if value == text]
+    if len(matches) != 1:
+        raise ValueError('visible turn matches none/several Codex seats; use manual bind-source')
+    source = matches[0]
+    refreshed = stored_turns(thread)
+    if not live(env, source) or capture(env, source, run) != text or refreshed.get(thread) != text or [key for key, value in refreshed.items() if value == text] != [thread]:
+        raise ValueError('source evidence changed during discovery')
+    return source
