@@ -20,7 +20,7 @@ def agy_fixture(directory):
     manifest = json.loads((ROOT / 'tests/fixtures/relay-must-accept.json').read_text())
     case = next(row for row in manifest['cases'] if row['name'] == 'agy-fresh')
     rows = (ROOT / 'tests/fixtures' / case['capture_file']).read_text().splitlines()
-    rows = [re.sub('─{8,}', '─' * 215, row) if set(re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', row).strip()) == {'─'} else row for row in rows]
+    rows = [re.sub('─{8,}', '─' * os.get_terminal_size().columns, row) if set(re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', row).strip()) == {'─'} else row for row in rows]
     y = case['cursor_y']
     value, cursor, pending = '', 0, b''
     decoder = codecs.getincrementaldecoder('utf-8')()
@@ -34,6 +34,8 @@ def agy_fixture(directory):
         os.write(1, screen.encode())
 
     draw()
+    (directory / 'ready').touch()
+    submitted = []
     while True:
         data = os.read(0, 4096)
         if not data:
@@ -42,6 +44,12 @@ def agy_fixture(directory):
             stream.write(data)
         pending += data
         while pending:
+            if pending[:1] in (b'\r', b'\n'):
+                submitted.append(value)
+                (directory / 'submitted.json').write_text(json.dumps(submitted))
+                value, cursor, pending = '', 0, pending[1:]
+                draw()
+                continue
             homes = (b'\x1b[H', b'\x1bOH', b'\x1b[1~', b'\x1b[7~')
             home = next((item for item in homes if pending.startswith(item)), None)
             if home:

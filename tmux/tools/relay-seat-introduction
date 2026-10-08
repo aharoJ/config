@@ -1,0 +1,75 @@
+"""One-time approved seat preamble, serialized with generation-bound delivery."""
+import fcntl
+import hashlib
+import json
+from pathlib import Path
+import runpy
+
+PREAMBLE = 'Messages delivered here are tasks for you; the prefix identifies the sender, not the addressee; never forward a task unless explicitly asked.'
+
+
+def generation(queue, data, env):
+    target = data['identity']
+    if not target or queue['identity'](env) != target:
+        raise ValueError('introduction target generation unavailable or changed')
+    guard = runpy.run_path(str(Path(__file__).with_name('relay-route-guard')))
+    rows = [row for row in guard['panes'](env) if row[0] == target['pane'] and row[1:3] == [data['session'], data['window']]]
+    if len(rows) != 1:
+        raise ValueError('introduction target is missing or ambiguous')
+    source = guard['pane_source'](env, rows[0])
+    token = ['process', source]
+    data['_introduction_verified'] = source['app'] != 'codex'
+    if source['app'] == 'codex':
+        state = guard['source_bindings']()
+        key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
+        thread = state['active'].get(key)
+        bound = dict(state['bindings'].get(thread, {}), thread_id=thread)
+        if thread and guard['live'](env, bound):
+            token = ['binding', bound['binding_epoch'], source]
+            data['_introduction_verified'] = True
+        else:
+            # Operator ruling: unidentified thread generations repeat the
+            # preamble. Content correlation never silently substitutes a
+            # process-level "once" receipt for a thread binding.
+            token = ['unbound', source]
+    if queue['identity'](env) != target:
+        raise ValueError('introduction target changed during generation proof')
+    return hashlib.sha256(json.dumps(token, sort_keys=True).encode()).hexdigest()
+
+
+def send(queue, data, env, transport):
+    folder = Path(data['record']).parent
+    state_folder = folder / '.seat-state'
+    state_folder.mkdir(mode=0o700, exist_ok=True)
+    ledger = state_folder / 'introductions.json'
+    with (folder / '.introductions.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return 5, 'introduction generation is owned by another delivery; no target input was sent'
+        try:
+            key = generation(queue, data, env)
+        except Exception as error:
+            key = None
+            data['_introduction_verified'] = False
+            data['introduction_warning'] = 'generation unproven; preamble repeated: ' + str(error)
+        state = json.loads(ledger.read_text()) if ledger.exists() else {}
+        verified = data.get('_introduction_verified', True)
+        included = not verified or key not in state
+        data['introduction'] = dict(generation=key, included=included, verified=verified)
+        wire = dict(data, message=(PREAMBLE + '\n' + data['message']) if included else data['message'])
+        data['wire_message'] = wire['message']
+        queue['save'](Path(data['record']), data)
+        if included and verified:
+            state[key] = dict(record=data['record'], state='attempting')
+            queue['save'](ledger, state)
+        code, output = transport(wire, env)
+        if included and verified and code in (0, 3, 4):
+            # Unknown input is never automatically replayed. Retain a separate
+            # uncertain receipt rather than pretend the preamble was received.
+            state[key] = dict(record=data['record'], state='delivered' if code == 0 else 'unknown')
+            queue['save'](ledger, state)
+        elif included and verified:
+            del state[key]  # Confirmed no-input refusal permits later introduction.
+            queue['save'](ledger, state)
+        return code, output

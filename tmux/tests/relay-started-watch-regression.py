@@ -44,8 +44,8 @@ def unavailable(*args):
 with patch.dict(g, snapshot=unavailable):
     path = record('retired')
     module['watch'](queue,path)
-assert json.loads(path.with_suffix('.watch.json').read_text())['state'] == 'stopped'
-assert len(launches) == 1
+assert json.loads(path.with_suffix('.watch.json').read_text())['state'] == 'notification-queued'
+assert len(launches) == 2 and 'start unverified' in launches[-1][1]['message']
 # Abrupt death before plan, after plan, after alert and after launch must leave
 # one stable logical alert. Recovery must never rewind unknown delivery.
 for boundary in ('before-plan','after-plan','after-alert','after-launch'):

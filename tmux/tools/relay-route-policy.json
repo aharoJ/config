@@ -12,12 +12,14 @@
     },
     "cvmapp": {
       "claude": "lead",
-      "codex": "lead"
+      "codex": "lead",
+      "red": "worker"
     },
     "vetmed-absence-expansion": {
       "claude": "lead",
       "codex": "lead",
-      "terra": "worker"
+      "terra": "worker",
+      "red": "worker"
     },
     "rp-schema": {
       "codex": "lead"

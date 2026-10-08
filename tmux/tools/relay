@@ -34,7 +34,8 @@ def main():
         for record in root.glob('*/*.json'):
             data = json.loads(record.read_text())
             if len(args) == 1 or data['id'] == args[1]:
-                print(data['state'] + ': ' + str(record))
+                queue = runpy.run_path(str(TOOLS / 'cc-msg-queue'))
+                print(queue['status_text'](record, data))
         return 0
     operator = args[:1] == ['--operator']
     if operator:

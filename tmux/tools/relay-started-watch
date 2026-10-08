@@ -98,13 +98,17 @@ def watch(queue, path):
         try:
             baseline = data['watch_baseline']
             deadline = data['updated'] + data['watch_minutes'] * 60
-            while True:
-                if snapshot(queue, env, data['identity']) != baseline:
-                    outcome('output-observed')
-                    return
-                if time.time() >= deadline:
-                    break
-                time.sleep(min(5, max(0, deadline - time.time())))
+            observation_error = None
+            try:
+                while True:
+                    if snapshot(queue, env, data['identity']) != baseline:
+                        outcome('output-observed')
+                        return
+                    if time.time() >= deadline:
+                        break
+                    time.sleep(min(5, max(0, deadline - time.time())))
+            except Exception as error:
+                observation_error = ' '.join(str(error).split())[:240]
             source = data['source']
             if source['pane'] == data['identity']['pane']:
                 raise ValueError('watch cannot notify the observed target')
@@ -126,8 +130,10 @@ def watch(queue, path):
             alert_id = uuid.uuid5(uuid.NAMESPACE_URL, str(path.resolve()) + ':' + data['id'] + ':started-watch').hex
             alert_path = folder / (alert_id + '.json')
             message = 'relay watch: target ' + data['session'] + ':' + data['window'] + ' showed no new output for ' + str(data['watch_minutes']) + ' minutes after delivery ' + data['id'] + '; check whether it started.'
+            if observation_error:
+                message = 'relay watch: start unverified for ' + data['session'] + ':' + data['window'] + ' after delivery ' + data['id'] + '; observation unavailable: ' + observation_error + '; check the task.'
             allowed = set(data.get('environment', {})) | {'CC_MSG_SESSION','CC_MSG_WINDOW','CC_MSG_PANE','CODEX_SEND_SESSION','CODEX_SEND_WINDOW','AGY_SEND_SESSION','AGY_SEND_WINDOW','AGY_SEND_PANE','RELAY_OPERATOR'}
-            alert = dict(id=alert_id, source=source, operator=False, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time()+1800, state='queued', identity=target, environment={key:notify_env[key] for key in allowed if key in notify_env}, record=str(alert_path))
+            alert = dict(id=alert_id, source=source, operator=False, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time()+1800, state='queued', identity=target, environment={key:notify_env[key] for key in allowed if key in notify_env}, record=str(alert_path), watch_notification=True)
             # The durable plan precedes the alert. Recovery uses one stable ID
             # and never rewinds an existing transport outcome or creates a
             # second logical notification, even across abrupt worker death.

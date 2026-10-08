@@ -93,7 +93,7 @@ class RouteTests(unittest.TestCase):
     def test_transport_carries_bound_record_not_source_env_grant(self):
         process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('done', '')})()
         with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
-            queue.deliver(dict(message='payload', identity=None, record='/bound/record.json', source=dict(pane='%1')), {})
+            queue.transport(dict(message='payload', identity=None, record='/bound/record.json', source=dict(pane='%1')), {})
         self.assertEqual(launch.call_args.kwargs['env']['RELAY_MESSAGE_RECORD'], '/bound/record.json')
         self.assertNotIn('RELAY_SOURCE', launch.call_args.kwargs['env'])
 

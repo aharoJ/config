@@ -214,6 +214,9 @@ def fixture(directory, glyph, mode):
                 if mode != "ignore-enter":
                     value = ""
                 pending = pending[1:]
+                if mode.endswith('critical-ready'):
+                    cursor = 0
+                    draw()
             elif pending[:1] == b"\x0c" and mode == "codex159-redraw-input":
                 redraw_tick += 1
                 pending = pending[1:]

@@ -104,14 +104,21 @@ try:
         assert time.monotonic() < deadline
         time.sleep(.02)
     started = runpy.run_path(str(TOOLS / 'relay-started-watch'))
+    introduction = runpy.run_path(str(TOOLS / 'relay-seat-introduction'))
+    queue = runpy.run_path(str(TOOLS / 'cc-msg-queue'))
+    target_env = dict(env, CC_MSG_SESSION='config', CC_MSG_WINDOW='lala')
+    target_identity = queue['identity'](target_env)
+    target_data = dict(identity=target_identity, session='config', window='lala')
+    with patch.object(introduction['generation'].__globals__['runpy'], 'run_path', lambda path:guard):
+        unbound_generation = introduction['generation'](queue,target_data,target_env)
     with patch.object(started['reply_warning'].__globals__['runpy'], 'run_path', lambda path:guard):
         assert started['reply_warning'](env,'config','lala') == 'target config:lala is unbound: it cannot reply until bound'
     guard['register_source'](env,FIRST,'config:lala')
     with patch.object(started['reply_warning'].__globals__['runpy'], 'run_path', lambda path:guard):
         assert started['reply_warning'](env,'config','lala') is None
-    queue = runpy.run_path(str(TOOLS / 'cc-msg-queue'))
-    target_env = dict(env, CC_MSG_SESSION='config', CC_MSG_WINDOW='lala')
-    target_identity = queue['identity'](target_env)
+    with patch.object(introduction['generation'].__globals__['runpy'], 'run_path', lambda path:guard):
+        first_generation = introduction['generation'](queue,target_data,target_env)
+        assert first_generation != unbound_generation
     baseline = started['snapshot'](queue,target_env,target_identity)
     source = dict(guard['source_bindings']()['bindings'][FIRST], thread_id=FIRST)
     assert guard['check'](env, source, 'config', 'claude')
@@ -122,6 +129,8 @@ try:
         assert time.monotonic() < deadline
         time.sleep(.02)
     bound = guard['automatic_source'](env,SECOND)
+    with patch.object(introduction['generation'].__globals__['runpy'], 'run_path', lambda path:guard):
+        assert introduction['generation'](queue,target_data,target_env) != first_generation
     assert started['snapshot'](queue,target_env,target_identity) != baseline
     assert bound['pane'] == pane and bound['thread_id'] == SECOND
     assert bound['window'] == 'lala'

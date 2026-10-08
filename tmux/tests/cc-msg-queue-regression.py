@@ -42,6 +42,11 @@ class QueueTests(unittest.TestCase):
         self.assertNotIn('watch_baseline', data)
 
     def setUp(self):
+        def unavailable(*args):
+            raise ValueError('unit fixture has no actual target')
+        advisory = patch.dict(queue.STARTED, reply_warning=lambda *args:None, snapshot=unavailable)
+        advisory.start()
+        self.addCleanup(advisory.stop)
         route = patch.object(queue, 'routing_source', return_value=dict(session='lab-test', window='codex', pane='%1'))
         route.start()
         self.addCleanup(route.stop)
@@ -49,6 +54,14 @@ class QueueTests(unittest.TestCase):
         self.root.mkdir(parents=True)
         self.identity = dict(socket='/test/socket', device=1, inode=2, pane='%8', pid='123')
         self.env = dict(CC_MSG_SESSION='lab-test', CC_MSG_WINDOW='claude', TMUX='/test/socket,1,2')
+
+    def test_started_check_defaults_to_ten_minutes_without_opt_in(self):
+        with patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
+            result, path, data, launch = self.send(0)
+        self.assertEqual(result, 0)
+        self.assertEqual(data['watch_minutes'], 10)
+        self.assertEqual(data['started_state'], 'unobserved')
+        self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
 
     def send(self, code):
         with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(code, 'test outcome')), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue.subprocess, 'Popen') as launch, patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', 'payload']):
@@ -76,7 +89,7 @@ class QueueTests(unittest.TestCase):
         transport.write_text('#!' + sys.executable + "\nimport os,time,pathlib\npathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()))\ntime.sleep(120)\n")
         transport.chmod(0o700)
         driver = self.root / 'driver.py'
-        driver.write_text("import importlib.machinery,pathlib,os,sys\nq=importlib.machinery.SourceFileLoader('queue', " + repr(str(Path(queue.__file__))) + ").load_module()\nq.ROOT=pathlib.Path(" + repr(str(self.root / 'inbox')) + ")\nq.TOOL=pathlib.Path(" + repr(str(transport)) + ")\nq.routing_source=lambda *a:dict(session='lab-test',window='codex',pane='%1')\nq.resolve_defaults=lambda e,a:e\nq.identity=lambda e:" + repr(self.identity) + "\nq.stable_screen=lambda *a:True\nos.environ.update(" + repr(self.env) + ")\nsys.argv=['queue','payload']\nsys.exit(q.main())\n")
+        driver.write_text("import importlib.machinery,pathlib,os,sys\nq=importlib.machinery.SourceFileLoader('queue', " + repr(str(Path(queue.__file__))) + ").load_module()\nq.ROOT=pathlib.Path(" + repr(str(self.root / 'inbox')) + ")\nq.TOOL=pathlib.Path(" + repr(str(transport)) + ")\nq.deliver=q.transport\nq.routing_source=lambda *a:dict(session='lab-test',window='codex',pane='%1')\nq.resolve_defaults=lambda e,a:e\nq.identity=lambda e:" + repr(self.identity) + "\nq.stable_screen=lambda *a:True\nos.environ.update(" + repr(self.env) + ")\nsys.argv=['queue','payload']\nsys.exit(q.main())\n")
         process = subprocess.Popen([sys.executable, str(driver)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         try:
             until = time.monotonic() + 5
@@ -115,7 +128,7 @@ class QueueTests(unittest.TestCase):
     def test_codex_transport_and_operator_are_explicit(self):
         process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
         with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
-            queue.deliver(dict(agent='codex', operator=True, message='replace draft', identity=self.identity), self.env)
+            queue.transport(dict(agent='codex', operator=True, message='replace draft', identity=self.identity), self.env)
         self.assertEqual(launch.call_args.args[0], [str(queue.TOOL.with_name('codex-send'))])
         env = launch.call_args.kwargs['env']
         self.assertEqual(env['CODEX_SEND_QUEUE_INTERNAL'], '1')
@@ -126,7 +139,7 @@ class QueueTests(unittest.TestCase):
         process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
         env = dict(self.env, CODEX_SEND_WINDOW='codex-review')
         with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
-            queue.deliver(dict(agent='codex-to', message='standing instruction', identity=self.identity), env)
+            queue.transport(dict(agent='codex-to', message='standing instruction', identity=self.identity), env)
         self.assertEqual(launch.call_args.args[0], [str(queue.TOOL.with_name('codex-send-to')), 'codex-review'])
         self.assertEqual(json.loads(launch.call_args.kwargs['env']['CC_MSG_EXPECT_IDENTITY']), self.identity)
         self.assertEqual(launch.call_args.kwargs['env']['CODEX_SEND_QUEUE_INTERNAL'], '1')
@@ -230,7 +243,7 @@ class QueueTests(unittest.TestCase):
     def test_transport_uses_stdin_and_bounds_tmux(self):
         process = type('Process', (), {'returncode': 0, 'communicate': lambda self, text, timeout: ('delivered', '')})()
         with patch.object(queue.subprocess, 'Popen', return_value=process) as launch:
-            code, output = queue.deliver(dict(message='--help', identity=self.identity), self.env)
+            code, output = queue.transport(dict(message='--help', identity=self.identity), self.env)
         self.assertEqual((code, output), (0, 'delivered'))
         self.assertEqual(launch.call_args.args[0], [str(queue.TOOL)])
         self.assertEqual(launch.call_args.kwargs['stdin'], queue.subprocess.PIPE)
