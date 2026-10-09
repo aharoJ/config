@@ -28,6 +28,10 @@
       "claude": "lead",
       "codex": "worker",
       "red": "worker"
+    },
+    "studywithme": {
+      "claude": "lead",
+      "codex": "worker"
     }
   },
   "orchestrator_of": {
@@ -75,6 +79,10 @@
     ],
     "net": [
       "review-protocol",
+      "claude"
+    ],
+    "studywithme": [
+      "studywithme",
       "claude"
     ]
   }
