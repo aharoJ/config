@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/` and is managed as a single git repo. There is no build system, test suite, or CI — changes are applied by reloading the relevant tool.
+Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/` and is managed as a single git repo. There is no build system or CI. Dotfile changes are applied by reloading the relevant tool. The tmux relay tools (`tmux/tools/`) have a regression suite under `tmux/tests/` (see `tmux/tests/README.md`); relay changes are gated there and deployed to `~/.local/share/relay-stable`.
 
 ## Reload Commands
 
