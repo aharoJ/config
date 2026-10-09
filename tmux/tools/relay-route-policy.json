@@ -35,10 +35,6 @@
     }
   },
   "orchestrator_of": {
-    "config": [
-      "review-protocol",
-      "claude"
-    ],
     "cvmapp": [
       "review-protocol",
       "claude"
