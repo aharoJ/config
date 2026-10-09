@@ -71,6 +71,7 @@ def main():
         command = [sys.executable, str(TOOLS / 'cc-msg-queue'), '--agy-to', window, message]
     else:
         raise ValueError('destination is not a supported interactive agent; open the named seat')
+    env['RELAY_EXACT_SEAT'] = '1'
     if clear:
         env['RELAY_OPERATOR'] = '1' if operator else '0'
         command = [sys.executable, str(TOOLS / 'relay-clear-draft'), app] + ([window] if app != 'claude' else []) + args[2:]

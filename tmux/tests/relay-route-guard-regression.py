@@ -13,17 +13,21 @@ def test(name, actual, expected):
     assert actual == expected, name
     cases.append(name)
 
-source = {'session': 'cvmapp', 'window': 'whale-3', 'app': 'codex', 'socket': {'inode': 7}}
+source = {'session': 'cvmapp', 'window': 'whale-3', 'app': 'codex', 'socket': {'inode': 7}, 'actor': 101}
 state['live'] = lambda env, value: not value.get('stale', False)
+state['AGENT']['prove'] = lambda pid: {'app':'codex'}
 state['panes'] = lambda env: [['%9', 'other-project', 'blue-27', '', '200', '0'], ['%8', 'cvmapp', 'red', '', '300', '0']]
 state['pane_source'] = lambda env, row: dict(source, session=row[1], window=row[2])
 for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
     for target in [('other-project', 'blue-27'), ('cvmapp', 'red')]:
+        state['AGENT']['prove'] = lambda pid, app=app: {'app':app} if app != 'relay' else None
         test('symmetric explicit peer '+app+str(target), check({}, dict(source, app=app), *target), app != 'relay')
 for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
     state['pane_source'] = lambda env, row, app=app: dict(source, app=app)
+    state['AGENT']['prove'] = lambda pid, app=app: {'app':app} if app != 'relay' else None
     test('target provider '+app, check({}, source, 'other-project', 'blue-27'), app != 'relay')
 state['pane_source'] = lambda env, row: dict(source)
+state['AGENT']['prove'] = lambda pid: {'app':'codex'}
 for target in [('missing', 'blue'), ('other-project', 'missing'), ('bad session', 'blue-27'), ('other-project', '1:blue')]:
     test('missing or invalid address '+str(target), check({}, source, *target), False)
 test('dead source', check({}, dict(source, stale=True), 'other-project', 'blue-27'), False)
@@ -44,6 +48,7 @@ state['panes'] = lambda env: [['%4', 'cvmapp', 'claude', '', '100', '0']]
 state['identity'] = lambda pid: 'root-start' if pid == 100 else 'actor-start'
 state['ancestors'] = lambda pid: [(101, 100, '/real/claude', 'claude'), (100, 1, '/bin/fish', '')]
 state['foreground'] = lambda actor, root: True
+state['AGENT']['prove'] = lambda pid: {'app':'claude'}
 test('live bound source', module['live']({}, bound), True)
 for key, value in [('socket', {'inode': 8}), ('pane', '%5'), ('session', 'other'), ('window', 'other'), ('root_identity', 'reused'), ('actor_identity', 'reused'), ('app', 'codex')]:
     test('stale binding '+key, module['live']({}, dict(bound, **{key: value})), False)

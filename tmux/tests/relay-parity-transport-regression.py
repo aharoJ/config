@@ -17,7 +17,7 @@ spec.loader.exec_module(transport)
 output = Path(sys.argv[1]).resolve()
 matrix = transport.Matrix(output)
 tools = output / 'tools'
-shutil.copytree(ROOT / 'tools', tools)
+shutil.copytree(matrix.proven_tools, tools)
 original = matrix.command
 payload = '(CC) <-> rp / \'single\' "double" $(false) `false` \\ literal'
 try:

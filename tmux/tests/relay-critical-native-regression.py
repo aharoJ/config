@@ -42,6 +42,9 @@ actor_source.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(in
 for app in ('claude','codex','agy'):
     subprocess.run(['cc',str(actor_source),'-o',str(out/app)],check=True,capture_output=True)
 matrix = transport.Matrix(out/'matrix')
+transport.AGENT_FIXTURE['enable'](tools, matrix.attestations, Path('/private/tmp' if sys.platform=='darwin' else '/tmp')/('tmux-'+str(os.getuid()))/matrix.socket)
+for app in ('claude','codex','agy'):
+    transport.AGENT_FIXTURE['attest'](matrix.attestations,app,out/app)
 results = []
 providers = ('claude','codex','agy') if len(sys.argv)==1 else (sys.argv[2],)
 assert len(sys.argv)==1 or sys.argv[1]=='--provider' and providers[0] in ('claude','codex','agy')

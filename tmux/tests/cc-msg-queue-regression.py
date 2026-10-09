@@ -170,6 +170,13 @@ class QueueTests(unittest.TestCase):
         self.assertEqual((resolved['CC_MSG_SESSION'], resolved['CC_MSG_WINDOW']), ('caller', 'claude'))
         self.assertIn('%9', request.call_args_list[0].args[0])
 
+    def test_explicit_relay_numeric_seat_is_not_an_index(self):
+        env = dict(TMUX='/test/socket,1,2', CC_MSG_SESSION='caller', CC_MSG_WINDOW='2', RELAY_EXACT_SEAT='1')
+        with patch.object(queue.subprocess, 'run') as request:
+            resolved = queue.resolve_defaults(env, 'claude')
+        self.assertEqual(resolved['CC_MSG_WINDOW'], '2')
+        request.assert_not_called()
+
     def test_missing_caller_cannot_default_to_another_pane(self):
         env = dict(TMUX='/test/socket,1,2', TMUX_PANE='%9')
         result = type('Result', (), {'returncode': 0, 'stdout': '%1|other\n'})()

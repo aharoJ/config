@@ -11,6 +11,7 @@ second = '00000000-0000-4000-8000-000000000002'
 source = dict(version=2, app='codex', pane='%1', session='config', window='codex', root=100, root_identity='root', actor=101, actor_identity='actor', socket=dict(device=1, inode=2))
 chain = [(200, 1, '/bin/codex', '')]
 g['LABEL']['process_argv'] = lambda pid: ['codex', 'app-server', '--managed-daemon']
+g['AGENT']['prove'] = lambda pid: dict(app='codex')
 g['socket'] = lambda env: source['socket']
 g['panes'] = lambda env: [[source['pane'], source['session'], source['window'], '', '100', '0']]
 g['identity'] = lambda pid: 'root' if pid == 100 else 'actor'

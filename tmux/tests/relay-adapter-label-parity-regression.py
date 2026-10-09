@@ -14,7 +14,7 @@ state.delivery.__file__ = str(ROOT / 'tests/relay-delivery-regression.py')
 output = Path(sys.argv[1]).resolve()
 matrix = state.StateMatrix(output)
 tools = output / 'tools'
-shutil.copytree(ROOT / 'tools', tools)
+shutil.copytree(matrix.proven_tools, tools)
 base_command = matrix.command
 base_record = matrix.record
 try:

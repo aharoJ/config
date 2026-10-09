@@ -232,6 +232,9 @@ def fixture(directory, glyph, mode):
                     pending = pending[newline:]
 
 
+AGENT_FIXTURE = __import__('runpy').run_path(str(pathlib.Path(__file__).with_name('relay-agent-fixture.py')))
+
+
 class Matrix:
     def __init__(self, output, validated_sources=False):
         os.umask(0o077)
@@ -246,6 +249,10 @@ class Matrix:
         self.source_sessions = set()
         self.authority_tools = pathlib.Path(os.environ['RELAY_AUTHORITY_TOOLS']) if os.environ.get('RELAY_AUTHORITY_TOOLS') else None
         self.socket = f"ccmsg-lab-private-{os.getpid()}"
+        self.attestations = self.output / 'agent-attestations.json'
+        self.proven_tools = self.output / 'proven-tools'
+        shutil.copytree(ROOT / 'tools', self.proven_tools)
+        AGENT_FIXTURE['enable'](self.proven_tools, self.attestations, pathlib.Path('/private/tmp' if sys.platform == 'darwin' else '/tmp') / ('tmux-' + str(os.getuid())) / self.socket)
         self.tmux_binary = self.output / "tmux-private"
         self.tmux_binary.write_text("#!/usr/bin/env bash\nexec tmux -L " + shlex.quote(self.socket) + ' -f /dev/null "$@"\n')
         self.tmux_binary.chmod(0o755)
@@ -276,6 +283,7 @@ class Matrix:
             code = actor.with_suffix('.c')
             code.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(int n,char **v){pid_t p=fork();if(!p){execvp(v[1],v+1);_exit(127);}int s;waitpid(p,&s,0);return 0;}\n')
             subprocess.run(['cc', str(code), '-o', str(actor)], check=True, capture_output=True)
+        AGENT_FIXTURE['attest'](self.attestations, app, actor)
         return actor
 
     def start(self, relay, name, mode="idle", width=192, height=51):
@@ -305,7 +313,7 @@ class Matrix:
                "TMUX_RELAY_LOCK_ROOT": str(self.output / "relay-locks")}
         if extra:
             env.update(extra)
-        argv = [str(ROOT / "tools" / relay)]
+        argv = [str(self.proven_tools / relay)]
         if relay == "codex-send-to":
             argv.append(window)
         argv.append(payload)
@@ -330,6 +338,7 @@ class Matrix:
             source = actor.with_suffix('.c')
             source.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(int n,char **v){pid_t p=fork();if(!p){execvp(v[1],v+1);_exit(127);}int s;waitpid(p,&s,0);return 0;}\n')
             subprocess.run(["cc", str(source), "-o", str(actor)], check=True, capture_output=True)
+        AGENT_FIXTURE['attest'](self.attestations, 'claude', actor)
         command = shlex.join(["exec", str(actor), sys.executable, str(ROOT / "tests/relay-matrix-source.py"), "worker", str(folder)])
         self.tmux("new-window", "-d", "-t", "=" + session, "-n", "sender", command)
         self.source_sessions.add(session)
@@ -493,7 +502,7 @@ class Matrix:
         (self.output / "cleanup.json").write_text(json.dumps({"socket": self.socket, "kill_exit": killed.returncode,
                                                            "ls_exit": gone.returncode, "remaining": bool(path and path.exists())}))
 
-    def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False):
+    def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False, attested=True):
         relay = "cc-msg.sh"
         session, window, directory = self.start(relay, name, width=width)
         alias = session + "-linked"
@@ -511,6 +520,8 @@ class Matrix:
                                   '  if (!child) { execvp(argv[1], argv + 1); _exit(127); }\n'
                                   '  int status; waitpid(child, &status, 0); sleep(60); return 0;\n}\n')
                 subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)
+            if attested and agent in ('claude','codex','agy','gemini'):
+                AGENT_FIXTURE['attest'](self.attestations, agent, binary)
             target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
             argv, env = self.command(relay, session, window, payload,
                                      {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"}, source=False)
@@ -536,6 +547,8 @@ class Matrix:
                 entry.parent.mkdir(parents=True)
                 entry.write_text("require('child_process').spawnSync(" + json.dumps(sender_argv[0]) + ", "
                                  + json.dumps(sender_argv[1:]) + "); setInterval(() => {}, 1000);\n")
+                if attested:
+                    AGENT_FIXTURE['attest'](self.attestations, agent, pathlib.Path(shutil.which('node')).resolve(), entry)
                 command = shlex.join([shutil.which("node"), str(entry)])
             else:
                 command = shlex.join([str(binary), *sender_argv])

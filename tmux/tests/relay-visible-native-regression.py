@@ -97,6 +97,11 @@ try:
     guard = runpy.run_path(str(TOOLS / 'relay-route-guard'))
     g = guard['automatic_source'].__globals__
     g.update(SOURCE_BINDINGS=root / 'bindings.json',RUNTIME_LOGS=root / 'logs.sqlite')
+    fixture = runpy.run_path(str(TOOLS.parent/'tests/relay-agent-fixture.py'))
+    registry = root/'attestations.json'
+    registry.write_text('[]');registry.chmod(0o600)
+    fixture['attest'](registry,'codex',root/'codex')
+    g['AGENT']['prove'].__globals__.update(TEST_ATTESTATIONS=str(registry),TEST_SOCKET=address.split(',')[0])
     vg = g['VISIBLE']['discover'].__globals__
     vg.update(STATE=root / 'state.sqlite',HISTORY=root / 'history.sqlite',CACHE=root / 'cache.json')
     deadline = time.monotonic() + 3

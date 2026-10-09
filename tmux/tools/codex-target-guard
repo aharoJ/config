@@ -10,6 +10,7 @@ import runpy
 import subprocess
 import sys
 
+AGENT = runpy.run_path(str(pathlib.Path(__file__).resolve().with_name('relay-agent-identity')))
 LABEL = runpy.run_path(str(pathlib.Path(__file__).resolve().with_name('relay-sender-label')))
 
 
@@ -46,10 +47,11 @@ def snapshot(socket, pane, applications):
             if current == root:
                 break
             current = table[current][0]
-        if not chain or chain[-1] != root or LABEL['app'](pid, executable) not in applications:
+        proof = AGENT['prove'](pid)
+        if not chain or chain[-1] != root or not proof or proof['app'] not in applications:
             continue
         args = LABEL['ps']('-p', str(pid), '-o', 'lstart=,args=').strip()
-        candidates.append((pid, args))
+        candidates.append((pid, args, proof))
     if len(candidates) != 1 or query(socket, pane, applications) != identity:
         raise ValueError('ambiguous or changed foreground identity')
     return hashlib.sha256(json.dumps([identity, foreground, candidates], sort_keys=True).encode()).hexdigest()

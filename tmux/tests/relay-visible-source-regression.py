@@ -88,6 +88,7 @@ with patch.dict(gg, source_bindings=lambda: {'bindings': {}, 'proofs': {}}, visi
                 register_source=lambda *args, **kwargs: registered, live=lambda *args: True):
     with patch.dict(gg['VISIBLE'], latest_user_time=lambda thread:1):
         assert guard['automatic_source']({}, 'thread') == dict(registered, thread_id='thread')
+gg['AGENT']['prove'] = lambda pid: dict(app='codex')
 full = dict(registered, root=100, root_identity='root', actor=101, actor_identity='actor', socket=dict(device=1,inode=2))
 data = dict(bindings={'thread': full}, active={'1:2:%1': 'thread'}, proofs={'thread': dict(kind='visible-turn',since=1)})
 with tempfile.TemporaryDirectory() as directory:

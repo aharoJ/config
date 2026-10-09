@@ -8,15 +8,16 @@ from unittest.mock import patch
 TOOLS = Path(__file__).resolve().parents[1] / 'tools'
 guard = runpy.run_path(str(TOOLS / 'relay-route-guard'))
 launcher = runpy.run_path(str(TOOLS / 'relay'))
-source = dict(app='codex', session='new-swarm', window='whale-3', socket=dict(device=1,inode=2))
+source = dict(app='codex', session='new-swarm', window='whale-3', socket=dict(device=1,inode=2),actor=101)
 rows = [['%1','new-swarm','whale-3','','100','0'],['%2','new-project','blue-19','','200','0']]
 g = guard['check'].__globals__
 with patch.dict(g, live=lambda env, source:True, panes=lambda env:rows, pane_source=lambda env,row:dict(source,session=row[1],window=row[2])):
     for left,right in [(rows[0],rows[1]),(rows[1],rows[0])]:
         for sender in ('claude','codex','agy','gemini'):
             for recipient in ('claude','codex','agy','gemini'):
-                with patch.dict(g, pane_source=lambda env,row:dict(source,app=recipient,session=row[1],window=row[2])):
+                with patch.dict(g, pane_source=lambda env,row:dict(source,app=recipient,actor=102,session=row[1],window=row[2])), patch.dict(g['AGENT'],prove=lambda pid:dict(app=sender if pid==101 else recipient)):
                     assert guard['check']({},dict(source,app=sender,session=left[1],window=left[2]),right[1],right[2])
+    g['AGENT']['prove'] = lambda pid: dict(app='codex')
     calls=[]
     def live(env, value):
         calls.append(value)
