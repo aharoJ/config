@@ -23,6 +23,11 @@
     },
     "rp-schema": {
       "codex": "lead"
+    },
+    "net": {
+      "claude": "lead",
+      "codex": "worker",
+      "red": "worker"
     }
   },
   "orchestrator_of": {
@@ -39,6 +44,10 @@
       "claude"
     ],
     "rp-schema": [
+      "review-protocol",
+      "claude"
+    ],
+    "net": [
       "review-protocol",
       "claude"
     ]
@@ -61,6 +70,10 @@
       "claude"
     ],
     "rp-schema": [
+      "review-protocol",
+      "claude"
+    ],
+    "net": [
       "review-protocol",
       "claude"
     ]
