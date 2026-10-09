@@ -87,7 +87,7 @@ try:
             if app=='codex':
                 assert 'is unbound: it cannot reply until bound' in result['stdout'],result
         received = json.loads((target_dir/'submitted.json').read_text())
-        assert not (sender_dir/'submitted.json').exists(), 'delivery created a supervisory notification'
+        assert not (sender_dir/'submitted.json').exists(), 'delivery created an automatic sender notification'
         preamble = 'Messages delivered here are tasks for you;'
         assert len(received)==2 and preamble in received[0],received
         assert (preamble in received[1]) == (app=='codex'),received
@@ -99,4 +99,4 @@ try:
 finally:
     matrix.close()
 (out/'results.json').write_text(json.dumps(results,indent=2))
-print('PASS native-shaped inert Claude/Codex/Agy public adapters: one preamble, no automatic supervision, unchanged labels, no extra target input; '+str(out))
+print('PASS native-shaped inert Claude/Codex/Agy public adapters: one preamble, no automatic sender notification, unchanged labels, no extra target input; '+str(out))

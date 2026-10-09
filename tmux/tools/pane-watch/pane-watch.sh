@@ -3,7 +3,6 @@
 # description: Alert on agent waits and lost observation coverage.
 # patched: validate arguments and timing; bind locks and coverage to the origin server and process
 # date: 2026-10-01
-# pane-watch: tell the operator, loudly, when an agent in a tmux pane is waiting on them.
 #
 # Design notes and the eight-round adversarial audit trail that produced the parser live in
 # ./audits/. Two rules that everything else follows from:
@@ -250,14 +249,10 @@ extract() {
     [ "$bi" -eq "$nb" ] && NOTHING_YET=1
   else
     TURN=$(printf '%s\n' "$body" | tail -40)
-    BOUND="no operator turn boundary on screen; showing the last 40 rows, the request may be older than this"
+    BOUND="no user-input turn boundary on screen; showing the last 40 rows, the request may be older than this"
   fi
   TURN=$(printf '%s\n' "$TURN" | grep -vE '^[[:space:]]*─+$')
 
-  # Identity is the operator row (set above), not the rendered text: the agent re-renders its
-  # transcript into recaps, changing the text without changing which message it is answering.
-  # Rendered text is alert CONTENT. With the boundary scrolled away there is no operator row, so
-  # fall back to the text hash rather than letting distinct turns share one identity.
   [ -z "$OPL_RAW" ] && SIG=$(fp "txt:$TURN")
 }
 
@@ -422,8 +417,8 @@ $hot"
       else why="idle with a completed, unacknowledged turn"; fi
       alerts=$((alerts+1)); b=${BACKOFF[$alerts]:-600}; next_alert=$((now+b))
       echo "=========================================================="
-      echo ">>>>>>>>>>  OPERATOR ACTION NEEDED  <<<<<<<<<<"
-      echo "$UI on $PANE ($P_SESS:$P_WIN) is $why. Nothing moves until you answer. [alert #$alerts]"
+      echo ">>>>>>>>>>  PANE RESPONSE MAY BE NEEDED  <<<<<<<<<<"
+      echo "$UI on $PANE ($P_SESS:$P_WIN) is $why. Review the pane and reply if appropriate. [alert #$alerts]"
       [ -n "$q" ] && echo "question: $q"
       [ -n "$a" ] && [ "$a" != "$q" ] && echo "trigger:  $a"
       echo "last:     $t2"

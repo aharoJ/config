@@ -1,4 +1,4 @@
-"""One-time approved seat preamble, serialized with generation-bound delivery."""
+"""Standard delivery preamble, serialized with generation-bound delivery."""
 import fcntl
 import hashlib
 import json
@@ -28,9 +28,6 @@ def generation(queue, data, env):
             token = ['binding', bound['binding_epoch'], source]
             data['_introduction_verified'] = True
         else:
-            # Operator ruling: unidentified thread generations repeat the
-            # preamble. Content correlation never silently substitutes a
-            # process-level "once" receipt for a thread binding.
             token = ['unbound', source]
     if queue['identity'](env) != target:
         raise ValueError('introduction target changed during generation proof')

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # path: ~/.config/tmux/tests/relay-parity-transport-regression.py
 # description: Exercise real source binding and queued labels on a private fixture server.
-# patched: cover coupled and standalone leads without vendor authority
 # date: 2026-10-06
 import importlib.util
 import json

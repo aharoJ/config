@@ -125,7 +125,7 @@ for glyph in '›' '»'; do
   run_watch "$TMP/fixtures/idle-$glyph" "$idle_output"
   require "$idle_output" 'ARMED codex'
   require "$idle_output" 'state=idle'
-  forbidden "$idle_output" 'no operator turn boundary'
+  forbidden "$idle_output" 'no user-input turn boundary'
 
   for state in busy queued; do
     write_fixture "$state" "$glyph"
@@ -141,7 +141,7 @@ for glyph in '›' '»'; do
   require "$modal_output" 'ARMED codex'
   require "$modal_output" 'state=modal'
   require "$modal_output" 'service modal'
-  forbidden "$modal_output" 'WATCH COVERAGE LOST|OPERATOR ACTION NEEDED'
+  forbidden "$modal_output" 'WATCH COVERAGE LOST|PANE RESPONSE MAY BE NEEDED'
 done
 
 set +e

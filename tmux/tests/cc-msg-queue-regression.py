@@ -29,7 +29,7 @@ class QueueTests(unittest.TestCase):
                 self.assertEqual(result, expected)
                 self.assertEqual(data['reply_warning'], warning)
 
-    def test_delivery_creates_no_supervision_even_with_legacy_environment(self):
+    def test_delivery_creates_no_sender_notification_even_with_legacy_environment(self):
         with patch.dict(os.environ, RELAY_WATCH_MINUTES='1', RELAY_STARTED_MINUTES='.001'):
             result, path, data, launch = self.send(0)
         self.assertEqual(result, 0)

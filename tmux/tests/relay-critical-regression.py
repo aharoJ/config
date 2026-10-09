@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Approved preamble, shared adapters, default monitor and truthful status."""
+"""Standard delivery preamble, shared adapters and truthful status."""
 import json
 import pathlib
 import runpy
@@ -48,8 +48,6 @@ for agent in ('claude','codex','codex-to','agy'):
 record = root / 'status.json'
 save(record,dict(id='status',state='delivered'))
 assert queue['status_text'](record,json.loads(record.read_text())) == 'delivered: '+str(record)
-# Config CC's explicit ruling: unproven generation repeats, never blocks a
-# transport merely because introduction scope cannot be identified.
 folder = root/'unbound'
 sent = []
 def unbound(queue,item,env):
