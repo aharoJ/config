@@ -14,7 +14,7 @@ current = (root / 'tools/codex-send-to').read_text()
 body = lambda source: source.split('require_empty_codex_input() {', 1)[1].split('\nsource ', 1)[0].split('\nrequire_queue_binding() {', 1)[0].replace('\n  require_queue_binding', '')
 assert hashlib.sha256(body(current).encode()).hexdigest() == 'ed7156e464300a6af30e8a0665d8aa8c1f7d58c5ba668f98a760ddd6305940d2', 'send composer function changed'
 assert 'codex-new-guard' not in current, 'reset footer grammar must not gate normal sends'
-assert hashlib.sha256((root / 'tools/relay-input-guard').read_bytes()).hexdigest() == 'c0768be6a484506ed9ace4275bbf497a704220a7e7cc4d93305e14806550180a', 'baseline composer grammar changed'
+assert hashlib.sha256((root / 'tools/relay-input-guard').read_bytes()).hexdigest() == '50adf42f3724e033e6305631f21eaf5682480fe73ef8c03d4b42d98b0dfc3e7d', 'baseline composer grammar changed'
 checks = 0
 for file in sorted((root / 'tests/fixtures').glob('*.json')):
     document = json.loads(file.read_text())

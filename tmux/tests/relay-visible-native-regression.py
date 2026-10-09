@@ -18,7 +18,7 @@ THIRD = '00000000-0000-4000-8000-000000000003'
 FOURTH = '00000000-0000-4000-8000-000000000004'
 FIFTH = '00000000-0000-4000-8000-000000000005'
 root = pathlib.Path(tempfile.mkdtemp(prefix='rn-n-',dir=pathlib.Path.home() / 'desk/lab'))
-socket = 'ccmsg-lab-private-native-' + str(os.getpid())
+socket = 'ccmsg-lab-private-' + str(os.getpid())
 C = r'''
 #include <stdio.h>
 #include <termios.h>
@@ -103,7 +103,7 @@ try:
     while 'first native unique turn' not in tmux('capture-pane','-p','-t',pane):
         assert time.monotonic() < deadline
         time.sleep(.02)
-    started = runpy.run_path(str(TOOLS / 'relay-started-watch'))
+    started = runpy.run_path(str(TOOLS / 'relay-reply-warning'))
     introduction = runpy.run_path(str(TOOLS / 'relay-seat-introduction'))
     queue = runpy.run_path(str(TOOLS / 'cc-msg-queue'))
     target_env = dict(env, CC_MSG_SESSION='config', CC_MSG_WINDOW='lala')
@@ -119,9 +119,8 @@ try:
     with patch.object(introduction['generation'].__globals__['runpy'], 'run_path', lambda path:guard):
         first_generation = introduction['generation'](queue,target_data,target_env)
         assert first_generation != unbound_generation
-    baseline = started['snapshot'](queue,target_env,target_identity)
     source = dict(guard['source_bindings']()['bindings'][FIRST], thread_id=FIRST)
-    assert guard['check'](env, source, 'config', 'claude')
+    assert not guard['check'](env, source, 'config', 'claude')
     assert not guard['check'](env, source, 'cvmapp', 'claude')
     add_turn(SECOND,'replacement native unique turn')
     (root / 'turn').write_text('replacement native unique turn\n')
@@ -131,7 +130,6 @@ try:
     bound = guard['automatic_source'](env,SECOND)
     with patch.object(introduction['generation'].__globals__['runpy'], 'run_path', lambda path:guard):
         assert introduction['generation'](queue,target_data,target_env) != first_generation
-    assert started['snapshot'](queue,target_env,target_identity) != baseline
     assert bound['pane'] == pane and bound['thread_id'] == SECOND
     assert bound['window'] == 'lala'
     assert guard['live'](env,bound)

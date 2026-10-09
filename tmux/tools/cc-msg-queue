@@ -18,7 +18,7 @@ import uuid
 
 TOOL = Path(__file__).resolve().with_name('cc-msg.sh')
 ROOT = Path(os.environ.get('CC_MSG_INBOX_ROOT', str(Path.home() / 'desk/tmp/inbox')))
-STARTED = runpy.run_path(str(TOOL.with_name('relay-started-watch')))
+REPLY = runpy.run_path(str(TOOL.with_name('relay-reply-warning')))
 INTRODUCTION = runpy.run_path(str(TOOL.with_name('relay-seat-introduction')))
 
 
@@ -177,26 +177,15 @@ def deliver(data, env):
 def finish(folder, path, data, state, code, output):
     data.update(state=state, code=code, output=output, updated=time.time())
     if state == 'delivered':
-        data['started_state'] = 'unobserved'
-        print(f'relay: delivered {data["id"]} to {data["session"]}:{data["window"]}; not started yet; composer verified (not an acknowledgment); record {path}')
+        print(f'relay: delivered {data["id"]} to {data["session"]}:{data["window"]}; composer verified (not an acknowledgment); record {path}')
     if state == 'delivered' and data.get('reply_warning_requested') and not data.get('reply_warning_checked'):
         env = dict(os.environ, **data.get('environment', {}))
-        warning = STARTED['reply_warning'](env, data['session'], data['window'])
+        warning = REPLY['reply_warning'](env, data['session'], data['window'])
         if warning:
             data['reply_warning'] = warning
             print('HARD WARNING: ' + warning)
-    if state == 'delivered' and data.get('watch_minutes') and not data.get('watch_notification'):
-        try:
-            data['watch_baseline'] = STARTED['snapshot'](globals(), dict(os.environ, **data.get('environment', {})), data['identity'])
-        except Exception as error:
-            data['watch_error'] = str(error)
-            data['watch_baseline_error'] = str(error)
     save(path, data)
     event(folder, data, state, code=code, output=output)
-    if state == 'delivered' and data.get('watch_minutes') and not data.get('watch_notification'):
-        launch_watch(path, data)
-    if data.get('watch_error'):
-        print('relay: HARD WARNING: not started yet; watch unavailable: ' + data['watch_error'])
     if state in ('failed', 'unknown', 'expired'):
         marker = folder / (data['id'] + '.FAILED')
         with marker.open('w') as stream:
@@ -205,22 +194,8 @@ def finish(folder, path, data, state, code, output):
             os.fsync(stream.fileno())
 
 
-def launch_watch(path, data):
-    try:
-        with path.with_suffix('.watch.log').open('a') as log:
-            subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--watch-worker', str(path)], stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True)
-    except OSError as error:
-        data['watch_error'] = str(error)
-        save(path, data)
-
-
 def status_text(path, data):
-    state = data['state']
-    if state == 'delivered':
-        receipt = path.with_suffix('.watch.json')
-        observed = receipt.exists() and json.loads(receipt.read_text()).get('state') == 'output-observed'
-        state += '; started: output observed (not task completion)' if observed else '; not started yet'
-    return state + ': ' + str(path)
+    return data['state'] + ': ' + str(path)
 
 
 def stable_screen(env, target):
@@ -357,17 +332,12 @@ def sweep(folder=None):
                         launch_worker(folder, path, data)
                     except OSError as error:
                         finish(folder, path, data, 'failed', 7, f'cannot recover retry worker: {error}')
-            elif data['state'] == 'delivered' and data.get('watch_minutes') and not data.get('watch_notification'):
-                receipt = path.with_suffix('.watch.json')
-                if not receipt.exists() or json.loads(receipt.read_text()).get('state') == 'notification-planned':
-                    launch_watch(path, data)
 
 
 def main():
     os.umask(0o077)
     if len(sys.argv) == 3 and sys.argv[1] == '--watch-worker':
-        STARTED['watch'](globals(), Path(sys.argv[2]))
-        return 0
+        raise RoutingError('automatic started watches were removed; no target input was sent')
     if len(sys.argv) == 4 and sys.argv[1] == '--schedule':
         schedule(Path(sys.argv[2]), int(sys.argv[3]))
         return 0
@@ -407,7 +377,9 @@ def main():
         return subprocess.call([sys.executable, str(TOOL.with_name('relay-clear-draft')), *args, *sys.argv[2:]], env=env)
     if sys.argv[1:] == ['--status']:
         for path in ROOT.glob('*/*.json'):
-            print(status_text(path, json.loads(path.read_text())))
+            data = json.loads(path.read_text())
+            if isinstance(data, dict) and 'id' in data and 'state' in data and not path.name.endswith('.watch.json'):
+                print(status_text(path, data))
         return 0
     if sys.argv[1:] in (['-h'], ['--help']):
         if agent == 'codex':
@@ -430,16 +402,11 @@ def main():
     data = dict(source=source, id=uuid.uuid4().hex, operator=operator, agent=agent, session=session, window=window, message=message, created=time.time(), deadline=time.time() + 1800, state='attempting', identity=identity(env), environment={key: env[key] for key in ('RELAY_QUEUE_AGENT', 'CODEX_SEND_SESSION', 'CODEX_SEND_WINDOW', 'AGY_SEND_SESSION', 'AGY_SEND_WINDOW', 'AGY_SEND_PANE', 'PATH', 'TMUX', 'TMUX_PANE', 'CC_MSG_SESSION', 'CC_MSG_WINDOW', 'CC_MSG_PANE', 'CC_MSG_EXACT', 'TMUX_BIN', 'TIMEOUT_BIN', 'TMPDIR', 'TMUX_RELAY_LOCK_ROOT', 'TMUX_RELAY_LOCK_BIN') if key in env})
     data['reply_warning_requested'] = True
     if data['reply_warning_requested']:
-        warning = STARTED['reply_warning'](env, session, window)
+        warning = REPLY['reply_warning'](env, session, window)
         data['reply_warning_checked'] = True
         if warning:
             data['reply_warning'] = warning
             print('HARD WARNING: ' + warning)
-    data['watch_minutes'] = float(env.get('RELAY_WATCH_MINUTES', env.get('RELAY_STARTED_MINUTES', '10')))
-    if not .001 <= data['watch_minutes'] <= 1440:
-        raise RoutingError('started-check requires .001..1440 minutes')
-    if data['identity'] and source.get('pane') == data['identity']['pane']:
-        raise RoutingError('started-check cannot notify its observed target; name a distinct destination')
     path = folder / (data['id'] + '.json')
     data['record'] = str(path)
     with path.with_suffix('.lock').open('a') as lock:

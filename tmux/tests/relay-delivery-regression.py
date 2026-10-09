@@ -269,13 +269,22 @@ class Matrix:
             raise RuntimeError(result.stderr)
         return result.stdout.strip()
 
+    def target_actor(self, app):
+        actor = self.output / 'matrix-target' / app
+        if not actor.exists():
+            actor.parent.mkdir(exist_ok=True)
+            code = actor.with_suffix('.c')
+            code.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(int n,char **v){pid_t p=fork();if(!p){execvp(v[1],v+1);_exit(127);}int s;waitpid(p,&s,0);return 0;}\n')
+            subprocess.run(['cc', str(code), '-o', str(actor)], check=True, capture_output=True)
+        return actor
+
     def start(self, relay, name, mode="idle", width=192, height=51):
         self.number += 1
         session = f"lab-ccmsg-{os.getpid()}-{self.number}"
         directory = self.output / f"{self.number:03d}-{relay}-{name}"
         directory.mkdir()
         glyph, window = ("❯", "lab-claude") if relay == "cc-msg.sh" else ("›", "lab-codex")
-        command = shlex.join(["exec", sys.executable, str(pathlib.Path(__file__).resolve()), "--fixture", str(directory), glyph, mode])
+        command = shlex.join(["exec", str(self.target_actor("claude" if relay == "cc-msg.sh" else "codex")), sys.executable, str(pathlib.Path(__file__).resolve()), "--fixture", str(directory), glyph, mode])
         self.tmux("new-session", "-d", "-s", session, "-n", window, "-x", str(width), "-y", str(height), command)
         self.sessions.add(session)
         self.server_address = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{socket_path},#{pid},0")

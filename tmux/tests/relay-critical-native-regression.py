@@ -80,25 +80,20 @@ try:
                 time.sleep(.02)
             result = json.loads(request.with_suffix('.result').read_text())
             assert result['returncode']==0,result
-            assert 'not started yet' in result['stdout'],result
+            assert 'not started yet' not in result['stdout'],result
             if app=='codex':
                 assert 'is unbound: it cannot reply until bound' in result['stdout'],result
-        until = time.monotonic()+20
-        while not (sender_dir/'submitted.json').exists() or len(json.loads((sender_dir/'submitted.json').read_text()))<2:
-            assert time.monotonic()<until,app
-            time.sleep(.05)
         received = json.loads((target_dir/'submitted.json').read_text())
-        alerts = json.loads((sender_dir/'submitted.json').read_text())
+        assert not (sender_dir/'submitted.json').exists(), 'delivery created a supervisory notification'
         preamble = 'Messages delivered here are tasks for you;'
         assert len(received)==2 and preamble in received[0],received
         assert (preamble in received[1]) == (app=='codex'),received
         assert all(line.startswith('sender ('+session+':sender) [') for line in received),received
-        assert len(alerts)==2 and all('relay watch: target' in line for line in alerts),alerts
         wire = (target_dir/'wire.bin').read_bytes()
         assert wire.count(b'\r')+wire.count(b'\n')==2,'watch typed extra input to target'
-        results.append(dict(app=app,deliveries=len(received),alerts=len(alerts),target_enter_count=2,unbound_repeat=app=='codex'))
+        results.append(dict(app=app,deliveries=len(received),alerts=0,target_enter_count=2,unbound_repeat=app=='codex'))
         matrix.cleanup_session(session)
 finally:
     matrix.close()
 (out/'results.json').write_text(json.dumps(results,indent=2))
-print('PASS native-shaped inert Claude/Codex/Agy public adapters: one preamble, default idle wakeups, unchanged labels, no extra target input; '+str(out))
+print('PASS native-shaped inert Claude/Codex/Agy public adapters: one preamble, no automatic supervision, unchanged labels, no extra target input; '+str(out))

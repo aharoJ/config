@@ -18,8 +18,7 @@ binmode STDERR, ':encoding(UTF-8)';
 #   2 = the current composer cannot be found.
 my ($glyph, $cursor_x, $cursor_y, $pane_width, $sender_tier) = @ARGV;
 exit 2 if (@ARGV < 3 || @ARGV > 5) || !defined($glyph) || !defined($cursor_x) || !defined($cursor_y);
-exit 2 if defined($sender_tier) && $sender_tier ne 'relaxed' && $sender_tier ne 'strict';
-$sender_tier //= 'strict';
+exit 2 if defined($sender_tier) && $sender_tier ne 'strict';
 eval { $glyph = decode('UTF-8', $glyph, FB_CROAK); 1 } or exit 2;
 exit 2 if length($glyph) == 0;
 exit 2 if $cursor_x !~ /\A[0-9]+\z/ || $cursor_y !~ /\A[0-9]+\z/;
@@ -477,13 +476,12 @@ if ($glyph eq '>') {
 }
 
 if ($glyph eq '›') {
-    if ($sender_tier eq 'strict' && ambiguous_input_at_home($rows[$prompt_index], $glyph)
+    if (ambiguous_input_at_home($rows[$prompt_index], $glyph)
         && composer_has_safe_tail(\@rows, $prompt_index, $glyph)) {
         print STDERR "relay-input-guard: cannot distinguish hint from Home-moved draft\n";
         exit 1;
     }
-    exit 1 if !codex_known_placeholder($rows[$prompt_index], $glyph)
-           && !($sender_tier eq 'relaxed' && ambiguous_input_at_home($rows[$prompt_index], $glyph));
+    exit 1 if !codex_known_placeholder($rows[$prompt_index], $glyph);
     exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph)
            && !(codex_known_placeholder($rows[$prompt_index], $glyph)
                 && wrapped_dim_tail(\@rows, $prompt_index, $glyph));
@@ -576,14 +574,13 @@ sub claude_known_placeholder {
     return $after_glyph =~ /\A[ \x{a0}][^\r\n]*\z/;
 }
 
-if ($sender_tier eq 'strict' && ambiguous_input_at_home($rows[$prompt_index], $glyph)
+if (ambiguous_input_at_home($rows[$prompt_index], $glyph)
     && composer_has_safe_tail(\@rows, $prompt_index, $glyph)) {
     print STDERR "relay-input-guard: cannot distinguish hint from Home-moved draft\n";
     exit 1;
 }
 exit 1 if !claude_known_empty($rows[$prompt_index], $glyph)
-       && !claude_known_placeholder($rows[$prompt_index], $glyph)
-       && !($sender_tier eq 'relaxed' && ambiguous_input_at_home($rows[$prompt_index], $glyph));
+       && !claude_known_placeholder($rows[$prompt_index], $glyph);
 exit 1 if !composer_has_safe_tail(\@rows, $prompt_index, $glyph)
        && !(claude_known_placeholder($rows[$prompt_index], $glyph)
             && wrapped_dim_tail(\@rows, $prompt_index, $glyph));

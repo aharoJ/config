@@ -23,19 +23,20 @@ try:
             target_session, target_window, target_directory = matrix.start(adapter, provider + ('-archive' if archived else '-direct'), width=260)
             payload = ("literal sender's quote " + ('long archive payload ' * 90 if archived else 'direct')).rstrip()
             def command(relay, session, window, message, extra=None, source=True):
-                policy = dict(version=2, seats={session:{'lab-sender-' + provider:'lead'}, target_session:{target_window:'lead'}}, orchestrator_of={session:[target_session,target_window]})
-                (tools / 'relay-route-policy.json').write_text(json.dumps(policy))
                 argv, env = base_command(adapter, target_session, target_window, message, extra, source=source)
                 argv[0] = str(tools / adapter)
                 env.update(CC_MSG_QUEUE_INTERNAL='0', CODEX_SEND_QUEUE_INTERNAL='0', AGY_SEND_QUEUE_INTERNAL='0', CC_MSG_INBOX_ROOT=str(output / 'inbox'))
                 env.pop('RELAY_MESSAGE_RECORD', None)
                 return argv, env
             def record(relay, name, result, expected_code, directory, expected_payload=None, no_input=False):
+                if not archived and expected_payload:
+                    label, text = expected_payload.split(': ', 1)
+                    expected_payload = label + ': ' + 'Messages delivered here are tasks for you; the prefix identifies the sender, not the addressee; never forward a task unless explicitly asked. ' + text
                 return base_record(relay, name, result, expected_code, target_directory, expected_payload, no_input)
             matrix.command = command
             matrix.record = record
             matrix.sender_case(provider + '-to-' + adapter + ('-archive' if archived else '-direct'), provider, payload=payload)
-    records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json')]
+    records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json') if not path.name.endswith('.watch.json')]
     assert len(records) == 6 and all(row['state'] == 'delivered' for row in records), records
 except BaseException:
     for session in matrix.sessions.copy():

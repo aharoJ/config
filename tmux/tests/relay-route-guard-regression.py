@@ -13,33 +13,31 @@ def test(name, actual, expected):
     assert actual == expected, name
     cases.append(name)
 
-source = {'session': 'cvmapp', 'window': 'codex', 'app': 'codex'}
-state['live'] = lambda env, value: True
+source = {'session': 'cvmapp', 'window': 'whale-3', 'app': 'codex', 'socket': {'inode': 7}}
+state['live'] = lambda env, value: not value.get('stale', False)
+state['panes'] = lambda env: [['%9', 'other-project', 'blue-27', '', '200', '0'], ['%8', 'cvmapp', 'red', '', '300', '0']]
+state['pane_source'] = lambda env, row: dict(source, session=row[1], window=row[2])
 for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
-    for window in ('claude', 'codex'):
-        seat = dict(source, app=app, window=window)
-        test('lead provider parity '+app+window, check({}, seat, 'config', 'codex'), app != 'relay')
-        test('lead to lead '+app+window, check({}, seat, 'review-protocol', 'claude'), app != 'relay')
-    worker = dict(source, app=app, window='terra')
-    test('worker local '+app, check({}, worker, 'cvmapp', 'codex'), True)
-    test('worker cannot skip project orcha '+app, check({}, worker, 'review-protocol', 'claude'), False)
-    test('worker unrelated project '+app, check({}, worker, 'config', 'claude'), False)
-for app in ('claude', 'codex', 'agy', 'gemini'):
-    schema = dict(source, session='rp-schema', window='codex', app=app)
-    test('rp-schema upward '+app, check({}, schema, 'review-protocol', 'claude'), True)
-    hub = dict(source, session='review-protocol', window='claude', app=app)
-    test('rp-schema return '+app, check({}, hub, 'rp-schema', 'codex'), True)
-vetmed = dict(source, session='vetmed-absence-expansion', window='terra')
-test('declared vetmed terra reports to local lead', check({}, vetmed, 'vetmed-absence-expansion', 'claude'), True)
-test('declared vetmed terra cannot skip local lead', check({}, vetmed, 'review-protocol', 'claude'), False)
-test('declared vetmed terra cannot reach config', check({}, vetmed, 'config', 'claude'), False)
-test('unknown session denied', check({}, dict(source, session='unknown'), 'config', 'claude'), False)
-test('unknown destination denied', check({}, source, 'other', 'codex'), False)
-test('unknown destination seat denied', check({}, source, 'config', 'unassigned'), False)
-test('vendor name grants no worker privilege', check({}, dict(source, window='worker', app='claude'), 'config', 'claude'), False)
-state['live'] = lambda env, value: False
-test('dead source local', check({}, source, 'cvmapp', 'claude'), False)
-test('dead source cross', check({}, source, 'config', 'codex'), False)
+    for target in [('other-project', 'blue-27'), ('cvmapp', 'red')]:
+        test('symmetric explicit peer '+app+str(target), check({}, dict(source, app=app), *target), app != 'relay')
+for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
+    state['pane_source'] = lambda env, row, app=app: dict(source, app=app)
+    test('target provider '+app, check({}, source, 'other-project', 'blue-27'), app != 'relay')
+state['pane_source'] = lambda env, row: dict(source)
+for target in [('missing', 'blue'), ('other-project', 'missing'), ('bad session', 'blue-27'), ('other-project', '1:blue')]:
+    test('missing or invalid address '+str(target), check({}, source, *target), False)
+test('dead source', check({}, dict(source, stale=True), 'other-project', 'blue-27'), False)
+state['pane_source'] = lambda env, row: dict(source, stale=True)
+test('dead target', check({}, source, 'other-project', 'blue-27'), False)
+state['pane_source'] = lambda env, row: dict(source, socket={'inode':8})
+test('other socket target', check({}, source, 'other-project', 'blue-27'), False)
+state['pane_source'] = lambda env, row: dict(source)
+test('live operator shell to verified target', check({'RELAY_OPERATOR':'1'}, dict(source, app='relay'), 'other-project', 'blue-27'), True)
+state['panes'] = lambda env: [['%9', 'other-project', 'blue-27', '', '200', '0']]*2
+test('ambiguous target', check({}, source, 'other-project', 'blue-27'), False)
+state['panes'] = lambda env: [['%9', 'other-project', 'blue-27', '', '200', '0']]
+state['live'] = lambda env, value: value.get('socket') != {'inode':7} or value is source
+test('target generation changed before route return', check({}, source, 'other-project', 'blue-27'), False)
 bound = {'version': 1, 'socket': {'inode': 7}, 'pane': '%4', 'session': 'cvmapp', 'window': 'claude', 'root': 100, 'root_identity': 'root-start', 'actor': 101, 'actor_identity': 'actor-start', 'app': 'claude'}
 state['socket'] = lambda env: {'inode': 7}
 state['panes'] = lambda env: [['%4', 'cvmapp', 'claude', '', '100', '0']]
@@ -51,7 +49,6 @@ for key, value in [('socket', {'inode': 8}), ('pane', '%5'), ('session', 'other'
     test('stale binding '+key, module['live']({}, dict(bound, **{key: value})), False)
 state['foreground'] = lambda actor, root: False
 test('source no foreground subtree', module['live']({}, bound), False)
-original = module['policy'].__globals__
 with tempfile.TemporaryDirectory() as directory:
     record = pathlib.Path(directory) / 'record.json'
     record.write_text('{}')
@@ -77,15 +74,4 @@ with tempfile.TemporaryDirectory() as directory:
     state['ancestors'] = lambda pid: [(201, 1, '/bin/bash', '')]
     state['process_executable'] = lambda pid: pathlib.Path('/bin/bash')
     test('env only record refused', module['record_caller'](201, record, {'actor': 101}), False)
-    path = pathlib.Path(directory) / 'policy.json'
-    path.write_text(json.dumps({'version': 2, 'seats': {'cvmapp': {'codex': 'lead'}}}))
-    path.chmod(0o600)
-    original['POLICY'] = path
-    test('operator policy valid', module['policy'](), {'cvmapp': {'codex': 'lead'}})
-    path.chmod(0o666)
-    try:
-        module['policy']()
-        raise AssertionError('writable policy accepted')
-    except ValueError:
-        cases.append('writable policy refused')
 print(json.dumps({'passed': len(cases), 'cases': cases}, indent=2))

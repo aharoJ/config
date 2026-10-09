@@ -22,39 +22,6 @@ relay_display() {
   printf '%s\n' "${response#*|}"
 }
 
-resolve_relay_sender_tier() {
-  local sender_file sender sender_pane sender_session sender_window sender_pid sender_app identity sender_command capture model
-  relay_sender_tier=strict
-  [ -x "$relay_script_dir/codex-model-sender-label" ] || return 0
-  sender_file="$(mktemp "${TMPDIR:-/tmp}/relay-sender-list.XXXXXX")" || return 0
-  if ! request list-panes -a -F '#{pane_id} #{session_name} #{window_name} #{pane_current_command} #{pane_pid} #{pane_dead}' > "$sender_file"; then
-    trash "$sender_file" >/dev/null 2>&1
-    return 0
-  fi
-  sender="$("$relay_script_dir/codex-model-sender-label" "$$" "$sender_file")"
-  trash "$sender_file" >/dev/null 2>&1
-  [ -n "$sender" ] || return 0
-  read -r sender_pane sender_session sender_window sender_pid sender_app <<< "$sender"
-  [ "$sender_app" = claude ] || return 0
-  identity="$(relay_display "$sender_pane" '#{pane_id} #{session_name} #{window_name} #{pane_pid} #{pane_dead} #{pane_current_command}')" || return 0
-  case "$identity" in
-    "$sender_pane $sender_session $sender_window $sender_pid 0 "*) ;;
-    *) return 0 ;;
-  esac
-  sender_command="${identity##* }"
-  [ "$sender_command" != claude.exe ] || return 0
-  capture="$(request capture-pane -p -t "$sender_pane")" || return 0
-  model="$(printf '%s\n' "$capture" | python3 -c 'import re,sys
-rows=sys.stdin.read().splitlines()
-for index in range(len(rows)-2,-1,-1):
-    if re.fullmatch("─{8,}", rows[index]):
-        status=rows[index+1]
-        if re.match(r"^  (?:Sonnet|Opus|Haiku)(?:\s|$)",status) and re.search(r"\bv[0-9]+\.[0-9]+\.[0-9]+\b",status):
-            print("claude")
-        break')" || return 0
-  [ "$model" = claude ] && relay_sender_tier=relaxed
-}
-
 relay_busy_preflight() {
   local capture=$1 cursor_y=$2 code
   printf '%s\n' "$capture" | python3 -c 'import re,sys
@@ -83,7 +50,7 @@ sys.exit(2)' "$relay_glyph" "$cursor_y"
   code=$?
   case "$code" in
     0)
-      [ "$relay_sender_tier" = relaxed ] && [ "$relay_glyph" = '❯' ] || refuse_draft "$pane" 'an agent busy state'
+      refuse_draft "$pane" 'an agent busy state'
       ;;
     1) ;;
     *) refuse_draft "$pane" 'an unproven agent state' ;;

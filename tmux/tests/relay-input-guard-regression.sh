@@ -152,9 +152,9 @@ expect_guard 1 '❯' 'Home-moved typed Claude draft above footer' "$cc_draft_foo
 expect_guard 0 '❯' 'dim Claude app text' "$cc_dim_non_placeholder" 2 0
 expect_guard 1 '❯' 'Claude dim app text followed by normal typed text' "$cc_dim_then_typed" 2 0 192
 expect_guard 1 '❯' 'Claude Home-moved text without SGR' "$cc_home_plain_draft" 2 0 192
-expect_guard 0 '❯' 'relaxed Claude ambiguous unstyled input' "$cc_home_plain_draft" 2 0 192 relaxed
+expect_guard 2 '❯' 'removed relaxed Claude ambiguous unstyled input' "$cc_home_plain_draft" 2 0 192 relaxed
 expect_guard 1 '❯' 'strict Claude explicit normal input' "$cc_home_explicit_normal_draft" 2 0 192
-expect_guard 1 '❯' 'relaxed Claude explicit normal input' "$cc_home_explicit_normal_draft" 2 0 192 relaxed
+expect_guard 2 '❯' 'removed relaxed Claude explicit normal input' "$cc_home_explicit_normal_draft" 2 0 192 relaxed
 expect_guard 1 '❯' 'dim Claude placeholder with trailing draft' $'❯ \e[2mTry "create"\e[0m typed\n────────────────────' 2 0
 expect_guard 0 '❯' 'dim Claude app text with extra quoted text' $'❯ \e[2mTry "create" extra"\e[0m\n────────────────────' 2 0
 expect_guard 0 '❯' 'wrapped dim Claude suggestion' "$cc_wrapped_placeholder" 2 0
@@ -167,9 +167,9 @@ expect_guard 0 '›' 'dim Codex app text advances cursor' "$codex_dim_typed" 3 0
 expect_guard 1 '›' 'Codex dim app text followed by normal typed text' "$codex_dim_then_typed" 2 0
 expect_guard 1 '›' 'Codex Home-moved text without SGR' "$codex_home_plain_draft" 2 0
 expect_guard 1 '›' 'strict Codex ambiguous unstyled input' "$codex_home_plain_draft" 2 0 192
-expect_guard 0 '›' 'relaxed Codex ambiguous unstyled input' "$codex_home_plain_draft" 2 0 192 relaxed
+expect_guard 2 '›' 'removed relaxed Codex ambiguous unstyled input' "$codex_home_plain_draft" 2 0 192 relaxed
 expect_guard 1 '›' 'strict Codex explicit normal input' "$codex_home_explicit_normal_draft" 2 0 192
-expect_guard 1 '›' 'relaxed Codex explicit normal input' "$codex_home_explicit_normal_draft" 2 0 192 relaxed
+expect_guard 2 '›' 'removed relaxed Codex explicit normal input' "$codex_home_explicit_normal_draft" 2 0 192 relaxed
 expect_guard 1 '›' 'multiline Codex draft' "$codex_multiline_draft" 4 1
 expect_guard 1 '›' 'plain Codex footer lookalike before draft content' "$codex_footer_lookalike_draft" 2 0
 expect_guard 1 '›' 'colored Codex footer lookalike before draft content' "$codex_colored_footer_lookalike_draft" 2 0

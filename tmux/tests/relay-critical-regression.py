@@ -47,10 +47,7 @@ for agent in ('claude','codex','codex-to','agy'):
     assert json.loads((folder/'.seat-state/introductions.json').read_text())['crash']['state'] == 'attempting'
 record = root / 'status.json'
 save(record,dict(id='status',state='delivered'))
-assert 'not started yet' in queue['status_text'](record,json.loads(record.read_text()))
-save(record.with_suffix('.watch.json'),dict(id='status',state='output-observed'))
-assert 'started: output observed' in queue['status_text'](record,json.loads(record.read_text()))
-assert 'not task completion' in queue['status_text'](record,json.loads(record.read_text()))
+assert queue['status_text'](record,json.loads(record.read_text())) == 'delivered: '+str(record)
 # Config CC's explicit ruling: unproven generation repeats, never blocks a
 # transport merely because introduction scope cannot be identified.
 folder = root/'unbound'
@@ -66,4 +63,4 @@ def unknown(*args):
     raise ValueError('current thread UUID unavailable')
 with patch.dict(intro['send'].__globals__, generation=unknown):
     assert intro['send']({'save':save},data(folder,'unknown','codex-to'),{},lambda *args:(0,'verified'))[0]==0
-print('PASS all shared adapters: first/repeat/reset introductions, no-input retry, uncertain lease; unobserved/observed delivery status')
+print('PASS all shared adapters: first/repeat/reset introductions, no-input retry, uncertain lease; delivery status carries no task-progress assertion')

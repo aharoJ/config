@@ -79,7 +79,7 @@ def run(output):
     database.commit()
     (output / 'fixture.c').write_text(C)
     subprocess.run(['cc', str(output / 'fixture.c'), '-o', str(output / 'codex')], check=True)
-    socket = 'ccmsg-lab-private-binding8-' + str(os.getpid())
+    socket = 'ccmsg-lab-private-' + str(os.getpid())
     wrapper = output / 'tmux-private'
     wrapper.write_text('#!/bin/sh\nexec tmux -L ' + socket + ' -f /dev/null "$@"\n')
     wrapper.chmod(0o700)

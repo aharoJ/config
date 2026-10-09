@@ -38,16 +38,14 @@ try:
     matrix.record = cross_record
     for provider in ('codex', 'claude'):
         def cross(relay, session, window, payload, extra=None, source=True):
-            policy = {'version': 2, 'seats': {session: {'lab-sender-' + provider: 'lead'}, target_session: {target_window: 'lead'}}, 'orchestrator_of': {session: [target_session, target_window]}}
-            (tools / 'relay-route-policy.json').write_text(json.dumps(policy))
             argv, env = command(relay, target_session, target_window, payload, extra, source=source)
             return argv, env
         matrix.command = cross
-        matrix.sender_case('cross-lead-' + provider, provider, payload=payload)
+        matrix.sender_case('cross-peer-' + provider, provider, payload=payload)
         target_session, target_window, target_directory = matrix.start('cc-msg.sh', 'next-cross-target-' + provider)
-    records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json')]
+    records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json') if not path.name.endswith('.watch.json')]
     assert len(records) == 7 and all(row['state'] == 'delivered' for row in records), records
 finally:
     matrix.close()
 assert all(row['passed'] for row in matrix.results), matrix.results
-print('PASS: 7 private bound-source queue/label/lead transport cases; no routing stubs')
+print('PASS: 7 private bound-source queue/label/peer transport cases; no routing stubs')

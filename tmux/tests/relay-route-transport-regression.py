@@ -18,20 +18,23 @@ try:
         env.update(CC_MSG_QUEUE_INTERNAL='0', CC_MSG_INBOX_ROOT=str(output/'inbox'))
         env.pop('RELAY_MESSAGE_RECORD', None)
         return argv, env
+    original_record = matrix.record
+    matrix.record = lambda relay,name,result,expected_code,directory,expected_payload=None,no_input=False: original_record(relay,name,result,expected_code,target_directory,expected_payload,no_input)
     matrix.command = cross
     for agent in ['codex','agy','gemini','claude']:
-        matrix.sender_case('cross-refused-'+agent,agent,code=1)
-    assert not list((output/'inbox').glob('*/*.json'))
+        matrix.sender_case('cross-peer-'+agent,agent)
+        target_session, target_window, target_directory = matrix.start('cc-msg.sh','next-cross-target-'+agent)
     def local(relay, session, window, payload, extra=None, source=True):
         argv, env = command(relay,session,window,payload,extra,source=source)
         env.update(CC_MSG_QUEUE_INTERNAL='0',CC_MSG_INBOX_ROOT=str(output/'inbox'))
         env.pop('RELAY_MESSAGE_RECORD',None)
         return argv,env
     matrix.command = local
+    matrix.record = original_record
     for agent in ['codex','agy']:
         matrix.sender_case('local-queued-'+agent,agent)
     records = [json.loads(path.read_text()) for path in (output/'inbox').glob('*/*.json')]
-    assert len(records) == 2 and all(row['state'] == 'delivered' and row['source']['session'] == row['session'] for row in records), records
+    assert len(records) == 6 and all(row['state'] == 'delivered' for row in records), records
     matrix.command = command
     for relay in ['cc-msg.sh','codex-send-to','codex-send','agy-send-to']:
         session, window, directory = matrix.start('cc-msg.sh','unresolved-'+relay)
@@ -43,7 +46,6 @@ try:
         env.pop('RELAY_MESSAGE_RECORD',None)
         result = transport.subprocess.run(argv,env=env,capture_output=True,text=True,timeout=20)
         matrix.record(relay,'unresolved-'+relay,result,1,directory,no_input=True)
-    assert not (target_directory/'wire.bin').exists()
 finally:
     matrix.close()
 assert all(row['passed'] for row in matrix.results), matrix.results

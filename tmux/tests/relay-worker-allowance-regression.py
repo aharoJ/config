@@ -4,20 +4,6 @@ def test(name,actual,expected):
  assert actual==expected,(name,actual,expected)
  cases.append(name)
 state['live']=lambda env,src:True
-source={'app':'codex','actor':101,'session':'rp-schema','window':'codex'}
-for app in ('claude','codex','agy','gemini'):
- for actor in (101,102,103):
-  test('mapped lead provider '+app+' actor '+str(actor),m['check']({},dict(source,app=app,actor=actor),'review-protocol','claude'),True)
- for window in ('terra','batch'):
-  test('mapped worker '+app+window,m['check']({},dict(source,app=app,window=window),'review-protocol','claude'),True)
-for session in ('config','cvmapp','vetmed-absence-expansion'):
- test('worker stays with project '+session,m['check']({},dict(source,session=session,window='terra'),'review-protocol','claude'),False)
- test('worker local '+session,m['check']({},dict(source,session=session,window='terra'),session,'claude'),True)
-for target in [('other','claude'),('review-protocol','unassigned')]:
- test('unrelated target '+str(target),m['check']({},source,*target),False)
-state['live']=lambda env,src:False
-test('stale mapped lead',m['check']({},source,'review-protocol','claude'),False)
-state['live']=lambda env,src:True
 f=m['record_caller'];exe=pathlib.Path(sys.executable).resolve();state['process_executable']=lambda pid:exe
 state['ancestors']=lambda pid:[(201,202,'/fixture/truncated',''),(202,1,'/fixture/claude','claude')]
 with tempfile.TemporaryDirectory() as d:

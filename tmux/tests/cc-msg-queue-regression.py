@@ -16,7 +16,6 @@ loader = importlib.machinery.SourceFileLoader('queue', str(Path(__file__).resolv
 spec = importlib.util.spec_from_loader(loader.name, loader)
 queue = importlib.util.module_from_spec(spec)
 loader.exec_module(queue)
-WATCH_LAUNCH = queue.launch_watch
 
 
 class QueueTests(unittest.TestCase):
@@ -25,30 +24,29 @@ class QueueTests(unittest.TestCase):
             with self.subTest(code=code):
                 self.root = self.root / uuid.uuid4().hex
                 warning = 'target lab-test:claude is unbound: it cannot reply until bound'
-                with patch.dict(os.environ, RELAY_REPLY_WARNING='1'), patch.dict(queue.STARTED, reply_warning=lambda *args:warning):
+                with patch.dict(os.environ, RELAY_REPLY_WARNING='1'), patch.dict(queue.REPLY, reply_warning=lambda *args:warning):
                     result, path, data, launch = self.send(code)
                 self.assertEqual(result, expected)
                 self.assertEqual(data['reply_warning'], warning)
 
-    def test_watch_only_arms_after_verified_delivery(self):
-        with patch.dict(os.environ, RELAY_WATCH_MINUTES='1'), patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
+    def test_delivery_creates_no_supervision_even_with_legacy_environment(self):
+        with patch.dict(os.environ, RELAY_WATCH_MINUTES='1', RELAY_STARTED_MINUTES='.001'):
             result, path, data, launch = self.send(0)
         self.assertEqual(result, 0)
-        self.assertEqual(data['watch_baseline'], 'baseline')
-        self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
-        self.root = self.root / uuid.uuid4().hex
-        with patch.dict(os.environ, RELAY_WATCH_MINUTES='1'), patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
-            result, path, data, launch = self.send(5)
-        self.assertEqual(result, 6)
-        self.assertNotIn('watch_baseline', data)
+        self.assertFalse(any(key.startswith('watch_') or key == 'started_state' for key in data))
+        launch.assert_not_called()
+        with patch.object(queue.subprocess, 'Popen') as recovered:
+            queue.sweep(path.parent)
+        recovered.assert_not_called()
+
+    def test_legacy_watch_worker_refuses_before_routing(self):
+        with patch.object(queue.sys, 'argv', ['queue', '--watch-worker', '/legacy/record.json']), patch.object(queue, 'routing_source') as route:
+            with self.assertRaises(queue.RoutingError):
+                queue.main()
+            route.assert_not_called()
 
     def setUp(self):
-        watcher = patch.object(queue, 'launch_watch')
-        watcher.start()
-        self.addCleanup(watcher.stop)
-        def unavailable(*args):
-            raise ValueError('unit fixture has no actual target')
-        advisory = patch.dict(queue.STARTED, reply_warning=lambda *args:None, snapshot=unavailable)
+        advisory = patch.dict(queue.REPLY, reply_warning=lambda *args:None)
         advisory.start()
         self.addCleanup(advisory.stop)
         route = patch.object(queue, 'routing_source', return_value=dict(session='lab-test', window='codex', pane='%1'))
@@ -59,39 +57,8 @@ class QueueTests(unittest.TestCase):
         self.identity = dict(socket='/test/socket', device=1, inode=2, pane='%8', pid='123')
         self.env = dict(CC_MSG_SESSION='lab-test', CC_MSG_WINDOW='claude', TMUX='/test/socket,1,2')
 
-    def test_started_check_defaults_to_ten_minutes_without_opt_in(self):
-        with patch.dict(queue.STARTED, snapshot=lambda *args:'baseline'):
-            result, path, data, launch = self.send(0)
-        self.assertEqual(result, 0)
-        self.assertEqual(data['watch_minutes'], 10)
-        self.assertEqual(data['started_state'], 'unobserved')
-        self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
-
-    def test_initial_baseline_failure_still_launches_and_recovers_watch(self):
-        result, path, data, launch = self.send(0)
-        self.assertEqual(result, 0)
-        self.assertEqual(data['state'], 'delivered')
-        self.assertEqual(data['started_state'], 'unobserved')
-        self.assertNotIn('watch_baseline', data)
-        self.assertEqual(data['watch_baseline_error'], 'unit fixture has no actual target')
-        self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
-        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'launch_watch') as recovered:
-            queue.sweep()
-        recovered.assert_called_once_with(path, data)
-
-    def test_failed_watch_spawn_retains_initial_error_for_recovery(self):
-        with patch.object(queue, 'launch_watch', WATCH_LAUNCH), patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(0, 'verified')), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue.subprocess, 'Popen', side_effect=OSError('spawn denied')), patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', 'payload']):
-            self.assertEqual(queue.main(), 0)
-        path = next(self.root.glob('*/*.json'))
-        data = json.loads(path.read_text())
-        self.assertEqual(data['watch_error'], 'spawn denied')
-        self.assertEqual(data['watch_baseline_error'], 'unit fixture has no actual target')
-        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'launch_watch') as recovered:
-            queue.sweep()
-        recovered.assert_called_once_with(path, data)
-
     def send(self, code):
-        with patch.object(queue, 'launch_watch', WATCH_LAUNCH), patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(code, 'test outcome')), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue.subprocess, 'Popen') as launch, patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', 'payload']):
+        with patch.object(queue, 'ROOT', self.root), patch.object(queue, 'identity', return_value=self.identity), patch.object(queue, 'deliver', return_value=(code, 'test outcome')), patch.object(queue, 'stable_screen', return_value=True), patch.object(queue.subprocess, 'Popen') as launch, patch.dict(os.environ, self.env), patch.object(queue.sys, 'argv', ['cc-msg', 'payload']):
             launch.return_value.pid = 999
             result = queue.main()
         path = next(self.root.glob('*/*.json'))
@@ -233,11 +200,7 @@ class QueueTests(unittest.TestCase):
         for code in (0, 1, 3, 4):
             result, path, data, launch = self.send(code)
             self.assertEqual(result, code)
-            if code == 0:
-                launch.assert_called_once()
-                self.assertEqual(launch.call_args.args[0][-2:], ['--watch-worker', str(path)])
-            else:
-                launch.assert_not_called()
+            launch.assert_not_called()
             self.assertEqual(data['state'], 'delivered' if code == 0 else 'unknown' if code in (3, 4) else 'failed')
             self.assertEqual(path.with_suffix('.FAILED').exists(), code != 0)
             self.root = self.root / str(code)
