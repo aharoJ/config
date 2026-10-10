@@ -18,19 +18,48 @@ for relative in allowed:
     assert installation(Path('/tmp') / relative) is None, relative
 for relative in denied:
     assert installation(home / relative) is None, relative
-with tempfile.TemporaryDirectory(prefix='identity-', dir=home / 'desk/lab') as value:
-    path = Path(value) / 'actor'
-    path.write_text('fixture')
-    path.chmod(0o600)
-    initial = module['stamp'](path)
-    path.chmod(0o622)
-    try:
-        module['stamp'](path)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError('writable actor accepted')
-    path.chmod(0o600)
-    path.write_text('replacement fixture')
-    assert module['stamp'](path) != initial
+value = tempfile.mkdtemp(prefix='identity-', dir=home / 'desk/lab')
+path = Path(value) / 'actor'
+path.write_text('fixture')
+path.chmod(0o600)
+initial = module['stamp'](path)
+path.chmod(0o622)
+try:
+    module['stamp'](path)
+except ValueError:
+    pass
+else:
+    raise AssertionError('writable actor accepted')
+path.chmod(0o600)
+path.write_text('replacement fixture')
+assert module['stamp'](path) != initial
+private_home = Path(value) / 'home'
+actor = private_home / daemon / 'bin/codex'
+actor.parent.mkdir(parents=True)
+actor.write_text('native fixture')
+actor.chmod(0o600)
+g = module['prove'].__globals__
+g['HOME_ROOT'] = private_home
+g['executable'] = lambda pid: actor.resolve(strict=True)
+g['LABEL']['process_argv'] = lambda pid: [str(actor)]
+assert module['prove'](100)['app'] == 'codex'
+actor.rename(actor.with_name('previous'))
+actor.symlink_to(path)
+assert module['prove'](100) is None
+actor.rename(actor.with_name('outside-link'))
+actor.write_text('replacement native fixture')
+actor.chmod(0o600)
+count = [0]
+def argv(pid):
+    count[0] += 1
+    if count[0] == 2:
+        actor.write_text('changed during proof')
+    return [str(actor)]
+g['LABEL']['process_argv'] = argv
+try:
+    module['prove'](100)
+except ValueError:
+    pass
+else:
+    raise AssertionError('native installation changed during proof')
 print('PASS four rolling native layouts, twelve noncanonical roots, unsafe modes and replacement stamps')

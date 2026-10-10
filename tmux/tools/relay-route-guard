@@ -21,7 +21,6 @@ import sqlite3
 
 LABEL = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-sender-label')))
 AGENT = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-agent-identity')))
-VISIBLE = runpy.run_path(str(pathlib.Path(__file__).with_name('relay-visible-source')))
 SOURCE_BINDINGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.local/state/relay/source-bindings.json'
 RUNTIME_LOGS = pathlib.Path(pwd.getpwuid(os.getuid()).pw_dir) / '.codex/logs_2.sqlite'
 
@@ -113,6 +112,26 @@ def pane_source(env, row):
     return source
 
 
+def local_codex(source):
+    table = LABEL['processes']()
+    matches = []
+    for pid, (parent, command) in table.items():
+        if pathlib.Path(command).name != 'codex':
+            continue
+        chain = ancestors(pid, table)
+        if not chain or chain[0][3] != 'codex' or not any(row[0] == source['actor'] for row in chain):
+            continue
+        proof = AGENT['prove'](pid)
+        if not proof or proof.get('entrypoint') != [None]:
+            continue
+        argv = LABEL['process_argv'](pid)[1:]
+        options = argv[:argv.index('--')] if '--' in argv else argv
+        if '--no-daemon' not in options or any(arg == '--remote' or arg.startswith('--remote=') or arg == 'app-server' for arg in options):
+            continue
+        matches.append(pid)
+    return len(matches) == 1
+
+
 def register_source_unlocked(env, thread, seat, verified=False, verified_since=None):
     if str(uuid.UUID(thread)) != thread:
         raise ValueError('name an exact Codex thread UUID')
@@ -197,70 +216,7 @@ def automatic_source(env, thread):
         bound = dict(source, thread_id=thread)
         if live(env, bound):
             return bound
-    source = visible_source(env, thread)
-    registered = register_source(env, thread, source['session'] + ':' + source['window'], verified='visible-turn', verified_since=VISIBLE['latest_user_time'](thread))
-    if {key: value for key, value in registered.items() if key != 'binding_epoch'} != source:
-        raise ValueError('source generation changed during automatic registration')
-    bound = dict(registered, thread_id=thread)
-    if not live(env, bound):
-        raise ValueError('automatic source changed during registration')
-    return bound
-
-
-def codex_panes(env):
-    table = LABEL['processes']()
-    roots = set()
-    for pid in table:
-        chain = ancestors(pid, table)
-        if chain and chain[0][3] == 'codex':
-            roots.update(item[0] for item in chain)
-    return [row for row in panes(env) if int(row[4]) in roots]
-
-
-def operator_lineage(data, thread, bound):
-    epoch, seen = bound.get('binding_epoch'), set()
-    first = True
-    while epoch and epoch not in seen:
-        seen.add(epoch)
-        node = data.get('lineage', {}).get(epoch)
-        if not isinstance(node, dict) or node.get('kind') not in ('operator','visible-turn'):
-            return False
-        if first and (node.get('thread') != thread or node.get('source') != bound):
-            return False
-        first = False
-        if node['kind'] == 'operator':
-            return True
-        epoch = node.get('predecessor_epoch')
-    return False
-
-
-def visible_source(env, thread):
-    data = source_bindings()
-    since = VISIBLE['latest_user_time'](thread)
-    if thread_retired(thread, since):
-        raise ValueError('requested thread retired after its latest user turn')
-    def continuity(source, turns, text):
-        key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
-        previous_thread = data['active'].get(key)
-        previous = data['bindings'].get(previous_thread, {})
-        kind = data.get('proofs', {}).get(previous_thread, {}).get('kind')
-        if kind not in ('operator', 'visible-turn') or any(previous.get(key) != source.get(key) for key in ('version','app','socket','pane','session','window')) or previous_thread not in turns:
-            raise ValueError('automatic source continuity unavailable; operator must bind this generation')
-        if kind == 'visible-turn' and not operator_lineage(data, previous_thread, previous):
-            raise ValueError('automatic source has no verified operator bootstrap chain')
-        for field in ('root','actor'):
-            if previous.get(field) != source.get(field) or previous.get(field + '_identity') != source.get(field + '_identity'):
-                try:
-                    old_identity = identity(previous[field])
-                except subprocess.CalledProcessError as error:
-                    if error.returncode != 1 or error.stdout.strip() or error.stderr.strip():
-                        raise
-                    old_identity = ''
-                if old_identity == previous[field + '_identity']:
-                    raise ValueError('prior source generation is still alive; operator must resolve it')
-        if previous_thread != thread and VISIBLE['thread_has_turn'](previous_thread, text):
-            raise ValueError('replacement turn reuses prior pane history; operator must bind the current thread')
-    return VISIBLE['discover'](env, thread, run, codex_panes, pane_source, live, continuity)
+    raise ValueError('shared daemon has no live explicit operator binding')
 
 
 def daemon_source(env, chain):
@@ -298,6 +254,8 @@ def bind(env, pid):
         if any(row[-2] == str(item[0]) for row in rows for item in chain):
             raise ValueError('ambiguous source pane')
         nearest = next((row for row in chain if row[3]), None)
+        if nearest is None:
+            raise ValueError('canonical source ancestry unavailable')
         hint = env.get('TMUX_PANE', '')
         matches = [row for row in rows if row[0] == hint]
         if len(matches) != 1:
@@ -374,10 +332,8 @@ def live(env, source):
             since = data.get('proofs', {}).get(thread, {}).get('since', SOURCE_BINDINGS.stat().st_mtime)
             if thread_retired(thread, since):
                 return False
-            if data.get('proofs', {}).get(thread, {}).get('kind') == 'visible-turn':
-                current = visible_source(env, thread)
-                if current != {key: value for key, value in bound.items() if key != 'binding_epoch'}:
-                    return False
+            if data.get('proofs', {}).get(thread, {}).get('kind') != 'operator':
+                return False
         proof = AGENT['prove'](source['actor'])
         if source['app'] != 'relay' and (not proof or proof['app'] != source['app'] or source.get('agent_identity', proof) != proof):
             return False

@@ -18,14 +18,6 @@ g['identity'] = lambda pid: 'root' if pid == 100 else 'actor'
 g['ancestors'] = lambda pid: [(101, 100, '/bin/codex', 'codex'), (100, 1, '/bin/fish', '')]
 g['foreground'] = lambda *args: True
 g['thread_retired'] = lambda *args: False
-def no_status(env, thread):
-    data = module['source_bindings']()
-    if thread == first and thread in data['bindings']:
-        bound = dict(data['bindings'][thread], thread_id=thread)
-        if module['live'](env, bound):
-            return bound
-    raise ValueError('no fresh native status in this unit fixture')
-g['automatic_source'] = no_status
 with tempfile.TemporaryDirectory() as directory:
     path = pathlib.Path(directory) / 'bindings.json'
     g['SOURCE_BINDINGS'] = path
@@ -37,9 +29,13 @@ with tempfile.TemporaryDirectory() as directory:
             return
         raise AssertionError('unproven daemon accepted')
     refused(env)
-    data = dict(version=1, bindings={first:source}, active={'1:2:%1':first})
+    data = dict(version=1, bindings={first:source}, active={'1:2:%1':first}, proofs={first:dict(kind='operator')})
     path.write_text(json.dumps(data)); path.chmod(0o600)
     assert module['daemon_source'](env, chain) == dict(source, thread_id=first)
+    data['proofs'][first]['kind'] = 'visible-turn'; path.write_text(json.dumps(data))
+    refused(env)
+    assert not module['live'](env, dict(source, thread_id=first))
+    data['proofs'][first]['kind'] = 'operator'; path.write_text(json.dumps(data))
     refused(dict(env, CODEX_SESSION_ID=second))
     refused(dict(env, CODEX_THREAD_ID=second, CODEX_SESSION_ID=second))
     data['active']['1:2:%1'] = second; path.write_text(json.dumps(data))

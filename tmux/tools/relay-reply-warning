@@ -11,6 +11,8 @@ def reply_warning(env, session, window):
         source = guard['pane_source'](env, rows[0])
         if source['app'] != 'codex':
             return None
+        if guard['local_codex'](source) and guard['live'](env, source):
+            return None
         state = guard['source_bindings']()
         key = str(source['socket']['device']) + ':' + str(source['socket']['inode']) + ':' + source['pane']
         thread = state['active'].get(key)
@@ -18,13 +20,6 @@ def reply_warning(env, session, window):
             bound = dict(state['bindings'].get(thread, {}), thread_id=thread)
             if guard['live'](env, bound):
                 return None
-            text = guard['VISIBLE']['capture'](env, source, guard['run'])
-            turns = guard['VISIBLE']['stored_turns']()
-            matches = [thread for thread, turn in turns.items() if turn == text]
-            if len(matches) == 1:
-                rebound = guard['automatic_source'](env, matches[0])
-                if rebound['pane'] == source['pane'] and rebound['socket'] == source['socket']:
-                    return None
         return 'target ' + session + ':' + window + ' is unbound: it cannot reply until bound'
     except Exception:
         return 'target ' + session + ':' + window + ' reply binding could not be verified'

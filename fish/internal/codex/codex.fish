@@ -64,9 +64,9 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
     end
 
     if test -n "$preset"
-        _agent_limit codex -m "$preset" --dangerously-bypass-approvals-and-sandbox $passthrough
+        _agent_limit codex --no-daemon -m "$preset" --dangerously-bypass-approvals-and-sandbox $passthrough
     else
-        _agent_limit codex --dangerously-bypass-approvals-and-sandbox $passthrough
+        _agent_limit codex --no-daemon --dangerously-bypass-approvals-and-sandbox $passthrough
     end
 end
 
