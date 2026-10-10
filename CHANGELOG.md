@@ -2,6 +2,8 @@
 
 ## Worktree candidate — peer-neutral tmux setup and named agent windows
 
+Explicit `tai --window` names now refuse an existing exact window name before pane creation or input. Deprecated Codex preset aliases remain compatible through October 31, 2026 (local date), with deadline warnings; from November 1 they refuse and name the explicit model replacement. This bounded bridge preserves current typed commands while ending rank-labelled aliases. Date-check failure also refuses the deprecated path; explicit model presets require no date check.
+
 `t3` preserves the caller window and focus by default, adding neutral notes/shell windows; outside tmux it creates work/notes/shell. Positional names choose the layout and `--focus` chooses focus. `t3 --legacy` explicitly restores claude/notes/codex naming and Claude focus. Normal single-agent `tai` launches accept `--window <name>` while keeping existing default names; panel and isolated audit-seat naming are unchanged. Codex model presets use `--model-gpt-5-5` and `--model-gpt-5-3-codex`; the old flags remain deprecated compatibility aliases during migration, with a replacement warning and unchanged model selection. This candidate is not merged or deployed.
 
 ## Live source-discovery deadline integration

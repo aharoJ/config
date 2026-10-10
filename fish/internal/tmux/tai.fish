@@ -337,6 +337,12 @@ function tai --description 'tmux: spawn AI agent window in current directory'
         end
         if test -n "$requested_window"
             set window_name "$requested_window"
+            set -l existing_windows (tmux list-windows -t "=$session" -F '#{window_name}')
+            or return $status
+            if contains -- "$window_name" $existing_windows
+                echo "tai: window '$window_name' already exists in session '$session'; choose an unused name" >&2
+                return 2
+            end
         end
         __tai_spawn "$window_name" "$launch_dir" "--session=$session" $parts $argv
         or return $status

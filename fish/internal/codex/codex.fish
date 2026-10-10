@@ -1,3 +1,16 @@
+function __codex_legacy_preset
+    set -l today (date +%Y%m%d)
+    if not string match -qr '^[0-9]{8}$' -- "$today"
+        echo "codex: cannot check preset migration deadline; use $argv[2]" >&2
+        return 2
+    end
+    if test "$today" -ge 20261101
+        echo "codex: $argv[1] retired on 2026-11-01; use $argv[2]" >&2
+        return 2
+    end
+    echo "codex: $argv[1] is deprecated until 2026-11-01; use $argv[2]" >&2
+end
+
 function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-gpt-5-3-codex'
     set -l preset ""
     set -l passthrough
@@ -19,7 +32,8 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
                     return 2
                 end
                 if test "$arg" = --model-lead
-                    echo 'codex: --model-lead is deprecated; use --model-gpt-5-5' >&2
+                    __codex_legacy_preset "$arg" --model-gpt-5-5
+                    or return $status
                 end
                 set preset gpt-5.5
             case --model-gpt-5-3-codex --model-audit
@@ -28,7 +42,8 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
                     return 2
                 end
                 if test "$arg" = --model-audit
-                    echo 'codex: --model-audit is deprecated; use --model-gpt-5-3-codex' >&2
+                    __codex_legacy_preset "$arg" --model-gpt-5-3-codex
+                    or return $status
                 end
                 set preset gpt-5.3-codex
             case --model '--model=*' -m '-m*'
