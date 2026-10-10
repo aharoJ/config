@@ -1,10 +1,27 @@
+function __codex_valid_date
+    string match -qr '^[0-9]{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$' -- "$argv[1]"
+    or return 1
+    set -l year (string sub -s 1 -l 4 -- "$argv[1]")
+    test "$year" -gt 0
+    or return 1
+    set -l month (math (string sub -s 5 -l 2 -- "$argv[1]"))
+    set -l day (string sub -s 7 -l 2 -- "$argv[1]")
+    set -l days 31 28 31 30 31 30 31 31 30 31 30 31
+    if test (math "$year % 4") -eq 0; and begin
+            test (math "$year % 100") -ne 0; or test (math "$year % 400") -eq 0
+        end
+        set days[2] 29
+    end
+    test "$day" -le "$days[$month]"
+end
+
 function __codex_legacy_preset
     set -l today (command date +%Y%m%d)
     or begin
         echo "codex: cannot check preset migration deadline; use $argv[2]" >&2
         return 2
     end
-    if not string match -qr '^[0-9]{8}$' -- "$today"
+    if not __codex_valid_date "$today"
         echo "codex: cannot check preset migration deadline; use $argv[2]" >&2
         return 2
     end
@@ -21,6 +38,7 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
     set -l options 1
     set -l raw_model 0
     set -l value_next 0
+    set -l image_values 0
     set -l command_seen 0
     set -l local_launch 1
     set -l explicit_local 0
@@ -34,6 +52,13 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
             set value_next 0
             set -a passthrough "$arg"
             continue
+        end
+        if test $image_values -eq 1
+            if not string match -q -- '-*' "$arg"
+                set -a passthrough "$arg"
+                continue
+            end
+            set image_values 0
         end
         if test $command_seen -eq 0; and not string match -q -- '-*' "$arg"
             set command_seen 1
@@ -82,7 +107,12 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
             case '--remote=*' '--remote-auth-token-env=*'
                 set local_launch 0
                 set -a passthrough "$arg"
-            case -c --config -p --profile -s --sandbox -a --ask-for-approval -C --cd --add-dir --enable --disable -i --image --local-provider
+            case -i --image
+                set image_values 1
+                set -a passthrough "$arg"
+            case '--image=*' '-i*'
+                set -a passthrough "$arg"
+            case -c --config -p --profile -s --sandbox -a --ask-for-approval -C --cd --add-dir --enable --disable --local-provider
                 set value_next 1
                 set -a passthrough "$arg"
             case '*'

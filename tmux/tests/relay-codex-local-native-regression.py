@@ -12,7 +12,7 @@ class FixtureResponses(BaseHTTPRequestHandler):
     def do_POST(self):
         request=json.loads(self.rfile.read(int(self.headers.get("Content-Length","0"))))
         with (root / "no-daemon-model-requests.jsonl").open("a") as out:
-            out.write(json.dumps(dict(path=self.path,keys=list(request),tools=request.get("tools",[]),input_metadata=[dict(keys=list(v),role=v.get('role'),type=v.get('type'),content_type=type(v.get('content')).__name__) for v in request.get('input',[])]))+"\n")
+            out.write(json.dumps(dict(path=self.path,keys=list(request),tools=request.get("tools",[]),input_metadata=[dict(keys=list(v),role=v.get('role'),type=v.get('type'),content_type=type(v.get('content')).__name__,content_item_types=[c.get('type') for c in v.get('content',[]) if isinstance(c,dict)] if isinstance(v.get('content'),list) else []) for v in request.get('input',[])]))+"\n")
         if request.get('tools'):
             self.send_response(200)
             self.send_header('Content-Type','text/event-stream')
@@ -24,7 +24,9 @@ class FixtureResponses(BaseHTTPRequestHandler):
             outputs=last_output>last_user
             import uuid
             token=uuid.uuid4().hex
-            if outputs:
+            latest_user = str(inputs[last_user]) if last_user >= 0 else ''
+            image_startup = image_options and not any(tag in latest_user for tag in ('isolated ', 'local transport launch', 'private native transport'))
+            if outputs or image_startup:
                 item=dict(type='message',id='msg_fixture',role='assistant',status='completed',content=[dict(type='output_text',text='native fixture complete',annotations=[])])
             else:
                 code="import os,json,runpy;from pathlib import Path;g=runpy.run_path("+repr(str(TOOLS/'relay-route-guard'))+");w=runpy.run_path("+repr(str(TOOLS/'relay-reply-warning'))+");p=os.getpid();e=dict(os.environ);source=g['bind'](e,p);borrowed=dict(e,TMUX_PANE='%0',CODEX_THREAD_ID='00000000-0000-4000-8000-000000000099',CODEX_SESSION_ID='00000000-0000-4000-8000-000000000099');spoof=g['bind'](borrowed,p);assert source==spoof;row=dict(pid=p,thread=e.get('CODEX_THREAD_ID'),chain=g['ancestors'](p),source=source,borrowed_source=spoof,warning=w['reply_warning'](e,source['session'],source['window']));Path("+repr(str(root/'no-daemon-swarm-proofs.jsonl'))+").open('a').write(json.dumps(row)+'\\n')"
@@ -62,6 +64,18 @@ binary = str(Path(sys.argv[2]).resolve(strict=True))
 identity = runpy.run_path(str(TOOLS/'relay-agent-identity'))
 assert identity['installation'](Path(binary)) == 'codex'
 identity['stamp'](Path(binary))
+image_options = []
+if len(sys.argv) > 3:
+    assert sys.argv[3] == '--variadic-images'
+    import struct
+    import zlib
+    def chunk(kind, data):
+        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+    png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 2, 2, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(b'\x00' + b'\xff\x00\x00'*2 + b'\x00' + b'\x00\xff\x00'*2)) + chunk(b'IEND', b'')
+    files = [root/'one.png', root/'two.png']
+    for image in files:
+        image.write_bytes(png)
+    image_options = ['--image', *map(str, files)]
 home = root / 'no-daemon-swarm-home'
 home.mkdir(exist_ok=True)
 (home / 'config.toml').write_text('check_for_update_on_startup=false\nmodel_provider="fixture"\nmodel="fixture-model"\n[model_providers.fixture]\nname="isolated fixture"\nbase_url="http://127.0.0.1:PORT/v1"\nwire_api="responses"\nrequires_openai_auth=false\n'.replace('PORT',str(mock.server_port)))
@@ -73,7 +87,7 @@ def tmux(*args):
     if r.returncode: raise RuntimeError(r.stderr)
     return r.stdout.strip()
 try:
-    command=shlex.join(['exec','env','-u','OPENAI_API_KEY','-u','CODEX_API_KEY','-u','CODEX_THREAD_ID','-u','CODEX_SESSION_ID','CODEX_HOME='+str(home),'TMPDIR='+str(root),binary,'--no-daemon','--no-alt-screen','--ask-for-approval','never','--sandbox','danger-full-access'])
+    command=shlex.join(['exec','env','-u','OPENAI_API_KEY','-u','CODEX_API_KEY','-u','CODEX_THREAD_ID','-u','CODEX_SESSION_ID','CODEX_HOME='+str(home),'TMPDIR='+str(root),binary,'--no-daemon','--no-alt-screen','--ask-for-approval','never','--sandbox','danger-full-access',*image_options])
     tmux('new-session','-d','-s','binding-fixture','-n','sentinel','-x','160','-y','45','exec sleep 600')
     tmux('set-option','-g','remain-on-exit','on')
     tmux('set-option','-g','automatic-rename','off')
@@ -107,7 +121,7 @@ try:
     capture('first-status',scroll=True)
     proofs=lambda:[json.loads(line) for line in (root/'no-daemon-swarm-proofs.jsonl').read_text().splitlines()]
     first=proofs()[-1]['thread']
-    resume=shlex.join(['exec','env','-u','OPENAI_API_KEY','-u','CODEX_API_KEY','-u','CODEX_THREAD_ID','-u','CODEX_SESSION_ID','CODEX_HOME='+str(home),'TMPDIR='+str(root),binary,'--no-daemon','--no-alt-screen','--ask-for-approval','never','--sandbox','danger-full-access','resume',first])
+    resume=shlex.join(['exec','env','-u','OPENAI_API_KEY','-u','CODEX_API_KEY','-u','CODEX_THREAD_ID','-u','CODEX_SESSION_ID','CODEX_HOME='+str(home),'TMPDIR='+str(root),binary,'--no-daemon','--no-alt-screen','--ask-for-approval','never','--sandbox','danger-full-access','resume',first,*image_options])
     tmux('new-window','-d','-t','=binding-fixture','-n','red',resume)
     time.sleep(8)
     locked=capture('resume-before-input','red',True)
@@ -174,6 +188,9 @@ try:
     capture('native-ping-received','red',True)
     capture('native-pong-received','blue',True)
     (root/'native-roundtrip.json').write_text(json.dumps(dict(delivered=len(delivered),proofs=len(proofs()),source_actors=[v['source']['actor'] for v in delivered],reply_warnings=False),indent=2))
+    if image_options:
+        requests=[json.loads(line) for line in (root/'no-daemon-model-requests.jsonl').read_text().splitlines()]
+        assert any(sum(v['content_item_types'].count('input_image') for v in r['input_metadata'])==2 for r in requests),requests
     print('PASS six native lifecycle cases and actual guarded native relay round trip; no manual binds')
 finally:
     subprocess.run(['tmux','-L',socket_name,'kill-server'],capture_output=True,text=True,timeout=5)

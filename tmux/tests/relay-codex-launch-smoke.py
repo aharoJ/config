@@ -22,7 +22,8 @@ class Responses(BaseHTTPRequestHandler):
     def do_POST(self):
         request = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         with (root/'request-tools.jsonl').open('a') as stream:
-            stream.write(json.dumps(dict(case=current.name,tools=request.get('tools',[])))+'\n')
+            images=sum(c.get('type')=='input_image' for v in request.get('input',[]) for c in (v.get('content',[]) if isinstance(v.get('content'),list) else []) if isinstance(c,dict))
+            stream.write(json.dumps(dict(case=current.name,tools=request.get('tools',[]),images=images))+'\n')
         if not request.get('tools'):
             self.send_response(400)
             self.end_headers()
@@ -98,7 +99,12 @@ try:
             time.sleep(.1)
     tmux('new-session', '-d', '-s', 'launch-smoke', '-n', 'sentinel', '-x', '160', '-y', '45', 'exec sleep 300')
     tmux('set-option', '-g', 'automatic-rename', 'off')
-    for name, args, local in [('delimited-prompt', ['--', 'future-subcommand'], True), ('bare-future-command', ['--no-daemon','future-subcommand'], False), ('remote', ['--remote', 'unix://' + str(listener)], False), ('remote-token', ['--remote='+ws_address, '--remote-auth-token-env', 'RELAY_SMOKE_TOKEN'], False)]:
+    cases = [('delimited-prompt', ['--', 'future-subcommand'], True), ('bare-future-command', ['--no-daemon','future-subcommand'], False), ('remote', ['--remote', 'unix://' + str(listener)], False), ('remote-token', ['--remote='+ws_address, '--remote-auth-token-env', 'RELAY_SMOKE_TOKEN'], False)]
+    if len(sys.argv)>3:
+        assert len(sys.argv)==5
+        first,second=[str(Path(v).resolve(strict=True)) for v in sys.argv[3:]]
+        cases += [('image-variadic',['--image',first,second],True), ('image-equals',['--image='+first,'--','prompt'],True), ('image-short',['-i'+first,'--','prompt'],True)]
+    for name,args,local in cases:
         current = root / name
         current.mkdir()
         script = 'source ' + shlex.quote(str(TOOLS.parents[1] / 'fish/internal/codex/codex.fish')) + "; function _agent_limit; set -lx PATH $RELAY_SMOKE_BIN $PATH; printf '%s\\0' $argv > $RELAY_SMOKE_ARGV; command $argv; end; codex $argv"
@@ -131,6 +137,9 @@ try:
             assert proof['source']['app'] == 'codex'
         else:
             assert ('exact local native launch' if name=='bare-future-command' else 'shared daemon') in proof['refusal'], proof
+        if name.startswith('image-'):
+            counts=[v['images'] for v in map(json.loads,(root/'request-tools.jsonl').read_text().splitlines()) if v['case']==name]
+            assert (2 if name=='image-variadic' else 1) in counts,(name,counts)
         records.append(dict(case=name, binary=str(binary), version=version, argv=argv, proof=proof, runtime_complete=True))
         tmux('kill-window', '-t', '=launch-smoke:=' + name)
     print('PASS real wrapper delimited prompt, bare future-command refusal and remote/token runtime tools')
