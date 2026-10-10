@@ -18,6 +18,35 @@ g['LABEL']['process_argv'] = lambda pid: ['codex','--no-daemon']
 assert not guard['local_codex'](source)
 g['AGENT']['prove'] = lambda pid: None
 assert not guard['local_codex'](source)
+mode = runpy.run_path(str(TOOLS / 'relay-route-guard'))
+m = mode['bind'].__globals__
+m['AGENT']['prove'] = lambda pid: dict(app='codex',entrypoint=[None])
+m['ancestors'] = lambda pid: [(100,1,'/canonical/codex','codex')]
+m['daemon_source'] = lambda env, chain: None
+m['panes'] = lambda env: [['%1','swarm','blue','','100','0'],['%2','swarm','red','','200','0']]
+m['LABEL']['origin'] = lambda pid, rows: (('%1','swarm','blue',100,'codex'),[(100,1,'/canonical/codex','codex')])
+m['identity'] = lambda pid: 'generation'
+m['socket'] = lambda env: dict(inode=7)
+m['live'] = lambda env, source: True
+m['pane_source'] = lambda env, row: dict(actor=200,app='codex',socket=dict(inode=7))
+negative = [[], ['--remote','unix:///remote'], ['--no-daemon','--remote=unix:///remote'], ['--no-daemon','app-server','daemon'], ['--config','model=fixture','--no-daemon','app-server','daemon'], ['--','--no-daemon'], ['--no-daemon','--no-daemon'], ['--no-daemon','exec','prompt'], ['--no-daemon','--unknown-future-mode']]
+for args in negative:
+    m['LABEL']['process_argv'] = lambda pid, args=args: ['codex',*args] if pid==100 else ['codex','--no-daemon']
+    assert not mode['local_source'](dict(actor=100)), args
+    assert not mode['check']({},dict(actor=100,app='codex',socket=dict(inode=7)), 'swarm','red'), args
+    try:
+        mode['bind']({},100)
+    except ValueError as error:
+        assert 'exact local native launch' in str(error), error
+    else:
+        raise AssertionError(('nonlocal actor accepted',args))
+for args in (['--no-daemon'], ['--model','app-server','--no-daemon','resume','thread'], ['--no-daemon','fork','thread'], ['--no-daemon','--','--remote'], ['--local-provider','fixture','--no-daemon']):
+    m['LABEL']['process_argv'] = lambda pid, args=args: ['codex',*args]
+    assert mode['local_source'](dict(actor=100)), args
+    assert mode['bind']({},100)['actor']==100
+    assert mode['check']({},dict(actor=100,app='codex',socket=dict(inode=7)), 'swarm','red'), args
+m['AGENT']['prove'] = lambda pid: dict(app='codex',entrypoint=['/canonical/codex.js'])
+assert not mode['local_source'](dict(actor=100))
 g['daemon_source'] = lambda env, chain: None
 g['ancestors'] = lambda pid, table=None: [(200,1,'unknown-execution-host','')]
 g['LABEL']['origin'] = lambda pid, rows: None
@@ -30,7 +59,7 @@ else:
     raise AssertionError('detached unknown host borrowed another pane')
 wrapper = TOOLS.parents[1] / 'fish/internal/codex/codex.fish'
 script = 'source '+str(wrapper)+"; function _agent_limit; printf '%s\n' $argv; end; codex $argv"
-for argv in ([], ['--model-lead'], ['--model-audit'], ['-m','future-model','resume','00000000-0000-4000-8000-000000000001']):
+for argv in ([], ['--model-lead'], ['--model-audit'], ['--no-daemon'], ['--model-lead','--no-daemon'], ['--model-audit','--no-daemon','--no-daemon'], ['-m','future-model','resume','00000000-0000-4000-8000-000000000001'], ['--config','exec'], ['--model','app-server'], ['fork','thread']):
     result = subprocess.run(['fish','--no-config','-c',script,'--',*argv],capture_output=True,text=True,check=True)
     args = result.stdout.splitlines()
     assert args[:2] == ['codex','--no-daemon'], args
@@ -39,3 +68,14 @@ for argv in ([], ['--model-lead'], ['--model-audit'], ['-m','future-model','resu
     if argv[:1] == ['-m']:
         assert args[-len(argv):] == argv, args
 print('PASS local native recognition, remote/unknown/ambiguous refusals and detached borrowed-hint refusal')
+
+for argv in (['exec','prompt'], ['--config','model=fixture','app-server','--help'], ['remote-control','--help'], ['--model-lead','app-server','--help'], ['--model','exec','remote-control']):
+    result=subprocess.run(['fish','--no-config','-c',script,'--',*argv],capture_output=True,text=True,check=True)
+    args=result.stdout.splitlines()
+    assert '--no-daemon' not in args, (argv,args)
+for argv in (['--no-daemon','--','--no-daemon'], ['--','--no-daemon'], ['--no-daemon','app-server','--help']):
+    result=subprocess.run(['fish','--no-config','-c',script,'--',*argv],capture_output=True,text=True,check=True)
+    args=result.stdout.splitlines()
+    assert args[:2]==['codex','--no-daemon'],args
+    assert args.count('--no-daemon')==(2 if '--' in argv else 1),args
+print('PASS exact-actor bind/queued checks, option parsing, explicit flag deduplication and non-TUI wrapper compatibility')

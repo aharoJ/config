@@ -502,8 +502,7 @@ class Matrix:
         (self.output / "cleanup.json").write_text(json.dumps({"socket": self.socket, "kill_exit": killed.returncode,
                                                            "ls_exit": gone.returncode, "remaining": bool(path and path.exists())}))
 
-    def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False, attested=True):
-        relay = "cc-msg.sh"
+    def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False, attested=True, actor_options=None, relay="cc-msg.sh", seeded_queue=False):
         session, window, directory = self.start(relay, name, width=width)
         alias = session + "-linked"
         try:
@@ -512,22 +511,23 @@ class Matrix:
             binary.parent.mkdir(exist_ok=True)
             if not binary.exists():
                 source = self.output / "sender-fixture.c"
-                source.write_text('#include <sys/wait.h>\n#include <unistd.h>\n'
+                source.write_text('#include <sys/wait.h>\n#include <unistd.h>\n#include <string.h>\n'
                                   'int main(int argc, char **argv) {\n'
                                   '  if (argc < 2) return 1;\n'
                                   '  pid_t child = fork();\n'
                                   '  if (child < 0) return 1;\n'
-                                  '  if (!child) { execvp(argv[1], argv + 1); _exit(127); }\n'
+                                  '  int start = 1; for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--")) { start = i + 1; break; }\n'
+                                  '  if (!child) { execvp(argv[start], argv + start); _exit(127); }\n'
                                   '  int status; waitpid(child, &status, 0); sleep(60); return 0;\n}\n')
                 subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)
             if attested and agent in ('claude','codex','agy','gemini'):
                 AGENT_FIXTURE['attest'](self.attestations, agent, binary)
             target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
             argv, env = self.command(relay, session, window, payload,
-                                     {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel"}, source=False)
+                                     {"TMUX_PANE": target_pane, "CC_MSG_FROM": "wrong\x1blabel", "CC_MSG_INBOX_ROOT": str(directory / "inbox")}, source=False)
             if self.authority_tools is not None:
                 argv[0] = str(self.authority_tools / relay)
-            request = dict(argv=argv, env=env)
+            request = dict(argv=argv, env=env, seeded_queue=seeded_queue)
             (directory / "sender-request.json").write_text(json.dumps(request))
             if rename:
                 proxy = directory / "tmux-sender-proxy"
@@ -541,6 +541,8 @@ class Matrix:
                 request["env"]["TMUX_BIN"] = str(proxy)
                 (directory / "sender-request.json").write_text(json.dumps(request))
             sender_argv = [sys.executable, str(pathlib.Path(__file__).resolve()), "--sender", str(directory)]
+            if agent == 'codex':
+                sender_argv = [str(binary), *(actor_options if actor_options is not None else ['--no-daemon']), '--', *sender_argv]
             if node:
                 entry = directory / "node_modules" / ("@openai/codex/bin/codex.js" if agent == "codex"
                                                        else "@anthropic-ai/claude-code/cli.js")
@@ -551,7 +553,7 @@ class Matrix:
                     AGENT_FIXTURE['attest'](self.attestations, agent, pathlib.Path(shutil.which('node')).resolve(), entry)
                 command = shlex.join([shutil.which("node"), str(entry)])
             else:
-                command = shlex.join([str(binary), *sender_argv])
+                command = shlex.join(sender_argv if agent == 'codex' else [str(binary), *sender_argv])
             sender_id = self.tmux("new-window", "-d", "-P", "-F", "#{window_id}", "-t", "=" + session,
                                   "-n", sender_window, command)
             if linked:
@@ -568,6 +570,8 @@ class Matrix:
             result = subprocess.CompletedProcess(argv, **json.loads((directory / "sender-result.json").read_text()))
             label = f"{sender_window} ({session}:{sender_window}) [model/effort unverified]"
             self.record(relay, name, result, code, directory, label + ": " + re_normalize(payload), code == 1)
+            if code == 1:
+                assert not list((directory / "inbox").rglob("*")), "refused sender changed inbox"
         finally:
             if not self.frozen:
                 if linked and alias in self.sessions:
@@ -706,7 +710,28 @@ if __name__ == "__main__":
         directory = pathlib.Path(sys.argv[2])
         time.sleep(0.2)
         request = json.loads((directory / "sender-request.json").read_text())
-        result = subprocess.run(request["argv"], env=request["env"], capture_output=True, text=True, timeout=45)
+        if request.get('seeded_queue'):
+            tools = pathlib.Path(request['argv'][0]).parent
+            guard = __import__('runpy').run_path(str(tools / 'relay-route-guard'))
+            chain = guard['ancestors'](os.getpid())
+            rows = [row for row in guard['panes'](request['env']) if any(pid==int(row[4]) for pid,*rest in chain)]
+            assert len(rows)==1, rows
+            row=rows[0]
+            identity=guard['bind'].__globals__['AGENT']
+            actor=next(pid for pid,*rest in chain if identity['prove'](pid) and identity['prove'](pid)['app']=='codex')
+            source=dict(version=2,pane=row[0],session=row[1],window=row[2],root=int(row[4]),root_identity=guard['identity'](int(row[4])),app='codex',actor=actor,actor_identity=guard['identity'](actor),socket=guard['socket'](request['env']),agent_identity=identity['prove'](actor))
+            if guard['codex_mode'](actor)[0]!='app-server':
+                assert guard['live'](request['env'],source), source
+            path = directory / 'preexisting-queue-record.json'
+            data = dict(id='preexisting',source=source,state='queued',session=request['env']['CC_MSG_SESSION'],window=request['env']['CC_MSG_WINDOW'],deadline=time.time()+60,environment=request['env'],identity={})
+            path.write_text(json.dumps(data))
+            result = subprocess.run([str(tools / 'cc-msg-queue'),'--worker',str(path)],env=request['env'],capture_output=True,text=True,timeout=45)
+            outcome = json.loads(path.read_text())
+            assert result.returncode==0 and outcome['state']=='failed' and outcome['code']==1, (result,outcome)
+            assert 'relay route refused: route not allowed' in outcome.get('output',''), outcome
+            result = subprocess.CompletedProcess(result.args,1,result.stdout,result.stderr+'\n'+outcome.get('output',''))
+        else:
+            result = subprocess.run(request["argv"], env=request["env"], capture_output=True, text=True, timeout=45)
         (directory / "sender-result.json").write_text(json.dumps(dict(returncode=result.returncode,
                                                                     stdout=result.stdout, stderr=result.stderr)))
     else:

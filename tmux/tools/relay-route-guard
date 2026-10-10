@@ -65,8 +65,7 @@ def ancestors(pid, table=None):
             proof = AGENT['prove'](pid)
             app_name = proof['app'] if proof else ''
             if app_name == 'codex':
-                argv = LABEL['process_argv'](pid)
-                if len(argv) > 1 and argv[1] == 'app-server':
+                if codex_mode(pid)[0] == 'app-server':
                     app_name = ''
         except (OSError, ValueError, subprocess.SubprocessError):
             app_name = ''
@@ -112,6 +111,45 @@ def pane_source(env, row):
     return source
 
 
+def codex_mode(pid):
+    argv = LABEL['process_argv'](pid)[1:]
+    valued = {'-c','--config','-m','--model','-p','--profile','-s','--sandbox','-a','--ask-for-approval','-C','--cd','--add-dir','--remote','--remote-auth-token-env','--enable','--disable','-i','--image','--local-provider'}
+    flags = {'--no-daemon','--no-alt-screen','--strict-config','--oss','--approve-for-me','--dangerously-bypass-approvals-and-sandbox','--dangerously-bypass-hook-trust','--worktree','--search','--last','--all'}
+    commands = {'agents','exec','e','review','login','logout','mcp','plugin','app-server','remote-control','app','completion','update','doctor','sandbox','debug','apply','a','resume','queue','archive','delete','migrate-rollouts','unarchive','fork','cloud','exec-server','features','help'}
+    command, local, count, first = None, True, 0, True
+    index = 0
+    while index < len(argv):
+        arg = argv[index]
+        if arg == '--':
+            break
+        name = arg.split('=',1)[0]
+        if name in valued:
+            if name in ('--remote','--remote-auth-token-env'):
+                local = False
+            if '=' not in arg:
+                index += 1
+                if index >= len(argv):
+                    return command, False
+        elif arg == '--no-daemon':
+            count += 1
+        elif arg in flags:
+            pass
+        elif any(arg.startswith(short) and len(arg)>2 for short in ('-c','-m','-p','-s','-a','-C')):
+            pass
+        elif arg.startswith('-'):
+            local = False
+        elif first:
+            command = arg if arg in commands else None
+            first = False
+        index += 1
+    return command, local and count == 1 and command in (None,'resume','fork')
+
+
+def local_source(source):
+    proof = AGENT['prove'](source['actor'])
+    return bool(proof and proof['app'] == 'codex' and proof.get('entrypoint') == [None] and codex_mode(source['actor'])[1])
+
+
 def local_codex(source):
     table = LABEL['processes']()
     matches = []
@@ -124,9 +162,7 @@ def local_codex(source):
         proof = AGENT['prove'](pid)
         if not proof or proof.get('entrypoint') != [None]:
             continue
-        argv = LABEL['process_argv'](pid)[1:]
-        options = argv[:argv.index('--')] if '--' in argv else argv
-        if '--no-daemon' not in options or any(arg == '--remote' or arg.startswith('--remote=') or arg == 'app-server' for arg in options):
+        if not codex_mode(pid)[1]:
             continue
         matches.append(pid)
     return len(matches) == 1
@@ -225,8 +261,7 @@ def daemon_source(env, chain):
         if pathlib.Path(row[2]).name != 'codex':
             continue
         proof = AGENT['prove'](row[0])
-        argv = LABEL['process_argv'](row[0])
-        if proof and proof['app'] == 'codex' and len(argv) > 1 and argv[1] == 'app-server' :
+        if proof and proof['app'] == 'codex' and codex_mode(row[0])[0] == 'app-server':
             daemon = row
             break
     if daemon is None:
@@ -292,6 +327,8 @@ def bind(env, pid):
     proof = AGENT['prove'](source['actor'])
     if proof:
         source['agent_identity'] = proof
+    if app == 'codex' and not local_source(source):
+        raise ValueError('Codex sender requires exact local native launch or explicit shared binding')
     if not live(env, source):
         raise ValueError('source changed')
     return source
@@ -376,6 +413,8 @@ def python_script(pid):
 def check(env, source, session, window):
     try:
         if not live(env, source) or not all(re.fullmatch(r'[A-Za-z0-9_-]+', name) for name in (session, window)):
+            return False
+        if source.get('app') == 'codex' and 'thread_id' not in source and not local_source(source):
             return False
         applications = ('claude', 'codex', 'agy', 'gemini')
         source_proof = AGENT['prove'](source['actor'])

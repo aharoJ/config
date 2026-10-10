@@ -20,11 +20,27 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
     set -l passthrough
     set -l options 1
     set -l raw_model 0
+    set -l value_next 0
+    set -l command_seen 0
+    set -l local_launch 1
+    set -l explicit_local 0
 
     for arg in $argv
         if test $options -eq 0
             set -a passthrough "$arg"
             continue
+        end
+        if test $value_next -eq 1
+            set value_next 0
+            set -a passthrough "$arg"
+            continue
+        end
+        if test $command_seen -eq 0; and not string match -q -- '-*' "$arg"
+            set command_seen 1
+            switch $arg
+                case agents exec e review login logout mcp plugin app-server remote-control app completion update doctor sandbox debug apply a queue archive delete migrate-rollouts unarchive cloud exec-server features help
+                    set local_launch 0
+            end
         end
         switch $arg
             case --
@@ -52,6 +68,14 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
                 set preset gpt-5.3-codex
             case --model '--model=*' -m '-m*'
                 set raw_model 1
+                if contains -- "$arg" --model -m
+                    set value_next 1
+                end
+                set -a passthrough "$arg"
+            case --no-daemon
+                set explicit_local 1
+            case -c --config -p --profile -s --sandbox -a --ask-for-approval -C --cd --add-dir --remote --remote-auth-token-env --enable --disable -i --image --local-provider
+                set value_next 1
                 set -a passthrough "$arg"
             case '*'
                 set -a passthrough $arg
@@ -63,10 +87,14 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
         return 2
     end
 
+    set -l launch_options
+    if test $local_launch -eq 1; or test $explicit_local -eq 1
+        set launch_options --no-daemon
+    end
     if test -n "$preset"
-        _agent_limit codex --no-daemon -m "$preset" --dangerously-bypass-approvals-and-sandbox $passthrough
+        _agent_limit codex $launch_options -m "$preset" --dangerously-bypass-approvals-and-sandbox $passthrough
     else
-        _agent_limit codex --no-daemon --dangerously-bypass-approvals-and-sandbox $passthrough
+        _agent_limit codex $launch_options --dangerously-bypass-approvals-and-sandbox $passthrough
     end
 end
 
