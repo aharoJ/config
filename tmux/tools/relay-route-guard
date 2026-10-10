@@ -115,7 +115,6 @@ def codex_mode(pid):
     argv = LABEL['process_argv'](pid)[1:]
     valued = {'-c','--config','-m','--model','-p','--profile','-s','--sandbox','-a','--ask-for-approval','-C','--cd','--add-dir','--remote','--remote-auth-token-env','--enable','--disable','-i','--image','--local-provider'}
     flags = {'--no-daemon','--no-alt-screen','--strict-config','--oss','--approve-for-me','--dangerously-bypass-approvals-and-sandbox','--dangerously-bypass-hook-trust','--worktree','--search','--last','--all'}
-    commands = {'agents','exec','e','review','login','logout','mcp','plugin','app-server','remote-control','app','completion','update','doctor','sandbox','debug','apply','a','resume','queue','archive','delete','migrate-rollouts','unarchive','fork','cloud','exec-server','features','help'}
     command, local, count, first = None, True, 0, True
     index = 0
     while index < len(argv):
@@ -139,7 +138,7 @@ def codex_mode(pid):
         elif arg.startswith('-'):
             local = False
         elif first:
-            command = arg if arg in commands else None
+            command = arg
             first = False
         index += 1
     return command, local and count == 1 and command in (None,'resume','fork')

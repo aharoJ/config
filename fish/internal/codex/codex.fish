@@ -38,7 +38,8 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
         if test $command_seen -eq 0; and not string match -q -- '-*' "$arg"
             set command_seen 1
             switch $arg
-                case agents exec e review login logout mcp plugin app-server remote-control app completion update doctor sandbox debug apply a queue archive delete migrate-rollouts unarchive cloud exec-server features help
+                case resume fork
+                case '*'
                     set local_launch 0
             end
         end
@@ -74,7 +75,14 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
                 set -a passthrough "$arg"
             case --no-daemon
                 set explicit_local 1
-            case -c --config -p --profile -s --sandbox -a --ask-for-approval -C --cd --add-dir --remote --remote-auth-token-env --enable --disable -i --image --local-provider
+            case --remote --remote-auth-token-env
+                set local_launch 0
+                set value_next 1
+                set -a passthrough "$arg"
+            case '--remote=*' '--remote-auth-token-env=*'
+                set local_launch 0
+                set -a passthrough "$arg"
+            case -c --config -p --profile -s --sandbox -a --ask-for-approval -C --cd --add-dir --enable --disable -i --image --local-provider
                 set value_next 1
                 set -a passthrough "$arg"
             case '*'

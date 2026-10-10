@@ -516,7 +516,7 @@ class Matrix:
                                   '  if (argc < 2) return 1;\n'
                                   '  pid_t child = fork();\n'
                                   '  if (child < 0) return 1;\n'
-                                  '  int start = 1; for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--")) { start = i + 1; break; }\n'
+                                  '  int start = 1; for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--")) { start = i + 1; }\n'
                                   '  if (!child) { execvp(argv[start], argv + start); _exit(127); }\n'
                                   '  int status; waitpid(child, &status, 0); sleep(60); return 0;\n}\n')
                 subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)

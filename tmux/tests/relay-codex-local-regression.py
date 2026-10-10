@@ -29,7 +29,7 @@ m['identity'] = lambda pid: 'generation'
 m['socket'] = lambda env: dict(inode=7)
 m['live'] = lambda env, source: True
 m['pane_source'] = lambda env, row: dict(actor=200,app='codex',socket=dict(inode=7))
-negative = [[], ['--remote','unix:///remote'], ['--no-daemon','--remote=unix:///remote'], ['--no-daemon','app-server','daemon'], ['--config','model=fixture','--no-daemon','app-server','daemon'], ['--','--no-daemon'], ['--no-daemon','--no-daemon'], ['--no-daemon','exec','prompt'], ['--no-daemon','--unknown-future-mode']]
+negative = [[], ['--remote','unix:///remote'], ['--no-daemon','--remote=unix:///remote'], ['--no-daemon','app-server','daemon'], ['--config','model=fixture','--no-daemon','app-server','daemon'], ['--','--no-daemon'], ['--no-daemon','--no-daemon'], ['--no-daemon','exec','prompt'], ['--no-daemon','--unknown-future-mode'], ['--no-daemon','future-subcommand']]
 for args in negative:
     m['LABEL']['process_argv'] = lambda pid, args=args: ['codex',*args] if pid==100 else ['codex','--no-daemon']
     assert not mode['local_source'](dict(actor=100)), args
@@ -40,7 +40,7 @@ for args in negative:
         assert 'exact local native launch' in str(error), error
     else:
         raise AssertionError(('nonlocal actor accepted',args))
-for args in (['--no-daemon'], ['--model','app-server','--no-daemon','resume','thread'], ['--no-daemon','fork','thread'], ['--no-daemon','--','--remote'], ['--local-provider','fixture','--no-daemon']):
+for args in (['--no-daemon'], ['--model','app-server','--no-daemon','resume','thread'], ['--no-daemon','fork','thread'], ['--no-daemon','--','--remote'], ['--local-provider','fixture','--no-daemon'], ['--no-daemon','--','future-subcommand']):
     m['LABEL']['process_argv'] = lambda pid, args=args: ['codex',*args]
     assert mode['local_source'](dict(actor=100)), args
     assert mode['bind']({},100)['actor']==100
@@ -69,13 +69,13 @@ for argv in ([], ['--model-lead'], ['--model-audit'], ['--no-daemon'], ['--model
         assert args[-len(argv):] == argv, args
 print('PASS local native recognition, remote/unknown/ambiguous refusals and detached borrowed-hint refusal')
 
-for argv in (['exec','prompt'], ['--config','model=fixture','app-server','--help'], ['remote-control','--help'], ['--model-lead','app-server','--help'], ['--model','exec','remote-control']):
+for argv in (['exec','prompt'], ['--config','model=fixture','app-server','--help'], ['remote-control','--help'], ['--model-lead','app-server','--help'], ['--model','exec','remote-control'], ['future-subcommand'], ['--remote','unix:///remote'], ['--remote=unix:///remote'], ['--remote-auth-token-env','FIXTURE_TOKEN'], ['--remote-auth-token-env=FIXTURE_TOKEN']):
     result=subprocess.run(['fish','--no-config','-c',script,'--',*argv],capture_output=True,text=True,check=True)
     args=result.stdout.splitlines()
     assert '--no-daemon' not in args, (argv,args)
-for argv in (['--no-daemon','--','--no-daemon'], ['--','--no-daemon'], ['--no-daemon','app-server','--help']):
+for argv in (['--no-daemon','--','--no-daemon'], ['--','--no-daemon'], ['--no-daemon','app-server','--help'], ['--','future-subcommand']):
     result=subprocess.run(['fish','--no-config','-c',script,'--',*argv],capture_output=True,text=True,check=True)
     args=result.stdout.splitlines()
     assert args[:2]==['codex','--no-daemon'],args
-    assert args.count('--no-daemon')==(2 if '--' in argv else 1),args
+    assert args.count('--no-daemon')==(2 if '--' in argv and argv[-1]=='--no-daemon' else 1),args
 print('PASS exact-actor bind/queued checks, option parsing, explicit flag deduplication and non-TUI wrapper compatibility')
