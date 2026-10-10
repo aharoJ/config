@@ -30,7 +30,7 @@ g completed_idle 'completed, unacknowledged turn' 'completion labelled honestly,
 echo "-- the alarm stays quiet when it must --"
 cnt empty_turn   0 'no alarm before the agent has replied'
 cnt unknown_gap  0 'idle run resets across an unknown sample'
-ng operator_false_fire 'my approval' 'operator text is not read as the agent request'
+ng user_input_false_fire 'my approval' 'user input is not read as the agent request'
 ng modal_no_anchor_content 'service modal' 'one modal phrase is not proof of a modal'
 ng modal_two_on_one_row    'service modal' 'two markers on ONE row is not a modal'
 ng modal_two_prose_rows    'service modal' 'two prose rows are not a modal'
