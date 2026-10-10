@@ -56,7 +56,7 @@ def process_argv(pid):
 
 def app(pid, command):
     name = pathlib.Path(command).name
-    if name in ("claude", "codex", "agy", "gemini"):
+    if name in ("claude", "codex", "agy"):
         return name
     if re.search(r"/claude/versions/\d+\.\d+\.\d+(?:[-+][\w.-]+)?$", command):
         return "claude"
@@ -70,8 +70,6 @@ def app(pid, command):
         return "codex"
     if entry.endswith("/@anthropic-ai/claude-code/cli.js"):
         return "claude"
-    if entry.endswith("/@google/gemini-cli/bundle/gemini.js") or entry.endswith("/@google/gemini-cli/dist/index.js"):
-        return "gemini"
     return ""
 
 

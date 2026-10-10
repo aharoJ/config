@@ -21,7 +21,7 @@ def check(table, apps, good, alternate=None, args='Thu Oct 2 node /installed/@op
     label = dict(namespace['LABEL'])
     label['ps'] = lambda *a: table if a[0] == '-t' else args
     label['app'] = lambda pid, command: apps.get(pid, '')
-    with patch.dict(namespace, LABEL=label, query=lambda *a: next(states)):
+    with patch.dict(namespace, LABEL=label, query=lambda *a: next(states)), patch.dict(namespace['AGENT'], prove=lambda pid: dict(app=apps[pid], executable=['fixture'], entrypoint=[None]) if apps.get(pid) else None):
         try:
             value = snapshot('/socket', '%1', applications)
         except ValueError:
@@ -43,8 +43,8 @@ check(base, {20: 'codex'}, False, ['%1', '10', 'fish', '/dev/ttys099', '0'])
 check(base.replace('20 10', '20 21').replace('21 20', '21 20'), {20: 'codex'}, False)
 assert check(base, {20: 'codex'}, True, args='different process start') != original
 assert check(base.replace('20 10', '30 10').replace('21 20', '21 30'), {30: 'codex'}, True) != original
-check(base, {20: 'agy'}, True, applications=('agy', 'gemini'))
-check(base, {20: 'gemini'}, True, applications=('agy', 'gemini'))
-check(base, {20: 'codex'}, False, applications=('agy', 'gemini'))
+check(base, {20: 'agy'}, True, applications=('agy',))
+check(base, {20: 'gemini'}, False, applications=('agy',))
+check(base, {20: 'codex'}, False, applications=('agy',))
 check(base, {20: 'claude'}, False)
 print(f'Codex target guard: {checks} checks PASS')

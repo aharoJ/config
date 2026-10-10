@@ -71,7 +71,7 @@ def fixture_proof(exe, argv):
     data = json.loads(registry.read_text())
     entry = Path(argv[1]).resolve(strict=True) if exe.name == 'node' and len(argv) > 1 and not argv[1].startswith('-') else None
     for row in data:
-        if row.get('app') not in ('claude', 'codex', 'agy', 'gemini') or row.get('executable', [None])[0] != str(exe):
+        if row.get('app') not in ('claude', 'codex', 'agy') or row.get('executable', [None])[0] != str(exe):
             continue
         if row.get('entrypoint', [None])[0] != (str(entry) if entry else None):
             continue
@@ -90,7 +90,7 @@ def prove(pid):
     root = node_root(exe)
     if root and len(argv) > 1 and not argv[1].startswith('-'):
         candidate = Path(argv[1]).resolve(strict=True)
-        entries = {'@openai/codex/bin/codex.js':'codex', '@anthropic-ai/claude-code/cli.js':'claude', '@google/gemini-cli/bundle/gemini.js':'gemini', '@google/gemini-cli/dist/index.js':'gemini'}
+        entries = {'@openai/codex/bin/codex.js':'codex', '@anthropic-ai/claude-code/cli.js':'claude'}
         app = next((kind for relative, kind in entries.items() if candidate == (root / relative).resolve()), None)
         if app:
             entry = candidate

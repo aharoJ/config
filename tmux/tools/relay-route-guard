@@ -425,7 +425,7 @@ def check(env, source, session, window):
             return False
         if source.get('app') == 'codex' and 'thread_id' not in source and not local_source(source):
             return False
-        applications = ('claude', 'codex', 'agy', 'gemini')
+        applications = ('claude', 'codex', 'agy')
         source_proof = AGENT['prove'](source['actor'])
         if (not source_proof or source_proof['app'] not in applications) and env.get('RELAY_OPERATOR') != '1':
             return False

@@ -520,7 +520,7 @@ class Matrix:
                                   '  if (!child) { execvp(argv[start], argv + start); _exit(127); }\n'
                                   '  int status; waitpid(child, &status, 0); sleep(60); return 0;\n}\n')
                 subprocess.run(["cc", str(source), "-o", str(binary)], check=True, capture_output=True, timeout=30)
-            if attested and agent in ('claude','codex','agy','gemini'):
+            if attested and agent in ('claude','codex','agy'):
                 AGENT_FIXTURE['attest'](self.attestations, agent, binary)
             target_pane = self.tmux("display-message", "-p", "-t", "=" + session + ":=" + window, "#{pane_id}")
             argv, env = self.command(relay, session, window, payload,
@@ -627,7 +627,7 @@ class Matrix:
         self.sender_case("codex-sender-stale-pane-and-override", "codex")
         self.sender_case("node-cc-sender", "claude", node=True)
         self.sender_case("node-codex-sender", "codex", node=True)
-        self.sender_case("unknown-app-known-pane", "bash")
+        self.sender_case("unknown-app-known-pane", "bash", code=1)
         self.case("cc-msg.sh", "bound-sender-override-ignored", extra={"CC_MSG_FROM": "claude", "TMUX_PANE": "%0"})
         self.sender_case("sender-renamed-during-resolution", "claude", rename=True, code=5)
         self.sender_case("ambiguous-linked-sender", "claude", linked=True, code=1)

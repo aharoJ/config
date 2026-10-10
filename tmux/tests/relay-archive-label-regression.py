@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as directory:
     home = pathlib.Path(directory)
     payload = home / 'payload'
     message = "summary with unmatched ' quote " + '界' * 300
-    for number, app in enumerate(('claude', 'codex', 'agy', 'gemini', 'relay')):
+    for number, app in enumerate(('claude', 'codex', 'agy', 'relay')):
         source = dict(app=app, session='config', window='codex')
         record = home / 'record'
         record.write_text(json.dumps(dict(source=source, message=message, id=f'{number:032x}', created=1791320000 + number)))
@@ -28,4 +28,4 @@ with tempfile.TemporaryDirectory() as directory:
         archived = home / line.split(' -- full: ~/')[1]
         assert archived.read_text() == message
         assert archived.stat().st_mode & 0o077 == 0
-print('PASS: five providers/neutral sender retain uniform archive labels, summaries and exact private payloads')
+print('PASS: three providers and neutral sender retain uniform archive labels, summaries and exact private payloads')

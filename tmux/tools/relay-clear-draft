@@ -99,7 +99,7 @@ def styled_cells(row):
 
 def guard(snapshot, kind, expected):
     valid_expected(expected)
-    glyph = '❯' if kind == 'claude' else '>' if kind in ('agy', 'gemini') else '›'
+    glyph = '❯' if kind == 'claude' else '>' if kind == 'agy' else '›'
     y, x, width = snapshot['y'], snapshot['x'], snapshot['width']
     raw = snapshot['capture'].splitlines()
     rows = visible(snapshot['capture'])
@@ -138,7 +138,7 @@ def guard(snapshot, kind, expected):
         prefix += part
         index += len(part)
         count += 0 if escape else 1
-    if kind in ('agy', 'gemini'):
+    if kind == 'agy':
         prefix = prefix.rstrip(' \u00a0')
     virtual[y] = prefix + ('\x1b[2mboundary proof\x1b[0m' if kind == 'codex' else '')
     check = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(len(match[1])), str(y), str(width), 'strict'], input='\n'.join(virtual) + '\n', text=True, capture_output=True, timeout=3)
@@ -219,7 +219,7 @@ def main():
     kind = sys.argv[1] if len(sys.argv) > 1 else ''
     args = sys.argv[2:]
     env = dict(os.environ)
-    if kind in ('codex', 'agy', 'gemini'):
+    if kind in ('codex', 'agy'):
         window, args = (args[0], args[1:]) if args else ('', [])
         env['CC_MSG_SESSION'], env['CC_MSG_WINDOW'] = env.get('CODEX_SEND_SESSION' if kind == 'codex' else 'AGY_SEND_SESSION', ''), window
         env.pop('CC_MSG_PANE', None)
@@ -248,7 +248,7 @@ def main():
     try:
         for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
             handlers[signum] = signal.signal(signum, interrupted)
-        if kind not in ('claude', 'codex', 'agy', 'gemini') or len(args) != 2 or args[0] != '--expect':
+        if kind not in ('claude', 'codex', 'agy') or len(args) != 2 or args[0] != '--expect':
             raise Refused('usage: --clear-draft --expect <exact short draft>; this mode clears only and sends no message')
         valid_expected(expected)
         target = queue.identity(env)
@@ -299,7 +299,7 @@ def main():
             if queue.identity(env) != target:
                 raise RuntimeError('target changed after clear')
             post = snapshot(target)
-            glyph = '❯' if kind == 'claude' else '>' if kind in ('agy', 'gemini') else '›'
+            glyph = '❯' if kind == 'claude' else '>' if kind == 'agy' else '›'
             empty = subprocess.run([str(TOOLS / 'relay-input-guard'), glyph, str(post['x']), str(post['y']), str(post['width']), 'strict'], input=post['capture'], capture_output=True, text=True, timeout=3)
             if empty.returncode == 0:
                 output = f'CLEARED exact draft {json.dumps(expected)}; empty composer verified; {pending_count(folder, target)} queued message(s) may now deliver; inbox {path}'

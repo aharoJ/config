@@ -19,11 +19,11 @@ state['AGENT']['prove'] = lambda pid: {'app':'codex', 'entrypoint':[None]}
 state['LABEL']['process_argv'] = lambda pid: ['codex','--no-daemon']
 state['panes'] = lambda env: [['%9', 'other-project', 'blue-27', '', '200', '0'], ['%8', 'cvmapp', 'red', '', '300', '0']]
 state['pane_source'] = lambda env, row: dict(source, session=row[1], window=row[2])
-for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
+for app in ('claude', 'codex', 'agy', 'relay'):
     for target in [('other-project', 'blue-27'), ('cvmapp', 'red')]:
         state['AGENT']['prove'] = lambda pid, app=app: {'app':app, 'entrypoint':[None]} if app != 'relay' else None
         test('symmetric explicit peer '+app+str(target), check({}, dict(source, app=app), *target), app != 'relay')
-for app in ('claude', 'codex', 'agy', 'gemini', 'relay'):
+for app in ('claude', 'codex', 'agy', 'relay'):
     state['pane_source'] = lambda env, row, app=app: dict(source, app=app, actor=202)
     state['AGENT']['prove'] = lambda pid, app=app: {'app':'codex' if pid==101 else app, 'entrypoint':[None]} if pid==101 or app != 'relay' else None
     test('target provider '+app, check({}, source, 'other-project', 'blue-27'), app != 'relay')

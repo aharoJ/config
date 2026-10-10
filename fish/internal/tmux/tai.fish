@@ -18,6 +18,7 @@ function __tai_usage
     echo "usage: tai [--session <session>] [--window <name>] <codex|gemini|cc|deepseek|mimo|kimi> [agent args...]"
     echo "       tai [--session <session>] all"
     echo "       tai [--session <session>] seat <gemini|astra|fable|deepseek> [agent args...]"
+    echo "       gemini launches the Gemini seat (Agy)"
     echo "       tai        # same as: tai all"
 end
 
@@ -40,6 +41,10 @@ end
 # installed native policy options. OpenRouter yields to caller approval flags.
 function __tai_validate
     set -l agent $argv[1]
+    set -l launch_agent "$agent"
+    if test "$agent" = gemini
+        set launch_agent "Gemini seat (Agy)"
+    end
     set -e argv[1]
     set -l approvals 0
     set -l separator 0
@@ -53,10 +58,10 @@ function __tai_validate
         test "$arg" = --; and set separator 1
         switch "$agent:$arg"
             case 'codex:--dangerously-bypass-approvals-and-sandbox' 'gemini:--dangerously-skip-permissions' 'gemini:--dangerously-skip-permissions=*'
-                echo "tai: bypass/YOLO is already enabled for '$agent'; omit '$arg'" >&2
+                echo "tai: bypass/YOLO is already enabled for '$launch_agent'; omit '$arg'" >&2
                 return 2
             case 'codex:--ask-for-approval' 'codex:--ask-for-approval=*' 'codex:-a' 'codex:-a=*' 'codex:-anever' 'codex:-aon-request' 'codex:--sandbox' 'codex:--sandbox=*' 'codex:-s' 'codex:-s=*' 'codex:-sread-only' 'codex:-sworkspace-write' 'codex:-sdanger-full-access' 'codex:--approve-for-me' 'gemini:--sandbox' 'gemini:--sandbox=*' 'gemini:--mode' 'gemini:--mode=*'
-                echo "tai: '$arg' has unverified precedence against '$agent' bypass; launch the wrapper directly to choose another policy" >&2
+                echo "tai: '$arg' has unverified precedence against '$launch_agent' bypass; launch the wrapper directly to choose another policy" >&2
                 return 2
             case 'codex:-c*' 'codex:--config' 'codex:--config=*'
                 set -l value (string replace -r -- '^(-c=?|--config=)' '' "$arg")

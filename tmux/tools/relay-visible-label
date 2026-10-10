@@ -23,7 +23,7 @@ def model_state(capture, cursor_y, app):
             match = re.fullmatch(r'  (Opus|Sonnet|Haiku) ([0-9]+(?:\.[0-9]+)+) +\| +context .+ \| +effort (low|medium|high|max)(?: +\| +v[0-9.]+.*)?', row)
             if match:
                 matches.append(match[1].lower() + '-' + match[2] + ' ' + match[3])
-        elif app in ('agy', 'gemini'):
+        elif app == 'agy':
             match = re.fullmatch(r'\s*\? for shortcuts\s+([A-Za-z][A-Za-z0-9 ._-]*) · (low|medium|high|xhigh|max|ultra)', row)
             if match:
                 matches.append(re.sub(r'\s+', '-', match[1].strip().lower()) + ' ' + match[2])

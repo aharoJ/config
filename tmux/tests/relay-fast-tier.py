@@ -13,7 +13,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parent
-CASES = ['relay-critical-regression.py', 'cc-msg-queue-regression.py', 'relay-visible-findings-regression.py', 'relay-visible-source-regression.py', 'relay-reset-no-identity-regression.py', 'relay-identity-no-input-regression.py', 'queue-route-regression.py',
+CASES = ['relay-retired-gemini-regression.py', 'relay-critical-regression.py', 'cc-msg-queue-regression.py', 'relay-visible-findings-regression.py', 'relay-visible-source-regression.py', 'relay-reset-no-identity-regression.py', 'relay-identity-no-input-regression.py', 'queue-route-regression.py',
          'relay-route-guard-regression.py', 'relay-native-argv-regression.py',
          'codex-footer-compat-regression.py', 'codex-new-guard-regression.py',
          'codex-target-guard-regression.py', 'relay-request-deadline-regression.py']

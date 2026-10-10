@@ -191,8 +191,8 @@ case "$target_count" in
   *) fail "target window $target_session:$window_name is ambiguous" ;;
 esac
 case "$command_name" in
-  agy|gemini|node) ;;
-  *) fail "pane $pane is running '$command_name', not Agy/Gemini; refuse" ;;
+  agy|node) ;;
+  *) fail "pane $pane is running '$command_name', not Agy; refuse" ;;
 esac
 
 relay_target_window="$window_name"
@@ -210,7 +210,7 @@ else
 fi
 send_target_proof=
 if [ "$command_name" = node ]; then
-  send_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" --agy)" || fail "foreground node process is not proven Agy/Gemini"
+  send_target_proof="$("$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" --agy)" || fail "foreground node process is not proven Agy"
 fi
 require_target_process() {
   [ -z "$send_target_proof" ] || "$relay_script_dir/codex-target-guard" "$relay_target_socket" "$pane" --agy "$send_target_proof"

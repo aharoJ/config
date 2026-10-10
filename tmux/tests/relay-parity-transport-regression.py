@@ -27,7 +27,7 @@ try:
         env.pop('RELAY_MESSAGE_RECORD', None)
         return argv, env
     matrix.command = command
-    for provider in ('codex', 'claude', 'agy', 'gemini'):
+    for provider in ('codex', 'claude', 'agy'):
         matrix.sender_case('queued-source-' + provider, provider, payload=payload)
     matrix.sender_case('queued-node-codex', 'codex', payload=payload, node=True)
     target_session, target_window, target_directory = matrix.start('cc-msg.sh', 'cross-target')
@@ -43,7 +43,7 @@ try:
         matrix.sender_case('cross-peer-' + provider, provider, payload=payload)
         target_session, target_window, target_directory = matrix.start('cc-msg.sh', 'next-cross-target-' + provider)
     records = [json.loads(path.read_text()) for path in (output / 'inbox').glob('*/*.json') if not path.name.endswith('.watch.json')]
-    assert len(records) == 7 and all(row['state'] == 'delivered' for row in records), records
+    assert len(records) == 6 and all(row['state'] == 'delivered' for row in records), records
 finally:
     matrix.close()
 assert all(row['passed'] for row in matrix.results), matrix.results

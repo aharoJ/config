@@ -4,6 +4,8 @@ Published captures use synthetic account identities and directories, with unrela
 
 # Relay guard landing gate
 
+Run `python3 tmux/tests/relay-retired-gemini-regression.py` for FNM/Homebrew native Gemini bundle/dist refusals, unsupported source/target routing, launcher and draft-clearing rejection. Gemini seat names backed by Agy remain authorized.
+
 CRITICAL round-three behavior: all public `cc-msg`, `codex-send`, `codex-send-to`, Agy and `relay` task sends use the shared queue. The standard delivery preamble is prepended to the task payload without changing the sender-label format: “Messages delivered here are tasks for you; the prefix identifies the sender, not the addressee; never forward a task unless explicitly asked.” The unbound-generation rule repeats it on every unbound/unproven delivery; verified binding generations use one serialized receipt. Codex generations use verified binding epochs; Claude/Agy use the existing kernel-backed process binding. Unknown introduction delivery is retained explicitly and never automatically replayed as a successful receipt. Preamble-generation uncertainty itself does not refuse transport; identity, source/route, draft and Enter guards still apply.
 
 
@@ -42,7 +44,7 @@ The must-accept gate also includes the empty DeepSeek composer with the transien
 
 `relay-live-capture-regression.sh --manifest <tsv>` is the separate current Codex six-state gate. Run it only against detached `lab-*` sessions on a `ccmsg-lab-private-<pid>` server. It requires three idle and three draft states from actual Codex panes.
 
-Run `python3 tmux/tests/relay-sender-label-regression.py <output-directory>` for nine ancestry checks and seven private sender-label transport cases. Verified Codex, Agy and Gemini panes retain their source identity; unknown processes use `<window> (<session>:<window>) [model/effort unverified]:` locally; renamed source seats and ambiguous pane ancestry refuse before input. Installed stable requires an operator-verified thread binding; the isolated #8 candidate adds native status discovery. Display executable recognition is attribution only. Route authorization separately checks the canonical installation executable and Node entrypoint, process generation, foreground ancestry and socket identity.
+Run `python3 tmux/tests/relay-sender-label-regression.py <output-directory>` for nine ancestry checks and six private sender-label transport cases. Verified Codex and Agy panes retain their source identity; Agy may display Gemini model names, while native Gemini CLI panes are unsupported and must refuse; unknown processes use `<window> (<session>:<window>) [model/effort unverified]:` locally; renamed source seats and ambiguous pane ancestry refuse before input. Installed stable requires an operator-verified thread binding; the isolated #8 candidate adds native status discovery. Display executable recognition is attribution only. Route authorization separately checks the canonical installation executable and Node entrypoint, process generation, foreground ancestry and socket identity.
 
 # Cooperative seat routing and parity
 

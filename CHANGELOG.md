@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-10 — retire native Gemini CLI support (candidate)
+
+The direct Fish `gemini` compatibility command now launches Agy with the same bypass policy as `tai gemini`, under the shared agent process cap. Relay identity, routing, labels, target guards and exact-draft clearing accept Claude, Codex and Agy only; native Gemini CLI Node entrypoints are unsupported. This supersedes the earlier native Gemini attribution entry without rewriting history. Gemini seat names, Agy model footers and `~/.gemini/antigravity-cli` trusted-workspace state remain in use. No external packages or provider state are removed. Not deployed.
+
 ## Worktree candidate — peer-neutral tmux setup and named agent windows
 
 The deprecated-preset deadline now requires successful date-command execution as well as valid output. A failing command cannot authorize the alias with stale valid-looking stdout; explicit model presets remain independent of the check. The system command is invoked rather than a Fish date function.

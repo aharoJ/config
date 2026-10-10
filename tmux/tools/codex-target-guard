@@ -62,7 +62,7 @@ if __name__ == '__main__':
         socket, pane, *expected = sys.argv[1:]
         applications = ('codex',)
         if expected[:1] == ['--agy']:
-            applications = ('agy', 'gemini')
+            applications = ('agy',)
             expected = expected[1:]
         first = snapshot(socket, pane, applications)
         if snapshot(socket, pane, applications) != first or (expected and expected != [first]):

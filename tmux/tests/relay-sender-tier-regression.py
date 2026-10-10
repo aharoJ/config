@@ -55,7 +55,7 @@ printf '%s\n' "$relay_sender_tier"
                 ("identity-drift", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_IDENTITY": "%421 rt2 other 25993 0 2.1.287"}, "strict"),
                 ("codex-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 codex"}, "strict"),
                 ("agy-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 agy"}, "strict"),
-                ("gemini-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 fable 25993 gemini"}, "strict"),
+                ("agy-gemini-seat-strict", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": "%421 rt2 gemini 25993 agy"}, "strict"),
                 ("unresolved", "  Sonnet 4.6 | context 1k | v2.1.287", {"MOCK_LABEL": ""}, "strict"),
             )
             for name, status, override, expected in cases:

@@ -18,7 +18,7 @@ for agent in ['codex', 'claude', 'agy', 'gemini', 'unknown']:
     table = {300:(200,'/usr/bin/bash'),200:(100,'/lab/'+agent),100:(1,'/usr/bin/fish')}
     with patch.dict(namespace, processes=lambda:table), patch.dict(os.environ, CC_MSG_FROM='claude', TMUX_PANE='%999'):
         result = origin(300, [pane])
-    expected = agent if agent != 'unknown' else 'relay'
+    expected = agent if agent not in ('unknown', 'gemini') else 'relay'
     assert result[0] == ('%4','review-protocol','codex','100',expected), result
     checks.append(dict(case='nearest-'+agent, result=result[0]))
 table = {300:(200,'/lab/codex'),200:(100,'/lab/claude'),100:(1,'/usr/bin/fish')}
@@ -34,8 +34,9 @@ fixtures = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fixtures)
 matrix = fixtures.Matrix(output/'transport')
 try:
-    for agent in ['codex','agy','gemini','bash']:
+    for agent in ['codex','agy']:
         matrix.sender_case('verified-'+agent,agent)
+    matrix.sender_case('unknown-source-bash', 'bash', code=1)
     matrix.sender_case('codex-node','codex',node=True)
     matrix.sender_case('renamed-codex','codex',rename=True,code=5)
     matrix.sender_case('ambiguous-codex','codex',linked=True,code=1)
