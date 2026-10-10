@@ -1,8 +1,39 @@
 # path: ~/.config/fish/internal/tmux/t3.fish
-# description: Set up claude, notes, and codex tmux windows in the current directory.
-# date: 2026-10-05
 
-function t3 --description 'tmux: set up claude, notes, and codex windows'
+function t3 --description 'tmux: preserve the caller and set up named windows; --legacy restores the old layout'
+    argparse --name=t3 h/help legacy 'focus=' -- $argv
+    or return $status
+    if set -q _flag_help
+        echo 'usage: t3 [--focus <name>] [window names...]'
+        echo '       t3 --legacy [--focus <name>]'
+        return 0
+    end
+    if set -q _flag_legacy; and test (count $argv) -gt 0
+        echo 't3: --legacy cannot be combined with window names' >&2
+        return 2
+    end
+    if test (count $_flag_focus) -gt 1
+        echo 't3: --focus may be specified only once' >&2
+        return 2
+    end
+    for name in $argv $_flag_focus
+        if not string match -qr '^[A-Za-z0-9_][A-Za-z0-9_-]*$' -- "$name"
+            echo 't3: window names must contain only letters, digits, underscores or hyphens' >&2
+            return 2
+        end
+    end
+    set -l requested $argv
+    set -l focus $_flag_focus
+    if set -q _flag_legacy
+        set requested claude notes codex
+        if not set -q _flag_focus
+            set focus claude
+        end
+        if not contains -- "$focus" $requested
+            echo 't3: --legacy focus must be claude, notes or codex' >&2
+            return 2
+        end
+    end
     set -l session
     set -l inside 0
     if set -q TMUX; and test -n "$TMUX"
@@ -15,14 +46,24 @@ function t3 --description 'tmux: set up claude, notes, and codex windows'
         or return $status
         set -l names (tmux list-windows -t "$session" -F '#{window_name}')
         or return $status
-        if not contains -- claude $names
+        if set -q _flag_legacy; and not contains -- claude $names
             tmux rename-window $target claude
             or return $status
         end
+        if test (count $requested) -eq 0
+            set requested notes shell
+        end
     else
+        if test (count $requested) -eq 0
+            set requested work notes shell
+        end
         set session (string replace -a -r '[.:]' _ -- (path basename "$PWD"))
         if not tmux has-session -t "=$session" 2>/dev/null
-            tmux new-session -d -s "$session" -n claude -c "$PWD"
+            if test (count $focus) -gt 0; and not contains -- "$focus" $requested
+                echo "t3: focus window '$focus' is not a requested window" >&2
+                return 2
+            end
+            tmux new-session -d -s "$session" -n "$requested[1]" -c "$PWD"
             or return $status
         end
         set session (tmux display-message -p -t "=$session:" '#{session_id}')
@@ -31,15 +72,27 @@ function t3 --description 'tmux: set up claude, notes, and codex windows'
 
     set -l names (tmux list-windows -t "$session" -F '#{window_name}')
     or return $status
-    for name in claude notes codex
+    if test (count $focus) -gt 0; and not contains -- "$focus" $names $requested
+        echo "t3: focus window '$focus' is not an existing or requested window" >&2
+        return 2
+    end
+    for name in $requested
         if not contains -- "$name" $names
             tmux new-window -d -t "$session:" -n "$name" -c "$PWD"
             or return $status
+            set -a names "$name"
         end
     end
-    tmux select-window -t "$session:=claude"
-    or return $status
+    if test (count $focus) -gt 0
+        tmux select-window -t "$session:=$focus"
+        or return $status
+    end
     if test $inside -eq 0
         tmux attach-session -t "$session"
     end
 end
+
+complete -c t3 -f
+complete -c t3 -l help -s h -d 'Show usage'
+complete -c t3 -l legacy -d 'Opt into claude, notes, codex and Claude focus'
+complete -c t3 -l focus -r -d 'Select an existing or requested window'

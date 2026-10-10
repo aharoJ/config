@@ -1,5 +1,9 @@
 # Changelog
 
+## Worktree candidate — peer-neutral tmux setup and named agent windows
+
+`t3` preserves the caller window and focus by default, adding neutral notes/shell windows; outside tmux it creates work/notes/shell. Positional names choose the layout and `--focus` chooses focus. `t3 --legacy` explicitly restores claude/notes/codex naming and Claude focus. Normal single-agent `tai` launches accept `--window <name>` while keeping existing default names; panel and isolated audit-seat naming are unchanged. Codex model presets use `--model-gpt-5-5` and `--model-gpt-5-3-codex`; the old flags remain deprecated compatibility aliases during migration, with a replacement warning and unchanged model selection. This candidate is not merged or deployed.
+
 ## Live source-discovery deadline integration
 
 Initial queued source discovery now has a bounded 120-second budget for native seat status probes. Authenticated record route checks retain their five-second budget, and atomic route gates remain unchanged. Deadline errors identify the phase rather than incorrectly requesting an inherited pane hint. Private native-actor tests cover discovery taking more than five seconds and native-recipient Enter through the bound queue record. Stable remains rolled back pending independent gate.

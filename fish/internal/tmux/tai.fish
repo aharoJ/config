@@ -15,7 +15,8 @@ end
 # Kimi exposes no native effort flag. Its wrapper must use --auto, not --yolo.
 
 function __tai_usage
-    echo "usage: tai [--session <session>] [codex|gemini|cc|deepseek|mimo|kimi|all] [agent args...]"
+    echo "usage: tai [--session <session>] [--window <name>] <codex|gemini|cc|deepseek|mimo|kimi> [agent args...]"
+    echo "       tai [--session <session>] all"
     echo "       tai [--session <session>] seat <gemini|astra|fable|deepseek> [agent args...]"
     echo "       tai        # same as: tai all"
 end
@@ -208,6 +209,7 @@ end
 
 function tai --description 'tmux: spawn AI agent window in current directory'
     set -l session
+    set -l requested_window
     set -l remaining
     while set -q argv[1]
         switch "$argv[1]"
@@ -233,6 +235,25 @@ function tai --description 'tmux: spawn AI agent window in current directory'
                         return 2
                     end
                 end
+            case --window '--window=*'
+                if test -n "$requested_window"
+                    echo 'tai: --window may be specified only once' >&2
+                    return 2
+                end
+                if test "$argv[1]" = --window
+                    if not set -q argv[2]
+                        echo 'tai: --window requires a window name' >&2
+                        return 2
+                    end
+                    set requested_window "$argv[2]"
+                    set -e argv[1]
+                else
+                    set requested_window (string replace -- '--window=' '' "$argv[1]")
+                end
+                if not string match -qr '^[A-Za-z0-9_][A-Za-z0-9_-]*$' -- "$requested_window"
+                    echo 'tai: window names must contain only letters, digits, underscores or hyphens' >&2
+                    return 2
+                end
             case '*'
                 set -a remaining "$argv[1]"
         end
@@ -250,6 +271,11 @@ function tai --description 'tmux: spawn AI agent window in current directory'
 
     set -l target $argv[1]
     set -e argv[1]
+
+    if test -n "$requested_window"; and contains -- "$target" all seat
+        echo 'tai: --window is supported only for an ordinary single-agent launch' >&2
+        return 2
+    end
 
     if test "$target" = seat
         if test (count $argv) -eq 0
@@ -309,6 +335,9 @@ function tai --description 'tmux: spawn AI agent window in current directory'
             case gemini
                 set -a parts --dangerously-skip-permissions
         end
+        if test -n "$requested_window"
+            set window_name "$requested_window"
+        end
         __tai_spawn "$window_name" "$launch_dir" "--session=$session" $parts $argv
         or return $status
     end
@@ -317,5 +346,6 @@ end
 complete -c tai -e
 complete -c tai -f
 complete -c tai -l session -r -d 'Explicit destination tmux session'
+complete -c tai -l window -r -d 'Window name for an ordinary single-agent launch'
 complete -c tai -n "not __fish_seen_subcommand_from codex gemini cc deepseek mimo kimi all seat" -a "codex gemini cc deepseek mimo kimi all seat"
 complete -c tai -n "__fish_seen_subcommand_from seat" -a "gemini astra fable deepseek"
