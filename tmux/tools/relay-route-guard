@@ -124,7 +124,7 @@ def codex_mode(pid):
         name = arg.split('=',1)[0]
         if name == '--image' or arg == '-i' or (arg.startswith('-i') and len(arg)>2):
             attached = '=' in arg or (arg.startswith('-i') and len(arg)>2)
-            if name == '--image' and '=' in arg and not arg.split('=',1)[1]:
+            if arg in ('--image=', '-i='):
                 return command, False
             values = int(attached)
             while not attached and index+1 < len(argv) and not argv[index+1].startswith('-'):

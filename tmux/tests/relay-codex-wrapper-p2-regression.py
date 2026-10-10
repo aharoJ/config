@@ -28,6 +28,7 @@ positive = [
     ['fork', 'thread', '-i', 'one.png', 'two.png'],
 ]
 negative = [
+    ['-i='],
     ['-ione.png', 'two.png'],
     ['-ione.png', 'future-command'],
     ['-ione.png', 'exec'],
