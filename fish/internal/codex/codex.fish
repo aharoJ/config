@@ -1,5 +1,9 @@
 function __codex_legacy_preset
-    set -l today (date +%Y%m%d)
+    set -l today (command date +%Y%m%d)
+    or begin
+        echo "codex: cannot check preset migration deadline; use $argv[2]" >&2
+        return 2
+    end
     if not string match -qr '^[0-9]{8}$' -- "$today"
         echo "codex: cannot check preset migration deadline; use $argv[2]" >&2
         return 2
