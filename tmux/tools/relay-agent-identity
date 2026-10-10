@@ -39,9 +39,9 @@ def installation(path):
     home = re.escape(str(HOME_ROOT))
     if re.fullmatch(home + r'/\.local/share/claude/versions/\d+\.\d+\.\d+(?:[-+][\w.-]+)?', value):
         return 'claude'
-    if re.fullmatch(home + r'/\.codex/packages/app-server-daemon/releases/[^/]+/codex', value):
+    if re.fullmatch(home + r'/\.codex/packages/app-server-daemon/releases/[^/]+/(?:bin/)?codex', value):
         return 'codex'
-    if re.fullmatch(home + r'/\.local/share/fnm/node-versions/v[^/]+/installation/lib/node_modules/@openai/codex/node_modules/@openai/codex-[^/]+/vendor/[^/]+/codex/codex', value):
+    if re.fullmatch(home + r'/\.local/share/fnm/node-versions/v[^/]+/installation/lib/node_modules/@openai/codex/node_modules/@openai/codex-[^/]+/vendor/[^/]+/(?:codex|bin)/codex', value):
         return 'codex'
     return 'agy' if path == HOME_ROOT / '.local/bin/agy' else None
 
