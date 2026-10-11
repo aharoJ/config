@@ -5,7 +5,12 @@ from pathlib import Path
 
 core = runpy.run_path(str(Path(__file__).resolve().with_name('relay-core')))
 try:
-    sys.exit(core['main']('claude', sys.argv[1:]))
+    args = sys.argv[1:]
+    if args[:1] and args[0] in ('--schedule', '--worker', '--sweep'):
+        sys.exit(0)
+    adapters = {'--codex-to': 'codex-to', '--codex': 'codex', '--agy-to': 'agy'}
+    adapter = adapters.get(args[0], 'claude') if args else 'claude'
+    sys.exit(core['main'](adapter, args[1:] if args and args[0] in adapters else args))
 except Exception as error:
     print('relay:', error, file=sys.stderr)
     sys.exit(1)
