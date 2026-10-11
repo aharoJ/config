@@ -181,6 +181,16 @@ def lab(output):
     assert result.returncode == 1
     assert len(submissions('claude')) == 2 and len(submissions('codex')) == 1
     print('PASS missing exact target sends no input to another pane', flush=True)
+    records = set((output / 'inbox').glob('*/*.json'))
+    for option in ('--check-binding', '--watch-worker'):
+        result = subprocess.run([str(TOOLS / 'cc-msg-queue'), option, '{}'], env=dict(env, CC_MSG_SESSION=session, CC_MSG_WINDOW='claude'), capture_output=True, text=True, timeout=10)
+        assert result.returncode == 1 and 'no target input was sent' in result.stderr
+    for option in ('--schedule', '--worker', '--sweep'):
+        result = subprocess.run([str(TOOLS / 'cc-msg-queue'), option, '/unused', '7'], env=env, capture_output=True, text=True, timeout=10)
+        assert result.returncode == 0
+    assert set((output / 'inbox').glob('*/*.json')) == records
+    assert len(submissions('claude')) == 2 and len(submissions('codex')) == 1
+    print('PASS retired internal calls create no messages or pane input', flush=True)
     (output / 'PASS').write_text('keeper corpus and private tmux transport passed\n')
 
 

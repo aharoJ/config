@@ -8,6 +8,9 @@ try:
     args = sys.argv[1:]
     if args[:1] and args[0] in ('--schedule', '--worker', '--sweep'):
         sys.exit(0)
+    if args[:1] and args[0] in ('--check-binding', '--watch-worker'):
+        print('relay: retired internal check; no target input was sent', file=sys.stderr)
+        sys.exit(1)
     adapters = {'--codex-to': 'codex-to', '--codex': 'codex', '--agy-to': 'agy'}
     adapter = adapters.get(args[0], 'claude') if args else 'claude'
     sys.exit(core['main'](adapter, args[1:] if args and args[0] in adapters else args))
