@@ -13,7 +13,7 @@ root = pathlib.Path(__file__).resolve().parents[1]
 helper = (root / 'tools/codex-new-chat').read_text()
 definitions = helper.split('new_observe() {', 1)[1].split('\n[ "$#" = 1 ]', 1)[0]
 definitions = 'new_observe() {' + definitions
-delivery = (root / 'tools/relay-delivery.sh').read_text()
+delivery = (root / 'tools/codex-model-delivery.sh').read_text()
 busy = 'relay_busy_preflight() {' + delivery.split('relay_busy_preflight() {', 1)[1].split('\nrelay_refusal_reason()', 1)[0]
 footer = 'Fast off · GPT-6.1-Sol low · ~/demo/lab/nongit'
 fresh = '  >_ OpenAI Codex (v0.160.0)\n     ~/demo/lab/nongit\n  \x1b[38;2;99;168;248mHello.\x1b[39m\n  \x1b[1mTip:\x1b[0m Use /title.\n\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m\n\n  ' + footer + ' · Context 0% used\n'

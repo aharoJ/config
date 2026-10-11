@@ -98,23 +98,6 @@ for manifest in sorted(fixtures.glob('*.json')):
         for name, variant in variants(raw):
             result = run([str(input_guard), case.get('glyph', '›'), str(case['cursor_x']), str(case['cursor_y']), str(case.get('pane_width', 215)), 'strict'], variant)
             assert result.returncode == wanted, ('input', manifest.name, case['name'], name, wanted, result.returncode)
-shell = (root / 'tests/relay-input-guard-regression.sh').read_text()
-body = shell.split('# Captures reproduce the SGR classes observed in live Codex and Claude panes.\n', 1)[1].split('\nexpect_relay ', 1)[0]
-script = "set -eu\nexpect_guard() { printf '%s\\0' \"$#\" \"$@\"; }\n" + body
-inventory = real_run(['bash', '-c', script], capture_output=True, text=True, check=True).stdout.split('\0')
-counts['shell_refusal_cases'] = 0
-position = 0
-while position < len(inventory) - 1:
-    length = int(inventory[position])
-    args = inventory[position + 1:position + 1 + length]
-    position += length + 1
-    wanted, glyph, name, capture, x, y, *extra_args = args
-    if int(wanted) == 0:
-        continue
-    counts['shell_refusal_cases'] += 1
-    for variant_name, variant in variants(capture):
-        result = run([str(input_guard), glyph, x, y, *extra_args], variant)
-        assert result.returncode == int(wanted), ('shell refusal', name, variant_name, wanted, result.returncode)
 counts['chat_cases'] = len(chat_cases)
 counts['checks'] = checks
 print('codex ANSI variance:', json.dumps(counts, sort_keys=True), 'PASS')

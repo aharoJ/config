@@ -132,7 +132,7 @@ require_empty_codex_input() {
   fail "target composer kept redrawing during inspection; no target input was sent"
 }
 
-source "$relay_script_dir/relay-delivery.sh" || fail 'relay delivery module is required'
+source "$relay_script_dir/codex-model-delivery.sh" || fail 'relay delivery module is required'
 
 new_pending_screen() {
   local capture code fresh_footer mode
