@@ -191,6 +191,16 @@ def lab(output):
     assert set((output / 'inbox').glob('*/*.json')) == records
     assert len(submissions('claude')) == 2 and len(submissions('codex')) == 1
     print('PASS retired internal calls create no messages or pane input', flush=True)
+    cc_env = dict(env, TMUX_PANE=pane_ids['claude'], CC_MSG_SESSION=session, CC_MSG_WINDOW='claude')
+    for args, reason in ((['#self accidental'], 'self-send refused'), (['portfolio:claude', '#self misplaced'], 'session:window positional'), (['config::other:claude', '#self colon target'], 'session:window positional')):
+        result = subprocess.run([str(TOOLS / 'cc-msg.sh'), *args], env=cc_env, capture_output=True, text=True, timeout=10)
+        assert result.returncode == 1 and reason in result.stderr, (result.stdout, result.stderr)
+    assert set((output / 'inbox').glob('*/*.json')) == records and len(submissions('claude')) == 2
+    result = subprocess.run([str(TOOLS / 'cc-msg.sh'), '--allow-self', '#self explicit'], env=cc_env, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    wait(lambda: len(submissions('claude')) == 3)
+    assert submissions('claude')[-1] == 'claude (' + session + ':claude): #self explicit'
+    print('PASS cc-msg rejects self-send/address misuse; explicit self-send works', flush=True)
     (output / 'PASS').write_text('keeper corpus and private tmux transport passed\n')
 
 

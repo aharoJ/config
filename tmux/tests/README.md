@@ -13,6 +13,8 @@ Normal commands remain `cc-msg`, `codex-send`, `codex-send-to`, `agy-send-to`, a
 
 An explicit `--clear-draft` clears the named pane, `--operator` interrupts/clears before sending, and `--keys <keys...>` performs an explicitly requested TUI action on that pane. Normal messages never clear a draft. Source ancestry and an inherited live pane name supply attribution, without source binding or launch-form gates.
 
+`cc-msg` refuses a message to the caller's own pane unless `--allow-self` is explicit. It rejects a leading `session:window` positional rather than treating it as text; use `CC_MSG_SESSION`/`CC_MSG_WINDOW` or `relay <session>:<window> <text>` for targeting. Explicit clear/key actions remain available on the named pane.
+
 A submitted record confirms the tmux submission, not a model acknowledgment. After possible input, an error is recorded without replaying the message. Read the record and pane to resolve it.
 
 The composer recognizer is shared with the model/reset commands. Their picker and reset tests remain under `codex-model-*` and `codex-new-*`. The specialized picker/reset operations remain separate from ordinary relay delivery.

@@ -279,6 +279,13 @@ def main(adapter, args):
         clear(row, interrupt=operator)
         print('relay: cleared', session + ':' + row['window_name'])
         return 0
+    if adapter == 'claude':
+        allow_self = '--allow-self' in args
+        args = [value for value in args if value != '--allow-self']
+        if args and re.fullmatch(r'\S+:\S+', args[0]):
+            raise ValueError('cc-msg takes text, not a session:window positional; set CC_MSG_SESSION and CC_MSG_WINDOW or use relay')
+        if origin and row['pane_id'] == origin['pane_id'] and not allow_self:
+            raise ValueError('cc-msg self-send refused; name another target or explicitly use --allow-self')
     message = ' '.join(' '.join(args).split()) if args else ' '.join(sys.stdin.read().split())
     if not message:
         raise ValueError('provide a message')
