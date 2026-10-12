@@ -147,10 +147,43 @@ def context_of(request):
     return {key: request[key] for key in ('topic', 'cycle_type', 'cycle', 'round')}
 
 
+def launch_slot(request):
+    scope = dict(project_root=str(Path(request['project_root']).resolve()), **context_of(request))
+    key = hashlib.sha256(json.dumps(scope, sort_keys=True).encode()).hexdigest()
+    return Path.home() / '.local/state/panel-dispatch/initial-launches' / (key + '.json')
+
+
+def first_attempt_check(request, reference):
+    proof = read(request['first_attempt_ref'])
+    require(proof.get('context') == context_of(request) and proof.get('project_root') == request['project_root'] and proof.get('roster') == request['roster'], 'initial attempt authority binding mismatch')
+    require(proof.get('independent') is True and proof.get('authorized') is True and proof.get('prior_attempts') == [], 'v1 requires independently authorized first attempts; replacements unsupported')
+    require(not Path(request['first_attempt_ref']['path']).is_relative_to(Path(request['project_root'])), 'first attempt authority must be external')
+    state = Path(request['project_root']) / 'reviews' / request['topic'] / 'state' / request['cycle_type']
+    require(not (state / ('resolve-r' + str(request['round']) + '.json')).exists(), 'existing round ledger makes first-attempt authority ambiguous')
+    slot = launch_slot(request)
+    if slot.exists():
+        claim = decode(path_bytes(slot))
+        require(claim.get('request_ref') == reference, 'round already claimed by another current attempt; replacement unsupported')
+
+
+def claim_launch(request, reference):
+    first_attempt_check(request, reference)
+    slot = launch_slot(request)
+    slot.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    require(slot.parent.resolve() == slot.parent and slot.parent.stat().st_uid == os.getuid() and stat.S_IMODE(slot.parent.stat().st_mode) == 0o700, 'unsafe initial-launch claim directory')
+    result = fresh(slot, dict(request_ref=reference, context=context_of(request), project_root=request['project_root'], first_attempt_ref=request['first_attempt_ref'], created_at=now(), scope='one initial launch only; never admission or supersession authority'))
+    descriptor = os.open(slot.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return result
+
+
 def request_check(reference):
     value = read(reference)
     required = {'version', 'project_root', 'protocol_root', 'topic', 'cycle_type', 'cycle', 'round', 'session',
-                'packet', 'roster', 'redispatch_policy_ref', 'launcher_ref', 'deadline_seconds', 'authorized', 'authorized_at'}
+                'packet', 'roster', 'redispatch_policy_ref', 'launcher_ref', 'first_attempt_ref', 'deadline_seconds', 'authorized', 'authorized_at'}
     require(set(value) == required and value['version'] == VERSION and value['authorized'] is True, 'closed authorized v1 launch request required')
     require(re.fullmatch('[a-z0-9][a-z0-9-]*', value['topic']), 'invalid topic')
     require(value['cycle_type'] in ('research', 'implementation') and isinstance(value['cycle'], str) and value['cycle'].strip(), 'invalid cycle')
@@ -194,6 +227,7 @@ def request_check(reference):
         require(isinstance(seat['window'], str) and re.fullmatch('[A-Za-z0-9_-]+', seat['window']), 'exact safe window name required')
         if seat['transport'] == 'gemini':
             require('outside-writes-not-confined' in seat['accepted_limitations'], 'Agy limitation not accepted')
+    first_attempt_check(value, reference)
     read(reference)
     return value
 
@@ -339,6 +373,7 @@ def launch(args):
     require(not (batch / 'launch-started.json').exists(), 'launch already attempted; no blind resend')
     existing = panes(request['session'])
     require(not any(row['window'] in {seat['window'] for seat in record['seats']} for row in existing), 'target windows already exist')
+    claim_launch(request, record['request_ref'])
     fresh(batch / 'launch-started.json', dict(prepared_ref=preparation_ref, created_at=now()))
     launches = []
     for seat in record['seats']:
@@ -483,6 +518,7 @@ def inspect_native(data, fmt, seat, request):
             if isinstance(content, str):
                 starts.append((number, content.strip()))
             elif isinstance(content, list):
+                require(content and all(isinstance(c, dict) and c.get('type') in ('text', 'tool_result') for c in content), 'unknown/non-text external native user input')
                 user_parts = [c for c in content if c.get('type') == 'text']
                 if user_parts:
                     starts.append((number, text_blocks(user_parts, ('text',)).strip()))
@@ -497,6 +533,8 @@ def inspect_native(data, fmt, seat, request):
                             output, error = '', None
                             gaps.append('unsupported native result envelope ' + str(identifier))
                         results[identifier] = dict(line=number, output=output, error=error)
+            else:
+                require(False, 'malformed external native user input')
         if row.get('type') == 'response_item' and payload.get('role') == 'user':
             value = text_blocks(payload.get('content', []), ('input_text',))
             if starts or not re.fullmatch('<environment_context>.*?</environment_context>', value.strip(), re.S):
@@ -608,6 +646,7 @@ def collect(args):
     native = read(native_index_ref)
     require(set(native) == {'context', 'launch_ref', 'seats'} and native['context'] == launch['context'] and native['launch_ref'] == launch_ref, 'independent native index context conflict')
     require(len(native['seats']) == len(launch['seats']), 'native roster mismatch')
+    require(all(seat['transport'] != 'gemini' for seat in launch['seats']), 'Agy automatic admission unqualified; use retain, not collect')
     batch = Path(launch['batch'])
     outputs = []
     for seat, evidence in zip(launch['seats'], native['seats']):
@@ -708,11 +747,12 @@ def retain(args):
     for seat, supplied in zip(launch['seats'], index['seats']):
         require(supplied['seat_id'] == seat['seat_id'] and supplied['attempt_id'] == seat['attempt_id'], 'retained seat order/identity mismatch')
         native = supplied.get('native_ref')
+        require(native is not None or supplied.get('non_observation') is True, 'missing native requires explicit non-observation')
         snapshot = fresh(Path(launch['batch']) / (seat['seat_id'] + '-unadmitted-native.jsonl'), read(native, json_proof=False)) if native is not None else None
         require(isinstance(supplied.get('cause'), str) and supplied['cause'].strip(), 'non-response cause required')
         outputs.append(dict(seat_id=seat['seat_id'], attempt_id=seat['attempt_id'], native_session_ref=snapshot, final_ref=None, admitted=False, responding=False, raw_verdict=None, pass_floor_eligible=False, cause=supplied['cause'], findings='retained native bytes require lead reproduction/classification; no vote credit'))
     read(index_ref)
-    return fresh(Path(args.output), dict(phase='unadmitted-retention', launch_ref=launch_ref, native_index_ref=index_ref, context=launch['context'], seats=outputs, created_at=now()))
+    return fresh(Path(args.output), dict(phase='unadmitted-retention', launch_ref=launch_ref, native_index_ref=index_ref, context=launch['context'], adapter=launch['adapter'], batch=launch['batch'], request_ref=launch['request_ref'], prepared_ref=launch['prepared_ref'], seats=outputs, created_at=now()))
 
 
 def cleanup(args):
@@ -722,10 +762,36 @@ def cleanup(args):
     require(request.get('authorized') is True and launch['context'] == context_of(request), 'cleanup launch authority conflict')
     collection_ref = dict(path=args.collected, sha256=args.collected_sha256)
     collected = read(collection_ref)
+    require(collected.get('phase') in ('collected', 'unadmitted-retention'), 'cleanup requires a typed preserved collection receipt')
+    preparation = read(launch['prepared_ref'])
+    launcher = read(request['launcher_ref'])
+    require(preparation.get('phase') == 'prepared' and launch['prepared_ref']['path'] == str(Path(launch['batch']) / 'prepared.json') and launcher.get('adapter') == launch['adapter'] and launcher.get('context') == launch['context'], 'cleanup candidate source/preparation provenance conflict')
+    require(launch.get('phase') in ('launched', 'owned-launch') and launch.get('adapter') == preparation.get('adapter') and launch.get('context') == preparation.get('context') and launch.get('request_ref') == preparation.get('request_ref') and launch.get('batch') == preparation.get('batch'), 'cleanup launch/prepared chain conflict')
+    require(0 < len(launch['seats']) <= len(preparation['seats']) and all(all(seat.get(key) == prepared[key] for key in prepared) for seat, prepared in zip(launch['seats'], preparation['seats'])), 'cleanup owned seats differ from prepared prefix')
+    require(collected.get('context') == launch['context'] and collected.get('adapter') == launch['adapter'], 'cleanup collection context/source conflict')
+    if collected['phase'] == 'unadmitted-retention':
+        require(set(collected) == {'phase', 'launch_ref', 'native_index_ref', 'context', 'adapter', 'batch', 'request_ref', 'prepared_ref', 'seats', 'created_at'} and all(collected[key] == launch[key] for key in ('batch', 'request_ref', 'prepared_ref')), 'cleanup retention chain conflict')
+    else:
+        require(set(collected) == {'phase', 'context', 'launch_ref', 'native_index_ref', 'adapter', 'seats', 'admission_authority'} and collection_ref['path'] == str(Path(launch['batch']) / 'collected.json') and launch['phase'] == 'launched', 'cleanup collection provenance conflict')
+    index = read(collected['native_index_ref'])
+    require(index.get('context') == launch['context'] and index.get('launch_ref') == launch_ref and len(index.get('seats', [])) == len(launch['seats']), 'cleanup preservation index conflict')
     require(collected.get('launch_ref') == launch_ref, 'preserved collection binding required before cleanup')
     require(len(collected.get('seats', [])) == len(launch['seats']), 'cleanup retained roster incomplete')
     require([seat['seat_id'] for seat in collected['seats']] == [seat['seat_id'] for seat in launch['seats']], 'cleanup retained roster order changed')
-    for seat in collected['seats']:
+    for seat, source, owned in zip(collected['seats'], index['seats'], launch['seats']):
+        require(seat['attempt_id'] == source['attempt_id'] == owned['attempt_id'] and seat['seat_id'] == source['seat_id'] == owned['seat_id'], 'cleanup preservation attempt conflict')
+        if collected['phase'] == 'collected':
+            require(seat.get('native_session_ref') is not None and seat.get('final_ref') is not None, 'cleanup admitted preservation missing')
+            require(seat['native_session_ref']['path'] == str(Path(launch['batch']) / (seat['seat_id'] + '-native.jsonl')) and seat['final_ref']['path'] == str(Path(launch['batch']) / (seat['seat_id'] + '-final.md')), 'cleanup preservation outside owned batch')
+            require(read(seat['native_session_ref'], json_proof=False) == read(source['native_ref'], json_proof=False), 'cleanup native snapshot provenance conflict')
+            admission = read(seat['admission_ref'])
+            require(admission.get('native_session_ref') == seat['native_session_ref'] and admission.get('final_ref') == seat['final_ref'] and admission.get('session_id') == seat['session_id'], 'cleanup final/admission conflict')
+        else:
+            require(set(seat) == {'seat_id', 'attempt_id', 'native_session_ref', 'final_ref', 'admitted', 'responding', 'raw_verdict', 'pass_floor_eligible', 'cause', 'findings'} and seat['admitted'] is False and seat['responding'] is False and seat['pass_floor_eligible'] is False and seat['raw_verdict'] is None and seat['final_ref'] is None and seat['cause'] == source.get('cause') and isinstance(seat['cause'], str) and seat['cause'].strip(), 'cleanup non-observation/retention cause missing')
+            if source.get('native_ref') is not None:
+                require(seat['native_session_ref'] is not None and seat['native_session_ref']['path'] == str(Path(launch['batch']) / (seat['seat_id'] + '-unadmitted-native.jsonl')) and read(seat['native_session_ref'], json_proof=False) == read(source['native_ref'], json_proof=False), 'cleanup retained native provenance conflict')
+            else:
+                require(seat['native_session_ref'] is None and source.get('non_observation') is True, 'cleanup missing native requires explicit non-observation')
         for key in ('native_session_ref', 'final_ref'):
             if seat[key] is not None:
                 read(seat[key], json_proof=False)

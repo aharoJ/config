@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from types import SimpleNamespace
+from unittest import mock
 
 sys.dont_write_bytecode = True
 API = runpy.run_path(str(Path(__file__).resolve().parents[1] / 'tools/panel-dispatch'))
@@ -45,11 +46,44 @@ try:
     projection = put('projection.json', dict(context=identity, canonical_input=intake, delivered_input=delivered, prompt=prompt, exclusion_pass=True, fidelity_pass=True, independent=True, unknown_fields=[], test_fixture_only=True))
     launcher = put('launcher.json', dict(context=identity, adapter=API['adapter'](), authorized=True, tai_sha256=API['ref'](API['REPO'] / 'fish/internal/tmux/tai.fish')['sha256'], trust_sha256=API['ref'](API['TOOLS'] / 'panel-seat-trust')['sha256'], test_fixture_only=True))
     policy = put('policy.json', dict(context=identity, authorized=True, authorized_at=API['now'](), max_redispatches=0, technical_causes=[], exhaustion='non-response', test_fixture_only=True))
-    request = put('request.json', dict(version='1', project_root=str(project), protocol_root=str(protocol), **identity, session=session, packet=dict(canonical_input=intake, manifest=manifest, delivered_input=delivered, prompt=prompt, projection_review=projection), roster=[dict(seat_id=kind + '-cli', attempt_id='a', transport=kind, window=kind, model=model, effort='low', accepted_limitations=[])], redispatch_policy_ref=policy, launcher_ref=launcher, deadline_seconds=90, authorized=True, authorized_at=API['now']()))
+    roster = [dict(seat_id=kind + '-cli', attempt_id='a', transport=kind, window=kind, model=model, effort='low', accepted_limitations=[])]
+    first = put('first-attempt.json', dict(context=identity, project_root=str(project), roster=roster, authorized=True, independent=True, prior_attempts=[], test_fixture_only=True))
+    request = put('request.json', dict(version='1', project_root=str(project), protocol_root=str(protocol), **identity, session=session, packet=dict(canonical_input=intake, manifest=manifest, delivered_input=delivered, prompt=prompt, projection_review=projection), roster=roster, redispatch_policy_ref=policy, launcher_ref=launcher, first_attempt_ref=first, deadline_seconds=90, authorized=True, authorized_at=API['now']()))
     tmux('new-session', '-d', '-s', session, '-n', 'hold', '-x', '215', '-y', '50', 'exec sleep 2147483647')
     tmux('set-option', '-t', session, 'automatic-rename', 'off')
     prepared_ref = API['prepare'](SimpleNamespace(request=request['path'], sha256=request['sha256'], batch=str(output / 'batch')))
     prepared = API['read'](prepared_ref)
+    if len(sys.argv) > 3 and sys.argv[3] == 'prestart-failure':
+        original_gate = API['prepared_check']
+        def gate(record, *, runtime=False):
+            if runtime:
+                raise ValueError('test-owned post-launch preparation refusal')
+            return original_gate(record)
+        relay = mock.Mock(side_effect=AssertionError('Start must not be called'))
+        with mock.patch.dict(API['launch'].__globals__, prepared_check=gate, relay_start=relay):
+            try:
+                API['launch'](SimpleNamespace(prepared=prepared_ref['path'], sha256=prepared_ref['sha256']))
+            except ValueError as error:
+                assert str(error) == 'test-owned post-launch preparation refusal'
+            else:
+                raise AssertionError('post-launch gate unexpectedly accepted')
+        relay.assert_not_called()
+        launched_ref = API['ref'](output / 'batch/owned-1.json')
+        launched = API['read'](launched_ref)
+        seat = launched['seats'][0]
+        put('final-screen.ansi', tmux('capture-pane', '-p', '-e', '-t', seat['pane']['pane_id']).encode())
+        index = put('retention-index.json', dict(context=identity, launch_ref=launched_ref,
+            seats=[dict(seat_id=seat['seat_id'], attempt_id=seat['attempt_id'], native_ref=None,
+                        non_observation=True, cause='post-launch gate refused before any Start; native transcript not observed')]))
+        retained = API['retain'](SimpleNamespace(launched=launched_ref['path'], sha256=launched_ref['sha256'],
+            native_index=index['path'], native_sha256=index['sha256'], output=str(output / 'retained.json')))
+        cleaned = API['cleanup'](SimpleNamespace(launched=launched_ref['path'], sha256=launched_ref['sha256'],
+            collected=retained['path'], collected_sha256=retained['sha256'], output=str(output / 'cleanup.json')))
+        launched = None
+        put('PASS.json', dict(no_start=True, partial_launch_cleaned=True, cleanup_ref=cleaned,
+                              qualification='not claimed: test control proofs only'))
+        print('PASS actual partial launch, no Start, explicit non-observation retention and owned cleanup')
+        sys.exit(0)
     launched_ref = API['launch'](SimpleNamespace(prepared=prepared_ref['path'], sha256=prepared_ref['sha256']))
     launched = API['read'](launched_ref)
     seat = launched['seats'][0]

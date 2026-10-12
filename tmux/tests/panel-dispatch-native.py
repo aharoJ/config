@@ -394,6 +394,44 @@ class NativeTests(unittest.TestCase):
         rows[3]['payload']['arguments'] = json.dumps(dict(cmd='cat PROMPT.md', workdir=str(child)))
         self.refused(rows, 'codex-jsonl')
 
+    def external_block_rows(self, content):
+        rows = self.rows()
+        rows.insert(3, dict(type='user', sessionId='session-a', cwd=str(self.folder),
+                            message=dict(role='user', content=content)))
+        return rows
+
+    def test_post_start_image_refused(self):
+        self.refused(self.external_block_rows([dict(type='image', source=dict(type='base64', media_type='image/png', data='fixture'))]))
+
+    def test_post_start_attachment_refused(self):
+        self.refused(self.external_block_rows([dict(type='attachment', content='external fixture')]))
+
+    def test_post_start_future_block_refused(self):
+        self.refused(self.external_block_rows([dict(type='future_input', value='external fixture')]))
+
+    def test_post_start_mixed_result_and_image_refused(self):
+        self.refused(self.external_block_rows([dict(type='tool_result', tool_use_id='future', content='fixture'), dict(type='image')]))
+
+    def test_post_start_empty_content_refused(self):
+        self.refused(self.external_block_rows([]))
+
+    def test_post_start_empty_string_refused(self):
+        self.refused(self.external_block_rows(''))
+
+    def test_post_start_null_content_refused(self):
+        self.refused(self.external_block_rows(None))
+
+    def test_post_start_malformed_content_refused(self):
+        self.refused(self.external_block_rows([None]))
+
+    def test_post_start_nonlist_content_refused(self):
+        self.refused(self.external_block_rows(dict(type='text', text='external fixture')))
+
+    def test_exact_start_text_block_and_results_accepted(self):
+        rows = self.rows()
+        rows[0]['message']['content'] = [dict(type='text', text=self.seat['delivery']['native_start'])]
+        self.assertEqual(self.inspect(rows)['raw_verdict'], 'PASS')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
