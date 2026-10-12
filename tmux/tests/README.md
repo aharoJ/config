@@ -27,4 +27,14 @@ Published captures use synthetic account identities and directories. ANSI sequen
 
 `tai seat` supplies seat/scratch as TMPDIR for Astra/Agy. Fable/DeepSeek use a real mode-0700 `/private/tmp/panel-<seat-inode>` temp directory, validated against its `.panel-seat` ownership marker, with native read/write access limited to their own seat and temp. `panel-temp.json` records the exact cleanup target: validate its marker and trash that directory with the owned seat at round cleanup. Symlinked or mismatched temp directories are refused. Astra defaults explicitly to gpt-6-sol low; use `-m` for another model, not `-c model=...`.
 
+## Panel dispatcher development
+
+`python3 tmux/tests/panel-dispatch-native.py` runs contrasting native-envelope controls. `python3 tmux/tests/panel-dispatch-integration.py` exercises the actual protocol-owned consumers using their fixture builder; `PANEL_PROTOCOL_ROOT` selects an explicit protocol checkout. Synthetic qualified controls do not activate production checks.
+
+`tmux/tools/tmux-lab run -- python3 tmux/tests/panel-dispatch-live.py /absolute/new/output fable` launches one owned interactive seat through tai and the sanctioned relay, collects native read/final/model evidence and tests owned cleanup. Other tested transports are `deepseek` and `astra`. These pilots use clearly labeled control proofs, not independently authorized production admission. Failed controls remain evidence. No headless Claude or existing windows are used.
+
+`panel-dispatch` has exclusive-creation, explicit-hash `prepare`, `launch`, `wait`, `collect`, `retain`, `verify` and `cleanup` phases. Only independently bound canonical dispatch/ledger authority reaches the protocol consumers. Source labels, delivery and decoder success alone do not supply admission, quorum or terminal authority. V1 takes an explicit zero automatic-redispatch budget; it never retries an admitted FAIL. Supersession/replacement semantics remain governed by existing protocol consumers and fresh operator authority, not automatic recovery.
+
+Unsupported envelopes and absence-based action contradictions are unqualified. Agy launches retain their accepted write-isolation warning, but the available Agy envelope lacks proven effective model/session/action linkage for automatic admission; retain it unadmitted rather than invent identity. Cleanup preflights every target/temp, preserves immutable native evidence, checks kernel identities for observed pane descendants and retires only owned trust/temp entries. It does not promise universal OS containment or publication recovery.
+
 Agy's native `--sandbox` blocked the outside read but allowed the outside write in the installed 1.3.3 probe. Its existing unattended approval bypass remains, with a loud isolation-limit warning. It is not advertised as fully confined. Native filesystem policies also do not forbid harmless in-seat command chaining or every outside `cd` metadata operation.
