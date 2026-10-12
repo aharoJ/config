@@ -7,13 +7,14 @@ import json
 import os
 import pathlib
 import re
+import shlex
 import stat
 import subprocess
 import sys
 import time
 import tomllib
 
-SEAT = re.compile(r"\A/private/tmp/review-protocol-[A-Za-z0-9._-]+-audit-r[0-9]+-agentic-[A-Za-z0-9._-]+-cli\Z")
+SEAT = re.compile(r"\A" + re.escape("/private/tmp") + r"/review-protocol-[A-Za-z0-9._-]+-audit-r[0-9]+-agentic-[A-Za-z0-9._-]+-cli\Z")
 HOME = pathlib.Path.home()
 CODEX_PANEL_HOME = HOME / ".local/state/codex-panel-home"
 CODEX_PANEL_CONFIG = """model = "gpt-5.6-terra"
@@ -195,6 +196,28 @@ def main():
         print("usage: panel-seat-trust <claude|deepseek|codex|agy> <seat-folder>", file=sys.stderr)
         sys.exit(2)
     paths = seat_paths(sys.argv[2])
+    scratch = pathlib.Path(paths[0]) / "scratch"
+    if scratch.is_symlink():
+        die("scratch must be a real directory inside the seat")
+    scratch.mkdir(mode=0o700, exist_ok=True)
+    settings = {
+        "permissions": {"defaultMode": "dontAsk",
+                        "allow": ["Bash", *[f"{tool}(/{paths[0]}/**)" for tool in ("Read", "Edit")]]},
+        "sandbox": {"enabled": True, "failIfUnavailable": True, "allowUnsandboxedCommands": False,
+                    "filesystem": {"denyRead": ["/"], "allowRead": ["/bin", "/sbin", "/usr", "/System", "/Library", "/dev", "/etc", "/private/etc", "/private/var/select", "/opt/homebrew", paths[0]]}}
+    }
+    if sys.argv[1] in ("claude", "deepseek"):
+        alias = pathlib.Path("/private/tmp") / ("panel-" + str(os.stat(paths[0]).st_ino))
+        if alias.is_symlink() and alias.resolve() == scratch:
+            pass
+        elif alias.exists() or alias.is_symlink():
+            die("short scratch alias already points elsewhere")
+        else:
+            alias.symlink_to(scratch)
+        settings["sandbox"]["filesystem"]["allowRead"].append(str(alias))
+        settings["sandbox"]["filesystem"]["allowWrite"] = [str(alias)]
+        write_atomic(pathlib.Path(paths[0]) / "panel-settings.json", json.dumps(settings), 0o600)
+        write_atomic(pathlib.Path(paths[0]) / "panel-env.sh", "export TMPDIR=" + shlex.quote(str(scratch)) + "\n", 0o600)
     kinds[sys.argv[1]](paths)
     print(f"panel-seat-trust: {sys.argv[1]} trusts {paths[0]}")
 

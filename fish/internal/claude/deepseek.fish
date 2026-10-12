@@ -87,5 +87,9 @@ function deepseek --description "Claude Code backed by DeepSeek (V4.1 Flash defa
         echo "          reinstall: npm install --prefix ~/.local/cc-pinned-2.1.153 @anthropic-ai/claude-code@2.1.153" >&2
         return 1
     end
-    _agent_limit $cc_pinned --dangerously-skip-permissions $argv
+    if set -q PANEL_SEAT_CONFINED
+        _agent_limit $cc_pinned $argv
+    else
+        _agent_limit $cc_pinned --dangerously-skip-permissions $argv
+    end
 end

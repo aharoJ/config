@@ -20,3 +20,11 @@ A submitted record confirms the tmux submission, not a model acknowledgment. Aft
 The composer recognizer is shared with the model/reset commands. Their picker and reset tests remain under `codex-model-*` and `codex-new-*`. The specialized picker/reset operations remain separate from ordinary relay delivery.
 
 Published captures use synthetic account identities and directories. ANSI sequences, widths and cursor geometry are preserved; manifest digests identify the sanitized bytes. Synthetic-derived cases retain their labels.
+
+## Panel seats
+
+`python3 tmux/tests/panel-seat-isolation.py <fresh-evidence-dir>` checks four launch policies and the actual Codex native permission profile. `tmux/tools/tmux-lab run -- python3 tmux/tests/panel-seat-native.py <fresh-evidence-dir> [fable|deepseek|astra|gemini ...]` runs visible interactive native seat probes, watches result files, and closes only its private test server. No headless Claude process is used.
+
+`tai seat` supplies seat/scratch as TMPDIR. Claude seats also use a validated short `/private/tmp/panel-<seat-inode>` alias to that scratch and a native environment file; remove that exact alias with the owned seat at round cleanup. Astra defaults explicitly to gpt-6-sol low; use `-m` for another model, not `-c model=...`.
+
+Agy's native `--sandbox` blocked the outside read but allowed the outside write in the installed 1.3.3 probe. Its existing unattended approval bypass remains, with a loud isolation-limit warning. It is not advertised as fully confined. Native filesystem policies also do not forbid harmless in-seat command chaining or every outside `cd` metadata operation.
