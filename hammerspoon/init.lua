@@ -14,10 +14,12 @@ require("hs.ipc")
 local reload          = require("modules.reload")
 local stackIndicators = require("modules.stack-indicators")
 local utils           = require("modules.utils")
+local dockOnDisplay   = require("modules.dock-on-display")
 
 -- Initialize
 reload.init()
 stackIndicators.init()
+dockOnDisplay.init()
 
 -- Startup notification
 hs.alert.show("Hammerspoon loaded", 1.5)

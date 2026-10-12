@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-12 — Reset Dock after monitor membership changes
+
+Hammerspoon now watches connected screen identities and debounces display-change bursts for three seconds before running `killall Dock` once. Unchanged screen membership, resolution/arrangement changes and Dock-generated layout noise do not trigger a reset. Initial loading does not restart Dock. Yabai and skhd configuration remain unchanged.
+
 ## 2026-10-10 — retire native Gemini CLI support (candidate)
 
 The direct Fish `gemini` compatibility command now launches Agy with the same bypass policy as `tai gemini`, under the shared agent process cap. Relay identity, routing, labels, target guards and exact-draft clearing accept Claude, Codex and Agy only; native Gemini CLI Node entrypoints are unsupported. This supersedes the earlier native Gemini attribution entry without rewriting history. Gemini seat names, Agy model footers and `~/.gemini/antigravity-cli` trusted-workspace state remain in use. No external packages or provider state are removed. Not deployed.
