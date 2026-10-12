@@ -39,7 +39,7 @@ try:
     intake = put('project/reviews/config-dispatch-fixture/intakes/audit-r1.md', b'Owned delivered input: alpha beta.\n')
     manifest = put('project/reviews/config-dispatch-fixture/intakes/audit-r1.manifest.json', dict(status='PASS', output=intake['path'], sha256='sha256:' + intake['sha256'], bytes=Path(intake['path']).stat().st_size))
     delivered = put('delivered.md', Path(intake['path']).read_bytes())
-    read_instruction = 'Read PROMPT.md and intake.md fully using Read.'
+    read_instruction = 'Read PROMPT.md and intake.md fully using only the Read tool, not Bash or compound shell commands.'
     if kind == 'astra':
         read_instruction = 'Preliminary prompt reads do not disqualify this pilot. Now read PROMPT.md and intake.md fully with two exec calls using these exact bodies: const r = await tools.exec_command({cmd:"cat PROMPT.md"}); text(r); and const r = await tools.exec_command({cmd:"cat intake.md"}); text(r); The authorized cat reads are not test execution; after these full-result reads, do not repeat them.'
     prompt = put('prompt.md', ('Operator-authorized native dispatcher pilot. ' + read_instruction + ' No reads outside this seat, no test execution and no peer messages. Reply exactly with two lines:\nGrounded check: owned input contains alpha beta; no tests executed.\nVerdict: PASS\n').encode())
@@ -47,19 +47,28 @@ try:
     launcher = put('launcher.json', dict(context=identity, adapter=API['adapter'](), authorized=True, tai_sha256=API['ref'](API['REPO'] / 'fish/internal/tmux/tai.fish')['sha256'], trust_sha256=API['ref'](API['TOOLS'] / 'panel-seat-trust')['sha256'], test_fixture_only=True))
     policy = put('policy.json', dict(context=identity, authorized=True, authorized_at=API['now'](), max_redispatches=0, technical_causes=[], exhaustion='non-response', test_fixture_only=True))
     roster = [dict(seat_id=kind + '-cli', attempt_id='a', transport=kind, window=kind, model=model, effort='low', accepted_limitations=[])]
+    if len(sys.argv) > 3 and sys.argv[3] == 'newwindow-later-failure':
+        roster.append(dict(roster[0], seat_id=kind + '-second', window=kind + '-second'))
     first = put('first-attempt.json', dict(context=identity, project_root=str(project), roster=roster, authorized=True, independent=True, prior_attempts=[], test_fixture_only=True))
     request = put('request.json', dict(version='1', project_root=str(project), protocol_root=str(protocol), **identity, session=session, packet=dict(canonical_input=intake, manifest=manifest, delivered_input=delivered, prompt=prompt, projection_review=projection), roster=roster, redispatch_policy_ref=policy, launcher_ref=launcher, first_attempt_ref=first, deadline_seconds=90, authorized=True, authorized_at=API['now']()))
     tmux('new-session', '-d', '-s', session, '-n', 'hold', '-x', '215', '-y', '50', 'exec sleep 2147483647')
     tmux('set-option', '-t', session, 'automatic-rename', 'off')
     prepared_ref = API['prepare'](SimpleNamespace(request=request['path'], sha256=request['sha256'], batch=str(output / 'batch')))
     prepared = API['read'](prepared_ref)
-    if len(sys.argv) > 3 and sys.argv[3] in ('sendkeys-failure', 'capture-failure', 'identity-failure', 'prestart-failure'):
+    if len(sys.argv) > 3 and sys.argv[3] in ('newwindow-failure', 'newwindow-later-failure', 'sendkeys-failure', 'capture-failure', 'identity-failure', 'prestart-failure'):
         failure = sys.argv[3]
         original_run = API['run']
         original_identity = API['process_identity']
         original_gate = API['prepared_check']
         fired = []
+        launcher_calls = []
+        projects_before = json.loads((Path.home() / '.claude.json').read_text()).get('projects', {}) if kind in ('fable', 'deepseek') else None
         def run(command, **kwargs):
+            if command[0] == 'fish':
+                launcher_calls.append(True)
+                if failure == 'newwindow-failure' or failure == 'newwindow-later-failure' and len(launcher_calls) == 2:
+                    command = list(command)
+                    command[-1] = command[-1].replace('if test "$argv[1]" = new-window; ', 'if test "$argv[1]" = new-window; return 1; ', 1)
             if failure == 'sendkeys-failure' and command[0] == 'fish':
                 command = list(command)
                 command[-1] = command[-1].replace('else; ', 'else; if test "$argv[1]" = send-keys; return 1; end; ', 1)
@@ -87,6 +96,13 @@ try:
         relay.assert_not_called()
         cleaned = API['ref'](output / 'batch/prestart-failure-cleanup.json')
         assert API['read'](cleaned)['phase'] == 'cleaned'
+        if projects_before is not None:
+            projects_after = json.loads((Path.home() / '.claude.json').read_text()).get('projects', {})
+            assert all(projects_after.get(key) == value for key, value in projects_before.items())
+            for seat in prepared['seats']:
+                assert seat['directory'] not in projects_after
+                assert '/tmp' + seat['directory'][len('/private/tmp'):] not in projects_after
+                assert not (Path('/private/tmp') / ('panel-' + str(Path(seat['directory']).stat().st_ino))).exists()
         claim = API['ref'](API['launch_slot'](API['read'](request)))
         assert API['read'](claim)['request_ref'] == request
         assert not (output / 'batch/starts-entered.json').exists()

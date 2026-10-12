@@ -257,7 +257,7 @@ class IntegrationTests(unittest.TestCase):
                         adapter=API['adapter'](), seats=[seat, dict(seat_id='not-launched', attempt_id='one')])
         prepared['phase'] = 'prepared'
         prepared_ref = API['fresh'](batch / 'prepared.json', prepared)
-        launch = dict(prepared, phase='owned-launch', prepared_ref=prepared_ref, seats=[seat])
+        launch = dict(prepared, phase='owned-launch', prepared_ref=prepared_ref, seats=[dict(seat, pane={})])
         launch_ref = API['fresh'](self.directory / 'cleanup-owned.json', launch)
         native = API['fresh'](self.directory / 'cleanup-native.jsonl', b'preserved native finding\n') if observed else None
         index = API['fresh'](self.directory / 'cleanup-index.json', dict(context=context, launch_ref=launch_ref,
@@ -295,6 +295,36 @@ class IntegrationTests(unittest.TestCase):
         bad = API['fresh'](self.directory / 'bad.json', value)
         with self.assertRaisesRegex(ValueError, 'typed preserved'):
             self.cleanup_until_target(launch, bad)
+
+    def no_pane_fixture(self):
+        launch, retained = self.retention_fixture()
+        original = API['read'](launch)
+        prepared = API['read'](original['prepared_ref'])
+        prefix = prepared['seats'][:1]
+        pending = API['fresh'](self.directory / 'trust-pending.json', dict(phase='trust-pending',
+            **{key: original[key] for key in ('context', 'request_ref', 'prepared_ref', 'adapter', 'batch')},
+            seats=prefix))
+        original.update(phase='prestart-recovery', trust_pending_ref=pending,
+                        seats=[dict(prefix[0], pane=None, pane_process=None)])
+        launch = API['fresh'](self.directory / 'no-pane-launch.json', original)
+        index = API['fresh'](self.directory / 'no-pane-index.json', dict(context=original['context'], launch_ref=launch,
+            seats=[dict(seat_id='a', attempt_id='one', native_ref=None, non_observation=True, cause='new-window refused')]))
+        retained = API['retain'](SimpleNamespace(launched=launch['path'], sha256=launch['sha256'],
+            native_index=index['path'], native_sha256=index['sha256'], output=str(self.directory / 'no-pane-retained.json')))
+        return launch, retained
+
+    def test_no_pane_recovery_refuses_unverified_live_window(self):
+        launch, retained = self.no_pane_fixture()
+        runtime = API['cleanup'].__globals__
+        with mock.patch.dict(runtime, panes=lambda session: [dict(window='owned-window')]):
+            with self.assertRaisesRegex(ValueError, 'unverified live target'):
+                self.cleanup_until_target(launch, retained)
+
+    def test_no_pane_recovery_refuses_missing_trust_pending_proof(self):
+        launch, retained = self.no_pane_fixture()
+        Path(API['read'](launch)['trust_pending_ref']['path']).unlink()
+        with self.assertRaises(FileNotFoundError):
+            self.cleanup_until_target(launch, retained)
 
     def test_cleanup_wrong_batch_refused_before_any_target(self):
         launch, retained = self.retention_fixture()
@@ -362,6 +392,27 @@ class IntegrationTests(unittest.TestCase):
                 API['launch'](SimpleNamespace(prepared='prepared', sha256='0' * 64))
         recovery.assert_called_once()
 
+    def test_trust_pending_is_sealed_before_delegated_launcher(self):
+        runtime = API['launch'].__globals__
+        batch = self.directory / 'pending-batch'
+        batch.mkdir()
+        seat = dict(seat_id='a', attempt_id='one', window='owned-window', transport='fable',
+                    model='model-observed', effort='low', directory=str(self.directory))
+        record = dict(batch=str(batch), context={}, request_ref={}, adapter=API['adapter'](), seats=[seat])
+        recovery = mock.Mock()
+        def run(command, **kwargs):
+            proof = API['read'](API['ref'](batch / 'trust-pending-1.json'))
+            self.assertEqual(proof['phase'], 'trust-pending')
+            self.assertEqual(proof['seats'], [seat])
+            self.assertEqual((batch / 'trust-pending-1.json').stat().st_mode & 0o222, 0)
+            raise ValueError('new-window failure after trust')
+        with mock.patch.dict(runtime, read=lambda reference: record if reference.get('path') == 'prepared' else API['decode'](API['path_bytes'](reference['path'])),
+            prepared_check=lambda value: dict(session='owned-test'), panes=lambda session: [],
+            claim_launch=lambda *args: {}, run=run, recover_prestart=recovery):
+            with self.assertRaisesRegex(ValueError, 'new-window failure after trust'):
+                API['launch'](SimpleNamespace(prepared='prepared', sha256='0' * 64))
+        recovery.assert_called_once()
+
     def test_possible_start_never_uses_prestart_nonobservation_recovery(self):
         runtime = API['launch'].__globals__
         recovery = mock.Mock()
@@ -425,7 +476,7 @@ class IntegrationTests(unittest.TestCase):
         batch.mkdir()
         seat = dict(seat_id='a', attempt_id='one', transport='astra', window='new-seat',
                     model='gpt-6-sol', effort='low', directory=str(folder), inputs={})
-        record = dict(batch=str(batch), seats=[seat], context={}, request_ref={})
+        record = dict(batch=str(batch), seats=[seat], context={}, request_ref={}, adapter=API['adapter']())
         request = dict(session='private-test', deadline_seconds=1)
         pane = dict(command='codex', cwd=str(folder), pid='123', pane_id='%1', window_id='@1')
         relay = mock.Mock()
