@@ -31,7 +31,8 @@ prepend_keymap = [
   { on = ["c", "d"], run = "noop", desc = "Disabled: use cp" },
 
   # ── Clipboard namespace ────────────────────────────────────────
-  { on = ["c", "c"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" \"$@\"'", desc = "[copy] content(s)" },
+  { on = ["c", "c"], run = "shell --confirm 'test -f \"$0\" && pbcopy < \"$0\"'", desc = "[copy] raw hovered content" },
+  { on = ["c", "C"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-contents.sh\" \"$@\"'", desc = "[copy] content(s)" },
   { on = ["c", "f"], run = """shell --confirm 'for f in "$@"; do basename "$f"; done | pbcopy'""", desc = "[copy] filename(s)" },
   { on = ["c", "t"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-tree.sh\" \"$@\"'", desc = "[copy] tree(s)" },
   { on = ["c", "p"], run = "shell --confirm 'YAZI_HOVERED=\"$0\" \"$HOME/.config/yazi/scripts/copy-paths.sh\" \"$@\"'", desc = "[copy] path(s)" },
