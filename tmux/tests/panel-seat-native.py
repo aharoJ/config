@@ -14,6 +14,7 @@ output = Path(sys.argv[1]).resolve()
 output.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ)
 folders = []
+peer_temps = []
 panes = {}
 
 def tmux(*args):
@@ -27,6 +28,9 @@ try:
         subprocess.run([str(repo / 'tmux/tools/panel-seat-trust'), trust_kind, str(folder)], check=True, capture_output=True, text=True, timeout=15)
         (folder / 'intake.txt').write_text('owned input\n')
         outside = Path('/private/tmp') / (folder.name + '-outside')
+        peer_temp = Path(tempfile.mkdtemp(prefix='panel-peer-', dir='/private/tmp'))
+        peer_temps.append(peer_temp)
+        (peer_temp / 'private.txt').write_text('peer scratch\n')
         script = '\n'.join([
             '#!/bin/sh',
             'cat intake.txt >/dev/null', 'a=$?',
@@ -34,6 +38,10 @@ try:
             'cat ' + shlex.quote(str(repo / 'fish/internal/tmux/tai.fish')) + ' >/dev/null', 'c=$?',
             'printf test > ' + shlex.quote(str(outside)), 'd=$?',
             'printf test > ' + shlex.quote('/private/tmp/claude-' + str(os.getuid()) + '/' + folder.name), 'e=$?',
+            'cat ' + shlex.quote(str(peer_temp / 'private.txt')) + ' >/dev/null', 'f=$?',
+            'printf test > ' + shlex.quote(str(peer_temp / 'outside')), 'g=$?',
+            'printf changed > ' + shlex.quote('/private/tmp/panel-' + str(folder.stat().st_ino) + '/.panel-seat'), 'h=$?',
+            'printf "%s %s %s\\n" "$f" "$g" "$h" > scratch/peer-result.txt',
             'printf "%s %s %s %s %s\\n" "$a" "$b" "$c" "$d" "$e" > scratch/result.txt',
         ])
         (folder / 'probe.sh').write_text(script + '\n')
@@ -51,6 +59,10 @@ try:
         else:
             command = ['agy', '--dangerously-skip-permissions', '--sandbox', '--effort', 'low', '--prompt-interactive', prompt]
         native_env = ['TMPDIR=' + str(folder / 'scratch'), 'CLAUDE_CODE_TMPDIR=/private/tmp/panel-' + str(folder.stat().st_ino), 'CLAUDE_ENV_FILE=' + str(folder / 'panel-env.sh'), 'PANEL_SEAT_CONFINED=1']
+        if kind == 'fable' and env.get('PANEL_TEST_CLAUDE'):
+            command[0] = env['PANEL_TEST_CLAUDE']
+        if kind in ('fable', 'deepseek'):
+            native_env[0] = 'TMPDIR=/private/tmp/panel-' + str(folder.stat().st_ino)
         if kind == 'astra':
             native_env.append('CODEX_HOME=' + str(Path.home() / '.local/state/codex-panel-home'))
         launch = shlex.join(['exec', 'env', *native_env, *command])
@@ -62,7 +74,8 @@ try:
         else:
             pane = tmux('new-window', '-d', '-t', sid, '-n', kind, '-c', str(folder), '-P', '-F', '#{pane_id}', launch)
         panes[kind] = pane
-    (output / 'seats.json').write_text(json.dumps(dict(panes=panes, folders=list(map(str, folders))), indent=2))
+    temp_records = [json.loads((folder / 'panel-temp.json').read_text()) for folder in folders if (folder / 'panel-temp.json').exists()]
+    (output / 'seats.json').write_text(json.dumps(dict(panes=panes, folders=list(map(str, folders)), temps=temp_records, peer_temps=list(map(str, peer_temps))), indent=2))
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline and not all((folder / 'scratch/result.txt').exists() for folder in folders):
         time.sleep(1)
@@ -73,6 +86,9 @@ try:
         results[kind] = path.read_text().strip() if path.exists() else 'no result file'
     (output / 'results.json').write_text(json.dumps(results, indent=2))
     assert all(value == '0 0 1 1 1' for value in results.values()), results
+    peer_results = {kind: (folder / 'scratch/peer-result.txt').read_text().strip() for kind, folder in zip(panes, folders)}
+    (output / 'peer-results.json').write_text(json.dumps(peer_results, indent=2))
+    assert all(value == '1 1 1' for value in peer_results.values()), peer_results
     reads = {}
     for kind, folder in zip(panes, folders):
         if kind not in ('fable', 'deepseek'):
@@ -83,20 +99,25 @@ try:
             for line in path.read_text().splitlines():
                 content = json.loads(line).get('message', {}).get('content', [])
                 for part in content if isinstance(content, list) else []:
-                    if part.get('type') == 'tool_use' and part.get('name') == 'Read':
-                        uses[part['id']] = part.get('input', {})
+                    if part.get('type') == 'tool_use' and part.get('name') in ('Read', 'Bash'):
+                        uses[part['id']] = dict(name=part['name'], **part.get('input', {}))
                     elif part.get('type') == 'tool_result':
                         replies[part['tool_use_id']] = part.get('is_error', False)
         denied = [identifier for identifier, args in uses.items() if args.get('file_path') == str(repo / 'fish/internal/tmux/tai.fish') and replies.get(identifier) is True]
         assert denied, (kind, uses, replies)
-        reads[kind] = dict(project=str(project), denied_read_ids=denied)
+        successful_shells = [identifier for identifier, args in uses.items() if args.get('name') == 'Bash' and args.get('command') == '/bin/sh probe.sh' and replies.get(identifier) is False]
+        reads[kind] = dict(project=str(project), denied_read_ids=denied, successful_shell_ids=successful_shells)
+        (output / 'native-read-denials.json').write_text(json.dumps(reads, indent=2))
+        assert successful_shells, (kind, uses, replies)
     (output / 'native-read-denials.json').write_text(json.dumps(reads, indent=2))
     print('PASS native seats allow seat/scratch and block outside read/write', flush=True)
     (output / 'PASS').write_text('native confinement passed\n')
 finally:
+    for peer_temp in peer_temps:
+        subprocess.run(['trash', str(peer_temp)], check=True)
     for folder in folders:
         alias = Path('/private/tmp') / ('panel-' + str(folder.stat().st_ino))
-        if alias.is_symlink() and alias.resolve() == folder / 'scratch':
+        if alias.is_dir() and not alias.is_symlink() and (alias / '.panel-seat').read_text() == str(folder) + '\n':
             subprocess.run(['trash', str(alias)], check=True)
         outside = Path('/private/tmp') / (folder.name + '-outside')
         if outside.exists():

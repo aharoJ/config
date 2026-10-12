@@ -218,6 +218,7 @@ function __tai_seat
 
     set -l seat_env "--env=TMPDIR=$launch_dir/scratch"
     if contains -- "$seat" fable deepseek
+        set seat_env "--env=TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir")
         set -a seat_env "--env=CLAUDE_CODE_TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir") "--env=CLAUDE_ENV_FILE=$launch_dir/panel-env.sh"
     end
     __tai_spawn "$seat" "$launch_dir" "--session=$session" $seat_env $parts $args $isolation

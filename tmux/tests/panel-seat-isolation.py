@@ -32,7 +32,8 @@ try:
         result = subprocess.run(['fish', '--no-config', '-c', code], cwd=seat, env=env, capture_output=True, text=True, timeout=15)
         assert result.returncode == 0, (kind, result.stdout, result.stderr)
         rows[kind] = result.stdout.splitlines()
-        assert '--env=TMPDIR=' + str(seat / 'scratch') in rows[kind]
+        temp = Path('/private/tmp') / ('panel-' + str(seat.stat().st_ino)) if kind in ('fable', 'deepseek') else seat / 'scratch'
+        assert '--env=TMPDIR=' + str(temp) in rows[kind]
         assert kind == 'gemini' or not any('dangerously' in arg for arg in rows[kind])
     assert 'gpt-6-sol' in rows['astra'] and '--no-daemon' in rows['astra']
     assert 'default_permissions="panel-seat"' in rows['astra']
@@ -49,6 +50,14 @@ try:
     assert policy['sandbox']['enabled'] and policy['sandbox']['failIfUnavailable']
     assert policy['sandbox']['allowUnsandboxedCommands'] is False
     assert str(seat) in policy['sandbox']['filesystem']['allowRead']
+    temp = Path('/private/tmp') / ('panel-' + str(seat.stat().st_ino))
+    assert temp.is_dir() and not temp.is_symlink() and temp.stat().st_mode & 0o777 == 0o700
+    assert json.loads((seat / 'panel-temp.json').read_text()) == dict(seat=str(seat), temp=str(temp))
+    marker = temp / '.panel-seat'
+    marker.write_text(str(peer) + '\n')
+    result = subprocess.run([str(repo / 'tmux/tools/panel-seat-trust'), 'claude', str(seat)], env=env, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 1 and 'another seat' in result.stderr
+    marker.write_text(str(seat) + '\n')
     (output / 'launches.json').write_text(json.dumps(rows, indent=2))
     (output / 'claude-settings.json').write_text(json.dumps(policy, indent=2))
     print('PASS four seat policies, scratch, explicit/custom Astra model, mismatch-form refusal', flush=True)
@@ -79,9 +88,17 @@ try:
     result = subprocess.run([str(repo / 'tmux/tools/panel-seat-trust'), 'claude', str(seat)], env=env, capture_output=True, text=True, timeout=10)
     assert result.returncode == 1 and 'real directory inside the seat' in result.stderr
     print('PASS scratch symlink cannot redirect outside the seat', flush=True)
+    subprocess.run(['trash', str(temp)], check=True)
+    temp.symlink_to(peer)
+    scratch.unlink()
+    scratch.mkdir(mode=0o700)
+    result = subprocess.run([str(repo / 'tmux/tools/panel-seat-trust'), 'claude', str(seat)], env=env, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 1 and 'must not be a symlink' in result.stderr
+    subprocess.run(['trash', str(temp)], check=True)
+    print('PASS per-seat temp ownership and symlink refusal', flush=True)
     (output / 'PASS').write_text('launch and native Codex confinement checks passed\n')
 finally:
     alias = Path('/private/tmp') / ('panel-' + str(seat.stat().st_ino))
-    if alias.is_symlink():
+    if alias.is_dir() and not alias.is_symlink() and (alias / '.panel-seat').read_text() == str(seat) + '\n':
         subprocess.run(['trash', str(alias)], check=True)
     subprocess.run(['trash', str(seat), str(peer)], check=True)
