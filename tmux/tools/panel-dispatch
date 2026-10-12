@@ -365,7 +365,80 @@ def relay_start(request, seat):
     return dict(reference=ref(path), native_start=value['label'] + ': ' + START)
 
 
+def own(args):
+    preparation_ref = dict(path=args.prepared, sha256=args.sha256)
+    record = read(preparation_ref)
+    request = read(record['request_ref'])
+    matches = [seat for seat in record['seats'] if seat['seat_id'] == args.seat_id]
+    require(len(matches) == 1 and record['adapter'] == adapter(), 'spawn ownership source/seat conflict')
+    seat = matches[0]
+    batch = Path(record['batch'])
+    intent_path = batch / (seat['seat_id'] + '-spawn-intent.json')
+    if not intent_path.exists():
+        fresh(intent_path, dict(prepared_ref=preparation_ref, seat_id=args.seat_id, pane_id=args.pane, observed_at=now()))
+    pane = exact_pane(request['session'], seat['window'])
+    require(pane['pane_id'] == args.pane and Path(pane['cwd']).resolve() == Path(seat['directory']), 'spawn ownership exact pane/cwd conflict')
+    spawn_path = batch / (seat['seat_id'] + '-spawn.json')
+    minimal = dict(**seat, pane=pane, observed_at=now())
+    if spawn_path.exists():
+        original = decode(path_bytes(spawn_path))
+        require(all(original['pane'][key] == pane[key] for key in ('window_id', 'pane_id', 'pid')), 'spawn recovery target changed')
+    else:
+        fresh(spawn_path, minimal)
+    deadline = time.monotonic() + 3
+    while True:
+        try:
+            identity = process_identity(pane['pid'])
+            break
+        except (OSError, ValueError):
+            require(time.monotonic() < deadline, 'spawn recorded but kernel custody unavailable; retain seat and do not resend')
+            time.sleep(.1)
+    temp_path = Path(seat['directory']) / 'panel-temp.json'
+    owned = dict(**seat, pane=pane, pane_process=identity, process_observer_ref=ref(TOOLS / 'tmux-lab'), temp=decode(path_bytes(temp_path)) if temp_path.exists() else None, launched_at=now())
+    path = batch / (seat['seat_id'] + '-owned-prestart.json')
+    if not path.exists():
+        fresh(path, owned)
+    rows = []
+    for prepared in record['seats']:
+        candidate = batch / (prepared['seat_id'] + '-owned-prestart.json')
+        if not candidate.exists():
+            break
+        rows.append(decode(path_bytes(candidate)))
+    output = batch / ('owned-prestart-' + str(len(rows)) + '.json')
+    if output.exists():
+        return ref(output)
+    return fresh(output, dict(phase='owned-launch', context=record['context'], request_ref=record['request_ref'], prepared_ref=preparation_ref, adapter=record['adapter'], batch=record['batch'], seats=rows, created_at=now()))
+
+
+def recover_prestart(record, preparation_ref, error):
+    batch = Path(record['batch'])
+    for seat in record['seats']:
+        intent = batch / (seat['seat_id'] + '-spawn-intent.json')
+        if intent.exists() and not (batch / (seat['seat_id'] + '-owned-prestart.json')).exists():
+            value = decode(path_bytes(intent))
+            require(value['prepared_ref'] == preparation_ref, 'spawn intent preparation conflict')
+            own(argparse.Namespace(prepared=preparation_ref['path'], sha256=preparation_ref['sha256'], seat_id=seat['seat_id'], pane=value['pane_id']))
+    owned = sorted(batch.glob('owned-prestart-*.json'), key=lambda path: int(path.stem.rsplit('-', 1)[1]))
+    if not owned:
+        return
+    launch_ref = ref(owned[-1])
+    launch = read(launch_ref)
+    index = fresh(batch / 'prestart-failure-index.json', dict(context=record['context'], launch_ref=launch_ref, seats=[dict(seat_id=seat['seat_id'], attempt_id=seat['attempt_id'], native_ref=None, non_observation=True, cause='pre-Start launch failure; native transcript not observed: ' + str(error)) for seat in launch['seats']]))
+    retained = retain(argparse.Namespace(launched=launch_ref['path'], sha256=launch_ref['sha256'], native_index=index['path'], native_sha256=index['sha256'], output=str(batch / 'prestart-failure-retained.json')))
+    cleanup(argparse.Namespace(launched=launch_ref['path'], sha256=launch_ref['sha256'], collected=retained['path'], collected_sha256=retained['sha256'], output=str(batch / 'prestart-failure-cleanup.json')))
+
+
 def launch(args):
+    record = read(dict(path=args.prepared, sha256=args.sha256))
+    try:
+        return launch_prestart(args)
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        if 'batch' in record and not (Path(record['batch']) / 'starts-entered.json').exists():
+            recover_prestart(record, dict(path=args.prepared, sha256=args.sha256), error)
+        raise
+
+
+def launch_prestart(args):
     preparation_ref = dict(path=args.prepared, sha256=args.sha256)
     record = read(preparation_ref)
     request = prepared_check(record)
@@ -391,7 +464,8 @@ def launch(args):
         if os.environ.get('TMUX_LAB_SOCKET'):
             tmux_command += ['-L', os.environ['TMUX_LAB_SOCKET'], '-f', '/dev/null']
         native_tmux = 'command ' + shlex.join(tmux_command)
-        code = 'function tmux; if test "$argv[1]" = new-window; ' + native_tmux + ' new-window -d $argv[2..-1]; else; ' + native_tmux + ' $argv; end; end; ' + code
+        ownership = shlex.join([sys.executable, str(SOURCE), 'own', '--prepared', args.prepared, '--sha256', args.sha256, '--seat-id', seat['seat_id']])
+        code = 'function tmux; if test "$argv[1]" = new-window; set -l created (' + native_tmux + ' new-window -d $argv[2..-1]); or return $status; ' + ownership + ' --pane "$created" >/dev/null; or return $status; printf "%s\\n" "$created"; else; ' + native_tmux + ' $argv; end; end; ' + code
         output = run(['fish', '-l', '-c', code], cwd=seat['directory'])
         deadline = time.monotonic() + request['deadline_seconds']
         while True:
@@ -411,6 +485,7 @@ def launch(args):
         fresh(batch / (seat['seat_id'] + '-launched.json'), launches[-1])
         fresh(batch / ('owned-' + str(len(launches)) + '.json'), dict(phase='owned-launch', context=record['context'], request_ref=record['request_ref'], prepared_ref=preparation_ref, adapter=adapter(), batch=str(batch), seats=launches, created_at=now()))
     prepared_check(record, runtime=True)
+    fresh(batch / 'starts-entered.json', dict(prepared_ref=preparation_ref, created_at=now()))
     for seat in launches:
         current = exact_pane(request['session'], seat['window'])
         require(all(current[key] == seat['pane'][key] for key in ('window_id', 'pane_id', 'pid', 'cwd')), 'pre-start target identity drift')
@@ -869,6 +944,9 @@ def main():
     prepare_parser.add_argument('--batch', required=True)
     launch_parser = sub.add_parser('launch')
     launch_parser.add_argument('--prepared', required=True)
+    own_parser = sub.add_parser('own')
+    for name in ('prepared', 'seat-id', 'pane'):
+        own_parser.add_argument('--' + name, required=True)
     collect_parser = sub.add_parser('collect')
     collect_parser.add_argument('--launched', required=True)
     collect_parser.add_argument('--native-index', required=True)
@@ -885,7 +963,7 @@ def main():
     retain_parser = sub.add_parser('retain')
     for name in ('launched', 'native-index', 'native-sha256', 'output'):
         retain_parser.add_argument('--' + name, required=True)
-    for child in (prepare_parser, launch_parser, collect_parser, verify_parser, cleanup_parser, retain_parser, wait_parser):
+    for child in (prepare_parser, launch_parser, own_parser, collect_parser, verify_parser, cleanup_parser, retain_parser, wait_parser):
         child.add_argument('--sha256', required=True)
     args = parser.parse_args()
     try:

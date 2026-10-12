@@ -327,8 +327,50 @@ class IntegrationTests(unittest.TestCase):
         bad = API['fresh'](self.directory / 'bad.json', value)
         with self.assertRaisesRegex(ValueError, 'non-observation/retention cause'):
             self.cleanup_until_target(launch, bad)
-            with self.assertRaises(FileExistsError):
-                API['claim_launch'](request, reference)
+
+    def test_spawn_receipt_precedes_fallible_process_snapshot(self):
+        runtime = API['own'].__globals__
+        context = self.fixture.identity
+        request = API['fresh'](self.directory / 'own-request.json', dict(session='owned-test'))
+        batch = self.directory / 'own-batch'
+        batch.mkdir()
+        seat = dict(seat_id='a', attempt_id='one', window='owned-window', directory=str(self.directory))
+        prepared = API['fresh'](self.directory / 'own-prepared.json', dict(context=context,
+            request_ref=request, batch=str(batch), adapter=API['adapter'](), seats=[seat]))
+        pane = dict(pane_id='%1', window_id='@1', pid='123', cwd=str(self.directory))
+        calls = []
+        def identity(pid):
+            self.assertTrue((batch / 'a-spawn-intent.json').exists())
+            self.assertTrue((batch / 'a-spawn.json').exists())
+            calls.append(pid)
+            if len(calls) == 1:
+                raise ValueError('transient snapshot failure')
+            return dict(pid=123)
+        with mock.patch.dict(runtime, exact_pane=lambda *args: pane, process_identity=identity):
+            receipt = API['own'](SimpleNamespace(prepared=prepared['path'], sha256=prepared['sha256'],
+                seat_id='a', pane='%1'))
+        self.assertEqual(API['read'](receipt)['phase'], 'owned-launch')
+        self.assertEqual(len(calls), 2)
+
+    def test_launch_error_runs_prestart_recovery_without_retry(self):
+        runtime = API['launch'].__globals__
+        recovery = mock.Mock()
+        record = dict(batch=str(self.directory))
+        with mock.patch.dict(runtime, read=lambda reference: record, recover_prestart=recovery,
+            launch_prestart=mock.Mock(side_effect=ValueError('post-spawn failure'))):
+            with self.assertRaisesRegex(ValueError, 'post-spawn failure'):
+                API['launch'](SimpleNamespace(prepared='prepared', sha256='0' * 64))
+        recovery.assert_called_once()
+
+    def test_possible_start_never_uses_prestart_nonobservation_recovery(self):
+        runtime = API['launch'].__globals__
+        recovery = mock.Mock()
+        (self.directory / 'starts-entered.json').write_text('{}')
+        with mock.patch.dict(runtime, read=lambda reference: dict(batch=str(self.directory)),
+            recover_prestart=recovery, launch_prestart=mock.Mock(side_effect=ValueError('delivery unknown'))):
+            with self.assertRaisesRegex(ValueError, 'delivery unknown'):
+                API['launch'](SimpleNamespace(prepared='prepared', sha256='0' * 64))
+        recovery.assert_not_called()
 
     def test_no_canonical_projection_fallback(self):
         f = self.fixture
