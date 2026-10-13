@@ -1,6 +1,8 @@
 """Regression: historical duplicates must not remove the active Enter row check."""
 import pathlib
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import tempfile
 import os
 import time
@@ -52,7 +54,7 @@ class DuplicateEnterGuardTest(unittest.TestCase):
                 self.assertEqual(current.returncode, 0)
                 self.assertEqual(changed.returncode, 1)
         finally:
-            tmux('kill-server')
+            cleanup_guard.stop_label(socket)
 
 
 if __name__ == '__main__':

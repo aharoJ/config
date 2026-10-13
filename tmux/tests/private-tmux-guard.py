@@ -8,6 +8,7 @@ import os
 import pathlib
 import re
 import sys
+import cleanup_guard
 
 
 def main():
@@ -36,11 +37,11 @@ def main():
         os.write(fd, record.encode())
     finally:
         os.close(fd)
-    os.execv(binary, [binary, *effective])
+    return cleanup_guard.run_tmux([binary, *effective]).returncode
 
 
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, ValueError, IndexError):
+    except (cleanup_guard.CleanupRefused, OSError, ValueError, IndexError):
         sys.exit(97)

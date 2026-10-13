@@ -65,8 +65,16 @@ def fixture_proof(exe, argv):
         raise ValueError('test attestation outside private fixtures')
     sock = Path(TEST_SOCKET)
     info = sock.lstat()
-    if not re.fullmatch(r'ccmsg-lab-private-\d+', sock.name) or not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid():
+    if not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid():
         raise ValueError('test attestation requires a private socket')
+    isolation = runpy.run_path(str(module.with_name('test-server-cleanup')))
+    try:
+        owned = isolation['route'](['tmux', '-S', str(sock)], allow_current=True)
+        record = isolation['load'](owned)
+        if not isolation['observation_matches'](owned, record, allow_current=True):
+            raise ValueError('test socket identity changed')
+    except (RuntimeError, OSError, ValueError, TypeError, KeyError) as error:
+        raise ValueError('test attestation requires a current owned socket lease') from error
     before = stamp(registry)
     data = json.loads(registry.read_text())
     entry = Path(argv[1]).resolve(strict=True) if exe.name == 'node' and len(argv) > 1 and not argv[1].startswith('-') else None

@@ -3,6 +3,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import tempfile
 
@@ -10,7 +12,7 @@ ROOT = Path(__file__).resolve().parent
 output = Path(sys.argv[1]).resolve()
 assert output.is_relative_to(Path.home() / 'desk')
 output.mkdir(parents=True, exist_ok=True)
-control_dir = Path(tempfile.mkdtemp(prefix='rn-c-', dir=Path.home() / 'desk/lab'))
+control_dir = Path(tempfile.mkdtemp(prefix='rn-c-', dir=Path.home() / 'desk/tmp'))
 control = control_dir / 'control.sock'
 subprocess.run(['tmux', '-S', str(control), '-f', '/dev/null', 'new-session', '-d', '-s', 'unrelated-control', 'exec cat'], check=True)
 try:
@@ -25,9 +27,8 @@ try:
     assert cleanups and all(item['state'] == 'stopped' for item in cleanups), receipt
     assert any(item['kill_exit'] == 0 for item in cleanups), receipt
     for item in cleanups:
-        proof = subprocess.run(['tmux', '-S', item['socket'], 'list-sessions'], capture_output=True, text=True)
-        assert proof.returncode == 1 and 'no server running' in proof.stderr, proof
+        assert not Path(item['socket']).exists(), item
     subprocess.run(['tmux', '-S', str(control), 'list-sessions'], check=True, capture_output=True)
     print('PASS timed-out private workers stop their own servers; distinct workers and unrelated control remain isolated')
 finally:
-    subprocess.run(['tmux', '-S', str(control), 'kill-server'], check=True)
+    cleanup_guard.stop(control, check=True)

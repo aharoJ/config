@@ -4,6 +4,8 @@ import sys
 import runpy
 from pathlib import Path
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
@@ -193,7 +195,7 @@ try:
         assert any(sum(v['content_item_types'].count('input_image') for v in r['input_metadata'])==2 for r in requests),requests
     print('PASS six native lifecycle cases and actual guarded native relay round trip; no manual binds')
 finally:
-    subprocess.run(['tmux','-L',socket_name,'kill-server'],capture_output=True,text=True,timeout=5)
+    cleanup_guard.stop_label(socket_name, capture_output=True, text=True, timeout=3)
     mock.shutdown()
     mock.server_close()
     mock_thread.join(timeout=2)

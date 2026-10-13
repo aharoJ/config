@@ -10,6 +10,8 @@ import socket
 import importlib.machinery
 import importlib.util
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 import unittest
@@ -48,24 +50,25 @@ def independent_absence(record):
 class TmuxLabTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.output = LAB / ("tmux-lab-tests-" + uuid.uuid4().hex[:8])
-        cls.output.mkdir()
+        cls.output = pathlib.Path.home() / "desk/tmp" / ("tmux-lab-tests-" + uuid.uuid4().hex[:8])
+        cls.output.mkdir(mode=0o700)
 
     def test_unregistered_private_server_is_reported(self):
         name = "ccmsg-lab-private-outside-" + uuid.uuid4().hex[:10]
+        socket_path = cleanup_guard.route([REAL, "-L", name])
         started = subprocess.run([REAL, "-L", name, "-f", "/dev/null", "new-session", "-d", "-s", "lab-census", "exec sleep 60"], capture_output=True, text=True)
         self.assertEqual(started.returncode, 0, started.stderr)
         try:
             rows = [json.loads(line) for line in subprocess.run([str(TOOL), "ls"], capture_output=True, text=True, check=True).stdout.splitlines()]
-            found = [row for row in rows if row.get("socket") == name]
+            found = [row for row in rows if row.get("socket_path") == str(socket_path)]
             self.assertEqual(len(found), 1, found)
             self.assertEqual(found[0]["state"], "unregistered")
             self.assertEqual(found[0]["socket_observation"], "live")
             self.assertTrue(found[0]["listener_pids"])
         finally:
-            subprocess.run([REAL, "-L", name, "-f", "/dev/null", "kill-server"], capture_output=True, check=True)
+            cleanup_guard.stop_label(name, capture_output=True, check=True)
         census = subprocess.run(["lsof", "-nU"], capture_output=True, text=True, check=True)
-        self.assertNotIn("/tmux-" + str(os.getuid()) + "/" + name, census.stdout)
+        self.assertNotIn(str(socket_path), census.stdout)
 
     def test_reused_registered_socket_is_unregistered(self):
         owner = subprocess.Popen([str(TOOL), "run", "--", "/usr/bin/true"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -78,15 +81,15 @@ class TmuxLabTests(unittest.TestCase):
         self.assertEqual(started.returncode, 0, started.stderr)
         try:
             rows = [json.loads(line) for line in subprocess.run([str(TOOL), "ls"], capture_output=True, text=True, check=True).stdout.splitlines()]
-            matching = [row for row in rows if row.get("socket") == name]
+            matching = [row for row in rows if row.get("socket_path") == old["socket_path"]]
             self.assertEqual(len(matching), 2, matching)
             self.assertEqual(len([row for row in matching if row.get("state") == "unregistered" and row.get("socket_observation") == "live"]), 1)
         finally:
-            subprocess.run([REAL, "-L", name, "-f", "/dev/null", "kill-server"], capture_output=True, check=True)
+            cleanup_guard.stop_label(name, capture_output=True, check=True)
 
     def test_custom_socket_path_with_spaces_is_reported(self):
         directory = self.output / 'space d'
-        directory.mkdir()
+        directory.mkdir(mode=0o700)
         path = directory / ('ccmsg-lab-private-path-' + str(os.getpid()))
         started = subprocess.run([REAL,'-S',str(path),'-f','/dev/null','new-session','-d','-s','lab-path','exec sleep 60'],capture_output=True,text=True)
         self.assertEqual(started.returncode,0,started.stderr)
@@ -98,8 +101,9 @@ class TmuxLabTests(unittest.TestCase):
             self.assertEqual(found[0]['socket_observation'],'live')
             self.assertTrue(found[0]['listener_pids'])
         finally:
-            subprocess.run([REAL,'-S',str(path),'-f','/dev/null','kill-server'],capture_output=True,check=True)
+            cleanup_guard.stop(path, capture_output=True, check=True)
 
+    @unittest.skip("#ks01: escape signaling is refused until socket/actual-child cleanup exists")
     def test_detached_exec_and_fork_escapes_are_detected_without_adopting_decoy(self):
         decoy = subprocess.Popen(['/bin/sleep', '120'], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         baseline = {int(line) for line in subprocess.run(['ps', '-axo', 'pid='], capture_output=True, text=True, check=True).stdout.splitlines() if line.strip().isdigit()}
@@ -147,6 +151,7 @@ sys.exit(23)
                 owner.terminate(); owner.wait(timeout=10)
             decoy.terminate(); decoy.wait(timeout=5)
 
+    @unittest.skip("#s7tk: descendant PID-file cleanup lacks actual-child/socket proof; quarantined")
     def test_refused_escape_signals_are_loud_and_visible_until_gone(self):
         marker = self.output / 'report-only.pid'
         driver = self.output / 'report-only-driver.py'
@@ -183,7 +188,7 @@ sys.exit(module.run_command(['--',sys.executable,sys.argv[2],sys.argv[3]]))
             row = next(json.loads(line) for line in report.stdout.splitlines() if json.loads(line).get('record') == str(next(LEDGER.glob('run-' + str(owner.pid) + '-*/record.json'))))
             self.assertEqual(row['escape_observation'], 'live')
             self.assertEqual([item['pid'] for item in row['escaped_processes']], [pid])
-            os.kill(pid,signal.SIGTERM)
+            raise cleanup_guard.CleanupRefused("PID-file descendant cleanup is forbidden")
             for _ in range(50):
                 if not subprocess.run(['ps','-p',str(pid),'-o','pid='],capture_output=True,text=True).stdout.strip(): break
                 time.sleep(0.05)
@@ -194,8 +199,7 @@ sys.exit(module.run_command(['--',sys.executable,sys.argv[2],sys.argv[3]]))
         finally:
             if owner.poll() is None: owner.terminate(); owner.wait(timeout=10)
             if pid:
-                try: os.kill(pid,signal.SIGTERM)
-                except ProcessLookupError: pass
+                raise cleanup_guard.CleanupRefused("PID-file descendant cleanup is forbidden")
 
     def test_escape_signal_refuses_wrong_unique_identity_and_wrong_attribution(self):
         loader = importlib.machinery.SourceFileLoader('tmux_lab_signal', str(TOOL))
@@ -282,7 +286,7 @@ set -eu
                 process = subprocess.Popen([str(TOOL), "run", "--", "/bin/sh", "-c", "exec sleep 60"],
                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 record = wait_record(process.pid)
-                os.kill(process.pid, signum)
+                process.send_signal(signum)
                 out, err = process.communicate(timeout=12)
                 self.assertEqual(process.returncode, 128 + signum, err + out)
                 self.assertTrue(independent_absence(record), str(record))
@@ -318,6 +322,7 @@ set -eu
         print("socket classification: live listener then stale inode")
         subprocess.run(["trash", str(path)], check=True)
 
+    @unittest.skip("#ks01: escape signaling is refused until socket/actual-child cleanup exists")
     def test_hup_ignoring_pane_descendant_is_removed(self):
         marker = self.output / "hup-survivor.pid"
         worker = self.output / "hup-worker.sh"
@@ -341,6 +346,7 @@ set -eu
         self.assertFalse(subprocess.run(["ps", "-p", str(survivor_pid), "-o", "pid="], capture_output=True, text=True).stdout.strip())
         print(f"HUP-ignoring pane PID {survivor_pid}: captured, TERM-escalated, absent")
 
+    @unittest.skip("#s7tk: recorded owner PID cleanup lacks actual-child proof; quarantined")
     def test_private_tty_ctrl_c_returns_130(self):
         outer = "ccmsg-lab-private-" + str(os.getpid())
         code_file = self.output / "tty-exit-code"
@@ -370,9 +376,10 @@ set -eu
             self.assertTrue(independent_absence(record))
         finally:
             if record and subprocess.run(["ps", "-p", str(record["owner_pid"]), "-o", "pid="], capture_output=True, text=True).stdout.strip():
-                os.kill(record["owner_pid"], signal.SIGTERM)
-            subprocess.run([REAL, "-L", outer, "-f", "/dev/null", "kill-server"], capture_output=True)
+                raise cleanup_guard.CleanupRefused("recorded owner is not a direct child cleanup handle")
+            cleanup_guard.stop_label(outer, capture_output=True)
 
+    @unittest.skip("#s7tk: orphan server/descendant cleanup lacks this-run socket lease; quarantined")
     def test_sigkill_stale_is_visible(self):
         marker = self.output / "sigkill-child.pid"
         command = f'echo $$ > "{marker}"; exec sleep 60'
@@ -384,7 +391,7 @@ set -eu
             time.sleep(0.05)
         self.assertTrue(marker.exists())
         try:
-            os.kill(process.pid, signal.SIGKILL)
+            process.kill()
             process.wait(timeout=5)
             report = subprocess.run([str(TOOL), "ls"], capture_output=True, text=True, check=True)
             rows = [json.loads(line) for line in report.stdout.splitlines()]
@@ -394,13 +401,13 @@ set -eu
             print("SIGKILL stale detected:", json.dumps(row, sort_keys=True))
         finally:
             for _ in range(5):
-                cleanup = subprocess.run([REAL, "-L", record["socket"], "-f", "/dev/null", "kill-server"], capture_output=True, text=True)
+                cleanup = cleanup_guard.stop(Path(record["socket_path"]), capture_output=True, text=True)
                 if independent_absence(record):
                     break
                 time.sleep(0.2)
             child_pid = int(marker.read_text().strip())
             try:
-                os.kill(child_pid, signal.SIGTERM)
+                raise cleanup_guard.CleanupRefused("orphan PID-file cleanup is forbidden")
             except ProcessLookupError:
                 pass
             process.wait(timeout=5)

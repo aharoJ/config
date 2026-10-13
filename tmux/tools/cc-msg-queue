@@ -154,16 +154,16 @@ def transport(data, env):
         stdout, stderr = process.communicate(data['message'], timeout=60)
         return process.returncode, stdout + stderr
     except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
+        process.kill()
         process.communicate()
         return 4, 'transport exceeded 60 seconds; delivery unknown; no automatic resend'
     except BaseException:
         try:
-            os.killpg(process.pid, signal.SIGTERM)
+            process.terminate()
             process.communicate(timeout=3)
         except (ProcessLookupError, subprocess.TimeoutExpired):
             try:
-                os.killpg(process.pid, signal.SIGKILL)
+                process.kill()
             except ProcessLookupError:
                 pass
             process.communicate()

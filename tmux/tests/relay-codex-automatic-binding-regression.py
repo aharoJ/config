@@ -4,8 +4,11 @@ import os
 from pathlib import Path
 import runpy
 import shutil
+import shlex
 import sqlite3
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import tempfile
 import time
@@ -81,10 +84,10 @@ def run(output):
     subprocess.run(['cc', str(output / 'fixture.c'), '-o', str(output / 'codex')], check=True)
     socket = 'ccmsg-lab-private-' + str(os.getpid())
     wrapper = output / 'tmux-private'
-    wrapper.write_text('#!/bin/sh\nexec tmux -L ' + socket + ' -f /dev/null "$@"\n')
+    wrapper.write_text('#!/bin/sh\nexec ' + shlex.join([sys.executable, str(ROOT / "tools/test-server-cleanup"), "proxy", socket]) + ' "$@"\n')
     wrapper.chmod(0o700)
     def tmux(*args):
-        return subprocess.check_output([str(wrapper), *args], text=True, timeout=10).strip()
+        return subprocess.check_output(['tmux', '-L', socket, '-f', '/dev/null', *args], text=True, timeout=10).strip()
     daemon = None
     try:
         for seat, thread in [('codex', FIRST), ('terra', OTHER)]:
@@ -250,7 +253,7 @@ def run(output):
         if daemon is not None:
             daemon.stdin.close()
             daemon.wait(timeout=10)
-        subprocess.run([str(wrapper), 'kill-server'], capture_output=True, timeout=10)
+        cleanup_guard.stop_label(socket, capture_output=True, timeout=3)
         database.close()
 
 

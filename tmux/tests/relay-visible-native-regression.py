@@ -7,6 +7,8 @@ import runpy
 import shlex
 import sqlite3
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import tempfile
 import time
 from unittest.mock import patch
@@ -171,6 +173,6 @@ try:
     assert not (root / 'wire').exists(), 'identity typed into native fixture'
     print('PASS native bootstrap/reset/resume/fork/respawn lineage, copied turns and pruned-history refusal, queued retirement; zero input bytes')
 finally:
-    subprocess.run(['tmux','-L',socket,'kill-server'],capture_output=True,text=True,timeout=3)
+    cleanup_guard.stop_label(socket, capture_output=True, text=True, timeout=3)
     proof = subprocess.run(['tmux','-L',socket,'list-sessions'],capture_output=True,text=True,timeout=3)
     assert proof.returncode == 1 and ('no server running' in proof.stderr or 'No such file' in proof.stderr)

@@ -7,6 +7,8 @@ import os
 import pathlib
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 
@@ -90,7 +92,7 @@ try:
     case('parallel-picker-x3', start='menu', runs=3, parallel=True, expect=(0, 5), inputs='enter')
     case('zsh-S-codex', zsh=True, expect=(1,), final=None)
 finally:
-    subprocess.run(['tmux', '-L', SERVER, 'kill-server'], capture_output=True)
+    cleanup_guard.stop_label(SERVER, capture_output=True)
     if BASE.exists():
         subprocess.run(['trash', str(BASE)])
 print(json.dumps(results, ensure_ascii=False, indent=1))

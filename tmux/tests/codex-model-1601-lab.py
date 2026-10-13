@@ -5,6 +5,8 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 
@@ -84,6 +86,6 @@ try:
         print(name, 'PASS' if passed else 'FAIL', p.returncode, p.stderr[-500:], flush=True)
         tmux('kill-session', '-t', 'lab')
 finally:
-    subprocess.run(['tmux', '-L', server, 'kill-server'], capture_output=True)
+    cleanup_guard.stop_label(server, capture_output=True)
     (output / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
 assert all(row['passed'] for row in results), results

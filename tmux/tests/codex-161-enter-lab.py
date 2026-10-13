@@ -4,6 +4,8 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 
@@ -61,4 +63,4 @@ try:
     (output/'results.json').write_text(json.dumps(results,indent=2)+'\n')
     print(f'PASS: {len(results)} actual relay_atomic native 0.161.0 postpaste and derived draft checks')
 finally:
-    subprocess.run(['tmux','-L',socket,'kill-server'],capture_output=True)
+    cleanup_guard.stop_label(socket, capture_output=True)

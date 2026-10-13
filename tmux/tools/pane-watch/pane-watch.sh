@@ -151,14 +151,8 @@ if ! mkdir "$LOCK" 2>/dev/null; then
       echo "REFUSE: $LOCK belongs to a live process that cannot be verified as this watcher; stop it directly before replacing." >&2
       exit 1
     }
-    echo "NOTICE: requesting a safe handoff from watcher PID $owner_pid for $PANE"
-    kill -TERM "$owner_pid" 2>/dev/null || { echo "REFUSE: cannot stop existing watcher PID $owner_pid." >&2; exit 1; }
-    handoff_tries=0
-    while [ -d "$LOCK" ] && [ "$handoff_tries" -lt 50 ]; do
-      sleep 0.1
-      handoff_tries=$((handoff_tries+1))
-    done
-    [ ! -d "$LOCK" ] || { echo "REFUSE: existing watcher PID $owner_pid did not release $LOCK; no replacement was started." >&2; exit 1; }
+    echo "REFUSE: a live watcher still holds $LOCK; PID-file ownership does not authorize stopping it." >&2
+    exit 1
   else
     rm -f "$LOCK/pid" "$LOCK/start"
     rmdir "$LOCK" 2>/dev/null || { echo "REFUSE: stale lock $LOCK contains unexpected files; inspect it before replacing." >&2; exit 1; }

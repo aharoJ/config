@@ -5,6 +5,8 @@ import os
 import runpy
 import shlex
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import time
 
 module = runpy.run_path(str(pathlib.Path(__file__).resolve().parents[1] / 'tools/relay-visible-source'))
@@ -68,6 +70,6 @@ try:
         raise AssertionError('alternate screen was accepted')
     print('PASS real private split-window focus changes, resize, scrollback and alternate-screen refusals; zero input commands')
 finally:
-    stopped = subprocess.run(['tmux','-L',socket,'kill-server'],capture_output=True,text=True,timeout=3)
+    stopped = cleanup_guard.stop_label(socket, capture_output=True, text=True, timeout=3)
     proof = subprocess.run(['tmux','-L',socket,'list-sessions'],capture_output=True,text=True,timeout=3)
     assert proof.returncode == 1 and ('no server running' in proof.stderr or 'No such file' in proof.stderr)

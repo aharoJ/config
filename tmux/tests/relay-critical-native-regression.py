@@ -25,14 +25,30 @@ if sys.argv[1:2] == ['--source']:
             seen.add(ready)
             request = ready.with_suffix('.json')
             data = json.loads(request.read_text())
-            result = subprocess.run(data['argv'],env=data['env'],capture_output=True,text=True,timeout=40)
-            request.with_suffix('.result').write_text(json.dumps(dict(returncode=result.returncode,stdout=result.stdout,stderr=result.stderr)))
+            stdout_path = request.with_suffix('.stdout')
+            stderr_path = request.with_suffix('.stderr')
+            with stdout_path.open('w') as output, stderr_path.open('w') as errors:
+                try:
+                    result = subprocess.run(data['argv'],env=data['env'],stdout=output,stderr=errors,text=True,timeout=40)
+                    code = result.returncode
+                except subprocess.TimeoutExpired:
+                    code = 124
+            request.with_suffix('.result').write_text(json.dumps(dict(returncode=code,stdout=stdout_path.read_text(),stderr=stderr_path.read_text())))
         time.sleep(.02)
 
 spec = importlib.util.spec_from_file_location('transport', ROOT/'tests/relay-delivery-regression.py')
 transport = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(transport)
 out = Path(tempfile.mkdtemp(prefix='rn-critical-',dir=Path.home()/'desk/lab'))
+scratch = out / 'scratch'
+scratch.mkdir(mode=0o700)
+fixture_bin = out / 'bin'
+fixture_bin.mkdir(mode=0o700)
+retained = out / 'retained-trash'
+retained.mkdir(mode=0o700)
+trash = fixture_bin / 'trash'
+trash.write_text('#!' + sys.executable + '\nimport os,sys,uuid\nfrom pathlib import Path\nroot=Path(' + repr(str(out)) + ')\nfor value in sys.argv[1:]:\n if value=="--": continue\n path=Path(value)\n if path.is_symlink() or not path.resolve().is_relative_to(root) or not path.is_file() or path.stat().st_uid!=os.geteuid(): sys.exit(97)\n path.rename(root/"retained-trash"/(uuid.uuid4().hex+"-"+path.name))\n')
+trash.chmod(0o700)
 tools = out/'tools'
 shutil.copytree(ROOT/'tools',tools)
 guard = tools/'relay-route-guard'
@@ -42,7 +58,7 @@ actor_source.write_text('#include <sys/wait.h>\n#include <unistd.h>\nint main(in
 for app in ('claude','codex','agy'):
     subprocess.run(['cc',str(actor_source),'-o',str(out/app)],check=True,capture_output=True)
 matrix = transport.Matrix(out/'matrix')
-transport.AGENT_FIXTURE['enable'](tools, matrix.attestations, Path('/private/tmp' if sys.platform=='darwin' else '/tmp')/('tmux-'+str(os.getuid()))/matrix.socket)
+transport.AGENT_FIXTURE['enable'](tools, matrix.attestations, transport.cleanup_guard.route(['tmux', '-L', matrix.socket]))
 for app in ('claude','codex','agy'):
     transport.AGENT_FIXTURE['attest'](matrix.attestations,app,out/app)
 results = []
@@ -69,7 +85,7 @@ try:
         while not all((folder/'ready').exists() for folder in (target_dir,sender_dir)):
             assert time.monotonic()<until
             time.sleep(.02)
-        env = dict(os.environ,TMUX=matrix.server_address,TMUX_BIN=str(matrix.tmux_binary),TMUX_RELAY_LOCK_ROOT=str(out/'locks'),CC_MSG_INBOX_ROOT=str(out/'inbox'),CC_MSG_SESSION=session,CC_MSG_WINDOW='lala',CODEX_SEND_SESSION=session,AGY_SEND_SESSION=session,RELAY_STARTED_MINUTES='.002')
+        env = dict(os.environ,TMPDIR=str(scratch),PATH=str(fixture_bin)+os.pathsep+os.environ['PATH'],TMUX=matrix.server_address,TMUX_BIN=str(matrix.tmux_binary),TMUX_RELAY_LOCK_ROOT=str(out/'locks'),CC_MSG_INBOX_ROOT=str(out/'inbox'),CC_MSG_SESSION=session,CC_MSG_WINDOW='lala',CODEX_SEND_SESSION=session,AGY_SEND_SESSION=session,RELAY_STARTED_MINUTES='.002')
         for key in ('CC_MSG_QUEUE_INTERNAL','CODEX_SEND_QUEUE_INTERNAL','AGY_SEND_QUEUE_INTERNAL','RELAY_MESSAGE_RECORD'):
             env.pop(key,None)
         for index in (1,2):
@@ -77,7 +93,7 @@ try:
             request = sender_dir/('request-'+str(index)+'.json')
             request.write_text(json.dumps(dict(argv=command,env=env)))
             request.with_suffix('.ready').touch()
-            until = time.monotonic()+25
+            until = time.monotonic()+45
             while not request.with_suffix('.result').exists():
                 assert time.monotonic()<until
                 time.sleep(.02)

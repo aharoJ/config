@@ -14,6 +14,8 @@ import shlex
 import signal
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 import tty
@@ -298,7 +300,8 @@ class StateMatrix(delivery.Matrix):
                 source = f'if [ "$1" = list-panes ]; then /bin/sleep 2; fi\nexec {real} "$@"'
                 expected, no_input = 3, True
             else:
-                source = f'if [ "$1" = if-shell ] && [[ "$*" = *paste-buffer* ]]; then {real} "$@"; code=$?; {real} kill-server; exit "$code"; fi\nexec {real} "$@"'
+                cleanup = shlex.join([sys.executable, str(delivery.ROOT / "tests/cleanup_guard.py"), "stop", "tmux", "-L", self.socket])
+                source = f'if [ "$1" = if-shell ] && [[ "$*" = *paste-buffer* ]]; then {real} "$@"; code=$?; {cleanup}; exit "$code"; fi\nexec {real} "$@"'
                 expected, no_input = 4, False
             proxy.write_text("#!/usr/bin/env bash\n" + source + "\n")
             proxy.chmod(0o755)

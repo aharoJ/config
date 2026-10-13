@@ -9,6 +9,8 @@ import stat
 import tempfile
 from pathlib import Path
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 
@@ -27,6 +29,7 @@ output = args.output.resolve()
 if not output.is_relative_to(Path.home() / 'desk') or not 1 <= args.workers <= 8 or not 1 <= args.timeout <= 60:
     parser.error('output must be under ~/desk, workers in 1..8, timeout in 1..60')
 output.mkdir(parents=True, exist_ok=True)
+cleanup_guard.record_directory()
 
 if args.private_tmux:
     CASES = ['relay-shell-quote-regression.py', 'relay-paste-row-regression.py', 'relay-duplicate-enter-regression.py', 'relay-visible-pane-regression.py', 'relay-visible-native-regression.py', *['relay-critical-native-regression.py:' + app for app in ('claude','codex','agy')]]
@@ -39,11 +42,14 @@ def execute(case):
     sockets = None
     cleanup = []
     if args.private_tmux:
+        worker_lease = cleanup_guard.fresh_lease()
+        env['KS01_RUN_CAP'] = json.dumps(worker_lease)
+        env.pop('S7TK_CLEANUP_RECORD_DIR', None)
         binary = directory / 'bin'
         binary.mkdir(exist_ok=True)
-        sockets = Path(tempfile.mkdtemp(prefix='rn-s-', dir=Path.home() / 'desk/lab'))
+        sockets = Path(worker_lease['root'])
         wrapper = binary / 'tmux'
-        wrapper.write_text('#!' + sys.executable + '\nimport os,sys,pathlib,hashlib\na=sys.argv[1:]\nif "-L" in a:\n i=a.index("-L");name=a[i+1]\n if not name or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for c in name):sys.exit(1)\n a[i:i+2]=["-S",str(pathlib.Path(' + repr(str(sockets)) + ')/ (hashlib.sha256(name.encode()).hexdigest()[:16]+".sock"))]\nos.execv(' + repr(shutil.which('tmux')) + ',["tmux",*a])\n')
+        wrapper.write_text('#!' + sys.executable + '\nimport sys\nsys.path.insert(0,' + repr(str(ROOT)) + ')\nimport cleanup_guard\nsys.exit(cleanup_guard.guarded_run(["tmux",*sys.argv[1:]]).returncode)\n')
         wrapper.chmod(0o700)
         env['PATH'] = str(binary) + os.pathsep + env['PATH']
     started = time.monotonic()
@@ -57,12 +63,18 @@ def execute(case):
             stdout, stderr = process.communicate(timeout=args.timeout)
             code = process.returncode
         except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
+            process.terminate()
             try:
                 stdout, stderr = process.communicate(timeout=1)
             except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                stdout, stderr = process.communicate()
+                process.kill()
+                try:
+                    stdout, stderr = process.communicate(timeout=1)
+                except subprocess.TimeoutExpired:
+                    process.stdout.close()
+                    process.stderr.close()
+                    process.wait(timeout=1)
+                    stdout, stderr = '', '#s7tk descendant pipe still open; no group signal sent'
             code = 124
     except OSError as error:
         code, stdout, stderr = 125, '', str(error)
@@ -75,9 +87,8 @@ def execute(case):
                 code = code or 125
                 continue
             try:
-                stopped = subprocess.run([tmux, '-S', str(socket), 'kill-server'], capture_output=True, text=True, timeout=3)
-                proof = subprocess.run([tmux, '-S', str(socket), 'list-sessions'], capture_output=True, text=True, timeout=3)
-                verified = proof.returncode == 1 and ('no server running' in proof.stderr or 'No such file' in proof.stderr)
+                stopped = subprocess.run([sys.executable, str(ROOT / 'cleanup_guard.py'), 'stop', tmux, '-S', str(socket)], env=env, capture_output=True, text=True, timeout=5)
+                verified = stopped.returncode == 0 and not socket.exists()
                 cleanup.append(dict(socket=str(socket), state='stopped' if verified else 'unverified', kill_exit=stopped.returncode))
                 if not verified:
                     code = code or 125

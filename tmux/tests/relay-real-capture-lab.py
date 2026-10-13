@@ -6,6 +6,8 @@ from pathlib import Path
 import select
 import shlex
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 import tty
@@ -87,10 +89,10 @@ def run(output):
     output.mkdir(parents=True, exist_ok=True)
     socket = f'ccmsg-lab-private-{os.getpid()}'
     wrapper = output / 'tmux-private'
-    wrapper.write_text('#!/bin/sh\nexec tmux -L '+socket+' -f /dev/null "$@"\n')
+    wrapper.write_text('#!/bin/sh\nexec ' + shlex.join([sys.executable, str(ROOT / "tools/test-server-cleanup"), "proxy", socket]) + ' "$@"\n')
     wrapper.chmod(0o700)
     def tmux(*args):
-        return subprocess.check_output([str(wrapper), *args], text=True, timeout=5).strip()
+        return subprocess.check_output(['tmux', '-L', socket, '-f', '/dev/null', *args], text=True, timeout=5).strip()
     try:
         for kind in ['claude', 'codex']:
             folder = output / kind
@@ -131,7 +133,7 @@ def run(output):
             (folder/'capture-after.ansi').write_text(tmux('capture-pane','-p','-e','-t','='+session+':='+kind)+'\n')
             print('PASS',kind,'real-capture replay; one confirmed submission',flush=True)
     finally:
-        subprocess.run([str(wrapper),'kill-server'],capture_output=True,timeout=5)
+        cleanup_guard.stop_label(socket, capture_output=True, timeout=3)
 
 if __name__ == '__main__':
     if sys.argv[1:2] == ['--fixture']:

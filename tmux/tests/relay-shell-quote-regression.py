@@ -4,6 +4,8 @@ import random
 import shlex
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 
 source = (Path(__file__).resolve().parents[1] / 'tools/relay-delivery.sh').read_text()
 function = source[source.index('relay_shell_join()'):source.index('relay_route_command()')]
@@ -35,5 +37,5 @@ try:
             receipt = tmux('if-shell', '-t', 'quote-lab', 'true', nested, 'display-message -p OUTERBLOCK')
             assert receipt.stdout == value + '\n', (shell, value, receipt.stdout)
 finally:
-    subprocess.run(['tmux', '-L', socket, 'kill-server'], capture_output=True)
+    cleanup_guard.stop_label(socket, capture_output=True)
 print(f'PASS: {len(shells)} Bash versions, {len(arguments)} literal/fuzz arguments each, shell and nested tmux paths')

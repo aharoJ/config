@@ -152,14 +152,6 @@ timeout_status() {
 
 stop_bounded() {
   [ -n "$bounded_pid" ] || return 0
-  kill -TERM "$bounded_pid" 2>/dev/null || true
-  for bounded_try in 1 2 3 4 5 6 7 8 9 10; do
-    bounded_state=$(ps -o state= -p "$bounded_pid" 2>/dev/null | tr -d ' ')
-    case "$bounded_state" in ''|Z*) break ;; esac
-    sleep 0.1
-  done
-  bounded_state=$(ps -o state= -p "$bounded_pid" 2>/dev/null | tr -d ' ')
-  case "$bounded_state" in ''|Z*) : ;; *) kill -KILL "$bounded_pid" 2>/dev/null || true ;; esac
   wait "$bounded_pid" 2>/dev/null || true
   bounded_pid=
 }

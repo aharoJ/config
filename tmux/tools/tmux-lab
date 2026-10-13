@@ -15,6 +15,13 @@ import subprocess
 import sys
 import time
 import uuid
+import importlib.machinery
+import importlib.util
+
+_cleanup_loader = importlib.machinery.SourceFileLoader("tmux_test_cleanup", str(pathlib.Path(__file__).with_name("test-server-cleanup")))
+_cleanup_spec = importlib.util.spec_from_loader(_cleanup_loader.name, _cleanup_loader)
+CLEANUP = importlib.util.module_from_spec(_cleanup_spec)
+_cleanup_loader.exec_module(CLEANUP)
 
 
 SYSTEM = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True)
@@ -103,20 +110,7 @@ def scoped_processes(record):
 
 
 def signal_scoped_process(record, row, signum):
-    pid = row['pid']
-    current = kernel_process(pid)
-    if (unique_identity(record['owner_pid']) != record['owner_unique_id'] or not current
-            or current['uid'] != record['uid'] or current['birth'] != row['birth']
-            or current['birth'][0] < int(record['created'])
-            or responsible_pid(pid) != record['owner_pid'] or unique_identity(pid) != row['unique_id']):
-        return False
-    try:
-        os.kill(pid, signum)
-        return True
-    except ProcessLookupError:
-        return False
-    except OSError:
-        return False
+    return False
 
 
 def clear_scoped_processes(record):
@@ -164,7 +158,9 @@ def tmux_env():
 
 
 def tmux_command(binary, name, *args, timeout=5):
-    return subprocess.run([binary, "-L", name, "-f", "/dev/null", *args], env=tmux_env(), capture_output=True, text=True, timeout=timeout)
+    if args[:1] == ("kill-server",):
+        return CLEANUP.stop_label(name, timeout=timeout)
+    return CLEANUP.guarded_run([binary, "-L", name, "-f", "/dev/null", *args], env=tmux_env(), capture_output=True, text=True, timeout=timeout)
 
 
 def write_record(path, record):
@@ -252,14 +248,14 @@ def stop_child(child):
     if child is None or child.poll() is not None:
         return
     try:
-        os.killpg(child.pid, signal.SIGTERM)
+        child.terminate()
     except ProcessLookupError:
         return
     try:
         child.wait(timeout=3)
     except subprocess.TimeoutExpired:
         try:
-            os.killpg(child.pid, signal.SIGKILL)
+            child.kill()
         except ProcessLookupError:
             pass
         child.wait(timeout=3)
@@ -271,7 +267,7 @@ def run_command(args):
     become_responsible()
     owner_pid = os.getpid()
     name = f"ccmsg-lab-private-{owner_pid}"
-    socket_path = pathlib.Path(f"/private/tmp/tmux-{os.getuid()}/{name}")
+    socket_path = CLEANUP.route([real_tmux(), "-L", name])
     if len(os.fsencode(socket_path)) >= 104:
         raise RuntimeError("private socket path exceeds macOS Unix limit")
     existing = socket_state(socket_path)
@@ -326,7 +322,6 @@ def run_command(args):
             raise RuntimeError('private server did not inherit responsibility scope')
         record["state"] = "running"
         write_record(record_path, record)
-        initializing = False
         if pending_signals:
             raise Interrupted(pending_signals[0])
         env = os.environ.copy()
@@ -337,6 +332,9 @@ def run_command(args):
                     "TMUX_LAB_RECORD": str(record_path), "TMUX_LAB_TOKEN": token, "TMUX_LAB_TMUX": str(wrapper),
                     "TMUX_BIN": str(wrapper), "TMUX": f"{actual_path},{server_pid},0", "PATH": str(run_dir) + os.pathsep + env.get("PATH", "")})
         child = subprocess.Popen(args[1:], env=env, start_new_session=True)
+        initializing = False
+        if pending_signals:
+            raise Interrupted(pending_signals[0])
         code = child.wait()
         exit_code = 128 - code if code < 0 else code
     except Interrupted as error:
@@ -351,14 +349,11 @@ def run_command(args):
             cleanup_errors.append("child: " + str(error))
         if record["server_pid"] is None and creation_attempted and os.path.lexists(socket_path):
             try:
-                server_pid, actual_path = server_identity(binary, name)
-                info = pathlib.Path(actual_path).stat()
-                process = subprocess.run(["ps", "-p", str(server_pid), "-o", "command="], capture_output=True, text=True)
-                if (stat.S_ISSOCK(info.st_mode) and os.path.realpath(actual_path) == os.path.realpath(socket_path)
-                        and f"-L {name}" in process.stdout and "-f /dev/null" in process.stdout):
-                    record["server_pid"] = server_pid
-                    record["socket_path"] = actual_path
-                    record["socket_inode"] = info.st_ino
+                proof = CLEANUP.load(socket_path)
+                if CLEANUP.observation_matches(socket_path, proof):
+                    record["server_pid"] = proof["pid"]
+                    record["socket_path"] = proof["path"]
+                    record["socket_inode"] = proof["inode"]
             except (OSError, RuntimeError, subprocess.TimeoutExpired):
                 pass
         if record["server_pid"] is not None and verify_identity(binary, record):
@@ -456,7 +451,7 @@ def proxy_command(args):
     binary = real_tmux()
     if not verify_identity(binary, record):
         return 97
-    return subprocess.run([binary, "-L", name, "-f", "/dev/null", *rest], env=tmux_env()).returncode
+    return CLEANUP.guarded_run([binary, "-L", name, "-f", "/dev/null", *rest], env=tmux_env()).returncode
 
 
 def list_runs():
@@ -473,7 +468,7 @@ def list_runs():
                 pid = int(line[1:])
             elif line.startswith('n/') and pid is not None:
                 path = pathlib.Path(line[1:])
-                if pattern.fullmatch(path.name):
+                if pattern.fullmatch(path.name) or (path.suffix == ".sock" and path.is_relative_to(CLEANUP.DESK_TMP)):
                     listener_pids.setdefault(os.path.realpath(path), set()).add(pid)
     for path in sorted(root.glob("run-*/record.json")):
         try:
@@ -498,7 +493,7 @@ def list_runs():
                               "escape_observation": 'live' if escapes else 'gone' if record.get('escaped_processes') else 'none',
                               "server_live": server_live, "socket_observation": "unknown" if owners is None else "live" if owners else "stale" if os.path.lexists(path_obj) else "absent",
                               "stale": server_live and not owner_live, "inspection_unknown": owners is None,
-                              "socket": record["socket"], "server_pid": record["server_pid"]}, sort_keys=True))
+                              "socket": record["socket"], "socket_path": record["socket_path"], "server_pid": record["server_pid"]}, sort_keys=True))
         except (OSError, ValueError, KeyError):
             print(json.dumps({"record": str(path), "state": "unreadable"}))
     candidates = set()

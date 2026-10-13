@@ -53,10 +53,8 @@ PY
   exit $?
 fi
 tmux_context="$(printenv TMUX 2>/dev/null || true)"
-socket="$(printf '%s\n' "$tmux_context" | sed 's/,.*//')"
-server="$(basename "$socket")"
-[[ "$server" =~ ^ccmsg-lab-private-[0-9]+$ ]] || fail 'an explicitly private lab TMUX context is required'
-lab_tmux() { tmux -L "$server" -f /dev/null "$@"; }
+socket="$(python3 -c 'import os; fields=os.environ.get("TMUX", "").rsplit(",",2); assert len(fields)==3 and fields[0] and all(value.isascii() and value.isdigit() for value in fields[1:]); print(fields[0])')" || fail 'valid inherited test context required'
+lab_tmux() { python3 "$root/tools/test-server-cleanup" run tmux -S "$socket" -f /dev/null "$@"; }
 
 awk -F '\t' '
   /^[[:space:]]*(#|$)/ { next }
@@ -82,6 +80,7 @@ require_case working-empty 0
 require_case single-line-draft 1
 require_case multiline-draft 1
 require_case home-cursor-draft 1
+[ -n "${KS01_RUN_CAP:-}" ] || fail 'this-run test capability required'
 
 version_bin="$(printenv CODEX_VERSION_BIN 2>/dev/null || true)"
 [ -n "$version_bin" ] || version_bin=codex

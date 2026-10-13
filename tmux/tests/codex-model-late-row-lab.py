@@ -7,6 +7,8 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import time
 
@@ -129,7 +131,7 @@ def main():
             "secure": process.returncode == 5 and not inputs,
         }
     finally:
-        subprocess.run(["tmux", "-L", SERVER, "kill-server"], capture_output=True)
+        cleanup_guard.stop_label(SERVER, capture_output=True)
     (OUTPUT / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
     return 0 if result.get("secure") else 1

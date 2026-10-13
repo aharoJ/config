@@ -6,6 +6,8 @@ import pathlib
 import re
 import shlex
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import tempfile
 import time
@@ -103,7 +105,7 @@ else:
         assert evaluate(agy_pane, agy_expression) == "1", "empty Agy prompt refused"
         print("relay paste row regression: PASS")
     finally:
-        run("kill-server", check=False)
+        cleanup_guard.stop_label(SOCKET)
         subprocess.run(["trash", str(scratch)], check=True)
 
 

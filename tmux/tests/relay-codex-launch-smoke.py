@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import shlex
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import threading
 import time
@@ -144,7 +146,7 @@ try:
         tmux('kill-window', '-t', '=launch-smoke:=' + name)
     print('PASS real wrapper delimited prompt, bare future-command refusal and remote/token runtime tools')
 finally:
-    subprocess.run(['tmux', '-L', socket_name, 'kill-server'], capture_output=True, timeout=5)
+    cleanup_guard.stop_label(socket_name, capture_output=True, timeout=3)
     server.terminate()
     server.wait(timeout=10)
     ws_server.terminate()

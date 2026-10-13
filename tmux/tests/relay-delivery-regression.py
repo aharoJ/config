@@ -16,6 +16,8 @@ import shlex
 import shutil
 import signal
 import subprocess
+import cleanup_guard
+cleanup_guard.install()
 import sys
 import tempfile
 import time
@@ -252,9 +254,9 @@ class Matrix:
         self.attestations = self.output / 'agent-attestations.json'
         self.proven_tools = self.output / 'proven-tools'
         shutil.copytree(ROOT / 'tools', self.proven_tools)
-        AGENT_FIXTURE['enable'](self.proven_tools, self.attestations, pathlib.Path('/private/tmp' if sys.platform == 'darwin' else '/tmp') / ('tmux-' + str(os.getuid())) / self.socket)
+        AGENT_FIXTURE['enable'](self.proven_tools, self.attestations, cleanup_guard.route(['tmux', '-L', self.socket]))
         self.tmux_binary = self.output / "tmux-private"
-        self.tmux_binary.write_text("#!/usr/bin/env bash\nexec tmux -L " + shlex.quote(self.socket) + ' -f /dev/null "$@"\n')
+        self.tmux_binary.write_text("#!/usr/bin/env bash\nexec " + shlex.join([sys.executable, str(ROOT / "tools/test-server-cleanup"), "proxy", self.socket]) + ' "$@"\n')
         self.tmux_binary.chmod(0o755)
         self.server_address = ""
         signal.signal(signal.SIGINT, self.interrupted)
@@ -265,7 +267,7 @@ class Matrix:
 
     def tmux(self, *args):
         try:
-            result = subprocess.run(["timeout", "2", str(self.tmux_binary), *args], capture_output=True, text=True, timeout=4)
+            result = subprocess.run(["timeout", "2", "tmux", "-L", self.socket, "-f", "/dev/null", *args], capture_output=True, text=True, timeout=4)
         except subprocess.TimeoutExpired:
             self.frozen = True
             raise RuntimeError("tmux froze; stopped without recovery")
@@ -489,18 +491,23 @@ class Matrix:
         for window in self.tmux("list-windows", "-t", "=" + session, "-F", "#{window_id}").splitlines():
             self.tmux("kill-window", "-t", window)
         self.sessions.discard(session)
+        self.source_sessions.discard(session)
+        if not self.sessions and not self.source_sessions and self.server_address:
+            cleanup_guard.stop_label(self.socket, timeout=3)
 
     def close(self):
         if not self.frozen:
             for session in self.sessions.copy():
                 self.cleanup_session(session)
-        killed = subprocess.run(["timeout", "2", str(self.tmux_binary), "kill-server"], capture_output=True, text=True, timeout=4)
-        gone = subprocess.run(["timeout", "2", str(self.tmux_binary), "ls"], capture_output=True, text=True, timeout=4)
-        path = pathlib.Path(self.server_address.split(",")[0]) if self.server_address else None
-        if gone.returncode == 1 and path is not None and path.name == self.socket and path.exists():
-            path.unlink()
+        if not self.server_address:
+            (self.output / "cleanup.json").write_text(json.dumps({"state": "not-started", "socket": self.socket}))
+            return
+        killed = cleanup_guard.stop_label(self.socket, capture_output=True, text=True, timeout=3)
+        path = pathlib.Path(self.server_address.rsplit(",", 2)[0])
+        if path.exists():
+            raise cleanup_guard.CleanupRefused("owned server stop left a socket; no guessed unlink")
         (self.output / "cleanup.json").write_text(json.dumps({"socket": self.socket, "kill_exit": killed.returncode,
-                                                           "ls_exit": gone.returncode, "remaining": bool(path and path.exists())}))
+                                                           "ls_exit": None, "remaining": False}))
 
     def sender_case(self, name, agent, payload="sender payload", code=0, width=192, rename=False, linked=False, node=False, attested=True, actor_options=None, relay="cc-msg.sh", seeded_queue=False):
         session, window, directory = self.start(relay, name, width=width)

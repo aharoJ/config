@@ -106,3 +106,34 @@ Queue interruption tests include a real subprocess terminated after its transpor
 Routing authorizes live supported native peers on the same user-owned tmux socket, with exact source and target generation checks. Session and window names select addresses and never assign rank. There is no route policy, mandatory hub, `orcha` shortcut, started-watch worker, or automatic task escalation. Every input guard uses strict proof; `relaxed` refuses. Shared-daemon thread attachment remains limited; local native launches use direct actor ancestry.
 
 Codex local relay launches use `codex -- "prompt"` for an initial prompt. Multiple images work with `codex --image one.png two.png` or repeated flags. Image operands continue until the next option or `--`; put a launch prompt after `--`. Unknown positional commands outside the image operand list still refuse automatic local authority. Model presets `--model-gpt-5-5` and `--model-gpt-5-3-codex` preserve the same local launch checks.
+# Cleanup safety after incident #s7tk
+
+Before any test-server stop, retain proof that this run created the socket and
+record its canonical path, inode and server kernel start-time generation.
+Create sockets only under `~/desk/tmp` using a fresh run capability and a
+precreation claim. The private lease includes the run nonce, live owner's
+kernel generation, socket path/inode and server PID/kernel generation. A
+record directory or logical label alone is not authority; inherited capability
+delegation is only for this run's children. Stop through `test-server-cleanup`
+after checking that proof again, using its explicit `-N -S` server-side identity
+condition. Refuse the default production socket and the socket in `$TMUX`,
+including aliases. `tmux new` plus PPID 1 proves no ownership. Never signal a
+tmux PID discovered with `ps` or a process-name search. Red must not signal
+processes or servers; the owning harness performs guarded cleanup.
+
+Client termination is limited to the actual unreaped child object this harness
+spawned. No process-group or discovered descendant termination is authorized.
+Uncontained descendants are reported/refused, not treated as cleanup success.
+Do not run any tmux-touching test before independent static isolation approval.
+
+Seven Rust native tests that depend on the everyday server are quarantined
+with `cfg(any())`, pending private-fixture migration; they are not counted as
+passing or active coverage. Five Python descendant/escape cleanup tests and
+one parent-PID interruption fixture, and four legacy synthetic live-route
+cases are likewise explicitly skipped. Installed
+tests remain unchanged and must not run until a separately approved deploy.
+
+The legacy ambient Rust Snapshot capture API now fails closed with
+InvalidNamespace, without invoking any backend. Native capture/preparation
+must use an explicitly bound Namespace; legacy prepare/captured_source are
+held pending that provider migration.
