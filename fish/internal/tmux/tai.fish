@@ -221,7 +221,19 @@ function __tai_seat
         set seat_env "--env=TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir")
         set -a seat_env "--env=CLAUDE_CODE_TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir") "--env=CLAUDE_ENV_FILE=$launch_dir/panel-env.sh"
     end
-    __tai_spawn "$seat" "$launch_dir" "--session=$session" $seat_env $parts $args $isolation
+    set -l launch_args
+    set -l isolation_inserted 0
+    for arg in $args
+        if test "$arg" = --; and test $isolation_inserted -eq 0
+            set -a launch_args $isolation
+            set isolation_inserted 1
+        end
+        set -a launch_args "$arg"
+    end
+    if test $isolation_inserted -eq 0
+        set -a launch_args $isolation
+    end
+    __tai_spawn "$seat" "$launch_dir" "--session=$session" $seat_env $parts $launch_args
 end
 
 function tai --description 'tmux: spawn AI agent window in current directory'
