@@ -187,7 +187,9 @@ pub fn classify(capture: &str, glyph: char, x: usize, y: usize, width: usize) ->
         Ok(Marker::Ghost)
             if glyph == '›'
                 && prompt.text.trim_end_matches(['\r', '\n']) == "› Ask Codex to do anything"
-                && rows[y + 1..].iter().all(|r| matches!(*r, "" | "\n" | "\r\n")) =>
+                && rows[y + 1..]
+                    .iter()
+                    .all(|r| matches!(*r, "" | "\n" | "\r\n")) =>
         {
             return Composer::EmptyCandidate;
         }
@@ -244,11 +246,9 @@ fn divider_width(raw: &str) -> Option<usize> {
 fn codex_footer(raw: &str) -> bool {
     row(raw).is_ok_and(|r| {
         !r.has_background_style
-            && r.text
-                .strip_prefix("  ")
-                .is_some_and(|text| {
-                    text.starts_with(|ch: char| !ch.is_whitespace() && ch != '\u{200b}')
-                })
+            && r.text.strip_prefix("  ").is_some_and(|text| {
+                text.starts_with(|ch: char| !ch.is_whitespace() && ch != '\u{200b}')
+            })
     })
 }
 
@@ -328,3 +328,60 @@ pub fn marker(raw: &str, glyph: char) -> Result<Marker, InvalidStyle> {
     }
     Ok(Marker::Draft)
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Screen {
+    Empty,
+    Staged(Vec<u8>),
+    Hold,
+}
+/// Conservative one-line staged-byte oracle. Unrecognized layouts, styles,
+/// wrapping, cursor edits and Unicode wires cannot authorize Enter.
+pub fn screen(glyph: char, capture: &str, x: usize, y: usize, width: usize, wire: &str) -> Screen {
+    if classify(capture, glyph, x, y, width) == Composer::EmptyCandidate {
+        return Screen::Empty;
+    }
+    if width == 0 || !wire.bytes().all(|b| (32..=126).contains(&b)) {
+        return Screen::Hold;
+    }
+    let rows: Vec<&str> = capture.split_inclusive('\n').collect();
+    let Some(raw) = rows.get(y) else {
+        return Screen::Hold;
+    };
+    let Ok(row) = row(raw) else {
+        return Screen::Hold;
+    };
+    let Some((prefix, tail)) = row.text.trim_end_matches(['\r', '\n']).split_once(glyph) else {
+        return Screen::Hold;
+    };
+    if !prefix.chars().all(|c| c == ' ' || c == '\u{a0}')
+        || row.has_dim_style
+        || row.has_background_style
+    {
+        return Screen::Hold;
+    }
+    let expected = format!(" {wire}");
+    if tail != expected && tail != format!("\u{a0}{wire}") {
+        return Screen::Hold;
+    }
+    let prompt_x = prefix.chars().count() + 2;
+    if x != prompt_x + wire.len() || x >= width {
+        return Screen::Hold;
+    }
+    // Substitute only the independently exact staged prompt, then reuse the
+    // classifier to require the recognized application's surrounding layout.
+    let empty = match glyph {
+        '❯' => format!("{prefix}❯\u{a0}\n"),
+        _ => format!("{prefix}›\x1b[2m \x1b[0m\n"),
+    };
+    let mut check = rows.iter().map(|r| (*r).to_owned()).collect::<Vec<_>>();
+    check[y] = empty;
+    if classify(&check.concat(), glyph, prompt_x, y, width) != Composer::EmptyCandidate {
+        return Screen::Hold;
+    }
+    Screen::Staged(wire.as_bytes().to_vec())
+}
+
+#[cfg(test)]
+#[path = "../tests/support/composer.rs"]
+mod tests;

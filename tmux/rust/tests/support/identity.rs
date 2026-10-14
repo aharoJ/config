@@ -1,0 +1,66 @@
+use super::*;
+use std::os::unix::fs::DirBuilderExt;
+#[test]
+fn private_paths() {
+    let root = PathBuf::from(std::env::var_os("HOME").unwrap())
+        .join("desk/tmp")
+        .join(format!(
+            "k50-private-{}",
+            crate::runtime::fresh_id().unwrap()
+        ));
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&root)
+        .unwrap();
+    let dir = open_dir(&root).unwrap();
+    private(&dir, true).unwrap();
+    let file = open_at(
+        &dir,
+        "record",
+        libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL,
+    )
+    .unwrap();
+    private(&file, false).unwrap();
+    std::os::unix::fs::symlink(&root, root.join("alias")).unwrap();
+    assert!(open_dir(&root.join("alias")).is_err());
+    assert!(open_at(&dir, "../record", libc::O_RDONLY).is_err());
+    std::fs::set_permissions(
+        root.join("record"),
+        std::os::unix::fs::PermissionsExt::from_mode(0o644),
+    )
+    .unwrap();
+    assert!(open_at(&dir, "record", libc::O_RDONLY).is_err());
+    assert!(private(&File::open("/").unwrap(), true).is_err());
+    let mut bytes: Vec<_> = root.as_os_str().as_bytes().to_vec();
+    bytes.extend_from_slice(b"/../tmp");
+    assert!(open_dir(Path::new(std::ffi::OsStr::from_bytes(&bytes))).is_err());
+    let me = kernel_process(std::process::id()).unwrap();
+    assert_eq!(kernel_ancestry(me.pid).unwrap()[0], me);
+    assert!(me.generation().unwrap() > 0);
+}
+#[test]
+fn routing_source() {
+    let snapshot =
+        Snapshot::parse(b"$0\t@1\t%2\t42\t0\t3:a:b3:w,#\n$1\t@2\t%3\t43\t0\t1:x1:y\n").unwrap();
+    let target = resolve(&snapshot, "a:b", "w,#", None).unwrap();
+    assert_eq!(target.selector(), "%2");
+    assert_eq!(split_route("a:b:w,#").unwrap(), ("a:b", "w,#"));
+    for route in ["", ":x", "x:", "x"] {
+        assert!(split_route(route).is_err());
+    }
+    assert!(resolve(&snapshot, "a", "w,#", None).is_err());
+    assert!(resolve(&snapshot, "a:b", "w,#", Some(PaneId(3))).is_err());
+    let mut duplicate = snapshot.clone();
+    duplicate.targets.push(target.clone());
+    assert!(resolve(&duplicate, "a:b", "w,#", None).is_err());
+    let parents = HashMap::from([(99, 42)]);
+    assert_eq!(source_candidate(&snapshot, 99, &parents), Some(target));
+    assert!(source_candidate(&duplicate, 99, &parents).is_none());
+    for raw in [
+        b"$0\t@1\t%2\t0\t0\t9:short".as_slice(),
+        b"$0\t@1\t%2\t42\t2\t1:x1:y\n",
+        b"$0\t@1\t%2\t42\t0\t1:x1:y",
+    ] {
+        assert!(Snapshot::parse(raw).is_err());
+    }
+}
