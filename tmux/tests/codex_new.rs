@@ -484,3 +484,35 @@ fn current_checkout_menu_uses_the_live_source_contract() {
         expect("menu", &mutation, "", false);
     }
 }
+
+#[test]
+fn both_guards_retain_the_shared_picker_and_native_reset_contract() {
+    let footer = "Fast off · GPT-6.1-Sol low · ~/.config";
+    let picker = fixture("codex-model-1601-terra-derived.ansi");
+    assert_eq!(
+        check("navigate-models", &picker, footer).as_deref(),
+        Some("5:0")
+    );
+    assert_eq!(
+        crate::model_guard::picker(&picker, "models", footer),
+        Some((5, 0))
+    );
+    for capture in [
+        picker.replace("GPT-5.6-Luna", "Unknown-model"),
+        picker.replace("  7. GPT-5.6-Luna", "  8. GPT-5.6-Luna"),
+        picker.replace("Older balanced model", "Unknown description"),
+        picker.replace(" select · ", " unverified · "),
+        picker.replace("Select Model and Effort", "Unexpected picker"),
+    ] {
+        assert!(check("models", &capture, footer).is_none());
+        assert!(!crate::model_guard::check("models", &capture, footer));
+    }
+    let native = fixture("codex-161-native-reset.ansi");
+    let footer = crate::model_guard::footer(&native).unwrap();
+    assert!(crate::model_guard::check(
+        "settling-reset",
+        &native,
+        &footer
+    ));
+    assert!(check("direct-reset", &native, &footer).is_some());
+}

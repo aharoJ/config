@@ -1,141 +1,70 @@
-# Sanitized fixture provenance
+# Integrated Rust checks
 
-The Rust panel tools are multicall entries in `tmux/rust`. `cargo test --manifest-path tmux/rust/Cargo.toml` runs the fast trust, evidence, native-envelope, native protocol/schema and cleanup-chain controls. Explicit `panel_plain` cases and `panel_protocol::tests::native_protocol_cli_controls` require an owned plain pane in a private `config-tt:p3x-test-*` window. Build their optimized production candidate with `cargo test --release --manifest-path tmux/rust/Cargo.toml --no-run`; run the selected ignored native harness from that plain pane. The cases stage copies through native aliases, and the interactive case launches one fresh Codex seat with one sanctioned Start. Authority proofs are test controls, not production panel admission. See `tmux/rust/review/p3x-panel-native-fix.md` for source citations, validation and remaining merge dependencies. Shared legacy runners remain for merge reconciliation.
+The active relay, model, fresh-chat and panel implementations are multicall
+surfaces in `tmux/rust`. Stage one built `angelstar-runtime` with command-name
+symlinks in a private PATH directory. Public links and installed legacy copies
+are not test fixtures and must remain unchanged.
 
-Published captures use synthetic account identities and directories, with unrelated private transcript prose replaced. ANSI sequences, per-row cell widths, wrapping and cursor metadata are preserved. Manifest digests identify the sanitized published bytes; `/fixtures/` source identifiers are public labels, not links to raw evidence. Raw capture locations are not published. Synthetic-derived cases retain their distinct labels.
+Run from the repository root:
 
-# Relay guard landing gate
+```text
+cargo fmt --manifest-path tmux/rust/Cargo.toml --check
+cargo clippy --locked --manifest-path tmux/rust/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path tmux/rust/Cargo.toml
+```
 
-Run `python3 tmux/tests/relay-retired-gemini-regression.py` for FNM/Homebrew native Gemini bundle/dist refusals, unsupported source/target routing, launcher and draft-clearing rejection. Gemini seat names backed by Agy remain authorized.
+The default suite covers the relay state/store/identity/composer guards, model
+picker and settling rules, fresh-chat captures and recovery profiles, and panel
+trust/evidence/protocol/schema/cleanup controls. The shared model and fresh-chat
+corpus checks both guards against the seven-model capture and native reset.
+The old shared script aggregators and mixed model renderer are replaced by
+these Rust checks and the explicit native harnesses below. Remaining legacy
+investigation scripts are historical and do not establish integrated parity.
 
-CRITICAL round-three behavior: all public `cc-msg`, `codex-send`, `codex-send-to`, Agy and `relay` task sends use the shared queue. The standard delivery preamble is prepended to the task payload without changing the sender-label format: “Messages delivered here are tasks for you; the prefix identifies the sender, not the addressee; never forward a task unless explicitly asked.” The unbound-generation rule repeats it on every unbound/unproven delivery; verified binding generations use one serialized receipt. Codex generations use verified binding epochs; Claude/Agy use the existing kernel-backed process binding. Unknown introduction delivery is retained explicitly and never automatically replayed as a successful receipt. Preamble-generation uncertainty itself does not refuse transport; identity, source/route, draft and Enter guards still apply.
+Run each signed private gate explicitly with `cargo test --locked --manifest-path
+tmux/rust/Cargo.toml --lib <test-name> -- --ignored --exact`:
 
+- `runtime::tests::private_delivery`
+- `runtime::tests::effect_faults`
+- `runtime::tests::activity_gate`
+- `runtime::tests::activity_elsewhere_then_quiet`
+- `test_server::lease_rejections`
 
-Unbound targets receive a hard send-time warning, including queued delivery; proven continuity still auto-rebinds. New `relay-critical-regression.py` covers shared introductions, unproven repeat/no-refusal, no-input retry, uncertain introduction leases and delivery status. Queue tests verify no automatic sender notifications, including legacy watch settings. Private `relay-critical-native-regression.py --provider <claude|codex|agy>` uses compiled inert actors, actual foreground/process/socket proof, public adapters, real queue/Enter paths. It proves Claude→Claude coverage, bound-process one-time introduction, unbound Codex repeat, no automatic sender alerts and exactly two target submissions for two requested tasks. The full 207-case matrix retains its explicit transport-layer internal mode; these additional public-path suites cover the critical queue behavior that matrix does not.
+The supervising Rust harness creates a fresh signed capability, claims its
+socket before creation, and verifies socket/server generations during cleanup.
+An inherited path, label, PID or pane hint alone does not grant authority.
+Never stop the default or caller server. Never signal a discovered PID or
+process group. Cleanup is limited to the run's verified socket and owned child
+objects; unknown or uncontained state remains a failure.
 
-`relay` also prints a send-time advisory for an unbound Codex recipient, including when delivery queues. A once-bootstrapped seat can use the same read-only continuity proof as source discovery; unavailable evidence is reported as unverified rather than silently treated as bound. Claude/Agy sources already bind through their live process proof. Cross-session delivery is allowed for explicitly addressed, verified peers on the same user-owned socket. Session and window names are addresses, not roles; address components use `[A-Za-z0-9_-]+`. Labels are unchanged.
+# Native parity
 
+Build an optimized candidate and native harness with `cargo test --release
+--locked --manifest-path tmux/rust/Cargo.toml --no-run`. Freeze its commit and
+SHA256, then select that candidate through private PATH symlinks from a plain
+pane in an owned `config-tt:p3x-test-*` window. Inherit actual TMUX/TMUX_PANE.
+Only documented caller env prefixes are permitted. Keep exact argv, env,
+captures, receipts, exits and cleanup evidence under the run's desk directory.
 
-Run `python3 tmux/tests/relay-ui-regression.py --ui-only all <output-directory>` for the three historical defaults, real-capture and paste-collision fixtures. The runner copies tools and fixtures, explicitly isolates routing only in that copy, and records its scope. Paste collision uses a compiled test actor and a capture-derived Agy renderer; it does not start a model. The test verifies the staged human draft kept the original cursor coordinates and received no relay text. Production guards are never edited.
+The ignored `panel_plain::native_interactive_start_collect_cleanup` integration
+case launches one fresh Codex seat, delivers one sanctioned Start, verifies full
+prompt/intake reads and one native final, collects its bound receipts, and
+retires only that owned seat. Run the compiled `panel_plain` test executable
+with `--ignored --exact native_interactive_start_collect_cleanup --nocapture`.
+Its PATH must also select the pinned candidate's public sender aliases.
+Test authority proofs do not certify a production panel's admission or
+independence. See the panel review files for retained validator limits.
 
-Use `--ui-only enter`, `delivery`, `state`, or `input` with the same runner for the other UI suites. Native sender cases in the delivery matrix use the production authority tools; other cases isolate UI transport. Source authority is separately covered by the actual-source parity, route, label and scheduler suites. The low-level defaults/real-capture/Enter scripts also accept an explicit isolated tmux root. Invoking unbound UI fixtures directly against production tools correctly refuses before input.
+Model and fresh-chat spot checks use their documented command shapes against
+an owned interactive Codex pane. Relay checks use the user's existing visible
+Claude pane and an owned Codex target; never start a headless Claude process.
+No guard may be stubbed or weakened to make a native row pass. Uncertain input
+must not be automatically replayed. Remove owned test panes/windows afterward.
 
-Run `python3 tmux/tests/relay-enter-composer-regression.py <output-directory> <isolated-root>` to exercise the actual final `relay_atomic` path on private detached terminals replaying real titled-Claude captures. Derived continuation drafts, boundary replacement, suffixes and moved cursors must send no Enter; valid composers and historical payload duplicates submit once. The final full-capture check retains before/after target metadata and a subsequent active-row check. Terminal changes after the final observation remain a residual race; the UI exposes no atomic snapshot-and-submit operation.
+# Capture provenance
 
-Run `python3 tmux/tests/relay-cc-title-regression.py <output-directory>` for real titled-Claude payload captures, a real ANSI empty composer with update/remote-control/shell indicators, and explicitly derived negative cases. Historical post-paste cursor positions are inferred from visible line endings and marked in metadata; the empty capture has recorded tmux cursor metadata. `relay-cc-title-real.json` records sanitized capture digests. `python3 tmux/tests/relay-real-capture-lab.py <output-directory> <isolated-root>` replays those real screens on a private detached server and verifies exactly one Claude submission and an owned targeted Codex retry. The Codex empty state comes from the published real-capture corpus; terminal replay is transport coverage, not a live-model receipt.
-
-`cc-msg` and `codex-send` default to the caller's tmux session and the `claude` or `codex` window. Explicit session and window overrides remain supported; numeric window indexes resolve to a name before the delivery identity is bound. Oversized messages are preserved under `~/desk/tmp/relay/` and delivered as a short `Read <path>` pointer.
-
-Ordinary sends preserve drafts and queue safe busy/copy-mode refusals for automatic retry. Exit 6 means the queue owns delivery; do not resend. Retries remain bound to the original foreground process, stop after 30 minutes, and never replay uncertain delivery outcomes.
-
-`--operator` / `-O` interrupts an active agent, clears its composer, and submits replacement text. Agents may use this mode only for an explicit operator cut, clear, delete, or erase-and-inject instruction. Agent-to-agent messages use the ordinary guarded path. Operator mode retains target identity and submission verification; an uncertain attempt after clearing is not automatically replayed.
-
-Run `python3 tmux/tests/relay-defaults-regression.py <isolated-root>` for private detached-server coverage of defaults, indexes, exact long-message preservation, draft-preserving retry, operator replacement of wrapped input with a cursor inside the draft, interruption of busy input, and explicit operator slash commands. Run `python3 tmux/tests/cc-msg-queue-regression.py` for persistence, target binding, and uncertain-outcome handling.
-
-Every change to `tmux/tools/relay-input-guard` must prove that real empty composers still pass, as well as that drafts refuse. Run `bash tmux/tests/relay-live-capture-regression.sh --fixtures tmux/tests/fixtures/relay-must-accept.json` and `bash tmux/tests/relay-input-guard-regression.sh` before landing. The must-accept set contains sanitized `capture-pane -p -e` output and cursor metadata for the three 2026-10-01 exit-5 panes, fresh/post-turn config panes, and 40- and 19-column DeepSeek panes. The guard regression replays the sanitized DeepSeek divider-shaped multiline draft in `relay-must-refuse.json` that caused a paste into unsent input. It also replays the 19-column pasted payload that previously failed verification.
-
-Relay code must never trust a bare `tmux display-message -t` result: tmux may return exit 0 and another pane's data when the requested target has vanished. Include `#{pane_id}` in every targeted format and require it to equal the resolved pane ID, including paste and Enter receipts. A missing or mismatched identity is a refusal or an unknown delivery outcome according to whether input was already attempted.
-
-Run `bash tmux/tests/relay-paste-collision-regression.sh` against a private interactive Agy fixture for the same-coordinate Home draft race, and `python3 tmux/tests/relay-duplicate-enter-regression.py` for the duplicate-history Enter condition. The first test preserves the staged human draft without relay bytes; the second requires an active-row check even when history contains the same payload.
-
-`python3 tmux/tests/relay-paste-row-regression.py` checks the generated tmux condition against a private wrapped Codex hint: it accepts the original input rows, then refuses a changed continuation row at unchanged cursor coordinates. It also checks an empty Agy input row.
-
-The same gate covers live Agy startup, post-turn, wide, 40-column and 19-column idle captures, plus Home-moved text and whitespace drafts. `agy-send-to` uses the same route and transport checks as the other relays; its exact session, window and optional pane routing are exercised by the guard regression.
-
-The must-accept gate also includes the empty DeepSeek composer with the transient `Ctrl+Y to paste deleted text` status hint observed in blind live testing. Unknown hint text remains a refusal.
-
-`relay-live-capture-regression.sh --manifest <tsv>` is the separate current Codex six-state gate. Run it only against detached `lab-*` sessions on a `ccmsg-lab-private-<pid>` server. It requires three idle and three draft states from actual Codex panes.
-
-Run `python3 tmux/tests/relay-sender-label-regression.py <output-directory>` for nine ancestry checks and six private sender-label transport cases. Verified Codex and Agy panes retain their source identity; Agy may display Gemini model names, while native Gemini CLI panes are unsupported and must refuse; unknown processes use `<window> (<session>:<window>) [model/effort unverified]:` locally; renamed source seats and ambiguous pane ancestry refuse before input. Installed stable requires an operator-verified thread binding; the isolated #8 candidate adds native status discovery. Display executable recognition is attribution only. Route authorization separately checks the canonical installation executable and Node entrypoint, process generation, foreground ancestry and socket identity.
-
-# Cooperative seat routing and parity
-
-`relay <session>:<seat> <text>` resolves an explicitly named verified peer; address components use `[A-Za-z0-9_-]+`, and numeric seat names are exact names through this entrypoint; `relay status [message-id]` reads durable submission outcomes. Terminal ancestry binds interactive sources. Shared app-server calls never use inherited pane hints. Missing, ambiguous or stale source context refuses even for explicit destinations; cwd, active clients, payload project names and sender overrides never establish a seat.
-
-
-Queued records retain source pane, actor/root process starts and socket identity. Canonical queue/clear caller proof, source liveness and target generation remain checked on retries and before input. Unknown source apps gain no peer routing permission. Legacy unbound records fail closed. Hostile same-account edits or direct tmux access are outside this cooperative boundary; the final snapshot-to-keystroke race remains.
-
-Sender parsing is uniformly strict. Busy, draft, copy and overlays defer without clearing human input. Agy and targeted Codex now share durable queue and archive behavior with CC/Codex defaults. One target scheduler owns pending retries; target-local recovery avoids sweeping unrelated inboxes. Known no-input states retry, unknown outcomes stop. Public queue outcomes are one line with a message ID and review path; exit meanings remain compatible.
-
-`relay --operator <session>:<seat> <text>` is exclusively for an explicit human interrupt/replace instruction. This explicit CLI entrypoint allows a live local operator source without supported-agent identity while retaining canonical target identity, exact address, draft/action and uncertainty protections. The local code invoking it belongs to the trusted operator boundary; the flag is not proof of native-agent identity. Ordinary agent messages never invoke it. `relay <session>:<seat> --clear-draft --expect <text>` supports the same explicitly expected clearing action across adapters. ASCII input must fit one line; multiline, attachments, selection and ambiguous styling refuse. The old arbitrary 16-character ceiling is removed; width and fresh matching still bound the action.
-
-The shared delivery module derives labels from the verified route source, including durable queue source context during detached delivery, preserving `terra (config:terra) [<model> <effort>]:` instead of deriving a neutral label from the transport worker. Shared app-server callers require a verified thread binding. Labels remain informative, never permissions.
-
-Run the route guard, worker allowance, queue-route, queue, sender-tier and clear-draft regressions for permission parity and retained safety. `relay-parity-transport-regression.py <output-directory>` uses real canonical guards on private fixture terminals to test source binding, Node/native parity and durable queue labels. Separate composer transport suites may copy tools and explicitly stub routing to isolate UI behavior; those runs do not prove routing authority. `relay-route-transport-regression.py` checks symmetric cross-session peers and unresolved callers producing no input or inbox mutation. Private fixtures are explicitly attested by stamped executable/entrypoint records in copied tools, scoped to owned `ccmsg-lab-private-<pid>` sockets under desk/lab or desk/tmp. Production tools have no environment switch enabling these attestations. Vendor-like filenames alone refuse. No actual headless model processes run.
-
-Run `relay-gate-deadline-regression.py <output-directory>` for slow mocked routing gates and bounded submission jobs. Allowed slow checks submit once; denial/timeouts send no input where known. An outer submission timeout remains unknown and never auto-replays. Live review-protocol↔rp-schema model checks are coordinated by the operator after installation.
-
-`relay source` inspects the current proven source. Installed stable: for a shared Codex app-server, first obtain `CODEX_THREAD_ID` from that exact visible interactive pane, then use `relay bind-source --operator <uuid> <session>:<seat>`. This registration writes a private runtime binding outside routing policy. Each pane has one active thread; a replacement thread retires the previous binding, and pane/socket/process generation changes require explicit re-registration. Unknown daemon threads refuse before creating a record. Do not infer bindings from cwd, titles or inherited pane hints. Legacy version-1 Codex records lack this source proof and refuse; inspect them before an explicit fresh send, never auto-replay unknown outcomes.
-
-Ordinary messages use `<window> (<session>:<window>) [<model> <effort>]: <text>` for all adapters. Oversized messages retain that label with a bounded summary and `-- full: <archive path>`. If the complete labelled pointer cannot fit, delivery refuses before input. `relay-native-argv-regression.py`, `relay-source-binding-regression.py` and `relay-archive-label-regression.py` cover argument boundaries, source binding invalidation and uniform archive rendering.
-
-Operator interrupt/replace prose retains the same label across adapters. Explicit operator slash/bang commands remain CLI actions. Legacy `CC_MSG_EXACT=1` refuses before input because its unlabelled agent-message contract conflicts with the uniform-label delivery rule.
-
-Window/model labels derive from the verified source seat and a unique styled live footer below its cursor. Model/effort is explicitly unverified when unavailable, hidden or ambiguous. The archive retains this same label. Window names identify seats; model names never confer permissions.
-
-# Local Codex relay source attribution
-
-The fish Codex wrapper passes one native `--no-daemon` flag for interactive launches, including resume and fork. Explicit flags are deduplicated before `--`; literal prompt arguments after `--` are preserved. For automatic local relay authority, use `codex -- "prompt text"` for a launch prompt. Any other first bare positional word besides resume/fork fails closed, including a future subcommand; the classifier does not infer prompt mode from a stale command table. Noninteractive commands such as exec, app-server and remote-control, unknown bare commands and remote/token-env invocations retain their existing launch mode without default local-flag injection. Native tool processes then retain kernel ancestry to their foreground TUI and use the existing actor/pane/socket route proof without a manual thread binding. Dynamic executable resolution and normal updates remain in place; no CLI version is pinned. Restart existing shared-daemon panes once to use this launch mode. Raw unflagged clients and explicit remote launches refuse unbound sends. Concurrent local resume of the same thread displays the native writer lock; the second seat must explicitly select a fork. Rollout requires acceptance of that behavior and reloading the fish function before restarting existing seats.
-
-Shared-daemon calls return only a live explicit operator binding. Viewport/history correlation no longer creates or refreshes route authority, and old `visible-turn` records fail liveness. Unknown detached execution hosts cannot borrow `TMUX_PANE`. Unbound Codex sender authorization and queued retries require the exact canonical native actor, one valid local-mode flag and no remote/noninteractive mode. An unrelated descendant cannot lend authority. Local reply warnings require a canonical native descendant with `--no-daemon`, no remote/app-server arguments, and current foreground source liveness. Missing/changed executable proof or unavailable route guards refuse before relay input. The shared-daemon selected-client limitation still needs an upstream atomic capability; local actor attribution does not claim to expose it.
-
-Run `python3 tmux/tests/relay-native-installation-regression.py`, `relay-source-binding-regression.py`, and `relay-codex-local-regression.py` for rolling native layouts, replacement/symlink/permission checks, canonical local launch recognition, remote and ambiguous refusals, stale visible-proof refusal, and detached borrowed-hint refusal. Run `python3 tmux/tests/relay-codex-mode-transport-regression.py <new-private-output>` for direct/enqueue/queued default-shared, raw, remote, flag-prefixed app-server and future bare-command refusals with zero target input or new inbox entries, plus delimited prompt and native/Node positive sends. Run `python3 tmux/tests/relay-codex-launch-smoke.py <new-private-output> <canonical-native-codex>` for real wrapper/native delimited-prompt authorization, bare future-command refusal and remote/token-env native runtime execution against a private Unix app server and loopback Responses fixture. Existing canonical impostor/route/queue/transport suites remain required.
-
-Run `python3 tmux/tests/relay-codex-local-native-regression.py <new-output-under-desk-lab-or-tmp> <installed-canonical-native-codex>` in this worktree for actual interactive native TUIs against an isolated loopback Responses fixture. It verifies fresh native tool execution, locked duplicate resume followed by an explicitly selected native fork, same-actor `/new` after selecting the current worktree, scrolled-out output, peer continuity and name reuse. Each real native tool compares its kernel route source against forged pane/thread hints. A guarded native relay ping/pong proves both seats can send and reply without thread registration. The fixture uses a private `ccmsg-lab-private-<pid>` server and records captures, process facts, durable delivery outcomes and cleanup. Native lock/worktree choices are TUI actions, not relay binds.
-
-The older `relay-visible-source`, status-card and automatic-binding fixtures are historical investigations. Their correlation/status prototypes are not authorization and are not positive installation gates for this implementation. Default shared-daemon exact duplicate selections remain covered by the separate saved native investigation evidence. Deployment requires independent review with no open P0/P1 findings.
-
-# Codex 0.160.1 picker investigation
-
-Run `python3 tmux/tests/codex-model-1601-regression.py` for both guards against a derived Terra-selected seven-model capture and altered menu refusals. The derived capture is a private terminal replay of the published 0.160.1 fixture with selection moved to row six; it is not the lost incident screen. Run `python3 tmux/tests/codex-model-1601-lab.py <new-private-output-directory>` for a synthetic Node renderer on a private tmux server. Its fixture path matches the recognized Codex Node entry point; it starts no model process. Real foreground target, composer, payload and picker guards remain in use. Reset cases stub routing only in copied tools to isolate UI behavior from this unrelated caller's live daemon binding. The lab checks session-only Sol/low selection, reset restoration of Terra/max, closed pickers, exactly one command per operation, and zero input into an owned draft. It is transport coverage, not a live-model receipt or a resolution of an unreproduced incident.
-
-The timing extension covers a manual `/new` followed immediately by model selection while the fresh frame has an unsettled cursor, a cursor that never settles, a draft that appears during the wait, an open checkout picker, and a partially painted model picker during reset restoration. In private copies only, a glyph wrapper signals the renderer when the first real glyph check begins; it then executes the unmodified recognizer. This synchronizes the synthetic race without returning fabricated guard results. Harness-owned reset input is recorded separately from helper input; refusals must produce zero helper input. Production preflight waits only for recognized fresh-reset screens, for at most its remaining 24 observations and a two-second shell deadline after detecting that state. It still proves the actual composer before requesting literal input. These are synthetic timing tests, not proof that every live refusal shares that cause.
-
-Terra blocked candidate `595a24c` because the reused `direct-reset` recognizer permitted arbitrary middle rows. The corrected candidate uses a separate `codex-model-guard settling-reset` predicate with an enumerated six-row structure (seven with the known YOLO permissions row), known greetings/tips, exact model/cwd/footer continuity, and no extra rows or non-SGR controls. It stays active across both preflight reads after settling begins. The timing matrix now also tests retained warning, model-title, checkout-title and status rows, plus a warning arriving as the cursor settles; each must exit 5 with zero helper input. Unknown greetings or tips refuse during settling rather than broadening this exception. Normal ready-composer behavior and codex-new-chat's existing recognizer are unchanged.
-
-`codex-model-late-row-lab.py <output>` reproduces row-preserving replacements after both strict preflights in a private synthetic terminal. Use `TERRA_LATE_ROW` and `TERRA_RACE_LABEL` for warning, status and picker-title variants. Refusal requires exit 5 and zero helper input. The model timing renderer uses a derived 0.161.0 header; it does not constitute native 0.161.0 screen evidence.
-
-Historical #8 status discovery remains excluded from routing authority. Native process proofs retain the cooperative same-account boundary; arbitrary environment values or terminal rendering cannot establish a shared thread attachment.
-
-Native 0.161.0 reset and status captures are published with sanitized cwd, UUID and account fields. Both styled and no-color status parsing retain fresh control-mode output proof and exact styled Session fields. Cleanup stress cases stub routing in copied tools only; route suites cover authority separately. Final route checks require the source used for attribution, including seat and process generation.
-
-The integrated model timing lab stubs both routing and the new binding hook in copied tools; automatic binding has its own native/synthetic gate. `codex-161-enter-lab.py <output> <isolated-root>` replays a sanitized native post-paste capture and draft mutations through final Enter; positive delivery requires exactly one CR, negatives zero bytes. This capture is from a private 0.161.0 pane, not the lost #9 incident capture.
-
-Queue interruption tests include a real subprocess terminated after its transport marks possible input: the result must persist unknown, schedule no worker and reap the transport. This repairs the interrupted-initial-attempt lifecycle; it does not establish the interruption actor in finding #9. SIGKILL and abrupt host loss remain covered by orphan recovery when invoked.
-
-`codex-161-queued-enter-lab.py <output>` uses a native-capture-derived target and a compiled synthetic Claude source on a private tmux server, retaining production routing/queue/transport. An owned draft initially queues without input; clearing that fixture permits exactly one submission. Extra content after paste must persist unknown, send no Enter and never retry. The source is a fixture, not a headless Claude process.
-
-Routing authorizes live supported native peers on the same user-owned tmux socket, with exact source and target generation checks. Session and window names select addresses and never assign rank. There is no route policy, mandatory hub, `orcha` shortcut, started-watch worker, or automatic task escalation. Every input guard uses strict proof; `relaxed` refuses. Shared-daemon thread attachment remains limited; local native launches use direct actor ancestry.
-
-Codex local relay launches use `codex -- "prompt"` for an initial prompt. Multiple images work with `codex --image one.png two.png` or repeated flags. Image operands continue until the next option or `--`; put a launch prompt after `--`. Unknown positional commands outside the image operand list still refuse automatic local authority. Model presets `--model-gpt-5-5` and `--model-gpt-5-3-codex` preserve the same local launch checks.
-# Cleanup safety after incident #s7tk
-
-Before any test-server stop, retain proof that this run created the socket and
-record its canonical path, inode and server kernel start-time generation.
-Create sockets only under `~/desk/tmp` using a fresh run capability and a
-precreation claim. The private lease includes the run nonce, live owner's
-kernel generation, socket path/inode and server PID/kernel generation. A
-record directory or logical label alone is not authority; inherited capability
-delegation is only for this run's children. Stop through `test-server-cleanup`
-after checking that proof again, using its explicit `-N -S` server-side identity
-condition. Refuse the default production socket and the socket in `$TMUX`,
-including aliases. `tmux new` plus PPID 1 proves no ownership. Never signal a
-tmux PID discovered with `ps` or a process-name search. Red must not signal
-processes or servers; the owning harness performs guarded cleanup.
-
-Client termination is limited to the actual unreaped child object this harness
-spawned. No process-group or discovered descendant termination is authorized.
-Uncontained descendants are reported/refused, not treated as cleanup success.
-Do not run any tmux-touching test before independent static isolation approval.
-
-Seven Rust native tests that depend on the everyday server are quarantined
-with `cfg(any())`, pending private-fixture migration; they are not counted as
-passing or active coverage. Five Python descendant/escape cleanup tests and
-one parent-PID interruption fixture, and four legacy synthetic live-route
-cases are likewise explicitly skipped. Installed
-tests remain unchanged and must not run until a separately approved deploy.
-
-The legacy ambient Rust Snapshot capture API now fails closed with
-InvalidNamespace, without invoking any backend. Native capture/preparation
-must use an explicitly bound Namespace; legacy prepare/captured_source are
-held pending that provider migration.
+Published captures use synthetic account identities and directories, with
+unrelated private transcript prose replaced. ANSI styling, row widths,
+wrapping and cursor metadata are retained. Manifest digests identify the
+published bytes; `/fixtures/` identifiers are labels rather than raw-evidence
+paths. Synthetic-derived cases remain explicitly distinct from native captures.
