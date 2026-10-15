@@ -164,9 +164,12 @@ impl OwnedChild {
     }
 }
 pub fn capture(command: &mut Command) -> Result<Vec<u8>> {
+    capture_for(command, Duration::from_secs(2))
+}
+pub(crate) fn capture_for(command: &mut Command, timeout: Duration) -> Result<Vec<u8>> {
     command.stdin(Stdio::null());
     let mut child = OwnedChild::spawn(command)?;
-    let deadline = Instant::now() + Duration::from_secs(2);
+    let deadline = Instant::now() + timeout;
     let result = (|| {
         while Instant::now() < deadline {
             if child.poll()? {

@@ -133,7 +133,7 @@ pub fn kernel_ancestry(mut pid: u32) -> Result<Vec<ProcessIdentity>> {
     }
     Err("long ancestry".into())
 }
-fn process_path(pid: u32) -> Result<PathBuf> {
+pub(crate) fn process_path(pid: u32) -> Result<PathBuf> {
     let mut path = [0u8; 4096];
     let count = unsafe { proc_pidpath(pid as i32, path.as_mut_ptr().cast(), path.len() as u32) };
     if count <= 0 || count as usize >= path.len() {
@@ -968,6 +968,12 @@ pub struct Client {
 }
 impl Client {
     pub fn bind(pane: u32) -> Result<Self> {
+        Self::bind_profile(pane, None)
+    }
+    pub(crate) fn bind_codex(pane: u32) -> Result<Self> {
+        Self::bind_profile(pane, Some("codex"))
+    }
+    fn bind_profile(pane: u32, operator: Option<&str>) -> Result<Self> {
         let pane_identity = kernel_process(pane).ok_or("missing pane owner")?;
         let mut queue = vec![(pane, 0)];
         let mut seen = HashSet::new();
@@ -983,24 +989,29 @@ impl Client {
                     .open(&path)
                 {
                     let m = file.metadata().map_err(|e| e.to_string())?;
-                    let profile = match m.len() {
-                        240664432 => Some((
-                            '❯',
-                            "c9b5341637becbd423ddffc5b254afb645682a3868cb708bbc6cc0e7bb419937",
-                        )),
-                        249556880 => Some((
-                            '❯',
-                            "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",
-                        )),
-                        247931696 => Some((
-                            '❯',
-                            "ba5ab7b8c195fa03ab8d5bf3915c76153b576a2c40e79a5c46e265e7ed9744b3",
-                        )),
-                        246642624 => Some((
-                            '›',
-                            "74c6a6d263f40d65f99c27a815275f5b4ed0bcc2baecc396b4cf3255498bdfc0",
-                        )),
-                        _ => None,
+                    let profile = if operator.is_some() {
+                        crate::model_identity::agent_image(pid, pane, &path)
+                            .map(|glyph| (glyph, ""))
+                    } else {
+                        match m.len() {
+                            240664432 => Some((
+                                '❯',
+                                "c9b5341637becbd423ddffc5b254afb645682a3868cb708bbc6cc0e7bb419937",
+                            )),
+                            249556880 => Some((
+                                '❯',
+                                "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",
+                            )),
+                            247931696 => Some((
+                                '❯',
+                                "ba5ab7b8c195fa03ab8d5bf3915c76153b576a2c40e79a5c46e265e7ed9744b3",
+                            )),
+                            246642624 => Some((
+                                '›',
+                                "74c6a6d263f40d65f99c27a815275f5b4ed0bcc2baecc396b4cf3255498bdfc0",
+                            )),
+                            _ => None,
+                        }
                     };
                     if let Some((glyph, hash)) = profile {
                         if m.is_file()
@@ -1014,14 +1025,14 @@ impl Client {
                             );
                             let mut digest = Sha256::new();
                             let mut buffer = [0u8; 65536];
-                            loop {
+                            while operator.is_none() {
                                 let n = bytes.read(&mut buffer).map_err(|e| e.to_string())?;
                                 if n == 0 {
                                     break;
                                 }
                                 digest.update(&buffer[..n]);
                             }
-                            if format!("{:x}", digest.finalize()) == hash {
+                            if operator.is_some() || format!("{:x}", digest.finalize()) == hash {
                                 matches.push(Self {
                                     file,
                                     path,
@@ -1053,6 +1064,19 @@ impl Client {
                     .map(|p| (*p as u32, depth + 1)),
             );
         }
+        if operator.is_some() {
+            let ancestors = matches
+                .iter()
+                .map(|client| kernel_ancestry(client.process.pid))
+                .collect::<Result<Vec<_>>>()?
+                .into_iter()
+                .flat_map(|chain| chain.into_iter().skip(1).map(|p| p.pid))
+                .collect::<HashSet<_>>();
+            matches.retain(|client| !ancestors.contains(&client.process.pid));
+            if matches.iter().any(|client| client.glyph != '›') {
+                return Err("foreground process is not one proven Codex".into());
+            }
+        }
         if matches.is_empty() {
             return Err("unsupported client".into());
         }
@@ -1068,6 +1092,31 @@ impl Client {
     }
     pub fn current(&self) -> Result<()> {
         self.verify()
+    }
+    pub(crate) fn proof(&self) -> Result<String> {
+        self.verify()?;
+        let ancestry = kernel_ancestry(self.process.pid)?;
+        let end = ancestry
+            .iter()
+            .position(|p| p.pid == self.pane.pid)
+            .ok_or("client ancestry changed")?;
+        let details = ancestry[..=end]
+            .iter()
+            .map(|p| crate::model_identity::detail(p.pid))
+            .collect::<Result<Vec<_>>>()?;
+        Ok(format!(
+            "{:x}",
+            Sha256::digest(
+                format!(
+                    "{:?}:{:?}:{}:{:?}:{details:?}",
+                    self.process,
+                    self.pane,
+                    self.path.display(),
+                    self.stamp
+                )
+                .as_bytes()
+            )
+        ))
     }
     pub fn verify(&self) -> Result<()> {
         if !kernel_ancestry(self.process.pid)?.contains(&self.pane) {
