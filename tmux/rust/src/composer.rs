@@ -362,7 +362,10 @@ pub fn receipt(
         submitted: rows[..y]
             .iter()
             .filter(|row| {
-                **row == normal || (glyph == '›' && **row == format!("\x1b[1;2m› \x1b[0m{wire}"))
+                **row == normal
+                    || (glyph == '›'
+                        && (**row == format!("\x1b[1;2m› \x1b[0m{wire}")
+                            || **row == format!("\x1b[1;2m› \x1b[0m\x1b[48;2;66;66;79m{wire}")))
             })
             .count(),
         ..Default::default()

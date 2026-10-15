@@ -1,5 +1,34 @@
 use super::*;
 #[test]
+fn captured_long_lived_codex_acceptance() {
+    let composer = include_str!("../fixtures/codex-sol-live-composer.ansi");
+    let accepted = include_str!("../fixtures/codex-sol-accepted-line.ansi");
+    let wire = "claude (config-tt:claude): #pre1 #pre3 #pre2 read and execute; do not forward: ~/desk/tmp/relay-rust-store/f68bb1c3afe553ca45b404b1c29854a3.original";
+    assert!(composer.contains("1 warning"));
+    assert_eq!(
+        classify(composer, '›', 2, 47, 183),
+        Composer::EmptyCandidate
+    );
+    let combined = format!("{accepted}{composer}");
+    assert_eq!(receipt('›', &combined, 2, 48, 183, wire).submitted, 1);
+    assert_eq!(
+        receipt('›', accepted, wire.len() + 2, 0, 183, wire).submitted,
+        0
+    );
+    for changed in [
+        combined.replace("48;2;66;66;79", "48;2;66;66;80"),
+        combined.replace(wire, &format!("{wire} suffix")),
+        combined.replace(wire, &format!("prefix {wire}")),
+        combined.replace("\x1b[1;2m› ", "\x1b[2m› "),
+    ] {
+        assert_eq!(receipt('›', &changed, 2, 48, 183, wire).submitted, 0);
+    }
+    assert_eq!(
+        receipt('›', &combined, 2, 48, 183, "unrelated").submitted,
+        0
+    );
+}
+#[test]
 fn captured_claude_busy_queue_word_styles() {
     let capture = include_str!("../fixtures/claude-busy-queued-word-styles.ansi");
     let wire = "sol (config-tt:sol): #s12r11rust Reply ACK_S12R11_RUST only; no tools.";
