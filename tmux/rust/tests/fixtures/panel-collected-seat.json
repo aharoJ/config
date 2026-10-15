@@ -1,0 +1,41 @@
+{
+  "admission_cause": "bound candidate; requires independent dispatch and consumer verification",
+  "admitted": true,
+  "attempt_id": "one",
+  "attempts": [
+    {
+      "account_ref": null,
+      "admission_ref": {
+        "path": "/fixtures/collected/a-admission.json",
+        "sha256": "9274836d2399f3131636ef034b355896a6f63ed013198029f3abd5f4793d899a"
+      },
+      "attempt_id": "one",
+      "exception_ref": null,
+      "final_ref": {
+        "path": "/fixtures/collected/a-final.md",
+        "sha256": "28cd1acdb2cbf78df8ae93b0e88ae62bae33d05c6b8e64da984527485781985b"
+      },
+      "launcher_ref": {
+        "path": "/fixtures/collected/launcher.json",
+        "sha256": "9c90f3324c2f9510bb8e983f8fad38d687656732bc20b9cfaddf6922675aae9b"
+      },
+      "native_session_ref": {
+        "path": "/fixtures/collected/a-native.jsonl",
+        "sha256": "eb6e2ba9e04a5f3d25dc8928745a283b98f46795fc36e564d5acd237d33f8426"
+      },
+      "reads_ref": {
+        "path": "/fixtures/collected/a-reads.json",
+        "sha256": "878f95194cff58fae5460cc846ce47112e45adae85447a00c5ec45e23f14b649"
+      },
+      "session_id": "01a140b9-6c55-7703-a8eb-eff608943af0",
+      "status": "current",
+      "supersession_ref": null,
+      "transport_ref": null
+    }
+  ],
+  "floor_cause": "record-only candidate; qualified account checks remain prospective",
+  "pass_floor_eligible": true,
+  "raw_verdict": "PASS",
+  "responding": true,
+  "seat_id": "a"
+}

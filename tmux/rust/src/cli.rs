@@ -379,6 +379,8 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
     match surface {
         "codex-new-chat" => return crate::new_chat::entry(args),
         "codex-new-guard" => return crate::new_guard::entry(args),
+        "panel-dispatch" => return crate::panel_dispatch::main_entry(args),
+        "panel-seat-trust" => return crate::panel_trust::main_entry(args),
         _ => (),
     }
     INTERRUPTED.store(false, Ordering::Relaxed);
