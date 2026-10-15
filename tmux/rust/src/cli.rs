@@ -366,6 +366,9 @@ fn execute(
     }
 }
 pub fn main_entry(surface: &str, args: &[String]) -> i32 {
+    if surface == "panel-seat-trust" {
+        return crate::panel_trust::main_entry(args);
+    }
     INTERRUPTED.store(false, Ordering::Relaxed);
     unsafe {
         libc::signal(libc::SIGINT, interrupt as *const () as libc::sighandler_t);

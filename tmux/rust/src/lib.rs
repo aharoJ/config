@@ -1,6 +1,7 @@
 pub mod cli;
 mod composer;
 mod identity;
+mod panel_trust;
 mod runtime;
 pub use runtime::producer_entry;
 mod store;
