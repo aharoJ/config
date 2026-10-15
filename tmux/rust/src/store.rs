@@ -673,8 +673,16 @@ impl Store {
     fn root_lock(&self) -> Result<Lock> {
         self.check_root()?;
         let file = identity::open_dir(&self.path).map_err(unsafe_path)?;
-        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-            return Err(Error::Busy);
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+        while unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+            let error = std::io::Error::last_os_error();
+            if !matches!(error.raw_os_error(), Some(libc::EWOULDBLOCK | libc::EINTR)) {
+                return Err(Error::Io(error));
+            }
+            if std::time::Instant::now() >= deadline {
+                return Err(Error::Busy);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
         }
         Ok(Lock(file))
     }

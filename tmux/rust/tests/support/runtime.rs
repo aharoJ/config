@@ -2,6 +2,21 @@ use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 #[test]
 fn delivery_guard_accepts_literal_message_formats() {
+    assert!(
+        identity::validate_delivery(&["send-keys", "-t", "%7", "-N", "27", "BSpace"], true).is_ok()
+    );
+    for arguments in [
+        ["send-keys", "-t", "%7", "-N", "0", "BSpace"],
+        ["send-keys", "-t", "%7", "-N", "65536", "BSpace"],
+        ["send-keys", "-t", "%7", "-N", "-1", "BSpace"],
+        ["send-keys", "-t", "%7", "-N", "27", "C-u"],
+    ] {
+        assert!(identity::validate_delivery(&arguments, true).is_err());
+    }
+    assert!(
+        identity::validate_delivery(&["send-keys", "-t", "%7", "-N", "27", "BSpace"], false)
+            .is_err()
+    );
     for payload in [
         "relay: #literal plain data",
         "relay: #literal explain #(literal)",
@@ -236,6 +251,7 @@ fn private_delivery() {
         "copy",
         "draft",
         "edited-stage",
+        "abandoned-stage",
         "trailing-semi",
         "escaped-semi",
     ] {
@@ -243,7 +259,7 @@ fn private_delivery() {
         let decoy = format!("decoy-{scene}");
         server.fixtures(&[&target, &decoy]);
         let ns = server.namespace();
-        let mut client = if matches!(scene, "draft" | "edited-stage") {
+        let mut client = if matches!(scene, "draft" | "edited-stage" | "abandoned-stage") {
             Some(attached(&server, &target))
         } else {
             None
@@ -293,7 +309,12 @@ fn private_delivery() {
             // The real fixture process is not a supported native image. Preserve
             // that actual binding failure rather than replacing it with a
             // generic renderer message or permitting any input.
-            assert_eq!(runtime.tick().unwrap(), State::TerminalNoInput);
+            let deadline = Instant::now() + Duration::from_secs(4);
+            while runtime.tick().unwrap() == State::PendingNoInput {
+                assert!(Instant::now() < deadline);
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            assert_eq!(runtime.state, State::TerminalNoInput);
             assert_eq!(
                 runtime
                     .store
@@ -313,6 +334,19 @@ fn private_delivery() {
         }
         runtime.fixture = Some(server.root.join(format!("{target}.json")));
         let state = runtime.tick().unwrap();
+        if scene == "abandoned-stage" {
+            assert_eq!(state, State::WaitingForFocusRelease);
+            assert_eq!(fixture_state(&server, &target)["submissions"], 0);
+            runtime.close().unwrap();
+            let observed = fixture_state(&server, &target);
+            assert_eq!(observed["draft"], "");
+            assert_eq!(observed["events"], wire.len() * 2);
+            assert_eq!(observed["submissions"], 0);
+            assert_eq!(fixture_state(&server, &decoy)["events"], 0);
+            assert!(runtime.store.attempt(&runtime.id).unwrap().history.iter().any(|step| step.evidence.diagnostics.iter().any(|note| note == "failure cleanup: exact own staged bytes removed; empty native composer proven")));
+            detach(client.take().unwrap());
+            continue;
+        }
         if matches!(scene, "busy" | "copy" | "draft") {
             assert_eq!(state, State::PendingNoInput);
             assert_eq!(fixture_state(&server, &target)["submissions"], 0);

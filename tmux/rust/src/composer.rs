@@ -242,6 +242,19 @@ fn divider_width(raw: &str) -> Option<usize> {
             .then(|| text.chars().count())
     })
 }
+pub fn ready(glyph: char, capture: &str, x: usize, y: usize, width: usize) -> bool {
+    if x != 2 || classify(capture, glyph, x, y, width) != Composer::EmptyCandidate {
+        return false;
+    }
+    if glyph != '›' {
+        return true;
+    }
+    let rows: Vec<_> = capture.split_inclusive('\n').collect();
+    rows.get(y + 1)
+        .is_some_and(|row| matches!(*row, "" | "\n" | "\r\n"))
+        && rows.get(y + 2).is_some_and(|row| codex_footer(row))
+        && blank_tail(&rows[y + 3..])
+}
 
 fn codex_footer(raw: &str) -> bool {
     row(raw).is_ok_and(|r| {
@@ -370,20 +383,31 @@ pub fn receipt(
             .count(),
         ..Default::default()
     };
-    if glyph == '❯'
-        && y >= 6
-        && divider_width(rows[y - 1]) == Some(width)
-        && rows.get(y + 1).and_then(|row| divider_width(row)) == Some(width)
+    let claude_queue_hint = if y >= 4
+        && rows[y - 3] == "\x1b[49m  \x1b[38;5;246mctrl+x ctrl+s to send now\x1b[39m"
+        && rows[y - 2].is_empty()
+    {
+        Some(y - 4)
+    } else if y >= 6
         && rows[y - 5] == "\x1b[49m  \x1b[38;5;246mctrl+x ctrl+s to send now\x1b[39m"
         && rows[y - 4].is_empty()
         && rows[y - 2].is_empty()
     {
+        Some(y - 6)
+    } else {
+        None
+    };
+    if let Some(queued_end) = claude_queue_hint.filter(|_| {
+        glyph == '❯'
+            && divider_width(rows[y - 1]) == Some(width)
+            && rows.get(y + 1).and_then(|row| divider_width(row)) == Some(width)
+    }) {
         result.queue_prompt = x == 2
             && matches!(rows[y],
                 "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress up to edit queued messages\x1b[0m"
                 | "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress\x1b[0m \x1b[2mup\x1b[0m \x1b[2mto\x1b[0m \x1b[2medit\x1b[0m \x1b[2mqueued\x1b[0m \x1b[2mmessages\x1b[0m");
         let queued = format!("\x1b[38;5;246m\x1b[48;5;237m❯ {wire}\x1b[39m");
-        for raw in rows[..=y - 6]
+        for raw in rows[..=queued_end]
             .iter()
             .rev()
             .take_while(|raw| raw.starts_with("\x1b[38;5;246m\x1b[48;5;237m❯ "))
@@ -393,7 +417,9 @@ pub fn receipt(
     }
     if glyph == '›' && y >= 3 && rows[y - 1].is_empty() {
         result.queue_prompt = x == 2
-            && rows[y] == "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m"
+            && matches!(rows[y],
+                "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m"
+                | "\x1b[1m›\x1b[0m\x1b[48;2;57;57;71m \x1b[2mAsk Codex to do anything\x1b[0m\x1b[48;2;57;57;71m")
             && classify(capture, glyph, x, y, width) == Composer::EmptyCandidate;
         let header = "\x1b[2m• \x1b[0mMessages to be submitted after next tool call\x1b[2m (press \x1b[0;1mesc\x1b[0;2m to interrupt and send immediately)\x1b[0m";
         if let Some(start) = rows[..y - 1].iter().rposition(|raw| *raw == header) {

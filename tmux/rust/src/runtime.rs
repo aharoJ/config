@@ -479,6 +479,8 @@ pub struct Runtime<'a> {
     geometry: Option<(u64, u64, u64)>,
     closed: bool,
     receipt_before: Option<composer::Receipt>,
+    ready_since: Option<(Instant, u64, u64, u64)>,
+    binding_since: Instant,
     #[cfg(test)]
     fixture: Option<std::path::PathBuf>,
     #[cfg(test)]
@@ -596,6 +598,8 @@ impl<'a> Runtime<'a> {
             geometry: None,
             closed: false,
             receipt_before: None,
+            ready_since: None,
+            binding_since: Instant::now(),
             #[cfg(test)]
             fixture: tests::cli_fixture(),
             #[cfg(test)]
@@ -695,7 +699,16 @@ impl<'a> Runtime<'a> {
             width as usize,
             &self.prepared.wire,
         ) {
-            composer::Screen::Empty => (Vec::new(), false),
+            composer::Screen::Empty => (
+                Vec::new(),
+                !composer::ready(
+                    client.glyph,
+                    &capture,
+                    x as usize,
+                    y as usize,
+                    width as usize,
+                ),
+            ),
             composer::Screen::Staged(bytes) => (bytes, false),
             composer::Screen::Hold => (Vec::new(), true),
         };
@@ -726,9 +739,11 @@ impl<'a> Runtime<'a> {
             })
     }
     fn receipt_mode(&self) -> bool {
-        self.client
-            .as_ref()
-            .is_ok_and(|client| self.prepared.client == Some(client.glyph))
+        self.client.as_ref().is_ok_and(|client| {
+            self.prepared
+                .client
+                .is_none_or(|glyph| glyph == client.glyph)
+        })
     }
     fn wait_for_renderer(&mut self) -> Result<State> {
         if self.state == State::WaitingForFocusRelease {
@@ -750,6 +765,9 @@ impl<'a> Runtime<'a> {
         }
     }
     fn paste(&mut self) -> Result<State> {
+        if self.client.is_err() {
+            self.client = identity::Client::bind(self.prepared.target.pane.pid);
+        }
         if self.lock.is_none() {
             let name = format!(
                 "target-{}-{}-{}",
@@ -774,10 +792,34 @@ impl<'a> Runtime<'a> {
         }
         let before = match self.view() {
             Ok(v) => v,
+            Err(error)
+                if error == "client-bind: unsupported client"
+                    && self.binding_since.elapsed() < Duration::from_secs(3) =>
+            {
+                return Ok(self.state)
+            }
+            Err(error) if error == "renderer changed during capture" => return Ok(self.state),
             Err(error) => return self.no_input(&format!("initial-view: {error}")),
         };
         if before.busy || before.copy || !before.bytes.is_empty() {
+            self.ready_since = None;
             return Ok(self.state);
+        }
+        if self.receipt_mode() {
+            match self.ready_since {
+                Some((since, width, height, y))
+                    if (width, height, y) == (before.width, before.height, before.y) =>
+                {
+                    if since.elapsed() < Duration::from_millis(500) {
+                        return Ok(self.state);
+                    }
+                }
+                _ => {
+                    self.ready_since =
+                        Some((Instant::now(), before.width, before.height, before.y));
+                    return Ok(self.state);
+                }
+            }
         }
         self.geometry = Some((before.width, before.height, before.y));
         let wire = self.prepared.wire.clone();
@@ -807,6 +849,7 @@ impl<'a> Runtime<'a> {
         checkpoint("final-paste-check");
         let ready = match self.view() {
             Ok(v) => v,
+            Err(error) if error == "renderer changed during capture" => return Ok(self.state),
             Err(error) => return self.no_input(&format!("final-view: {error}")),
         };
         if (ready.width, ready.height, ready.y) != (before.width, before.height, before.y) {
@@ -1040,9 +1083,6 @@ impl<'a> Runtime<'a> {
         }
     }
     fn enter(&mut self) -> Result<State> {
-        // A new boundary for this exact-byte check, not the original paste.
-        // CLI ticks wait briefly and share one overall deadline. Same-second
-        // activity conservatively holds until a later quiet check can pass.
         let second = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| e.to_string())?
@@ -1082,11 +1122,15 @@ impl<'a> Runtime<'a> {
             quote(&condition),
             quote(&enter)
         );
-        let action = format!(
-            "if-shell -F -t {pane} {} {} 'display-message -p activity'",
-            quote(&no_activity_condition(second)),
-            quote(&guarded)
-        );
+        let action = if self.receipt_mode() {
+            guarded
+        } else {
+            format!(
+                "if-shell -F -t {pane} {} {} 'display-message -p activity'",
+                quote(&no_activity_condition(second)),
+                quote(&guarded)
+            )
+        };
         let focus = if self.receipt_mode() {
             "1".into()
         } else {
@@ -1140,6 +1184,96 @@ impl<'a> Runtime<'a> {
             _ => self.unknown("Enter outcome unproved"),
         }
     }
+    fn remove_staged(&mut self) -> Result<()> {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let before = loop {
+            match self.view() {
+                Ok(view) if !view.busy && !view.copy && view.bytes.is_empty() => {
+                    self.store.diagnostics(&self.id, vec!["failure cleanup: composer already empty; no removal input".into()])
+                        .map_err(|e| format!("removal observation: {e:?}"))?;
+                    return Ok(());
+                }
+                Ok(view) if self.staged(&view) => break view,
+                Err(error)
+                    if error == "renderer changed during capture" && Instant::now() < deadline => {}
+                _ => {
+                    return Err(
+                        "failure cleanup: exact own staged bytes unproved; no removal input".into(),
+                    )
+                }
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        };
+        let pane = self.prepared.target.selector();
+        let condition = self.condition()?;
+        let action = format!(
+            "send-keys -t {pane} -N {} BSpace ; display-message -p removed",
+            self.prepared.wire.len()
+        );
+        let producer = Producer::spawn(
+            self.ns,
+            &[
+                "if-shell",
+                "-F",
+                "-t",
+                &pane,
+                &condition,
+                &action,
+                "display-message -p refused",
+            ],
+        )?;
+        self.producers.push(producer);
+        let index = self.producers.len() - 1;
+        let child = self.producers[index]
+            .child
+            .identity
+            .ok_or("removal producer unattested")?;
+        self.store
+            .diagnostics(
+                &self.id,
+                vec![format!(
+            "failure cleanup intent: exact own wire {} bytes; owned producer {}:{}; no replay",
+            self.prepared.wire.len(), child.pid, child.generation()?
+        )],
+            )
+            .map_err(|e| format!("removal intent: {e:?}"))?;
+        checkpoint("removal-dispatch:before");
+        let final_view = self.view()?;
+        if !self.staged(&final_view)
+            || (
+                final_view.x,
+                final_view.y,
+                final_view.width,
+                final_view.height,
+            ) != (before.x, before.y, before.width, before.height)
+        {
+            self.producers[index].input.take();
+            return Err(
+                "failure cleanup: staged bytes changed before removal; no removal input".into(),
+            );
+        }
+        if self.producers[index].execute()?.trim() != "removed" {
+            return Err("failure cleanup: guarded removal refused".into());
+        }
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if let Ok(after) = self.view() {
+                if !after.busy
+                    && !after.copy
+                    && after.bytes.is_empty()
+                    && (after.width, after.height) == (before.width, before.height)
+                {
+                    self.store.diagnostics(&self.id, vec!["failure cleanup: exact own staged bytes removed; empty native composer proven".into()])
+                        .map_err(|e| format!("removal proof: {e:?}"))?;
+                    return Ok(());
+                }
+            }
+            if Instant::now() >= deadline {
+                return Err("failure cleanup: removal outcome unproved".into());
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    }
     pub fn close(&mut self) -> Result<()> {
         let start = Instant::now();
         if self.closed {
@@ -1156,6 +1290,7 @@ impl<'a> Runtime<'a> {
             .clone()
             .ok_or("cleanup budgets missing")?;
         let mut notes = Vec::new();
+        let mut removal_error = None;
         for p in &mut self.producers {
             p.input.take();
         }
@@ -1171,11 +1306,26 @@ impl<'a> Runtime<'a> {
             clipped.decision_ms = remaining;
             notes.extend(p.child.cleanup(&clipped));
         }
-        let producers_closed = self.producers.iter().all(|p| {
+        let mut producers_closed = self.producers.iter().all(|p| {
             p.child.status.is_some()
                 && !p.child.reader_fault
                 && p.child.readers.iter().all(|r| r.eof)
         });
+        if self.marked && producers_closed && self.state != State::Submitted {
+            if let Err(error) = self.remove_staged() {
+                notes.push(error.clone());
+                removal_error = Some(error);
+            }
+            for producer in &mut self.producers {
+                producer.input.take();
+                notes.extend(producer.child.cleanup(&budgets));
+            }
+            producers_closed = self.producers.iter().all(|p| {
+                p.child.status.is_some()
+                    && !p.child.reader_fault
+                    && p.child.readers.iter().all(|r| r.eof)
+            });
+        }
         if self.marked
             && producers_closed
             && matches!(self.state, State::Submitted | State::TerminalNoInput)
@@ -1194,7 +1344,13 @@ impl<'a> Runtime<'a> {
                 .diagnostics(&self.id, notes)
                 .map_err(|e| format!("cleanup warning: {e:?}"))?;
         }
-        restart.map(|_| ()).map_err(|e| format!("restart: {e:?}"))
+        restart.map_err(|e| format!("restart: {e:?}"))?;
+        if let Some(error) = removal_error {
+            if self.state != State::InputUnknown {
+                return Err(error);
+            }
+        }
+        Ok(())
     }
 }
 impl Drop for Runtime<'_> {
