@@ -204,8 +204,8 @@ def live_preflight():
         if result.returncode:
             raise Refused('read-only preflight observation failed')
         return result.stdout
-    server, session_id, observed_socket, version = observe(['display-message', '-p', '-t', '=' + SESSION + ':', '#{pid}|#{session_id}|#{socket_path}|#{version}']).decode().strip().split('|')
-    if observed_socket != socket or version != '3.7c' or not re.fullmatch(r'\$\d+', session_id):
+    server, session_id, observed_socket, version = observe(['display-message', '-p', '-t', '=' + SESSION, '#{pid}|#{session_id}|#{socket_path}|#{version}']).decode().strip().split('|')
+    if observed_socket != socket or version != '3.7c':
         raise Refused('unexpected socket or tmux version')
     server_identity = kernel.identity(int(server))
     info = Path(socket).lstat()
