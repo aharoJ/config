@@ -130,6 +130,9 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
     let tail = &args[start..];
     let literal = tail.first().is_some_and(|s| s == "--");
     let words = if literal { &tail[1..] } else { tail };
+    if surface == "cc-msg" && words.first().is_some_and(|s| s.contains(':')) {
+        return Err("cc-msg does not accept a positional route".into());
+    }
     if !literal && words.first().is_some_and(|s| s.starts_with('-')) {
         return Err("unsupported message option; use -- for literal text".into());
     }
@@ -168,6 +171,19 @@ fn wait_ms(env: &Env) -> Result<u64> {
         return Err("wait budget must be 1..3600000 ms".into());
     }
     Ok(ms)
+}
+fn write_reader_announcement(
+    out: &mut dyn Write,
+    id: &str,
+    state: State,
+    path: &std::path::Path,
+) -> std::io::Result<()> {
+    writeln!(
+        out,
+        "relay: {id} {}; record {}",
+        store::reader_state(state),
+        path.display()
+    )
 }
 fn announcement(
     store: &mut store::Store,
@@ -316,16 +332,27 @@ fn execute(
                     }
                 }
                 let closed = runtime.close();
+                let record = runtime.reader_record();
                 drop(runtime);
                 if let Err(e) = closed {
                     let _ = writeln!(
                         err,
                         "relay: cleanup/durability unresolved: {e}; attempt {id}"
                     );
-                    let _ = announcement(&mut store, &id, out, err, false);
                     return Ok(4);
                 }
-                Ok(announcement(&mut store, &id, out, err, false))
+                let (state, path) = match record {
+                    Ok(record) => record,
+                    Err(e) => {
+                        let _ = writeln!(err, "relay: {e}; committed attempt {id}");
+                        return Ok(4);
+                    }
+                };
+                if write_reader_announcement(out, &id, state, &path).is_err() {
+                    let _ = writeln!(err, "relay: announcement failed; committed attempt {id}");
+                    return Ok(4);
+                }
+                Ok(outcome(state))
             }
             Operation::Help => unreachable!(),
         }

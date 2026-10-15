@@ -24,6 +24,34 @@ impl State {
         )
     }
 }
+pub fn reader_state(state: State) -> &'static str {
+    match state {
+        State::Submitted => "delivered",
+        State::TerminalNoInput => "error",
+        State::PendingNoInput => "pending",
+        _ => "unknown",
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReaderTarget {
+    pub session_name: String,
+    pub window_name: String,
+    pub pane_id: String,
+    pub pane_pid: String,
+}
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReaderRecord {
+    pub id: String,
+    pub state: String,
+    pub message: String,
+    pub label: String,
+    pub operator: bool,
+    pub literal: bool,
+    pub target: ReaderTarget,
+    pub payload: String,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Peer {
@@ -674,6 +702,12 @@ impl Store {
                 continue;
             }
             let (id, kind) = name.split_once('.').ok_or(Error::Corrupt)?;
+            if kind == "json" {
+                let record: ReaderRecord =
+                    serde_json::from_slice(&self.file(&name)?).map_err(|_| Error::Corrupt)?;
+                self.validate_reader(id, &record)?;
+                continue;
+            }
             let archive = self
                 .ledger
                 .archives
@@ -935,6 +969,91 @@ impl Store {
             .find(|a| a.id == id)
             .cloned()
             .ok_or(Error::Missing)
+    }
+    pub fn original_path(&self, archive: &str) -> PathBuf {
+        self.path.join(format!("{archive}.original"))
+    }
+    fn validate_reader(&self, id: &str, record: &ReaderRecord) -> Result<()> {
+        let attempt = self
+            .ledger
+            .attempts
+            .iter()
+            .find(|a| a.id == id)
+            .ok_or(Error::Corrupt)?;
+        let archive = self
+            .ledger
+            .archives
+            .iter()
+            .find(|a| a.id == attempt.archive)
+            .ok_or(Error::Corrupt)?;
+        let original = self.content(archive, false)?;
+        let mut message =
+            crate::runtime::normalize(std::str::from_utf8(&original).map_err(|_| Error::Corrupt)?)
+                .map_err(|_| Error::Corrupt)?;
+        for code in attempt.attribution.codes.iter().filter(|c| c.generated) {
+            message = format!("#{} {message}", code.value);
+        }
+        if record.id != id
+            || record.state != reader_state(attempt.state())
+            || record.label != attempt.attribution.label
+            || record.message != message
+            || record.operator
+            || record.literal
+            || record.payload.as_bytes() != self.content(archive, true)?
+            || record.target.pane_id != format!("%{}", attempt.peer.pane)
+            || record.target.session_name.is_empty()
+            || record.target.window_name.is_empty()
+            || record
+                .target
+                .pane_pid
+                .parse::<u32>()
+                .ok()
+                .is_none_or(|pid| pid == 0)
+        {
+            return Err(Error::Corrupt);
+        }
+        Ok(())
+    }
+    pub fn reader_record(
+        &mut self,
+        id: &str,
+        target: ReaderTarget,
+        message: String,
+    ) -> Result<(State, PathBuf)> {
+        let _lock = self.lock()?;
+        let attempt = self
+            .ledger
+            .attempts
+            .iter()
+            .find(|a| a.id == id)
+            .ok_or(Error::Missing)?
+            .clone();
+        let archive = self
+            .ledger
+            .archives
+            .iter()
+            .find(|a| a.id == attempt.archive)
+            .ok_or(Error::Corrupt)?;
+        let state = attempt.state();
+        let record = ReaderRecord {
+            id: id.into(),
+            state: reader_state(state).into(),
+            message,
+            label: attempt.attribution.label,
+            operator: false,
+            literal: false,
+            target,
+            payload: String::from_utf8(self.content(archive, true)?).map_err(|_| Error::Corrupt)?,
+        };
+        self.validate_reader(id, &record)?;
+        let name = format!("{id}.json");
+        self.write(
+            &name,
+            &serde_json::to_vec(&record).map_err(|_| Error::Corrupt)?,
+            true,
+            "reader-record",
+        )?;
+        Ok((state, self.path.join(name)))
     }
     pub fn target_blocked(&mut self, id: &str) -> Result<bool> {
         let _lock = self.lock()?;

@@ -853,3 +853,36 @@ fn attached_worker() {
         std::thread::sleep(Duration::from_millis(5));
     }
 }
+
+#[test]
+fn overflow_receiver_instruction() {
+    let path = identity::account_home()
+        .unwrap()
+        .join("desk/relay-rust-store/0123456789abcdef0123456789abcdef.original");
+    let pointer = overflow_pointer("peer", "#abc123", &path);
+    assert!(pointer.contains("[read and execute; do not forward: ~/desk/relay-rust-store/"));
+    assert!(pointer.ends_with("0123456789abcdef0123456789abcdef.original]"));
+    assert!(!pointer.contains("-- full:"));
+}
+
+#[test]
+fn overflow_ordinary_width_capacity() {
+    let path = identity::account_home()
+        .unwrap()
+        .join("desk/relay-rust-store/0123456789abcdef0123456789abcdef.original");
+    let pointer = overflow_pointer("peer", "#abc123", &path);
+    let mut capacity = store::Capacity {
+        width: 120,
+        height: 30,
+        cursor_x: 2,
+        cursor_y: 0,
+        cells: Some(pointer.len() as u64),
+        byte_limit: Some(117),
+        cell_limit: Some(117),
+        pointer,
+    };
+    assert!(capacity.permits(), "{}", capacity.pointer);
+    capacity.pointer = overflow_pointer(&"long".repeat(30), "#abc123", &path);
+    capacity.cells = Some(capacity.pointer.len() as u64);
+    assert!(!capacity.permits());
+}

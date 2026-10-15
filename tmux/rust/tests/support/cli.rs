@@ -173,13 +173,31 @@ fn read_status() {
     let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
     assert_eq!(value["state"], "pending-no-input");
     assert_eq!(value["receipt"], "unproved");
+    submit_fixture(&mut store, &mut handle, "relay: #explicit original");
+    struct Broken;
+    impl Write for Broken {
+        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+            Err(std::io::ErrorKind::BrokenPipe.into())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    assert_eq!(
+        announcement(&mut store, attempt, &mut Broken, &mut err, false),
+        0
+    );
+    assert_eq!(store.attempt(attempt).unwrap().state(), State::Submitted);
+}
+
+fn submit_fixture(store: &mut store::Store, handle: &mut store::AttemptHandle, wire: &str) {
     let mut evidence = store::Evidence {
         capacity: Some(store::Capacity {
             width: 80,
             height: 24,
             cursor_x: 2,
             cursor_y: 0,
-            pointer: "relay: #explicit original".into(),
+            pointer: wire.into(),
             cells: Some(25),
             byte_limit: Some(77),
             cell_limit: Some(77),
@@ -204,21 +222,19 @@ fn read_status() {
         composer_proof: Some("empty".into()),
         ..Default::default()
     };
-    evidence.capacity.as_mut().unwrap().cells = Some("relay: #explicit original".len() as u64);
+    evidence.capacity.as_mut().unwrap().cells = Some(wire.len() as u64);
     store
-        .transition(&mut handle, State::InputIntent, evidence.clone())
+        .transition(handle, State::InputIntent, evidence.clone())
         .unwrap();
     evidence.ownership.as_mut().unwrap().child = Some((3, 4));
     store
-        .transition(&mut handle, State::InputIntent, evidence.clone())
+        .transition(handle, State::InputIntent, evidence.clone())
         .unwrap();
     evidence.paste_proof = Some("exact".into());
-    store
-        .transition(&mut handle, State::Pasted, evidence)
-        .unwrap();
+    store.transition(handle, State::Pasted, evidence).unwrap();
     store
         .transition(
-            &mut handle,
+            handle,
             State::SubmitIntent,
             store::Evidence {
                 composer_proof: Some("exact".into()),
@@ -232,7 +248,7 @@ fn read_status() {
         .unwrap();
     store
         .transition(
-            &mut handle,
+            handle,
             State::Submitted,
             store::Evidence {
                 submission_proof: Some("guarded Enter".into()),
@@ -240,18 +256,173 @@ fn read_status() {
             },
         )
         .unwrap();
-    struct Broken;
-    impl Write for Broken {
-        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
-            Err(std::io::ErrorKind::BrokenPipe.into())
-        }
-        fn flush(&mut self) -> std::io::Result<()> {
-            Ok(())
-        }
+}
+
+#[test]
+fn cc_route_first_word_refuses() {
+    let env = Env::from([
+        ("CC_MSG_SESSION".into(), "s".into()),
+        ("CC_MSG_WINDOW".into(), "w".into()),
+    ]);
+    for words in [
+        args(&["session:window", "task"]),
+        args(&["--", "session:window"]),
+    ] {
+        assert!(parse("cc-msg", &words, &env).is_err());
     }
-    assert_eq!(
-        announcement(&mut store, attempt, &mut Broken, &mut err, false),
-        0
-    );
-    assert_eq!(store.attempt(attempt).unwrap().state(), State::Submitted);
+    assert!(parse("cc-msg", &args(&["Explain", "session:window"]), &env).is_ok());
+}
+
+fn reader_line(output: &str) -> Option<(&str, &str, &str)> {
+    let line = output.strip_suffix('\n').unwrap_or(output);
+    if line.contains(['\r', '\n']) {
+        return None;
+    }
+    let (head, path) = line.strip_prefix("relay: ")?.split_once("; record ")?;
+    let (id, state) = head.split_once(' ')?;
+    if id.len() != 32
+        || !id
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        || state.is_empty()
+        || !state.bytes().all(|b| b.is_ascii_lowercase())
+        || path.is_empty()
+    {
+        return None;
+    }
+    Some((id, state, path))
+}
+
+#[test]
+fn unchanged_reader_parses() {
+    use std::os::unix::fs::DirBuilderExt;
+    let tasks = [
+        ("Read TASK.md in this folder and execute it.", true),
+        ("reply READY, read nothing", true),
+        (
+            "#panel-start Read PROMPT.md in this folder and follow it exactly.",
+            false,
+        ),
+    ];
+    for (task, generated) in tasks {
+        let path = target::account_home()
+            .unwrap()
+            .join("desk/tmp")
+            .join(format!("s9x-reader-{}", runtime::fresh_id().unwrap()));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&path)
+            .unwrap();
+        let id = runtime::fresh_id().unwrap();
+        let message = if generated {
+            format!("#{} {task}", &id[..6])
+        } else {
+            task.into()
+        };
+        let wire = format!("relay: {message}");
+        let mut store = store::Store::open(&path).unwrap();
+        let publication = store
+            .publish(
+                &runtime::fresh_id().unwrap(),
+                task.as_bytes(),
+                wire.as_bytes(),
+                store::Attribution {
+                    source: store::Source::Tool,
+                    label: "relay".into(),
+                    codes: vec![store::Code {
+                        value: if generated {
+                            id[..6].into()
+                        } else {
+                            "panel-start".into()
+                        },
+                        generated,
+                    }],
+                },
+            )
+            .unwrap();
+        let mut handle = store
+            .accept(
+                publication,
+                store::Acceptance {
+                    id: &id,
+                    request: &id,
+                    peer: store::Peer {
+                        socket_device: 1,
+                        socket_inode: 2,
+                        server_generation: 3,
+                        session: 4,
+                        window: 5,
+                        pane: 6,
+                        pane_generation: 7,
+                    },
+                },
+            )
+            .unwrap();
+        submit_fixture(&mut store, &mut handle, &wire);
+        let expected_target = store::ReaderTarget {
+            session_name: "net".into(),
+            window_name: "reader".into(),
+            pane_id: "%6".into(),
+            pane_pid: "123".into(),
+        };
+        let (state, record_path) = store
+            .reader_record(&id, expected_target.clone(), message.clone())
+            .unwrap();
+        let mut output = Vec::new();
+        write_reader_announcement(&mut output, &id, state, &record_path).unwrap();
+        let output = String::from_utf8(output).unwrap();
+        let (parsed_id, parsed_state, parsed_path) = reader_line(&output).unwrap();
+        let record: store::ReaderRecord =
+            serde_json::from_slice(&std::fs::read(parsed_path).unwrap()).unwrap();
+        assert_eq!(parsed_id, id);
+        assert_eq!(parsed_state, "delivered");
+        assert_eq!(record.state, "delivered");
+        assert_eq!(record.payload, wire);
+        assert_eq!(
+            record.payload,
+            format!("{}: {}", record.label, record.message)
+        );
+        assert_eq!(record.id, parsed_id);
+        assert_eq!(record.message, message);
+        assert!(!record.operator && !record.literal);
+        assert_eq!(record.target, expected_target);
+        if generated {
+            assert_eq!(record.message, format!("#{} {task}", &record.id[..6]));
+            if task.starts_with("reply READY") {
+                let neutral = record
+                    .payload
+                    .strip_suffix(" reply READY, read nothing")
+                    .unwrap();
+                let (label, code) = neutral.rsplit_once(": #").unwrap();
+                assert!(!label.is_empty() && !label.contains(['\r', '\n']));
+                assert_eq!(code, &parsed_id[..6]);
+            }
+        } else {
+            let panel_path = output
+                .split_once("; record ")
+                .unwrap()
+                .1
+                .strip_suffix('\n')
+                .unwrap();
+            assert!(panel_path.starts_with('/'));
+            assert_eq!(panel_path, parsed_path);
+            assert_eq!(record.message, task);
+        }
+        drop(store);
+        let mut reopened = store::Store::open(&path).unwrap();
+        assert_eq!(reopened.attempt(&id).unwrap().state(), State::Submitted);
+        let mut changed = record.clone();
+        changed.payload.push('!');
+        std::fs::write(&record_path, serde_json::to_vec(&changed).unwrap()).unwrap();
+        assert!(reopened.attempt(&id).is_err());
+        drop(reopened);
+        std::fs::remove_dir_all(path).unwrap();
+    }
+    for line in [
+        "relay: nope delivered; record /r\n",
+        "relay: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa delivered; record /r\n\n",
+        "relay: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa delivered; record /r\r\n",
+    ] {
+        assert!(reader_line(line).is_none());
+    }
 }

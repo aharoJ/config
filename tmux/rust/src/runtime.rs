@@ -295,7 +295,17 @@ pub fn normalize(s: &str) -> Result<String> {
     }
     Ok(normalized)
 }
+fn overflow_pointer(label: &str, codes: &str, path: &std::path::Path) -> String {
+    let compact = identity::account_home()
+        .ok()
+        .and_then(|home| path.strip_prefix(home).ok())
+        .map(|suffix| format!("~/{}", suffix.display()))
+        .unwrap_or_else(|| path.display().to_string());
+    format!("{label}: {codes} [read and execute; do not forward: {compact}]")
+}
 pub struct Prepared {
+    id: String,
+    message: String,
     target: Target,
     source: Option<Target>,
     ancestry: Vec<identity::ProcessIdentity>,
@@ -352,8 +362,9 @@ impl Prepared {
                 });
             }
         }
+        let id = fresh_id()?;
         if codes.is_empty() {
-            let value = format!("r{}", &fresh_id()?[..12]);
+            let value = id[..6].to_owned();
             normalized = format!("#{value} {normalized}");
             codes.push(Code {
                 value,
@@ -371,6 +382,8 @@ impl Prepared {
             },
         };
         let prepared = Self {
+            id,
+            message: normalized.clone(),
             target,
             source,
             ancestry,
@@ -433,6 +446,21 @@ pub struct Runtime<'a> {
     before_enter: Option<Box<dyn FnMut() -> Result<()> + 'a>>,
 }
 impl<'a> Runtime<'a> {
+    pub fn reader_record(&mut self) -> Result<(State, std::path::PathBuf)> {
+        let target = &self.prepared.target;
+        self.store
+            .reader_record(
+                &self.id,
+                store::ReaderTarget {
+                    session_name: target.session_name.clone(),
+                    window_name: target.window.name.clone(),
+                    pane_id: target.selector(),
+                    pane_pid: target.pane.pid.to_string(),
+                },
+                self.prepared.message.clone(),
+            )
+            .map_err(|e| format!("reader record: {e:?}"))
+    }
     pub fn ids(&self) -> (&str, &str) {
         (&self.id, &self.archive)
     }
@@ -463,8 +491,8 @@ impl<'a> Runtime<'a> {
             return Err("unknown capacity".into());
         }
         let archive = fresh_id()?;
-        let id = fresh_id()?;
-        if !prepared.wire.is_ascii() || prepared.wire.len() as u64 > v[0] - 10 {
+        let id = prepared.id.clone();
+        if !prepared.wire.is_ascii() || prepared.wire.len() as u64 > v[0] - 3 {
             let codes = prepared
                 .attribution
                 .codes
@@ -472,7 +500,11 @@ impl<'a> Runtime<'a> {
                 .map(|c| format!("#{}", c.value))
                 .collect::<Vec<_>>()
                 .join(" ");
-            prepared.wire = format!("{}: {codes} -- full: {archive}", prepared.attribution.label);
+            prepared.wire = overflow_pointer(
+                &prepared.attribution.label,
+                &codes,
+                &store.original_path(&archive),
+            );
         }
         let socket = std::fs::symlink_metadata(ns.socket()).map_err(|e| e.to_string())?;
         let process =
