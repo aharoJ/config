@@ -2,6 +2,8 @@
 
 **NOT GO.** Claude rejected the embedded interpreter bridges and Angel chose native Rust replacements. This report is retained as historical evidence only. Its authorization and GO claims are withdrawn. See `p3x-panel-fix-divergence.md` for the current decision and the exhausted 10-round budget.
 
+The separate F1-F10 fix slice is now recorded in `p3x-panel-native-fix.md`: native bridges replaced, required real cycle still failing, current NO-GO at F10.
+
 This supersedes `p3x-panel-divergence.md`. The source-of-truth correction from Claude authorized the existing external seat launcher and protocol APIs, clarified owned cleanup signals, and required the live helper rather than the stale worktree copy. The branch now ports both live tools into the multicall runtime. Nothing was deployed.
 
 ## Sources and callers

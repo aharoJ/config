@@ -29,13 +29,6 @@ pub(crate) fn tools() -> Result<PathBuf> {
         .map(Path::to_owned)
         .ok_or("tool directory missing".into())
 }
-fn repo() -> Result<PathBuf> {
-    tools()?
-        .parent()
-        .and_then(Path::parent)
-        .map(Path::to_owned)
-        .ok_or("repo directory missing".into())
-}
 pub(crate) fn adapter() -> Result<Value> {
     Ok(
         json!({"id":"config-panel-dispatch","version":"1","source_sha256":reference(&source()?)?["sha256"]}),
@@ -293,8 +286,7 @@ pub(crate) fn request_check(reference: &Value) -> Result<Value> {
         "launcher identity/authority mismatch",
     )?;
     check(
-        launcher["tai_sha256"]
-            == crate::panel_io::reference(&repo()?.join("fish/internal/tmux/tai.fish"))?["sha256"]
+        launcher["tai_sha256"] == adapter()?["source_sha256"]
             && launcher["trust_sha256"] == executable_hash(&tools()?.join("panel-seat-trust"))?,
         "launcher source drift",
     )?;
@@ -487,7 +479,7 @@ fn prepared_check(record: &Value, runtime: bool) -> Result<Value> {
             allowed.extend([
                 "scratch",
                 "panel-settings.json",
-                ext("environment_file"),
+                "panel-env.sh",
                 "panel-temp.json",
                 "unleash-repo-schema-v1-codeium-language-server.json",
             ]);
@@ -812,65 +804,8 @@ fn launch_prestart(args: &Args) -> Result<Value> {
                 json!({"phase":"trust-pending","prepared_ref":preparation,"seats":a(&record,"seats")?[..launches.len()+1],"created_at":now()}),
             ),
         )?;
-        let kind = s(seat, "transport")?;
-        let arguments = if kind == "astra" {
-            vec![
-                "-m".into(),
-                s(seat, "model")?.into(),
-                "-c".into(),
-                format!("model_reasoning_effort={}", seat["effort"]),
-            ]
-        } else {
-            vec![
-                "--model".into(),
-                s(seat, "model")?.into(),
-                "--effort".into(),
-                s(seat, "effort")?.into(),
-            ]
-        };
-        let mut tmux_command = vec!["command".to_owned(), "/opt/homebrew/bin/tmux".into()];
-        if let Ok(socket) = std::env::var("TMUX_LAB_SOCKET") {
-            if !socket.is_empty() {
-                tmux_command.extend(["-L".into(), socket, "-f".into(), "/dev/null".into()]);
-            }
-        }
-        let native = tmux_command
-            .iter()
-            .map(|s| quote(s))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let own = format!(
-            "{} --surface panel-dispatch own --prepared {} --sha256 {} --seat-id {}",
-            quote(source()?.to_str().ok_or("source path not UTF-8")?),
-            quote(arg(args, "prepared")?),
-            quote(arg(args, "sha256")?),
-            quote(s(seat, "seat_id")?)
-        );
-        let code=format!("function tmux; if test \"$argv[1]\" = new-window; set -l created ({native} new-window -d $argv[2..-1]); or return $status; {own} --pane \"$created\" >/dev/null; or return $status; printf \"%s\\n\" \"$created\"; else; {native} $argv; end; end; source {}; functions -c __tai_spawn __panel_original_spawn; function __tai_spawn; set argv[1] {}; __panel_original_spawn $argv; end; tai --session {} seat {} {}",quote(repo()?.join("fish/internal/tmux/tai.fish").to_str().ok_or("tai path not UTF-8")?),quote(s(seat,"window")?),quote(s(&request,"session")?),quote(kind),arguments.iter().map(|s|quote(s)).collect::<Vec<_>>().join(" "));
-        let output = run(
-            Command::new(ext("shell"))
-                .args(["-l", "-c", &code])
-                .current_dir(s(seat, "directory")?),
-            None,
-            30,
-        )?;
-        let deadline =
-            Instant::now() + Duration::from_secs(request["deadline_seconds"].as_u64().unwrap());
-        let pane = loop {
-            let pane = exact_pane(s(&request, "session")?, s(seat, "window")?)?;
-            if !external("plain_commands")
-                .as_array()
-                .unwrap()
-                .contains(&pane["command"])
-            {
-                break pane;
-            }
-            check(
-                Instant::now() < deadline,
-                "CLI readiness deadline exhausted",
-            )?;
-            std::thread::sleep(Duration::from_millis(200));
-        };
+        let output = crate::panel_launch::start(args, &record, seat)?;
+        let pane = exact_pane(s(&request, "session")?, s(seat, "window")?)?;
         check(
             panel_native::resolve(Path::new(s(&pane, "cwd")?))? == Path::new(s(seat, "directory")?),
             "launched cwd mismatch",
@@ -884,7 +819,8 @@ fn launch_prestart(args: &Args) -> Result<Value> {
             "-y",
             "50",
         ])?;
-        let capture = tmux(&["capture-pane", "-p", "-e", "-t", s(&pane, "pane_id")?])?;
+        let capture =
+            crate::panel_launch::ready(seat, &pane, request["deadline_seconds"].as_u64().unwrap())?;
         let screen = fresh_bytes(
             &batch.join(format!("{}-prestart.ansi", s(seat, "seat_id")?)),
             capture.as_bytes(),

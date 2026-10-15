@@ -1,5 +1,7 @@
 # #p3x panel fix: NO-GO / Divergence at 10 of 10
 
+Historical budget-stop report. Angel subsequently approved the separate F1-F10 native fix slice. See `p3x-panel-native-fix.md` for the implemented native replacements and current F10 NO-GO; the old budget is not the current implementation blocker.
+
 Angel chose native Rust replacements for the review-protocol checks and tai seat launch. The task brief is `~/desk/tmp/relay/port/panel-fix.md`. The existing implementation does not satisfy that decision: it still executes inline interpreter code. The earlier GO and claimed external-debt exception are withdrawn.
 
 The fix brief explicitly says: "Continue your round count; the cap is 10. If you would exceed it, stop and send a Divergence report." The existing committed report (`p3x-panel-live.md`, originally line 110 at `45a92f7`) records the initial three rounds plus corrected rounds four through ten. There is no remaining implementation or verification round. This response records the divergence; it does not reset the counter or perform round eleven.

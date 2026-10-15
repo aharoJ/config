@@ -50,13 +50,6 @@ pub fn merge(mut v: Value, extra: Value) -> Value {
     }
     v
 }
-pub fn external(key: &str) -> &'static Value {
-    static DATA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
-    &DATA.get_or_init(|| serde_json::from_str(include_str!("../panel_external.json")).unwrap())[key]
-}
-pub fn ext(key: &str) -> &'static str {
-    external(key).as_str().unwrap()
-}
 pub fn home() -> Result<PathBuf> {
     std::env::var_os("HOME")
         .map(PathBuf::from)
@@ -170,7 +163,7 @@ pub fn decode(bytes: &[u8]) -> Result<Value> {
         .map(|v| v.0)
         .map_err(|e| e.to_string())
 }
-fn stamp(m: &fs::Metadata) -> (u64, u64, u64, i64, i64, i64, i64) {
+fn stamp(m: &fs::Metadata) -> (u64, u64, u64, i64, i64, i64, i64, u32, u64) {
     (
         m.dev(),
         m.ino(),
@@ -179,6 +172,8 @@ fn stamp(m: &fs::Metadata) -> (u64, u64, u64, i64, i64, i64, i64) {
         m.mtime_nsec(),
         m.ctime(),
         m.ctime_nsec(),
+        m.mode(),
+        m.nlink(),
     )
 }
 fn named(parent: &File, name: &str) -> Result<fs::Metadata> {
@@ -198,6 +193,7 @@ fn named(parent: &File, name: &str) -> Result<fs::Metadata> {
 fn open_at(parent: &File, name: &str, directory: bool) -> Result<File> {
     let name = CString::new(name).map_err(|e| e.to_string())?;
     let flags = libc::O_RDONLY
+        | libc::O_NONBLOCK
         | libc::O_NOFOLLOW
         | libc::O_CLOEXEC
         | if directory { libc::O_DIRECTORY } else { 0 };
@@ -209,6 +205,9 @@ fn open_at(parent: &File, name: &str, directory: bool) -> Result<File> {
     }
 }
 pub fn path_bytes(path: &Path) -> Result<Vec<u8>> {
+    path_snapshot(path).map(|(bytes, _)| bytes)
+}
+pub(crate) fn path_snapshot(path: &Path) -> Result<(Vec<u8>, fs::Metadata)> {
     check(
         path.is_absolute() && !path.components().any(|c| matches!(c, Component::ParentDir)),
         "absolute canonical path required",
@@ -268,7 +267,7 @@ pub fn path_bytes(path: &Path) -> Result<Vec<u8>> {
         )?;
     }
     check(bytes.len() as u64 <= MAX_BYTES, "evidence byte limit")?;
-    Ok(bytes)
+    Ok((bytes, held))
 }
 pub fn reference(path: &Path) -> Result<Value> {
     Ok(json!({"path":path,"sha256":hash(&path_bytes(path)?)}))
@@ -382,18 +381,17 @@ pub fn run(command: &mut Command, input: Option<&[u8]>, seconds: u64) -> Result<
 pub fn protocol(root: &str, mode: &str, value: &Value) -> Result<Value> {
     let path = Path::new(root);
     check(
-        path.is_absolute() && !io(fs::symlink_metadata(path))?.file_type().is_symlink(),
+        path.is_absolute() && io(fs::symlink_metadata(path))?.is_dir(),
         "explicit real protocol checkout required",
     )?;
-    let code = format!("{}{}", ext("protocol_import"), ext(mode));
-    let mut command = Command::new(ext("runtime"));
-    command.args(["-P", "-B", "-c", &code, root]);
-    decode(
-        run(
-            &mut command,
-            Some(&serde_json::to_vec(value).map_err(|e| e.to_string())?),
-            0,
-        )?
-        .as_bytes(),
-    )
+    match mode {
+        "protocol_load" => Ok(json!({})),
+        "protocol_schema" => {
+            let schema = crate::panel_schema::load(path)?;
+            crate::panel_schema::validate(value, &schema["$defs"]["agentic_seat"], &schema)
+                .map(|errors| json!(errors))
+        }
+        "protocol_verify" => crate::panel_protocol::verify(value),
+        _ => Err("unknown protocol operation".into()),
+    }
 }

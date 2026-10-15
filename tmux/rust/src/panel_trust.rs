@@ -385,7 +385,7 @@ pub(crate) fn isolation(kind: &str, paths: &[String; 2]) -> Result<()> {
         io(DirBuilder::new().mode(0o700).create(&temp))?;
         write_atomic(&marker, &(paths[0].clone() + "\n"), 0o600)?;
     }
-    let mut allow = vec![Value::String(crate::panel_io::ext("shell_tool").into())];
+    let mut allow = vec![Value::String("Bash".into())];
     allow.extend(["Read", "Edit"].map(|tool| Value::String(format!("{tool}(/{}/**)", paths[0]))));
     let settings = serde_json::json!({
         "permissions":{"defaultMode":"dontAsk","allow":allow},
@@ -399,7 +399,7 @@ pub(crate) fn isolation(kind: &str, paths: &[String; 2]) -> Result<()> {
         0o600,
     )?;
     write_atomic(
-        &folder.join(crate::panel_io::ext("environment_file")),
+        &folder.join("panel-env.sh"),
         &format!(
             "export TMPDIR={}\n",
             crate::panel_io::quote(temp.to_str().ok_or("temp path is not UTF-8")?)
@@ -419,13 +419,7 @@ pub fn main_entry(args: &[String]) -> i32 {
         return 2;
     }
     let result = (|| {
-        let paths = seat_paths(&args[1])?;
-        isolation(&args[0], &paths)?;
-        let home = std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .map(Ok)
-            .unwrap_or_else(crate::identity::account_home)?;
-        trust(&args[0], &home, &paths)?;
+        let paths = prepare(&args[0], &args[1])?;
         println!("panel-seat-trust: {} trusts {}", args[0], paths[0]);
         Ok::<_, String>(())
     })();
@@ -436,6 +430,17 @@ pub fn main_entry(args: &[String]) -> i32 {
             1
         }
     }
+}
+
+pub(crate) fn prepare(kind: &str, folder: &str) -> Result<[String; 2]> {
+    let paths = seat_paths(folder)?;
+    isolation(kind, &paths)?;
+    let home = std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .map(Ok)
+        .unwrap_or_else(crate::identity::account_home)?;
+    trust(kind, &home, &paths)?;
+    Ok(paths)
 }
 
 #[cfg(test)]

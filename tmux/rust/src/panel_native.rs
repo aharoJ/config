@@ -463,7 +463,7 @@ pub fn inspect(data: &[u8], fmt: &str, seat: &Value) -> Result<Value> {
             .get("command")
             .or_else(|| argument.get("cmd"))
             .and_then(Value::as_str);
-        if [ext("shell_tool"), "exec_command", "functions.exec_command"].contains(&name) {
+        if ["Bash", "exec_command", "functions.exec_command"].contains(&name) {
             if let Some(command) =
                 command.filter(|c| re(r"^(?:/bin/)?cat (?:PROMPT\.md|intake\.md)$").is_match(c))
             {
@@ -526,13 +526,7 @@ pub fn inspect(data: &[u8], fmt: &str, seat: &Value) -> Result<Value> {
         }
         if result.is_none()
             || !argument.is_object()
-            || ![
-                "Read",
-                ext("shell_tool"),
-                "exec_command",
-                "functions.exec_command",
-            ]
-            .contains(&name)
+            || !["Read", "Bash", "exec_command", "functions.exec_command"].contains(&name)
         {
             gaps.push(format!("unsupported/pending action {id}"));
         }

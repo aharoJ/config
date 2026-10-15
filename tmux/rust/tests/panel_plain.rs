@@ -33,6 +33,7 @@ struct Lane {
     real_home: PathBuf,
     rows: Vec<Value>,
     seats: Vec<PathBuf>,
+    path: String,
 }
 impl Lane {
     fn new() -> Self {
@@ -55,9 +56,6 @@ impl Lane {
             symlink(&source, tools.join(name)).unwrap();
             symlink(&source, bin.join(name)).unwrap();
         }
-        let tai = root.join("stage/fish/internal/tmux/tai.fish");
-        fs::create_dir_all(tai.parent().unwrap()).unwrap();
-        fs::copy(real_home.join(".config/fish/internal/tmux/tai.fish"), &tai).unwrap();
         let home = root.join("home");
         fs::create_dir(&home).unwrap();
         symlink(root.join("stage"), home.join(".config")).unwrap();
@@ -78,6 +76,7 @@ impl Lane {
             real_home,
             rows: Vec::new(),
             seats: Vec::new(),
+            path: std::env::var("PATH").unwrap_or_default(),
         }
     }
     fn call(&mut self, surface: &str, args: &[String], expected: i32) -> Option<Value> {
@@ -86,14 +85,7 @@ impl Lane {
             .args(args)
             .current_dir(&self.root)
             .env("HOME", &self.home)
-            .env(
-                "PATH",
-                format!(
-                    "{}:{}",
-                    self.bin.display(),
-                    std::env::var("PATH").unwrap_or_default()
-                ),
-            )
+            .env("PATH", format!("{}:{}", self.bin.display(), self.path))
             .output()
             .unwrap();
         self.rows.push(json!({"surface":surface,"argv":args,"expected_exit":expected,"actual_exit":output.status.code(),"stdout":String::from_utf8_lossy(&output.stdout),"stderr":String::from_utf8_lossy(&output.stderr),"elapsed_ms":started.elapsed().as_millis()}));
@@ -160,7 +152,7 @@ impl Lane {
         let adapter = json!({"id":"config-panel-dispatch","version":"1","source_sha256":hash(&fs::read(&self.source).unwrap())});
         let launcher = put(
             &base.join("launcher.json"),
-            &json!({"context":identity,"adapter":adapter,"authorized":true,"tai_sha256":hash(&fs::read(self.root.join("stage/fish/internal/tmux/tai.fish")).unwrap()),"trust_sha256":hash(&fs::read(&self.source).unwrap()),"test_fixture_only":true}),
+            &json!({"context":identity,"adapter":adapter,"authorized":true,"tai_sha256":hash(&fs::read(&self.source).unwrap()),"trust_sha256":hash(&fs::read(&self.source).unwrap()),"test_fixture_only":true}),
         );
         let policy = put(
             &base.join("policy.json"),
@@ -469,9 +461,7 @@ fn native_plain_pane_parity() {
 fn native_owned_launch_recovery() {
     assert_plain_pane();
     let mut lane = Lane::new();
-    let tai = lane.root.join("stage/fish/internal/tmux/tai.fish");
-    let text = fs::read_to_string(&tai).unwrap() + "\nfunction __tai_spawn; return 1; end\n";
-    fs::write(&tai, text).unwrap();
+    lane.path = "/usr/bin:/bin".into();
     let request = lane.request(2, 1);
     let prep_ref = lane.prepare(&request, "launch-batch");
     let prepared = read(&prep_ref);
@@ -917,16 +907,22 @@ fn native_provider_temp_retirement() {
 }
 
 #[test]
-#[ignore = "external owner API bridge must not import modules from the caller's project"]
-fn native_protocol_import_origin() {
+#[ignore = "native protocol needs data artifacts and no owner executable modules"]
+fn native_protocol_checkout_is_data_only() {
     assert_plain_pane();
     let mut lane = Lane::new();
-    fs::write(
-        lane.root.join("json.py"),
-        "raise RuntimeError('caller module must not load')\n",
+    let reference = lane.request(8, 1);
+    let mut request = read(&reference);
+    let root = lane.root.join("data-only-protocol");
+    fs::create_dir_all(root.join("reviews/schema")).unwrap();
+    fs::copy(
+        lane.real_home
+            .join(".skills/review-protocol/reviews/schema/resolve-ledger.schema.json"),
+        root.join("reviews/schema/resolve-ledger.schema.json"),
     )
     .unwrap();
-    let request = lane.request(8, 1);
-    lane.prepare(&request, "import-origin-batch");
+    request["protocol_root"] = json!(root);
+    let request = put(&lane.root.join("data-only-request.json"), &request);
+    lane.prepare(&request, "data-only-batch");
     println!("P3X_IMPORT_ORIGIN_PASS {}", lane.root.display());
 }

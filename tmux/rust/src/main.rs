@@ -4,6 +4,9 @@ fn main() {
         .map(|s| s.into_string())
         .collect();
     let code = match args {
+        Ok(args) if args.first().is_some_and(|s| s == "--panel-seat-exec") => {
+            angelstar_runtime::panel_seat_entry(&args[1..])
+        }
         Ok(args) if args.first().is_some_and(|s| s == "--delivery-producer") => {
             angelstar_runtime::producer_entry(&args[1..])
         }
