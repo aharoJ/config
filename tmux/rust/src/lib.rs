@@ -1,4 +1,8 @@
 pub mod cli;
+pub mod model;
+pub mod model_guard;
+mod model_identity;
+mod model_payload;
 mod composer;
 mod identity;
 mod runtime;
