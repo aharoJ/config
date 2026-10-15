@@ -84,6 +84,7 @@ impl Lane {
         let started = Instant::now();
         let output = Command::new(surface)
             .args(args)
+            .current_dir(&self.root)
             .env("HOME", &self.home)
             .env(
                 "PATH",
@@ -913,4 +914,19 @@ fn native_provider_temp_retirement() {
         }
         println!("P3X_PROVIDER_PASS {kind} {}", lane.root.display());
     }
+}
+
+#[test]
+#[ignore = "external owner API bridge must not import modules from the caller's project"]
+fn native_protocol_import_origin() {
+    assert_plain_pane();
+    let mut lane = Lane::new();
+    fs::write(
+        lane.root.join("json.py"),
+        "raise RuntimeError('caller module must not load')\n",
+    )
+    .unwrap();
+    let request = lane.request(8, 1);
+    lane.prepare(&request, "import-origin-batch");
+    println!("P3X_IMPORT_ORIGIN_PASS {}", lane.root.display());
 }

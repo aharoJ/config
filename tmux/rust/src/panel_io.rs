@@ -387,7 +387,7 @@ pub fn protocol(root: &str, mode: &str, value: &Value) -> Result<Value> {
     )?;
     let code = format!("{}{}", ext("protocol_import"), ext(mode));
     let mut command = Command::new(ext("runtime"));
-    command.args(["-B", "-c", &code, root]);
+    command.args(["-P", "-B", "-c", &code, root]);
     decode(
         run(
             &mut command,

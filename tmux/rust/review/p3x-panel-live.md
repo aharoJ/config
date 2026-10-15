@@ -30,11 +30,11 @@ Repository tool entries are relative symlinks to the adjacent `angelstar-runtime
 
 ## Parity matrix and actual environment
 
-All native CLI rows used a copied installed candidate and PATH aliases, from initially plain panes in private windows `config-tt:p3x-test-native` (`@320`, `%357`) and `config-tt:p3x-test-consumers` (`@323`, `%360`). TMUX and TMUX_PANE were inherited from those actual panes. HOME was isolated under the evidence directory. No invented routing prefix was injected. Launch itself supplied the documented prefix above.
+All native CLI rows used a copied installed candidate and PATH aliases, from initially plain panes in private windows. Final runs used `config-tt:p3x-test-final` (`@328`, `%365`) and `config-tt:p3x-test-final-consumers` (`@331`, `%368`); earlier checks used `p3x-test-native` (`@320`, `%357`) and `p3x-test-consumers` (`@323`, `%360`). TMUX and TMUX_PANE were inherited from those actual panes. HOME and the invocation directory were isolated under the evidence directory. No invented routing prefix was injected. Launch itself supplied the documented prefix above.
 
-The final native runs contain 58 CLI invocations, each with exact argv, expected/actual exit, stdout, stderr and elapsed time in its `parity.json`. The controls use clearly labeled synthetic authority proofs; they do not activate a real project panel or certify independence/admission.
+The final native runs contain 59 CLI invocations, each with exact argv, expected/actual exit, stdout, stderr and elapsed time in its `parity.json`. The controls use clearly labeled synthetic authority proofs; they do not activate a real project panel or certify independence/admission.
 
-The final debug candidate SHA256 is `67c1111461c325da088da34b54aa787139796b680e73b842ea705db17fc6bc55`, identical in the build output, final interactive pilot and provider-retirement candidate copies.
+The final debug candidate SHA256 is `7a2c0baa08e072af31abd4d61c7e7b1e14f676684a7607e4932e07e7e1d11218`, identical in the build output and final interactive pilot copy. Earlier candidates and their evidence remain distinguishable by digest.
 
 | Shape | Caller environment | Expected | Actual | Exit |
 | --- | --- | --- | --- | --- |
@@ -63,19 +63,20 @@ The final debug candidate SHA256 is `67c1111461c325da088da34b54aa787139796b680e7
 | Verify record-only / qualified owner fixtures | Explicit protocol/project/path/hash CLI options | Actual owner consumer PASS and correct floor sources | Matches | 0 |
 | Verify stale bytes, wrong session, self-activation, shared inode, projection failure | Same | Owner refusal | Matches | 1 |
 | Agy automatic collection | Same | Refuse admission; retention remains available | Matches | 1 |
+| Caller directory contains a conflicting stdlib module | Same, controlled local module fixture | Import stdlib and the selected owner, without caller-directory lookup | Matches after reproduced regression fix | 0 |
 
-The final interactive run used `plain-1792086433254024000`; custody `plain-1792086465257041000`; pre-window recovery `plain-1792086471838504000`; general CLI cases `plain-1792086478206321000`; provider retirement `plain-1792086717863072000`, `plain-1792086724052329000` and `plain-1792086729869953000`. All are under `~/desk/tmp/relay/port/panel-evidence/corrected/`. An earlier separate interactive pilot also passed. Each interactive pilot used a fresh fixture project and first-attempt authority; neither retried an existing claimed round.
+The final interactive run used `plain-1792087248231923000`; custody `plain-1792087280074220000`; pre-window recovery `plain-1792087286765948000`; general CLI cases `plain-1792087293100496000`; import-origin control `plain-1792087327255492000`; provider retirement `plain-1792087331304081000`, `plain-1792087338016445000` and `plain-1792087344283654000`. All are under `~/desk/tmp/relay/port/panel-evidence/corrected/`; `final-all.log` indexes these runs. Earlier interactive pilots also passed. Every interactive pilot used a fresh fixture project and first-attempt authority; none retried an existing claimed round.
 
 ## Validation and grep
 
-- Default `cargo test`: 51 passed, 0 failed, 1.03 s. Thirteen unit harness cases and five explicit pane/pilot cases are ignored by default. The new fast tests include strict evidence and decoder controls, sorted claim-key compatibility including Unicode, native action ordering, and preservation-chain refusals.
-- Five explicit owned-pane cases passed: four in 77.89 s, provider retirement in 17.20 s. These include the real interactive Codex Start/read/final/collection/cleanup path, all four trust helpers, wait exhaustion, retained evidence, kernel custody, pre-window recovery, and provider temp retirement.
+- Default `cargo test`: 51 passed, 0 failed, 1.52 s. Thirteen unit harness cases and six explicit pane/pilot cases are ignored by default. The new fast tests include strict evidence and decoder controls, sorted claim-key compatibility including Unicode, native action ordering, and preservation-chain refusals.
+- Six explicit owned-pane cases passed in 101.55 s. These include the real interactive Codex Start/read/final/collection/cleanup path, all four trust helpers, wait exhaustion, retained evidence, kernel custody, pre-window recovery, provider temp retirement and the caller-module collision control.
 - All 69 live native-envelope controls passed through the native parser probe (0.443 s).
-- Fifteen applicable live integration controls passed through the native CLI and actual external owner consumers (39.220 s). The first adaptation attempted two additional in-process-mock cases; those harness-only failures are retained in the earlier log. Their wait/retain behavior was then tested with real native CLI proofs instead.
+- Fifteen applicable live integration controls passed through the native CLI and actual external owner consumers (40.986 s after the import-origin fix). The first adaptation attempted two additional in-process-mock cases; those harness-only failures are retained in the earlier log. Their wait/retain behavior was then tested with real native CLI proofs instead.
 - `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and `git diff --cached --check` passed.
 - `git grep -n -i -E 'python|perl|/bin/sh|bash' -- tmux/rust/src` is empty, exit 1, including all staged new modules. No new Rust code comments were added. This grep does not mean external interpreter debt disappeared: the names and tiny owner-API bridge are explicitly recorded in `panel_external.json` outside src.
 
-Logs, exact CLI rows, source snapshots and the command inventory are in `panel-evidence/corrected/`. No old test source or own interpreter implementation is shipped as an executable tool. The runtime-created environment artifact is retained because external tai consumes it.
+Logs, exact CLI rows, source snapshots and the command inventory are in `panel-evidence/corrected/`. The last audit reproduced a bridge regression: a local `json.py` could load from the caller directory. The bridge now supplies the runtime's safe-path option, preserving the original script-entry import boundary; `import-origin-before.log` retains the failure and `final-all.log` proves the fix. No old test source or own interpreter implementation is shipped as an executable tool. The runtime-created environment artifact is retained because external tai consumes it.
 
 ## Every Command::new
 
@@ -85,7 +86,7 @@ Logs, exact CLI rows, source snapshots and the command inventory are in `panel-e
 | `panel_dispatch.rs:585` | `/bin/ps`: existing descendant graph snapshot, external system program |
 | `panel_dispatch.rs:719` | Current native executable: existing cc-msg/codex-send-to/agy-send-to surfaces with the real routing prefixes |
 | `panel_dispatch.rs:851` | `fish -l -c`: external, not ours; run the bound tai launcher and its existing provider wrappers |
-| `panel_io.rs:389` | `python3 -B -c`: external owner API adapter, not a port of the owner's validation code; calls the selected review-protocol modules |
+| `panel_io.rs:389` | `python3 -P -B -c`: external owner API adapter, not a port of the owner's validation code; calls the selected review-protocol modules without implicit caller-directory imports |
 | `panel_cleanup.rs:408` | `trash`: external, not ours; same owned-temp retirement as the source |
 | `identity.rs:396,695`, inherited | Namespace-pinned tmux command and default-socket attestation |
 | `runtime.rs:233`, inherited | Current native executable: owned relay producer |
