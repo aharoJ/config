@@ -376,6 +376,11 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
     if let Some(code) = crate::model::entry(surface, args) {
         return code;
     }
+    match surface {
+        "codex-new-chat" => return crate::new_chat::entry(args),
+        "codex-new-guard" => return crate::new_guard::entry(args),
+        _ => (),
+    }
     INTERRUPTED.store(false, Ordering::Relaxed);
     unsafe {
         libc::signal(libc::SIGINT, interrupt as *const () as libc::sighandler_t);

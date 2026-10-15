@@ -74,7 +74,7 @@ unsafe extern "C" {
     fn proc_pidpath(pid: i32, buffer: *mut libc::c_void, size: u32) -> i32;
     fn proc_listchildpids(pid: i32, buffer: *mut libc::c_void, size: i32) -> i32;
 }
-pub fn kernel_process(pid: u32) -> Option<ProcessIdentity> {
+fn bsd_info(pid: u32) -> Option<BsdInfo> {
     let mut info: BsdInfo = unsafe { std::mem::zeroed() };
     let count = unsafe {
         proc_pidinfo(
@@ -93,12 +93,20 @@ pub fn kernel_process(pid: u32) -> Option<ProcessIdentity> {
     {
         return None;
     }
+    Some(info)
+}
+pub fn kernel_process(pid: u32) -> Option<ProcessIdentity> {
+    let info = bsd_info(pid)?;
     Some(ProcessIdentity {
         pid,
         parent: info.head[4],
         start_seconds: info.seconds,
         start_microseconds: info.micros,
     })
+}
+pub(crate) fn kernel_terminal(pid: u32) -> Option<(u32, u32, u32)> {
+    let info = bsd_info(pid)?;
+    Some((info.tail[3], info.tail[1], info.tail[4]))
 }
 #[cfg(test)]
 pub(crate) fn process_retired(expected: ProcessIdentity) -> Result<bool> {
@@ -390,12 +398,19 @@ impl Namespace {
         Ok(())
     }
     pub fn command(&self, args: &[&str]) -> Result<String> {
+        self.command_for(args, std::time::Duration::from_secs(2))
+    }
+    pub(crate) fn command_for(
+        &self,
+        args: &[&str],
+        timeout: std::time::Duration,
+    ) -> Result<String> {
         self.verify()?;
         validate_delivery(args, false)?;
         delivery_attest(&self.socket)?;
         let mut command = Command::new(&self.executable);
         command.arg("-N").arg("-S").arg(&self.socket).args(args);
-        let bytes = crate::runtime::capture(&mut command)?;
+        let bytes = crate::runtime::capture_for(&mut command, timeout)?;
         self.verify()?;
         String::from_utf8(bytes).map_err(|e| e.to_string())
     }
@@ -1117,6 +1132,9 @@ impl Client {
                 .as_bytes()
             )
         ))
+    }
+    pub(crate) fn process_identity(&self) -> ProcessIdentity {
+        self.process
     }
     pub fn verify(&self) -> Result<()> {
         if !kernel_ancestry(self.process.pid)?.contains(&self.pane) {
