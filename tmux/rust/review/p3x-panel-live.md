@@ -1,4 +1,6 @@
-# #p3x live panel port: GO for merge
+# #p3x live panel port: historical GO, withdrawn
+
+**NOT GO.** Claude rejected the embedded interpreter bridges and Angel chose native Rust replacements. This report is retained as historical evidence only. Its authorization and GO claims are withdrawn. See `p3x-panel-fix-divergence.md` for the current decision and the exhausted 10-round budget.
 
 This supersedes `p3x-panel-divergence.md`. The source-of-truth correction from Claude authorized the existing external seat launcher and protocol APIs, clarified owned cleanup signals, and required the live helper rather than the stale worktree copy. The branch now ports both live tools into the multicall runtime. Nothing was deployed.
 
@@ -109,4 +111,4 @@ The complete unabridged search is `panel-evidence/corrected/commands.txt`. The t
 
 The earlier three rounds plus corrected rounds four through ten were used. At the cap, all checks above pass. Every own test pane/window was closed; test-created physical seats and temp folders were removed, while evidence and candidate copies remain under ~/desk. No public link, active config source, relay-stable, caller or memory was edited. No subagents or headless Claude process were used.
 
-Decision: **GO for merging the live panel port**, with the explicitly authorized external debt and #p4x sender registration above. This is not a deployment action. The external summary records final commit IDs and actual added/removed counts for both the correction commit and the complete branch.
+Historical decision, now withdrawn: GO for merging the live panel port. The current decision is **NO-GO**; see `p3x-panel-fix-divergence.md`.
