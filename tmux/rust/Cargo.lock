@@ -21,6 +21,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "syn",
  "toml",
  "unicode-general-category",
  "unicode-normalization",

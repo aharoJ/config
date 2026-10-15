@@ -221,6 +221,7 @@ fn controller(root: &Path, actor: &str, native: bool, wrapped: bool, documented:
             "#{pane_id}",
             "-t",
             &pane,
+            "--",
             exe.to_str().unwrap(),
             "hold",
         ]);

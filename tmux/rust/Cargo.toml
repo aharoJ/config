@@ -17,3 +17,6 @@ unicode-normalization = "0.1"
 unicode-width = "0.2"
 toml = { version = "0.8", default-features = false, features = ["parse"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+syn = { version = "3", features = ["full", "visit"] }

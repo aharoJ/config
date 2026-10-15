@@ -98,7 +98,9 @@ impl Server {
                 "private-k50",
                 "-n",
                 "hold",
-                "/bin/sleep 120",
+                "--",
+                "/bin/sleep",
+                "120",
                 ";",
                 "set-option",
                 "-g",
@@ -161,7 +163,7 @@ impl Server {
     }
     pub fn fixtures(&self, names: &[&str]) {
         for name in names {
-            let command=format!("exec /usr/bin/env ANGELSTAR_FIXTURE_ROOT={} ANGELSTAR_FIXTURE_NAME={} {} --ignored --exact test_server::fixture --nocapture",crate::runtime::quote(self.root.to_str().unwrap()),crate::runtime::quote(name),crate::runtime::quote(std::env::current_exe().unwrap().to_str().unwrap()));
+            let executable = std::env::current_exe().unwrap();
             self.command(&[
                 "new-window",
                 "-d",
@@ -169,13 +171,35 @@ impl Server {
                 "private-k50",
                 "-n",
                 name,
-                &command,
+                "-e",
+                &format!("ANGELSTAR_FIXTURE_ROOT={}", self.root.display()),
+                "-e",
+                &format!("ANGELSTAR_FIXTURE_NAME={name}"),
+                "--",
+                executable.to_str().unwrap(),
+                "--ignored",
+                "--exact",
+                "test_server::fixture",
+                "--nocapture",
             ]);
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
             while !self.root.join(format!("{name}.json")).exists() {
                 assert!(std::time::Instant::now() < deadline);
                 std::thread::sleep(std::time::Duration::from_millis(5));
             }
+            let pid: u32 = self
+                .command(&["display-message", "-p", "-t", name, "#{pane_pid}"])
+                .trim()
+                .parse()
+                .unwrap();
+            assert_eq!(
+                identity::process_path(pid).unwrap(),
+                std::fs::canonicalize(&executable).unwrap()
+            );
+            println!(
+                "direct fixture {name}: pane PID {pid}, image {}",
+                executable.display()
+            );
         }
     }
     pub fn command(&self, args: &[&str]) -> String {
@@ -199,17 +223,25 @@ impl Drop for Server {
         let pid = record["pid"].as_u64().unwrap() as u32;
         let before = identity::kernel_process(pid).unwrap();
         let m = std::fs::symlink_metadata(&self.socket).unwrap();
-        let condition=format!("#{{&&:#{{==:#{{pid}},{pid}}},#{{==:#{{start_time}},{}}},#{{==:#{{@ks01_socket_nonce}},{}}}}}",record["server_start"],record["marker"].as_str().unwrap());
+        let observed = self.command(&[
+            "display-message",
+            "-p",
+            "#{pid}|#{start_time}|#{@ks01_socket_nonce}|#{socket_path}",
+        ]);
+        assert_eq!(
+            observed.trim(),
+            format!(
+                "{pid}|{}|{}|{}",
+                record["server_start"],
+                record["marker"].as_str().unwrap(),
+                self.socket.display()
+            )
+        );
+        assert_eq!(identity::delivery_attest(&self.socket).unwrap(), record);
         let out = Command::new("/opt/homebrew/bin/tmux")
             .args(["-N", "-S"])
             .arg(&self.socket)
-            .args([
-                "if-shell",
-                "-F",
-                &condition,
-                "kill-server",
-                "display-message -p cleanup-refused",
-            ])
+            .arg("kill-server")
             .output()
             .unwrap();
         assert!(

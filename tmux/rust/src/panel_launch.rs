@@ -167,6 +167,7 @@ pub(crate) fn start(args: &Args, record: &Value, seat: &Value) -> Result<String>
         argv.extend(["-e".into(), format!("{key}={}", value.as_str().unwrap())]);
     }
     argv.extend([
+        "--".into(),
         source.to_string_lossy().into(),
         "--panel-seat-exec".into(),
         s(&plan, "path")?.into(),
