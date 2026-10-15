@@ -599,10 +599,6 @@ impl Client {
                 {
                     let m = file.metadata().map_err(|e| e.to_string())?;
                     let profile = match m.len() {
-                        240664432 => Some((
-                            '❯',
-                            "c9b5341637becbd423ddffc5b254afb645682a3868cb708bbc6cc0e7bb419937",
-                        )),
                         247931696 => Some((
                             '❯',
                             "ba5ab7b8c195fa03ab8d5bf3915c76153b576a2c40e79a5c46e265e7ed9744b3",

@@ -1,22 +1,4 @@
 use super::*;
-
-#[test]
-fn claude_296_redacted_native_layout() {
-    let capture = include_str!("../../../tests/fixtures/claude-2.1.296-empty-redacted.ansi");
-    assert_eq!(screen('❯', capture, 2, 1, 215, ""), Screen::Empty);
-    let mut rows: Vec<String> = capture.split_inclusive('\n').map(str::to_owned).collect();
-    rows[1] = "❯ synthetic-draft\n".into();
-    let staged = rows.concat();
-    assert_eq!(
-        screen('❯', &staged, 17, 1, 215, "synthetic-draft"),
-        Screen::Staged(b"synthetic-draft".to_vec())
-    );
-    assert_eq!(screen('❯', &staged, 17, 1, 215, "different"), Screen::Hold);
-    assert_eq!(
-        screen('❯', &staged, 2, 1, 215, "synthetic-draft"),
-        Screen::Hold
-    );
-}
 #[test]
 fn codex_162_current_composer() {
     let capture = include_str!("../../../tests/fixtures/codex-162-empty-composer.ansi");

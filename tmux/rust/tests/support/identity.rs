@@ -1,26 +1,6 @@
 use super::*;
 use std::os::unix::fs::DirBuilderExt;
 #[test]
-#[ignore = "read-only exact native descendant binding; no launch or input"]
-fn live_native_descendant_binding() {
-    let pane = std::env::var("ANGELSTAR_BIND_PANE_PID")
-        .unwrap()
-        .parse()
-        .unwrap();
-    let expected = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
-        .unwrap()
-        .parse::<u32>()
-        .unwrap();
-    let path = PathBuf::from(std::env::var("ANGELSTAR_BIND_NATIVE_PATH").unwrap());
-    let glyph = std::env::var("ANGELSTAR_BIND_GLYPH").unwrap();
-    let client = Client::bind(pane).unwrap();
-    assert_eq!(client.process.pid, expected);
-    assert_eq!(client.path, path);
-    assert_eq!(client.glyph.to_string(), glyph);
-    client.current().unwrap();
-}
-
-#[test]
 #[ignore = "read-only explicitly authorized live Codex descendant identity; never launches a client"]
 fn live_codex_descendant_binding() {
     let pane: u32 = std::env::var("ANGELSTAR_BIND_PANE_PID")
