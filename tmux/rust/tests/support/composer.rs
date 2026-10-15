@@ -1,5 +1,29 @@
 use super::*;
 #[test]
+fn captured_codex_busy_accepted_history() {
+    let capture = include_str!("../fixtures/codex-busy-accepted.ansi");
+    let wire = "sol (config-tt:sol): #s11k10rust Reply ACK_S11K10_RUST only; no tools.";
+    assert_eq!(classify(capture, '›', 2, 24, 180), Composer::EmptyCandidate);
+    assert_eq!(receipt('›', capture, 2, 24, 180, wire).submitted, 1);
+    assert_eq!(receipt('›', capture, 2, 24, 180, "unrelated").submitted, 0);
+    assert_eq!(receipt('❯', capture, 2, 24, 180, wire).submitted, 0);
+    let row = capture
+        .lines()
+        .position(|row| row == format!("\x1b[1;2m› \x1b[0m{wire}"))
+        .unwrap();
+    assert_eq!(
+        receipt('›', capture, wire.len() + 2, row, 180, wire).submitted,
+        0
+    );
+    for changed in [
+        capture.replace("\x1b[1;2m› ", "\x1b[2m› "),
+        capture.replace(wire, &format!("prefix {wire}")),
+        capture.replace(wire, &format!("{wire} suffix")),
+    ] {
+        assert_eq!(receipt('›', &changed, 2, 24, 180, wire).submitted, 0);
+    }
+}
+#[test]
 fn captured_busy_queue_receipts() {
     let claude = include_str!("../fixtures/claude-busy-queued.ansi");
     let codex = include_str!("../fixtures/codex-busy-queued.ansi");

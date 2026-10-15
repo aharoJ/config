@@ -359,7 +359,12 @@ pub fn receipt(
         _ => return Receipt::default(),
     };
     let mut result = Receipt {
-        submitted: rows[..y].iter().filter(|row| **row == normal).count(),
+        submitted: rows[..y]
+            .iter()
+            .filter(|row| {
+                **row == normal || (glyph == '›' && **row == format!("\x1b[1;2m› \x1b[0m{wire}"))
+            })
+            .count(),
         ..Default::default()
     };
     if glyph == '❯'
