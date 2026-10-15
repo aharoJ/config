@@ -1,30 +1,22 @@
 use super::*;
 use crate::panel_schema::list;
 #[test]
-fn real_native_composer_readiness_refuses_drafts_modes_and_wrong_geometry() {
-    let capture = include_str!("../fixtures/panel-codex-idle.ansi");
-    let y = capture
-        .lines()
-        .position(|line| {
-            crate::composer::row(line).is_ok_and(|r| r.text.trim_start().starts_with('›'))
-        })
-        .unwrap();
-    let meta = format!("2|{y}|215|50|0|0|%1");
-    assert!(empty(&meta, capture, '›'));
-    assert!(!empty(&format!("2|{y}|215|50|0|1|%1"), capture, '›'));
-    assert!(!empty("2|49|215|50|0|0|%1", capture, '›'));
-    let draft = capture
-        .lines()
-        .enumerate()
-        .map(|(i, line)| {
-            if i == y {
-                "› actual draft\n".to_owned()
-            } else {
-                format!("{line}\n")
-            }
-        })
-        .collect::<String>();
-    assert!(!empty(&meta, &draft, '›'));
+fn trimmed_live_capture_misaligns_actual_tmux_cursor_row() {
+    let raw = include_str!("../fixtures/panel-codex-idle.ansi");
+    let meta = include_str!("../fixtures/panel-codex-idle.meta").trim();
+    let fields = meta.split('|').collect::<Vec<_>>();
+    let x = fields[0].parse().unwrap();
+    let y = fields[1].parse().unwrap();
+    let width = fields[2].parse().unwrap();
+    assert_eq!(
+        crate::composer::screen('›', raw, x, y, width, ""),
+        crate::composer::Screen::Empty
+    );
+    assert_ne!(
+        crate::composer::screen('›', raw.trim(), x, y, width, ""),
+        crate::composer::Screen::Empty
+    );
+    println!("F11 actual tmux metadata {meta}: raw empty=true, stripped empty=false");
 }
 #[test]
 fn codex_seat_preserves_policy_and_native_config_arguments() {

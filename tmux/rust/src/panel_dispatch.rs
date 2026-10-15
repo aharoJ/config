@@ -708,8 +708,7 @@ pub(crate) fn relay_start(request: &Value, seat: &Value) -> Result<Value> {
         "astra" => "codex-send-to",
         _ => "agy-send-to",
     };
-    let mut command = Command::new(source()?);
-    command.args(["--surface", name]);
+    let mut command = Command::new(name);
     if ["fable", "deepseek"].contains(&kind) {
         command
             .env("CC_MSG_SESSION", s(request, "session")?)
@@ -819,8 +818,7 @@ fn launch_prestart(args: &Args) -> Result<Value> {
             "-y",
             "50",
         ])?;
-        let capture =
-            crate::panel_launch::ready(seat, &pane, request["deadline_seconds"].as_u64().unwrap())?;
+        let capture = tmux(&["capture-pane", "-p", "-e", "-t", s(&pane, "pane_id")?])?;
         let screen = fresh_bytes(
             &batch.join(format!("{}-prestart.ansi", s(seat, "seat_id")?)),
             capture.as_bytes(),

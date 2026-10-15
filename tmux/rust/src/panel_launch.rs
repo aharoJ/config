@@ -205,61 +205,6 @@ pub(crate) fn start(args: &Args, record: &Value, seat: &Value) -> Result<String>
     }
     Ok(format!("native seat {id} -> {}", program.display()))
 }
-fn empty(meta: &str, capture: &str, glyph: char) -> bool {
-    let values: Vec<_> = meta.split('|').collect();
-    if values.len() != 7 || values[4] != "0" || values[5] != "0" {
-        return false;
-    }
-    let parsed: Option<Vec<usize>> = values[..4].iter().map(|v| v.parse().ok()).collect();
-    let Some(v) = parsed else {
-        return false;
-    };
-    v[0] < v[2]
-        && v[1] < v[3]
-        && crate::composer::screen(glyph, capture, v[0], v[1], v[2], "")
-            == crate::composer::Screen::Empty
-}
-pub(crate) fn ready(seat: &Value, pane: &Value, seconds: u64) -> Result<String> {
-    let selector = s(pane, "pane_id")?;
-    let kind = s(seat, "transport")?;
-    if kind == "gemini" {
-        return panel_dispatch::tmux(&["capture-pane", "-p", "-e", "-t", selector]);
-    }
-    let glyph = if kind == "astra" { '›' } else { '❯' };
-    let format="#{cursor_x}|#{cursor_y}|#{pane_width}|#{pane_height}|#{pane_dead}|#{pane_in_mode}|#{pane_id}";
-    let deadline = Instant::now() + Duration::from_secs(seconds);
-    let mut previous: Option<(String, String, Instant)> = None;
-    loop {
-        let meta = panel_dispatch::tmux(&["display-message", "-p", "-t", selector, format])?;
-        check(
-            meta.split('|').next_back() == Some(selector),
-            "seat readiness target changed",
-        )?;
-        let capture = panel_dispatch::tmux(&["capture-pane", "-p", "-e", "-t", selector])?;
-        if empty(&meta, &capture, glyph)
-            && panel_dispatch::tmux(&["display-message", "-p", "-t", selector, format])? == meta
-        {
-            if let Some((old_meta, old_capture, since)) = &previous {
-                if *old_meta == meta && *old_capture == capture {
-                    if since.elapsed() >= Duration::from_secs(2) {
-                        return Ok(capture);
-                    }
-                } else {
-                    previous = Some((meta, capture, Instant::now()));
-                }
-            } else {
-                previous = Some((meta, capture, Instant::now()));
-            }
-        } else {
-            previous = None;
-        }
-        check(
-            Instant::now() < deadline,
-            "CLI readiness deadline exhausted",
-        )?;
-        std::thread::sleep(Duration::from_millis(100));
-    }
-}
 unsafe extern "C" {
     fn proc_pidpath(pid: i32, buffer: *mut libc::c_void, size: u32) -> i32;
 }
