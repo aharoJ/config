@@ -101,6 +101,11 @@ class CleanupTests(unittest.TestCase):
                 with self.assertRaises(guard.CleanupRefused):
                     guard.run_tmux([executable, "-L", "private", "new-session", "-d"])
 
+    def test_handoff_attestation_refuses_default_before_observation(self):
+        with patch.object(guard, "observe", side_effect=AssertionError("protected socket must not be observed")), patch.object(guard, "_run", side_effect=AssertionError("backend must not run")):
+            with self.assertRaises(guard.CleanupRefused):
+                guard.attest(Path(f"/private/tmp/tmux-{os.geteuid()}/default"))
+
     def test_lingering_dead_owned_socket_is_retired_without_backend(self):
         with tempfile.TemporaryDirectory(prefix="ks01-lingering-", dir=guard.DESK_TMP) as root:
             path = Path(root) / "fixture.sock"

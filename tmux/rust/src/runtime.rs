@@ -124,14 +124,7 @@ impl OwnedChild {
         if self.status.is_some() {
             return Ok(());
         }
-        if self.owner_live()
-            && self
-                .identity
-                .zip(identity::kernel_process(self.child.id()))
-                .is_some_and(|(a, b)| a.same(b) && b.parent == self.owner.pid)
-        {
-            self.child.kill().map_err(|e| e.to_string())?;
-        }
+        // EOF cancels an undispatched producer. Never signal even an owned PID.
         Ok(())
     }
     fn cleanup(&mut self, b: &Budgets) -> Vec<String> {
@@ -208,7 +201,7 @@ impl Producer {
         let mut command = Command::new("/usr/bin/python3");
         command
             .args(["-c", BRIDGE])
-            .arg(identity::helper())
+            .arg(identity::delivery_helper())
             .arg(ns.socket())
             .args(args)
             .stdin(Stdio::piped());
@@ -396,13 +389,12 @@ pub struct Runtime<'a> {
     archive: String,
     state: State,
     peer: Peer,
-    client: Option<identity::Client>,
+    client: Result<identity::Client>,
     lock: Option<File>,
     marked: bool,
     producers: Vec<Producer>,
     evidence: Evidence,
     geometry: Option<(u64, u64, u64)>,
-    paste_second: Option<u64>,
     closed: bool,
     #[cfg(test)]
     fixture: Option<std::path::PathBuf>,
@@ -481,7 +473,7 @@ impl<'a> Runtime<'a> {
                 },
             )
             .map_err(|e| format!("acceptance {id}: {e:?}"))?;
-        let client = identity::Client::bind(process.pid).ok();
+        let client = identity::Client::bind(process.pid);
         Ok(Self {
             ns,
             prepared,
@@ -500,10 +492,9 @@ impl<'a> Runtime<'a> {
                 ..Default::default()
             },
             geometry: None,
-            paste_second: None,
             closed: false,
             #[cfg(test)]
-            fixture: None,
+            fixture: tests::cli_fixture(),
             #[cfg(test)]
             before_enter: None,
         })
@@ -552,7 +543,10 @@ impl<'a> Runtime<'a> {
         if let Some(path) = &self.fixture {
             return tests::fixture_view(self.ns, &self.prepared, path);
         }
-        let client = self.client.as_ref().ok_or("unsupported client")?;
+        let client = self
+            .client
+            .as_ref()
+            .map_err(|e| format!("client-bind: {e}"))?;
         client.current()?;
         let pane = self.prepared.target.selector();
         let format="#{cursor_x}|#{cursor_y}|#{pane_width}|#{pane_height}|#{pane_dead}|#{pane_in_mode}|#{version}";
@@ -643,7 +637,7 @@ impl<'a> Runtime<'a> {
         }
         let before = match self.view() {
             Ok(v) => v,
-            Err(_) => return self.no_input("identity or renderer unavailable"),
+            Err(error) => return self.no_input(&format!("initial-view: {error}")),
         };
         if before.busy || before.copy || !before.bytes.is_empty() {
             return Ok(self.state);
@@ -673,7 +667,7 @@ impl<'a> Runtime<'a> {
         checkpoint("final-paste-check");
         let ready = match self.view() {
             Ok(v) => v,
-            Err(_) => return self.no_input("final renderer unavailable"),
+            Err(error) => return self.no_input(&format!("final-view: {error}")),
         };
         if (ready.width, ready.height, ready.y) != (before.width, before.height, before.y) {
             return self.no_input("geometry changed before paste");
@@ -683,7 +677,7 @@ impl<'a> Runtime<'a> {
         }
         let mut attest = Command::new("/usr/bin/python3");
         attest
-            .arg(identity::helper())
+            .arg(identity::delivery_helper())
             .arg("attest")
             .arg(self.ns.socket());
         let lease: serde_json::Value =
@@ -881,12 +875,6 @@ impl<'a> Runtime<'a> {
                 self.unknown("composer changed before paste release")?;
                 return Err("composer changed".into());
             }
-            self.paste_second = Some(
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map_err(|e| e.to_string())?
-                    .as_secs(),
-            );
         }
         #[cfg(test)]
         if enter {
@@ -908,9 +896,16 @@ impl<'a> Runtime<'a> {
         }
     }
     fn enter(&mut self) -> Result<State> {
+        // A new boundary for this exact-byte check, not the original paste.
+        // CLI ticks wait briefly and share one overall deadline. Same-second
+        // activity conservatively holds until a later quiet check can pass.
+        let second = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_secs();
         let before = match self.view() {
             Ok(v) => v,
-            Err(_) => return self.unknown("staged renderer missing"),
+            Err(error) => return self.unknown(&format!("staged-view: {error}")),
         };
         if !self.staged(&before) {
             return self.unknown("staged bytes or geometry changed");
@@ -928,7 +923,6 @@ impl<'a> Runtime<'a> {
             },
         )?;
         let pane = self.prepared.target.selector();
-        let second = self.paste_second.ok_or("activity boundary missing")?;
         let enter = format!("send-keys -t {pane} Enter ; display-message -p applied");
         let guarded = format!(
             "if-shell -F -t {pane} {} {} 'display-message -p refused'",
@@ -942,9 +936,13 @@ impl<'a> Runtime<'a> {
         );
         let result = self.effect(&no_focus_condition(&pane), &action, true)?;
         match result.trim() {
-            "focused" | "activity" => {
-                self.commit(State::WaitingForFocusRelease, Evidence::default())
-            }
+            "focused" | "activity" => self.commit(
+                State::WaitingForFocusRelease,
+                Evidence {
+                    diagnostics: vec![format!("submit-{}-guard", result.trim())],
+                    ..Default::default()
+                },
+            ),
             "applied" => self.commit(
                 State::Submitted,
                 Evidence {

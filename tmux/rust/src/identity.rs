@@ -375,7 +375,7 @@ impl Namespace {
         self.verify()?;
         let mut command = Command::new("/usr/bin/python3");
         command
-            .arg(helper())
+            .arg(delivery_helper())
             .args(["run", "tmux", "-S"])
             .arg(&self.socket)
             .args(args);
@@ -391,12 +391,16 @@ impl Namespace {
     }
 }
 use std::os::unix::fs::OpenOptionsExt;
+#[cfg(test)]
 pub fn helper() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/cleanup_guard.py")
 }
-pub fn connect_signed(socket: &Path) -> Result<Namespace> {
+pub fn delivery_helper() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/delivery_guard.py")
+}
+pub fn connect_delivery(socket: &Path) -> Result<Namespace> {
     let mut command = Command::new("/usr/bin/python3");
-    command.arg(helper()).arg("attest").arg(socket);
+    command.arg(delivery_helper()).arg("attest").arg(socket);
     let raw = crate::runtime::capture(&mut command)?;
     let record: serde_json::Value = serde_json::from_slice(&raw).map_err(|e| e.to_string())?;
     let pid = u32::try_from(record["pid"].as_u64().ok_or("missing server pid")?)
@@ -411,6 +415,17 @@ pub fn connect_signed(socket: &Path) -> Result<Namespace> {
         socket,
         server,
     )
+}
+#[cfg(test)]
+pub fn connect_signed(socket: &Path) -> Result<Namespace> {
+    if socket
+        == Path::new(&format!("/private/tmp/tmux-{}/default", unsafe {
+            libc::geteuid()
+        }))
+    {
+        return Err("fixture socket required".into());
+    }
+    connect_delivery(socket)
 }
 #[derive(Clone, Debug)]
 pub struct Snapshot {
@@ -645,18 +660,20 @@ impl Client {
                     .map(|p| (*p as u32, depth + 1)),
             );
         }
+        if matches.is_empty() {
+            return Err("unsupported client".into());
+        }
         if matches.len() != 1 {
-            return Err("unsupported or ambiguous client".into());
+            return Err(format!(
+                "ambiguous client: {} matching processes",
+                matches.len()
+            ));
         }
         let client = matches.pop().unwrap();
         client.verify()?;
         Ok(client)
     }
     pub fn current(&self) -> Result<()> {
-        let current = Self::bind(self.pane.pid)?;
-        if current.process != self.process || current.stamp != self.stamp {
-            return Err("client replaced or ambiguous".into());
-        }
         self.verify()
     }
     pub fn verify(&self) -> Result<()> {

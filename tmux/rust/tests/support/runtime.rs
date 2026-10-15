@@ -41,8 +41,10 @@ fn owned_cleanup() {
         decision_ms: 60,
     };
     validate_budgets(&budgets).unwrap();
-    let mut command = Command::new("/bin/sleep");
-    command.arg("5").stdin(Stdio::null());
+    let mut command = Command::new("/usr/bin/python3");
+    command
+        .args(["-c", "import sys; sys.stdin.buffer.read()"])
+        .stdin(Stdio::piped());
     let mut child = OwnedChild::spawn(&mut command).unwrap();
     let expected = child.identity.unwrap();
     let mut wrong = expected;
@@ -185,7 +187,14 @@ fn private_delivery() {
         return;
     }
     let server = crate::test_server::Server::new();
-    for scene in ["ready", "busy", "copy", "draft", "edited-stage"] {
+    for scene in [
+        "bind-error",
+        "ready",
+        "busy",
+        "copy",
+        "draft",
+        "edited-stage",
+    ] {
         let target = format!("target-{scene}");
         let decoy = format!("decoy-{scene}");
         server.fixtures(&[&target, &decoy]);
@@ -232,6 +241,28 @@ fn private_delivery() {
             },
         )
         .unwrap();
+        if scene == "bind-error" {
+            // The real fixture process is not a supported native image. Preserve
+            // that actual binding failure rather than replacing it with a
+            // generic renderer message or permitting any input.
+            assert_eq!(runtime.tick().unwrap(), State::TerminalNoInput);
+            assert_eq!(
+                runtime
+                    .store
+                    .attempt(&runtime.id)
+                    .unwrap()
+                    .history
+                    .last()
+                    .unwrap()
+                    .evidence
+                    .diagnostics,
+                vec!["initial-view: client-bind: unsupported client"]
+            );
+            assert_eq!(fixture_state(&server, &target)["events"], 0);
+            assert_eq!(fixture_state(&server, &decoy)["events"], 0);
+            runtime.close().unwrap();
+            continue;
+        }
         runtime.fixture = Some(server.root.join(format!("{target}.json")));
         let state = runtime.tick().unwrap();
         if matches!(scene, "busy" | "copy" | "draft") {
@@ -253,6 +284,17 @@ fn private_delivery() {
             }
         } else if scene == "edited-stage" {
             assert_eq!(state, State::WaitingForFocusRelease);
+            assert!(runtime
+                .store
+                .attempt(&runtime.id)
+                .unwrap()
+                .history
+                .last()
+                .unwrap()
+                .evidence
+                .diagnostics
+                .iter()
+                .any(|message| message == "submit-focused-guard"));
             assert_eq!(fixture_state(&server, &target)["submissions"], 0);
             let edited = format!("{wire}!");
             human(
@@ -492,6 +534,17 @@ fn activity_gate() {
     .unwrap();
     assert_eq!(result.trim(), "activity");
     assert_eq!(state, State::WaitingForFocusRelease);
+    assert!(runtime
+        .store
+        .attempt(&runtime.id)
+        .unwrap()
+        .history
+        .last()
+        .unwrap()
+        .evidence
+        .diagnostics
+        .iter()
+        .any(|message| message == "submit-activity-guard"));
     assert_eq!(fixture_state(&server, "target")["submissions"], 0);
     assert_eq!(runtime.tick().unwrap(), State::InputUnknown);
     assert_eq!(runtime.tick().unwrap(), State::InputUnknown);
@@ -514,4 +567,127 @@ fn activity_gate() {
     assert_eq!(target["submissions"], 0);
     assert_eq!(fixture_state(&server, "decoy")["events"], 0);
     println!("activity refusal evidence {}", server.root.display());
+}
+
+#[test]
+#[ignore = "signed leased private activity-elsewhere then quiet fixture"]
+fn activity_elsewhere_then_quiet() {
+    if crate::test_server::supervised("runtime::tests::activity_elsewhere_then_quiet") {
+        return;
+    }
+    let server = crate::test_server::Server::new();
+    server.fixtures(&["target", "decoy"]);
+    let ns = server.namespace();
+    let mut client = attached(&server, "decoy");
+    let prepared =
+        Prepared::new(&ns, "private-k50", "target", None, "#quiet staged-message").unwrap();
+    let wire = prepared.wire.clone();
+    let mut store = Store::open(&server.root.join("archive")).unwrap();
+    let mut runtime = Runtime::accept(
+        &ns,
+        prepared,
+        &mut store,
+        b"#quiet staged-message",
+        Budgets {
+            stop_ms: 30,
+            drain_ms: 30,
+            reap_ms: 30,
+            decision_ms: 90,
+        },
+    )
+    .unwrap();
+    runtime.fixture = Some(server.root.join("target.json"));
+    let mut inject_once = true;
+    runtime.before_enter = Some(Box::new(|| {
+        if inject_once {
+            // Real attached-client input elsewhere, after the exact target check.
+            human(&mut client, &server, "decoy", b"x", b"x");
+            inject_once = false;
+        }
+        Ok(())
+    }));
+    assert_eq!(runtime.tick().unwrap(), State::WaitingForFocusRelease);
+    assert!(runtime
+        .store
+        .attempt(&runtime.id)
+        .unwrap()
+        .history
+        .last()
+        .unwrap()
+        .evidence
+        .diagnostics
+        .iter()
+        .any(|d| d == "submit-activity-guard"));
+    assert_eq!(fixture_state(&server, "target")["submissions"], 0);
+    let deadline = Instant::now() + Duration::from_secs(8);
+    loop {
+        match runtime.tick().unwrap() {
+            State::Submitted => break,
+            State::WaitingForFocusRelease => {
+                assert!(
+                    Instant::now() < deadline,
+                    "quiet activity boundary never advanced"
+                );
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            state => panic!("unexpected quiet-loop state: {state:?}"),
+        }
+    }
+    for _ in 0..3 {
+        assert_eq!(runtime.tick().unwrap(), State::Submitted);
+    }
+    while fixture_state(&server, "target")["submissions"] != 1 {
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(
+        fixture_state(&server, "target")["events"],
+        wire.len() as u64 + 1
+    );
+    assert_eq!(fixture_state(&server, "decoy")["events"], 1);
+    assert_eq!(fixture_state(&server, "decoy")["submissions"], 0);
+    let attempt = runtime.ids().0.to_string();
+    runtime.close().unwrap();
+    drop(runtime);
+    detach(client);
+    assert_eq!(store.attempt(&attempt).unwrap().state(), State::Submitted);
+    assert_eq!(fixture_state(&server, "target")["submissions"], 1);
+    println!(
+        "activity elsewhere then quiet evidence {}",
+        server.root.display()
+    );
+}
+
+thread_local! {
+    static HARNESS_FIXTURE: std::cell::RefCell<Option<std::path::PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+pub(super) fn cli_fixture() -> Option<std::path::PathBuf> {
+    HARNESS_FIXTURE.with(|value| value.borrow().clone())
+}
+
+#[test]
+#[ignore = "stdin-only actual CLI adapter for signed private controller dry run"]
+fn harness_cli_probe() {
+    use std::io::Read;
+    let socket = std::path::PathBuf::from(std::env::var_os("ANGELSTAR_RELAY_SOCKET").unwrap());
+    let ns = identity::connect_signed(&socket).expect("signed private socket required");
+    let mut input = String::new();
+    std::io::stdin()
+        .take(1024 * 1024)
+        .read_to_string(&mut input)
+        .unwrap();
+    let request: serde_json::Value = serde_json::from_str(&input).unwrap();
+    let fixture = std::path::PathBuf::from(request["fixture"].as_str().unwrap());
+    assert_eq!(fixture.parent(), ns.socket().parent());
+    HARNESS_FIXTURE.with(|value| *value.borrow_mut() = Some(fixture));
+    let args: Vec<String> = request["args"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|arg| arg.as_str().unwrap().to_owned())
+        .collect();
+    // Actual public parser, runtime, store, budgets, producer and exit mapping.
+    // Only the already-existing test view is supplied by the private client.
+    std::process::exit(crate::cli::main_entry("cc-msg", &args));
 }

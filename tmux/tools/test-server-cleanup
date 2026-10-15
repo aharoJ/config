@@ -432,9 +432,22 @@ def run_tmux(argv, *args, **kwargs):
     return guarded_run(values, *args, **kwargs)
 
 
+def attest(path):
+    path = route(["tmux", "-S", str(path)], allow_current=True)
+    if not path.is_relative_to(record_directory()):
+        raise CleanupRefused("handoff socket outside current lease root")
+    record = load(path)
+    if not observation_matches(path, record, allow_current=True):
+        raise CleanupRefused("handoff socket identity changed")
+    return record
+
+
 if __name__ == "__main__":
     try:
         role = sys.argv[1]
+        if role == "attest":
+            print(encoded(attest(Path(sys.argv[2]))).decode())
+            sys.exit(0)
         if role == "proxy":
             sys.exit(proxy_run(sys.argv[2], sys.argv[3:]).returncode)
         if role == "supervise":

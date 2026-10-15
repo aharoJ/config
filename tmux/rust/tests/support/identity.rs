@@ -1,6 +1,47 @@
 use super::*;
 use std::os::unix::fs::DirBuilderExt;
 #[test]
+#[ignore = "read-only explicitly authorized live Codex descendant identity; never launches a client"]
+fn live_codex_descendant_binding() {
+    let pane: u32 = std::env::var("ANGELSTAR_BIND_PANE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let expected: u32 = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let client = Client::bind(pane).unwrap();
+    assert_eq!(client.process.pid, expected);
+    assert_ne!(
+        client.process.parent, pane,
+        "fixture must cover nested wrappers"
+    );
+    assert_eq!(client.glyph, '›');
+    client.current().unwrap();
+}
+
+#[test]
+fn bound_client_checks_identity_without_rebinding_image() {
+    let process = kernel_process(std::process::id()).unwrap();
+    let path = process_path(process.pid).unwrap();
+    let file = File::open(&path).unwrap();
+    // Stand in for an already hash-proven binding. This test image is not a
+    // vendor profile, so calling bind again would fail rather than succeed.
+    let mut client = Client {
+        stamp: stamp(&file.metadata().unwrap()),
+        file,
+        path,
+        process,
+        pane: process,
+        glyph: '›',
+    };
+    client.current().unwrap();
+    client.stamp.0 ^= 1;
+    assert!(client.current().is_err());
+}
+
+#[test]
 fn private_paths() {
     let root = PathBuf::from(std::env::var_os("HOME").unwrap())
         .join("desk/tmp")

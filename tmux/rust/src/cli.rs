@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nRequires explicit role routing and ANGELSTAR_RELAY_STORE; sends require ANGELSTAR_RELAY_SOCKET and signed private authority. Missing message reads stdin for relay, cc-msg, codex-send. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
+pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nRequires explicit role routing and ANGELSTAR_RELAY_STORE; sends require ANGELSTAR_RELAY_SOCKET and delivery authority. Missing message reads stdin for relay, cc-msg, codex-send. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operation {
@@ -265,7 +265,7 @@ fn execute(
                 message,
             } => {
                 let original = message.ok_or("message missing")?;
-                let ns = target::connect_signed(&PathBuf::from(required(
+                let ns = target::connect_delivery(&PathBuf::from(required(
                     env,
                     "ANGELSTAR_RELAY_SOCKET",
                 )?))?;
