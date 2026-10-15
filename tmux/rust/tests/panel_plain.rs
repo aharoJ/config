@@ -58,6 +58,7 @@ impl Lane {
         }
         let home = root.join("home");
         fs::create_dir(&home).unwrap();
+        fs::create_dir_all(home.join("desk/tmp")).unwrap();
         symlink(root.join("stage"), home.join(".config")).unwrap();
         fs::write(home.join(".claude.json"), "{\"untouched\":42}").unwrap();
         fs::create_dir_all(home.join(".gemini/antigravity-cli")).unwrap();
