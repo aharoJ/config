@@ -376,8 +376,9 @@ pub fn receipt(
         && rows[y - 2].is_empty()
     {
         result.queue_prompt = x == 2
-            && rows[y]
-                == "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress up to edit queued messages\x1b[0m";
+            && matches!(rows[y],
+                "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress up to edit queued messages\x1b[0m"
+                | "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress\x1b[0m \x1b[2mup\x1b[0m \x1b[2mto\x1b[0m \x1b[2medit\x1b[0m \x1b[2mqueued\x1b[0m \x1b[2mmessages\x1b[0m");
         let queued = format!("\x1b[38;5;246m\x1b[48;5;237m❯ {wire}\x1b[39m");
         for raw in rows[..=y - 6]
             .iter()

@@ -1,5 +1,42 @@
 use super::*;
 #[test]
+fn captured_claude_busy_queue_word_styles() {
+    let capture = include_str!("../fixtures/claude-busy-queued-word-styles.ansi");
+    let wire = "sol (config-tt:sol): #s12r11rust Reply ACK_S12R11_RUST only; no tools.";
+    assert_eq!(
+        receipt('❯', capture, 2, 25, 180, wire),
+        Receipt {
+            submitted: 0,
+            queued: 1,
+            queue_prompt: true
+        }
+    );
+    assert!(!receipt('❯', capture, 3, 25, 180, wire).queue_prompt);
+    assert_eq!(receipt('❯', capture, 2, 25, 180, "unrelated").queued, 0);
+    assert!(
+        !receipt(
+            '❯',
+            &capture.replace("\x1b[2mqueued", "queued"),
+            2,
+            25,
+            180,
+            wire
+        )
+        .queue_prompt
+    );
+    assert!(
+        !receipt(
+            '❯',
+            &capture.replace("messages", "drafts"),
+            2,
+            25,
+            180,
+            wire
+        )
+        .queue_prompt
+    );
+}
+#[test]
 fn captured_codex_busy_accepted_history() {
     let capture = include_str!("../fixtures/codex-busy-accepted.ansi");
     let wire = "sol (config-tt:sol): #s11k10rust Reply ACK_S11K10_RUST only; no tools.";
