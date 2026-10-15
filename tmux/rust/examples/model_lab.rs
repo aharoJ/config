@@ -313,9 +313,10 @@ fn actor(root: &Path) {
                 rows.push("".into());
             }
             if state == "slash" {
-                rows.push(format!(
+                rows.push(
                     "\x1b[1;7m› /model  choose what model and reasoning effort to use\x1b[0m"
-                ));
+                        .into(),
+                );
                 rows.push("".into());
                 rows.push("› /model".into());
                 cursor = (8, rows.len() - 1);
