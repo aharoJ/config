@@ -11,6 +11,7 @@ use std::time::Duration;
 #[derive(Debug)]
 struct Failure(i32, String);
 type Result<T> = std::result::Result<T, Failure>;
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(1);
 
 fn fail(detail: impl Into<String>) -> Failure {
     Failure(
@@ -135,13 +136,9 @@ impl Lock {
                 format!("{}:{}:{}", meta.dev(), meta.ino(), target.selector()).as_bytes()
             )
         );
-        let root = std::env::var_os("TMUX_RELAY_LOCK_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(format!("/private/tmp/tmux-{}/relay-locks", unsafe {
-                    libc::geteuid()
-                }))
-            });
+        let root = PathBuf::from(format!("/private/tmp/tmux-{}/relay-locks", unsafe {
+            libc::geteuid()
+        }));
         std::fs::DirBuilder::new()
             .recursive(true)
             .mode(0o700)
@@ -218,7 +215,10 @@ struct State {
 impl State {
     fn read(ns: &identity::Namespace, pane: &str, changed: bool) -> Result<Self> {
         let text = ns
-            .command(&["display-message", "-p", "-t", pane, STATE])
+            .command_for(
+                &["display-message", "-p", "-t", pane, STATE],
+                REQUEST_TIMEOUT,
+            )
             .map_err(|e| tmux_error(e, changed))?;
         let values: Vec<_> = text.trim_end_matches('\n').splitn(12, '|').collect();
         let parse = || -> Option<Self> {
@@ -270,13 +270,11 @@ fn foreground(client: &identity::Client, state: &State) -> identity::Result<()> 
     if client.glyph != '›' {
         return Err("foreground process is not proven Codex".into());
     }
-    let tty = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NOCTTY | libc::O_NONBLOCK)
-        .open(&state.tty)
-        .map_err(|e| e.to_string())?;
-    let group = unsafe { libc::tcgetpgrp(tty.as_raw_fd()) };
-    if group <= 0 || unsafe { libc::getpgid(client.process_identity().pid as i32) } != group {
+    let (device, group, foreground) = identity::kernel_terminal(client.process_identity().pid)
+        .ok_or("Codex terminal unavailable")?;
+    let (root_device, _, root_foreground) =
+        identity::kernel_terminal(state.pid).ok_or("pane terminal unavailable")?;
+    if group == 0 || group != foreground || foreground != root_foreground || device != root_device {
         return Err("Codex foreground process changed".into());
     }
     Ok(())
@@ -295,7 +293,13 @@ struct Chat {
 impl Chat {
     fn open(socket: &Path, session: &str, window: &str) -> Result<Self> {
         let ns = identity::connect_delivery(socket).map_err(|e| tmux_error(e, false))?;
-        let snapshot = ns.capture().map_err(|e| tmux_error(e, false))?;
+        let raw = ns
+            .command_for(
+                &["list-panes", "-a", "-F", identity::CAPTURE_FORMAT],
+                REQUEST_TIMEOUT,
+            )
+            .map_err(|e| tmux_error(e, false))?;
+        let snapshot = identity::Snapshot::parse(raw.as_bytes()).map_err(fail)?;
         let targets: Vec<_> = snapshot
             .targets
             .iter()
@@ -357,7 +361,10 @@ impl Chat {
         }
         self.capture = self
             .ns
-            .command(&["capture-pane", "-p", "-e", "-t", &self.pane])
+            .command_for(
+                &["capture-pane", "-p", "-e", "-t", &self.pane],
+                REQUEST_TIMEOUT,
+            )
             .map_err(|e| tmux_error(e, self.changed))?;
         let after = State::read(&self.ns, &self.pane, self.changed)?;
         if !state.same_target(&after) {
@@ -450,7 +457,8 @@ impl Chat {
             &no,
         ]);
         self.changed = true;
-        let output = runtime::capture(&mut command).map_err(|e| tmux_error(e, true))?;
+        let output =
+            runtime::capture_for(&mut command, REQUEST_TIMEOUT).map_err(|e| tmux_error(e, true))?;
         self.ns.verify().map_err(|e| tmux_error(e, true))?;
         if output != b"__NEW_SENT__\n" {
             return Err(partial(
@@ -670,41 +678,6 @@ impl Chat {
         self.wait("direct-reset", footer)?;
         self.idle()?;
         Ok(())
-    }
-}
-
-pub(crate) fn live(args: &[String]) -> i32 {
-    let run = || -> identity::Result<()> {
-        if args.len() != 6 {
-            return Err("invalid live guard arity".into());
-        }
-        if !guard::re(r"^%[0-9]+$").is_match(&args[1]) {
-            return Err("invalid pane".into());
-        }
-        let ns = identity::connect_delivery(Path::new(&args[0]))?;
-        let state = State::read(&ns, &args[1], false).map_err(|e| e.1)?;
-        if state.mode || state.cwd != args[4] {
-            return Err("target changed".into());
-        }
-        let client = identity::Client::bind(state.pid)?;
-        foreground(&client, &state)?;
-        let proof = format!(
-            "{:x}",
-            Sha256::digest(
-                serde_json::to_vec(&client.process_identity()).map_err(|e| e.to_string())?
-            )
-        );
-        if proof != args[5] {
-            return Err("Codex identity changed".into());
-        }
-        let capture = ns.command(&["capture-pane", "-p", "-e", "-t", &args[1]])?;
-        guard::check(&args[2], &capture, &args[3]).ok_or("screen changed")?;
-        Ok(())
-    };
-    if run().is_ok() {
-        0
-    } else {
-        1
     }
 }
 

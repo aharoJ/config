@@ -1,6 +1,12 @@
 use super::*;
 
 #[test]
+fn kernel_group_matches_the_callers_own_session() {
+    let (_, group, _) = identity::kernel_terminal(std::process::id()).unwrap();
+    assert_eq!(group, unsafe { libc::getpgrp() } as u32);
+}
+
+#[test]
 fn real_caller_routes_and_refusals() {
     for window in ["codex", "red", "terra", "rp-schema", "001"] {
         let args = vec![window.into()];

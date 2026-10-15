@@ -506,9 +506,6 @@ pub(crate) fn check(mode: &str, capture: &str, expected: &str) -> Option<String>
 }
 
 pub(crate) fn entry(args: &[String]) -> i32 {
-    if args.first().is_some_and(|arg| arg == "live") {
-        return crate::new_chat::live(&args[1..]);
-    }
     let Some(mode) = args.first() else { return 1 };
     let mut capture = String::new();
     if std::io::stdin().read_to_string(&mut capture).is_err() {
