@@ -398,8 +398,8 @@ impl Switch {
         let f = guard::escape_format;
         let checks = vec![
             format!("#{{==:#{{pane_id}},{}}}", self.pane),
-            format!("#{{==:#{{pane_in_mode}},0}}"),
-            format!("#{{==:#{{pane_dead}},0}}"),
+            "#{==:#{pane_in_mode},0}".to_owned(),
+            "#{==:#{pane_dead},0}".to_owned(),
             format!("#{{==:#{{pane_pid}},{}}}", self.target.pane.pid),
             format!("#{{==:#{{pane_current_command}},{}}}", view.command),
             format!("#{{==:#{{session_name}},{}}}", f(&self.target.session_name)),
