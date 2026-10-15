@@ -64,7 +64,7 @@ fn seat_name(path: &str) -> bool {
     })
 }
 
-fn seat_paths(raw: &str) -> Result<[String; 2]> {
+pub(crate) fn seat_paths(raw: &str) -> Result<[String; 2]> {
     if !Path::new(raw).is_absolute() {
         return Err("seat path must be absolute".into());
     }
@@ -86,7 +86,7 @@ fn seat_paths(raw: &str) -> Result<[String; 2]> {
     ])
 }
 
-fn write_atomic(path: &Path, text: &str, mode: u32) -> Result<()> {
+pub(crate) fn write_atomic(path: &Path, text: &str, mode: u32) -> Result<()> {
     let name = path
         .file_name()
         .ok_or("config filename missing")?
@@ -103,10 +103,10 @@ fn write_atomic(path: &Path, text: &str, mode: u32) -> Result<()> {
     io(fs::rename(tmp, path))
 }
 
-struct DirLock(PathBuf);
+pub(crate) struct DirLock(PathBuf);
 
 impl DirLock {
-    fn acquire(config: &Path) -> Result<Self> {
+    pub(crate) fn acquire(config: &Path) -> Result<Self> {
         let mut path = config.as_os_str().to_owned();
         path.push(".lock");
         let path = PathBuf::from(path);
@@ -146,7 +146,7 @@ fn read_json(path: &Path) -> Result<Value> {
     serde_json::from_str(&io(fs::read_to_string(path))?).map_err(|e| e.to_string())
 }
 
-fn save_json(path: &Path, value: &Value) -> Result<()> {
+pub(crate) fn save_json(path: &Path, value: &Value) -> Result<()> {
     let mode = io(fs::metadata(path))?.permissions().mode() & 0o7777;
     write_atomic(
         path,
@@ -351,6 +351,68 @@ fn trust(kind: &str, home: &Path, paths: &[String; 2]) -> Result<()> {
     }
 }
 
+pub(crate) fn isolation(kind: &str, paths: &[String; 2]) -> Result<()> {
+    let folder = Path::new(&paths[0]);
+    let scratch = folder.join("scratch");
+    if fs::symlink_metadata(&scratch).is_ok_and(|m| m.file_type().is_symlink()) {
+        return Err("scratch must be a real directory inside the seat".into());
+    }
+    match DirBuilder::new().mode(0o700).create(&scratch) {
+        Ok(()) => (),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists && scratch.is_dir() => (),
+        Err(e) => return Err(e.to_string()),
+    }
+    if !["claude", "deepseek"].contains(&kind) {
+        return Ok(());
+    }
+    let temp = Path::new("/private/tmp").join(format!("panel-{}", io(fs::metadata(folder))?.ino()));
+    let marker = temp.join(".panel-seat");
+    if fs::symlink_metadata(&temp).is_ok_and(|m| m.file_type().is_symlink()) {
+        return Err("per-seat temp must not be a symlink".into());
+    }
+    if temp.exists() {
+        let info = io(fs::metadata(&temp))?;
+        if !info.is_dir() || info.uid() != unsafe { libc::getuid() } || info.mode() & 0o077 != 0 {
+            return Err("per-seat temp must be an owned mode 0700 directory".into());
+        }
+        if fs::symlink_metadata(&marker).is_ok_and(|m| m.file_type().is_symlink())
+            || !marker.is_file()
+            || io(fs::read_to_string(&marker))? != paths[0].clone() + "\n"
+        {
+            return Err("per-seat temp belongs to another seat".into());
+        }
+    } else {
+        io(DirBuilder::new().mode(0o700).create(&temp))?;
+        write_atomic(&marker, &(paths[0].clone() + "\n"), 0o600)?;
+    }
+    let mut allow = vec![Value::String(crate::panel_io::ext("shell_tool").into())];
+    allow.extend(["Read", "Edit"].map(|tool| Value::String(format!("{tool}(/{}/**)", paths[0]))));
+    let settings = serde_json::json!({
+        "permissions":{"defaultMode":"dontAsk","allow":allow},
+        "sandbox":{"enabled":true,"failIfUnavailable":true,"allowUnsandboxedCommands":false,
+            "filesystem":{"denyRead":["/"],"allowRead":["/bin","/sbin","/usr","/System","/Library","/dev","/etc","/private/etc","/private/var/select","/opt/homebrew",paths[0],temp],
+                "allowWrite":[temp],"denyWrite":[format!("/private/tmp/claude-{}",unsafe{libc::getuid()}),marker]}}
+    });
+    write_atomic(
+        &folder.join("panel-settings.json"),
+        &serde_json::to_string(&settings).map_err(|e| e.to_string())?,
+        0o600,
+    )?;
+    write_atomic(
+        &folder.join(crate::panel_io::ext("environment_file")),
+        &format!(
+            "export TMPDIR={}\n",
+            crate::panel_io::quote(temp.to_str().ok_or("temp path is not UTF-8")?)
+        ),
+        0o600,
+    )?;
+    write_atomic(
+        &folder.join("panel-temp.json"),
+        &serde_json::json!({"seat":paths[0],"temp":temp}).to_string(),
+        0o600,
+    )
+}
+
 pub fn main_entry(args: &[String]) -> i32 {
     if args.len() != 2 || !["claude", "deepseek", "codex", "agy"].contains(&args[0].as_str()) {
         eprintln!("{USAGE}");
@@ -358,6 +420,7 @@ pub fn main_entry(args: &[String]) -> i32 {
     }
     let result = (|| {
         let paths = seat_paths(&args[1])?;
+        isolation(&args[0], &paths)?;
         let home = std::env::var_os("HOME")
             .map(PathBuf::from)
             .map(Ok)

@@ -1,5 +1,7 @@
 # #p3x panel lane: NO-GO
 
+Historical baseline-only report. Superseded by `p3x-panel-live.md` after Claude corrected the source of truth and external-program/owned-cleanup rules. Do not use this report as the current lane verdict.
+
 Branch `port-panel`, base `a8ee75c`. This is a partial implementation and a divergence report, not a completed panel cutover. Do not deploy it as a replacement for the active panel tools.
 
 The baseline `panel-seat-trust` is ported into the multicall binary in `src/panel_trust.rs`. Its repository launcher is a relative symlink to the adjacent staged `angelstar-runtime`, with dispatch through argv[0]. The active `panel-dispatch` is not ported. The newer active trust helper's isolation artifacts are not ported either.

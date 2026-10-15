@@ -366,6 +366,9 @@ fn execute(
     }
 }
 pub fn main_entry(surface: &str, args: &[String]) -> i32 {
+    if surface == "panel-dispatch" {
+        return crate::panel_dispatch::main_entry(args);
+    }
     if surface == "panel-seat-trust" {
         return crate::panel_trust::main_entry(args);
     }

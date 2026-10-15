@@ -1,5 +1,7 @@
 # Sanitized fixture provenance
 
+The Rust panel tools are multicall entries in `tmux/rust`. `cargo test --manifest-path tmux/rust/Cargo.toml` runs the fast trust, evidence, native-envelope and cleanup-chain controls. The explicit `panel_plain` integration cases require an owned plain pane in a private `config-tt:p3x-test-*` window and stage their own candidate through PATH aliases. The interactive case launches one fresh Codex seat and sends one sanctioned Start; all authority proofs are test controls, not production panel admission. See `tmux/rust/review/p3x-panel-live.md` for exact validation and external protocol/tai dependencies. Shared legacy runners remain for merge reconciliation.
+
 Published captures use synthetic account identities and directories, with unrelated private transcript prose replaced. ANSI sequences, per-row cell widths, wrapping and cursor metadata are preserved. Manifest digests identify the sanitized published bytes; `/fixtures/` source identifiers are public labels, not links to raw evidence. Raw capture locations are not published. Synthetic-derived cases retain their distinct labels.
 
 # Relay guard landing gate
