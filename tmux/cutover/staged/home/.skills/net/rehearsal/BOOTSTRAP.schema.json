@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "context_id",
+    "directory",
+    "session",
+    "configuration_directory",
+    "records_path",
+    "model",
+    "effort",
+    "tmux_session",
+    "tmux_window",
+    "no_resume",
+    "no_prompt",
+    "inventory_hash",
+    "profile_path",
+    "profile_hash",
+    "source_configuration_directory",
+    "started_at"
+  ],
+  "properties": {
+    "version": {
+      "const": "net-bootstrap-1"
+    },
+    "context_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1
+    },
+    "configuration_directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "records_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "const": "claude-opus-5-5"
+    },
+    "effort": {
+      "const": "medium"
+    },
+    "tmux_session": {
+      "const": "net"
+    },
+    "tmux_window": {
+      "type": "string",
+      "pattern": "^rh-ctx[0-9]+$"
+    },
+    "no_resume": {
+      "const": true
+    },
+    "no_prompt": {
+      "const": true
+    },
+    "inventory_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "profile_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profile_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_configuration_directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "seeded_keys": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

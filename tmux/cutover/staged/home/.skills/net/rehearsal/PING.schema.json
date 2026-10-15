@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "relay_id",
+    "context_id",
+    "session",
+    "tmux_session",
+    "tmux_window",
+    "bootstrap_hash",
+    "target",
+    "message",
+    "at",
+    "state",
+    "status",
+    "stdout",
+    "stderr"
+  ],
+  "properties": {
+    "version": {
+      "const": "net-ping-1"
+    },
+    "relay_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "context_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tmux_session": {
+      "const": "net"
+    },
+    "tmux_window": {
+      "type": "string",
+      "pattern": "^rh-ctx[0-9]+$"
+    },
+    "bootstrap_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "target": {
+      "type": "object"
+    },
+    "message": {
+      "const": "reply READY, read nothing"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "state": {
+      "enum": [
+        "SEND_REQUESTED",
+        "KEYSTROKES_DELIVERED",
+        "FAILED_NO_RESEND"
+      ]
+    },
+    "status": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "stdout": {
+      "type": "string"
+    },
+    "stderr": {
+      "type": "string"
+    },
+    "relay_binding": {
+      "$ref": "#/$defs/binding"
+    },
+    "relay": {
+      "$ref": "#/$defs/evidence"
+    }
+  },
+  "$defs": {
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "transport",
+        "package",
+        "relay",
+        "send",
+        "store",
+        "socket",
+        "inbox"
+      ],
+      "properties": {
+        "version": {
+          "const": "relay-package-1"
+        },
+        "transport": {
+          "enum": [
+            "rust-v1",
+            "python-v1"
+          ]
+        },
+        "package": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relay": {
+          "type": "string",
+          "minLength": 1
+        },
+        "send": {
+          "type": "string",
+          "minLength": 1
+        },
+        "socket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "store": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inbox": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "peer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "socket_device",
+        "socket_inode",
+        "server_generation",
+        "session",
+        "window",
+        "pane",
+        "pane_generation"
+      ],
+      "properties": {
+        "socket_device": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "socket_inode": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "session": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "window": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pane": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pane_generation": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transport",
+        "label",
+        "peer"
+      ],
+      "properties": {
+        "transport": {
+          "$ref": "#/$defs/transport"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "peer": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/peer"
+            }
+          ]
+        }
+      }
+    },
+    "announcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt",
+        "archive",
+        "state",
+        "peer",
+        "submission",
+        "receipt"
+      ],
+      "properties": {
+        "attempt": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        "archive": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        "state": {
+          "enum": [
+            "submitted",
+            "terminal-no-input",
+            "pending-no-input",
+            "input-intent",
+            "pasted",
+            "waiting-for-focus-release",
+            "submit-intent",
+            "input-unknown"
+          ]
+        },
+        "peer": {
+          "$ref": "#/$defs/peer"
+        },
+        "submission": {
+          "enum": [
+            "proved",
+            "unproved"
+          ]
+        },
+        "receipt": {
+          "const": "unproved"
+        }
+      }
+    },
+    "evidence": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transport",
+            "announcement",
+            "wire"
+          ],
+          "properties": {
+            "transport": {
+              "$ref": "#/$defs/transport"
+            },
+            "announcement": {
+              "$ref": "#/$defs/announcement"
+            },
+            "wire": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "wire_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "original_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transport",
+            "legacy_id",
+            "record_path",
+            "record_hash",
+            "wire",
+            "wire_hash",
+            "original_hash"
+          ],
+          "properties": {
+            "transport": {
+              "$ref": "#/$defs/transport"
+            },
+            "legacy_id": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "record_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "record_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "wire": {
+              "type": "string",
+              "minLength": 1
+            },
+            "wire_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "original_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

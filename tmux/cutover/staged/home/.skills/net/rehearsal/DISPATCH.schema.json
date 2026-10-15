@@ -1,0 +1,402 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "state",
+        "context_id",
+        "session",
+        "session_receipt_hash",
+        "preparation_hash",
+        "task_hash",
+        "task",
+        "at",
+        "attempts",
+        "task_file",
+        "task_file_hash",
+        "relay_width",
+        "relay_label"
+      ],
+      "properties": {
+        "version": {
+          "const": "net-dispatch-1"
+        },
+        "state": {
+          "const": "SEALED"
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_receipt_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "preparation_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "task_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "attempts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "case_id",
+              "attempt_id",
+              "packet_hash"
+            ],
+            "properties": {
+              "case_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "attempt_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packet_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "task_file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_file_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "relay_width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "relay_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relay_binding": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "at"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "SEND_REQUESTED",
+            "KEYSTROKES_DELIVERED",
+            "ROUTING_REFUSED",
+            "COPY_MODE_REFUSED",
+            "DRAFT_REFUSED",
+            "DELIVERY_UNKNOWN",
+            "FAILED_NO_RESEND"
+          ]
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "relay": {
+          "$ref": "#/$defs/evidence"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "transport",
+        "package",
+        "relay",
+        "send",
+        "store",
+        "socket",
+        "inbox"
+      ],
+      "properties": {
+        "version": {
+          "const": "relay-package-1"
+        },
+        "transport": {
+          "enum": [
+            "rust-v1",
+            "python-v1"
+          ]
+        },
+        "package": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relay": {
+          "type": "string",
+          "minLength": 1
+        },
+        "send": {
+          "type": "string",
+          "minLength": 1
+        },
+        "socket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "store": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inbox": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "peer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "socket_device",
+        "socket_inode",
+        "server_generation",
+        "session",
+        "window",
+        "pane",
+        "pane_generation"
+      ],
+      "properties": {
+        "socket_device": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "socket_inode": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "session": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "window": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pane": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pane_generation": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transport",
+        "label",
+        "peer"
+      ],
+      "properties": {
+        "transport": {
+          "$ref": "#/$defs/transport"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "peer": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/peer"
+            }
+          ]
+        }
+      }
+    },
+    "announcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt",
+        "archive",
+        "state",
+        "peer",
+        "submission",
+        "receipt"
+      ],
+      "properties": {
+        "attempt": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        "archive": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        "state": {
+          "enum": [
+            "submitted",
+            "terminal-no-input",
+            "pending-no-input",
+            "input-intent",
+            "pasted",
+            "waiting-for-focus-release",
+            "submit-intent",
+            "input-unknown"
+          ]
+        },
+        "peer": {
+          "$ref": "#/$defs/peer"
+        },
+        "submission": {
+          "enum": [
+            "proved",
+            "unproved"
+          ]
+        },
+        "receipt": {
+          "const": "unproved"
+        }
+      }
+    },
+    "evidence": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transport",
+            "announcement",
+            "wire"
+          ],
+          "properties": {
+            "transport": {
+              "$ref": "#/$defs/transport"
+            },
+            "announcement": {
+              "$ref": "#/$defs/announcement"
+            },
+            "wire": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "wire_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "original_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transport",
+            "legacy_id",
+            "record_path",
+            "record_hash",
+            "wire",
+            "wire_hash",
+            "original_hash"
+          ],
+          "properties": {
+            "transport": {
+              "$ref": "#/$defs/transport"
+            },
+            "legacy_id": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{32}$"
+            },
+            "record_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "record_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "wire": {
+              "type": "string",
+              "minLength": 1
+            },
+            "wire_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "original_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

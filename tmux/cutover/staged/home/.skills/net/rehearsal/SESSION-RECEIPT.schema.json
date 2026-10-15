@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:net:session-receipt:1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "context_id",
+    "session",
+    "model",
+    "requested_effort",
+    "effective_effort",
+    "billing_mode",
+    "account_or_seat",
+    "configuration_directory",
+    "directory",
+    "tmux_session",
+    "tmux_window",
+    "target",
+    "approval_hash",
+    "authority_hash",
+    "bootstrap_hash",
+    "inventory_hash",
+    "records_path",
+    "records_hash",
+    "records_length",
+    "started_at",
+    "attested_at",
+    "no_resume",
+    "no_operational_exposure",
+    "network_denial_proven",
+    "ping_hash"
+  ],
+  "properties": {
+    "version": {
+      "const": "net-session-1"
+    },
+    "context_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "const": "claude-opus-5-5"
+    },
+    "requested_effort": {
+      "const": "medium"
+    },
+    "effective_effort": {
+      "const": "UNOBSERVABLE"
+    },
+    "billing_mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "account_or_seat": {
+      "type": "string",
+      "minLength": 1
+    },
+    "configuration_directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tmux_session": {
+      "const": "net"
+    },
+    "tmux_window": {
+      "type": "string",
+      "pattern": "^rh-ctx[0-9]+$"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tmux_session",
+        "tmux_window",
+        "pane_id",
+        "pane_pid",
+        "command",
+        "directory",
+        "process_pid",
+        "process_session",
+        "requested_model",
+        "requested_effort"
+      ],
+      "properties": {
+        "tmux_session": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tmux_window": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pane_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pane_pid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "process_pid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "process_session": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_effort": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "approval_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "authority_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "bootstrap_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "inventory_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "records_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "records_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "records_length": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "no_resume": {
+      "const": true
+    },
+    "no_operational_exposure": {
+      "const": true
+    },
+    "network_denial_proven": {
+      "const": false
+    },
+    "ping_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
