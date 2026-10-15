@@ -19,6 +19,10 @@ DEFAULT = Path('/private/tmp/tmux-%d/default' % os.geteuid())
 
 
 def validate(args, nested=False):
+    if not nested and len(args) == 5 and args[0:2] == ['set-buffer', '-b'] and re.fullmatch(r'relay-[a-f0-9]{32}', args[2]) and args[3] == '--':
+        if '\n' in args[4] or '\r' in args[4]:
+            raise ValueError('delivery command refused')
+        return
     if not args or any(any(token in arg for token in ('#(', '#{E:', '#{T:', '\n', '\r')) for arg in args):
         raise ValueError('delivery command refused')
     verb = args[0]
@@ -42,8 +46,6 @@ def validate(args, nested=False):
     if not nested and verb == 'list-panes' and len(args) == 4 and args[1:3] == ['-a', '-F']:
         return
     if not nested and verb == 'capture-pane' and len(args) == 5 and args[1:4] == ['-p', '-e', '-t'] and re.fullmatch(r'%\d+', args[4]):
-        return
-    if not nested and verb == 'set-buffer' and len(args) == 5 and args[1] == '-b' and re.fullmatch(r'relay-[a-f0-9]{32}', args[2]) and args[3] == '--':
         return
     if nested and verb == 'paste-buffer' and len(args) == 5 and args[1] == '-b' and re.fullmatch(r'relay-[a-f0-9]{32}', args[2]) and args[3] == '-t' and re.fullmatch(r'%\d+', args[4]):
         return

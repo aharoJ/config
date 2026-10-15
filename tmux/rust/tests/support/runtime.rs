@@ -1,6 +1,34 @@
 use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 #[test]
+fn delivery_guard_accepts_literal_message_formats() {
+    for payload in [
+        "relay: #literal plain data",
+        "relay: #literal explain #(literal)",
+        "relay: #literal explain #{E:literal}",
+        "relay: #literal explain #{T:literal}",
+    ] {
+        let mut command = Command::new("/usr/bin/python3");
+        command
+            .args([
+                "-c",
+                "import runpy,sys; runpy.run_path(sys.argv[1])['validate'](sys.argv[2:])",
+            ])
+            .arg(identity::delivery_helper())
+            .args([
+                "set-buffer",
+                "-b",
+                "relay-0123456789abcdef0123456789abcdef",
+                "--",
+                payload,
+            ]);
+        assert!(
+            capture(&mut command).is_ok(),
+            "literal payload refused: {payload:?}"
+        );
+    }
+}
+#[test]
 fn envelope_capacity() {
     assert_eq!(normalize("  λ\n\t#x\u{1c} y  ").unwrap(), "λ #x y");
     for text in ["", " \n\t", "bad\u{1b}", "bad\0"] {
@@ -194,6 +222,8 @@ fn private_delivery() {
         "copy",
         "draft",
         "edited-stage",
+        "trailing-semi",
+        "escaped-semi",
     ] {
         let target = format!("target-{scene}");
         let decoy = format!("decoy-{scene}");
@@ -224,15 +254,19 @@ fn private_delivery() {
         if scene == "copy" {
             server.command(&["copy-mode", "-t", &format!("private-k50:{target}")]);
         }
-        let prepared =
-            Prepared::new(&ns, "private-k50", &target, None, "#core staged-message").unwrap();
+        let message = match scene {
+            "trailing-semi" => "#core staged-message;",
+            "escaped-semi" => "#core staged-message\\;",
+            _ => "#core staged-message",
+        };
+        let prepared = Prepared::new(&ns, "private-k50", &target, None, message).unwrap();
         let wire = prepared.wire.clone();
         let mut store = Store::open(&server.root.join(format!("archive-{scene}"))).unwrap();
         let mut runtime = Runtime::accept(
             &ns,
             prepared,
             &mut store,
-            b"#core staged-message",
+            message.as_bytes(),
             Budgets {
                 stop_ms: 30,
                 drain_ms: 30,

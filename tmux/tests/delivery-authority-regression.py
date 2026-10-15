@@ -150,6 +150,27 @@ class Authority(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'requires passing'):
             live['verify_private_dryrun']('0' * 64, None)
 
+    def test_literal_buffer_exception_keeps_command_boundary(self):
+        prefix = ['set-buffer', '-b', 'relay-' + 'a' * 32, '--']
+        for payload in ['relay: #literal #(literal)', 'relay: #literal #{E:literal}',
+                        'relay: #literal #{T:literal}', 'relay: #literal ; kill-server']:
+            guard['validate'](prefix + [payload])
+            with self.assertRaises(ValueError):
+                guard['validate'](prefix + [payload], True)
+        for args in [prefix, prefix + ['safe', ';', 'kill-server'],
+                     prefix + ['relay: #literal\nkill-server'],
+                     prefix + ['relay: #literal\rkill-server'],
+                     ['set-buffer', '-b', 'relay-' + 'g' * 32, '--', 'safe'],
+                     ['set-buffer', '-b', 'other', '--', 'safe'],
+                     ['set-buffer', '-b', prefix[2], '-F', 'safe'],
+                     ['set-buffer', '-F', '-b', prefix[2], '--', 'safe']]:
+            with self.subTest(args=args):
+                with self.assertRaises(ValueError):
+                    guard['validate'](args)
+        with self.assertRaises(ValueError):
+            guard['validate'](['if-shell', '-F', '-t', '%123', '1',
+                               shlex.join(prefix + ['safe']), 'display-message -p refused'])
+
     def test_delivery_cannot_destroy_or_signal(self):
         validate = guard['validate']
         validate(['list-panes', '-a', '-F', '#{pane_id}'])

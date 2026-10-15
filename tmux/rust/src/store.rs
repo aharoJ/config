@@ -364,6 +364,18 @@ fn attribution(a: &Attribution) -> bool {
                 && !a.codes[..i].iter().any(|x| x.value == c.value)
         })
 }
+fn attributed_wire(wire: &[u8], attribution: &Attribution) -> bool {
+    std::str::from_utf8(wire).is_ok_and(|s| {
+        s.starts_with(&format!("{}: ", attribution.label))
+            && attribution.codes.iter().all(|c| {
+                s.match_indices(&format!("#{}", c.value)).any(|(i, _)| {
+                    s.as_bytes()
+                        .get(i + 1 + c.value.len())
+                        .is_none_or(|b| !b.is_ascii_alphanumeric() && !b"_-".contains(b))
+                })
+            })
+    })
+}
 fn text(p: &Option<String>) -> bool {
     p.as_ref().is_some_and(|p| !p.is_empty())
 }
@@ -695,6 +707,7 @@ impl Store {
             } else {
                 a.original.clone()
             }
+            || (wire && !attributed_wire(&bytes, &a.attribution))
         {
             return Err(Error::Corrupt);
         }
@@ -775,21 +788,11 @@ impl Store {
         attribution: Attribution,
     ) -> Result<Published> {
         let _lock = self.lock()?;
-        let valid = std::str::from_utf8(wire).is_ok_and(|s| {
-            s.starts_with(&format!("{}: ", attribution.label))
-                && attribution.codes.iter().all(|c| {
-                    s.match_indices(&format!("#{}", c.value)).any(|(i, _)| {
-                        s.as_bytes()
-                            .get(i + 1 + c.value.len())
-                            .is_none_or(|b| !b.is_ascii_alphanumeric() && !b"_-".contains(b))
-                    })
-                })
-        });
         if !valid_id(id)
             || original.is_empty()
             || std::str::from_utf8(original).is_err()
             || !self::attribution(&attribution)
-            || !valid
+            || !attributed_wire(wire, &attribution)
         {
             return Err(Error::Invalid);
         }

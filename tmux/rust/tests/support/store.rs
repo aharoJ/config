@@ -362,3 +362,31 @@ fn restart_no_replay() {
         .transition(&mut handle, State::InputIntent, intent())
         .is_err());
 }
+
+#[test]
+fn persisted_attribution_matches_archived_wire() {
+    for mutation in ["code", "label"] {
+        let path = root();
+        let (store, _) = accepted(&path);
+        drop(store);
+        let ledger_path = path.join("ledger.json");
+        let mut ledger: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&ledger_path).unwrap()).unwrap();
+        for kind in ["archives", "attempts"] {
+            let a = &mut ledger[kind][0]["attribution"];
+            if mutation == "code" {
+                a["codes"][0]["value"] = serde_json::json!("y");
+            } else {
+                a["label"] = serde_json::json!("other");
+                a["source"] = serde_json::json!({
+                    "Known": {"identity": "1:2:3", "generation": 1, "label": "other"}
+                });
+            }
+        }
+        std::fs::write(&ledger_path, serde_json::to_vec(&ledger).unwrap()).unwrap();
+        assert!(
+            matches!(Store::open(&path), Err(Error::Corrupt)),
+            "{mutation}"
+        );
+    }
+}

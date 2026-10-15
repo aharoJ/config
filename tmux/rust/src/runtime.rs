@@ -662,8 +662,11 @@ impl<'a> Runtime<'a> {
         }
         let buffer = format!("relay-{}", self.id);
         let pane = self.prepared.target.selector();
+        let data = wire
+            .strip_suffix(';')
+            .map_or_else(|| wire.clone(), |prefix| format!("{prefix}\\;"));
         self.ns
-            .command(&["set-buffer", "-b", &buffer, "--", &wire])?;
+            .command(&["set-buffer", "-b", &buffer, "--", &data])?;
         checkpoint("final-paste-check");
         let ready = match self.view() {
             Ok(v) => v,
