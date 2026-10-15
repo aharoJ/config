@@ -193,3 +193,33 @@ fn snapshot_fixture_masks_prompt_and_box_glyphs_in_body_positions() {
         assert_eq!(refused["fixture"]["glyph"], "❯");
     }
 }
+
+#[test]
+fn codex_162_background_staged_prompt() {
+    let wire = "relay: #s7x probe";
+    let capture =
+        format!("\x1b[1m›\x1b[0m\x1b[48;2;57;57;71m {wire}\n\n\x1b[49m  native-session\n");
+    assert_eq!(
+        screen('›', &capture, wire.len() + 2, 0, 100, wire),
+        Screen::Staged(wire.as_bytes().to_vec())
+    );
+    assert_eq!(
+        screen('›', &capture, wire.len() + 1, 0, 100, wire),
+        Screen::Hold
+    );
+    assert_eq!(
+        screen('›', &capture, wire.len() + 2, 0, 100, "other"),
+        Screen::Hold
+    );
+    assert_eq!(
+        screen(
+            '›',
+            &capture.replace("57;57;71", "1;2;3"),
+            wire.len() + 2,
+            0,
+            100,
+            wire
+        ),
+        Screen::Hold
+    );
+}

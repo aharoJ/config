@@ -190,7 +190,32 @@ pub fn capture(command: &mut Command) -> Result<Vec<u8>> {
     result
 }
 
-const BRIDGE:&str="import runpy,sys,subprocess\ng=runpy.run_path(sys.argv[1])\ng['attest'](sys.argv[2])\nif sys.stdin.readline()!='go\\n':sys.exit(90)\nr=g['run_tmux'](['tmux','-S',sys.argv[2],*sys.argv[3:]],capture_output=True,stdin=subprocess.DEVNULL,timeout=2)\nsys.stdout.buffer.write(r.stdout);sys.stderr.buffer.write(r.stderr);sys.exit(r.returncode)\n";
+pub fn producer_entry(args: &[String]) -> i32 {
+    let result = (|| -> Result<()> {
+        let socket = std::path::Path::new(args.first().ok_or("producer socket absent")?);
+        let words: Vec<_> = args[1..].iter().map(String::as_str).collect();
+        identity::validate_delivery(&words, false)?;
+        let ns = identity::connect_delivery(socket)?;
+        let mut release = [0; 3];
+        std::io::stdin()
+            .read_exact(&mut release)
+            .map_err(|e| e.to_string())?;
+        if release != *b"go\n" {
+            return Err("producer release refused".into());
+        }
+        let output = ns.command(&words)?;
+        std::io::stdout()
+            .write_all(output.as_bytes())
+            .map_err(|e| e.to_string())
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(error) => {
+            eprintln!("relay: {error}");
+            1
+        }
+    }
+}
 struct Producer {
     child: OwnedChild,
     input: Option<ChildStdin>,
@@ -198,10 +223,16 @@ struct Producer {
 impl Producer {
     fn spawn(ns: &Namespace, args: &[&str]) -> Result<Self> {
         ns.verify()?;
-        let mut command = Command::new("/usr/bin/python3");
+        let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+        #[cfg(test)]
+        let executable = executable
+            .parent()
+            .and_then(|p| p.parent())
+            .ok_or("test executable parent")?
+            .join("angelstar-runtime");
+        let mut command = Command::new(executable);
         command
-            .args(["-c", BRIDGE])
-            .arg(identity::delivery_helper())
+            .arg("--delivery-producer")
             .arg(ns.socket())
             .args(args)
             .stdin(Stdio::piped());
@@ -678,13 +709,7 @@ impl<'a> Runtime<'a> {
         if ready.busy || ready.copy || !ready.bytes.is_empty() {
             return Ok(self.state);
         }
-        let mut attest = Command::new("/usr/bin/python3");
-        attest
-            .arg(identity::delivery_helper())
-            .arg("attest")
-            .arg(self.ns.socket());
-        let lease: serde_json::Value =
-            serde_json::from_slice(&capture(&mut attest)?).map_err(|e| e.to_string())?;
+        let lease = identity::delivery_attest(self.ns.socket())?;
         let owner = identity::kernel_process(std::process::id()).ok_or("owner missing")?;
         self.evidence.capacity = Some(capacity);
         self.evidence.composer_proof = Some("verified empty composer and exact geometry".into());

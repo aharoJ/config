@@ -8,24 +8,39 @@ fn delivery_guard_accepts_literal_message_formats() {
         "relay: #literal explain #{E:literal}",
         "relay: #literal explain #{T:literal}",
     ] {
-        let mut command = Command::new("/usr/bin/python3");
-        command
-            .args([
-                "-c",
-                "import runpy,sys; runpy.run_path(sys.argv[1])['validate'](sys.argv[2:])",
-            ])
-            .arg(identity::delivery_helper())
-            .args([
+        assert!(identity::validate_delivery(
+            &[
                 "set-buffer",
                 "-b",
                 "relay-0123456789abcdef0123456789abcdef",
                 "--",
-                payload,
-            ]);
-        assert!(
-            capture(&mut command).is_ok(),
-            "literal payload refused: {payload:?}"
-        );
+                payload
+            ],
+            false
+        )
+        .is_ok());
+    }
+    for args in [
+        vec!["kill-server"],
+        vec!["display-message", "-p", "#(unsafe)"],
+        vec![
+            "set-buffer",
+            "-b",
+            "relay-0123456789abcdef0123456789abcdef",
+            "--",
+            "bad\nline",
+        ],
+        vec![
+            "if-shell",
+            "-F",
+            "-t",
+            "%7",
+            "1",
+            "send-keys -t %7 Enter ; kill-server",
+            "display-message -p refused",
+        ],
+    ] {
+        assert!(identity::validate_delivery(&args, false).is_err());
     }
 }
 #[test]
@@ -69,10 +84,8 @@ fn owned_cleanup() {
         decision_ms: 60,
     };
     validate_budgets(&budgets).unwrap();
-    let mut command = Command::new("/usr/bin/python3");
-    command
-        .args(["-c", "import sys; sys.stdin.buffer.read()"])
-        .stdin(Stdio::piped());
+    let mut command = Command::new("/bin/cat");
+    command.stdin(Stdio::piped());
     let mut child = OwnedChild::spawn(&mut command).unwrap();
     let expected = child.identity.unwrap();
     let mut wrong = expected;
@@ -151,16 +164,16 @@ fn fixture_state(server: &crate::test_server::Server, name: &str) -> serde_json:
 fn attached(server: &crate::test_server::Server, target: &str) -> OwnedChild {
     server.command(&["select-window", "-t", &format!("private-k50:{target}")]);
     let ready = server.root.join(format!("{target}.attached.ready"));
-    let mut command = Command::new("/usr/bin/python3");
+    let mut command = Command::new(std::env::current_exe().unwrap());
     command
-        .arg(
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../tests/fixtures/private-attached-client.py"),
-        )
-        .arg(identity::helper())
-        .arg(&server.socket)
-        .arg("private-k50")
-        .arg(&ready)
+        .args([
+            "--ignored",
+            "--exact",
+            "runtime::tests::attached_worker",
+            "--nocapture",
+        ])
+        .env("ANGELSTAR_ATTACHED_SOCKET", &server.socket)
+        .env("ANGELSTAR_ATTACHED_READY", &ready)
         .stdin(Stdio::piped())
         .env("TERM", "xterm-256color");
     let mut child = OwnedChild::spawn(&mut command).unwrap();
@@ -724,4 +737,119 @@ fn harness_cli_probe() {
     // Actual public parser, runtime, store, budgets, producer and exit mapping.
     // Only the already-existing test view is supplied by the private client.
     std::process::exit(crate::cli::main_entry("cc-msg", &args));
+}
+
+#[test]
+#[ignore = "private attached terminal worker only"]
+fn attached_worker() {
+    use std::os::unix::process::CommandExt;
+    let socket = std::path::PathBuf::from(std::env::var_os("ANGELSTAR_ATTACHED_SOCKET").unwrap());
+    let ready = std::path::PathBuf::from(std::env::var_os("ANGELSTAR_ATTACHED_READY").unwrap());
+    identity::delivery_attest(&socket).unwrap();
+    let mut master = -1;
+    let mut slave = -1;
+    let mut size = libc::winsize {
+        ws_row: 24,
+        ws_col: 80,
+        ws_xpixel: 0,
+        ws_ypixel: 0,
+    };
+    assert_eq!(
+        unsafe {
+            libc::openpty(
+                &mut master,
+                &mut slave,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                &mut size,
+            )
+        },
+        0
+    );
+    use std::os::fd::{AsRawFd, FromRawFd};
+    let mut terminal = unsafe { File::from_raw_fd(master) };
+    let slave = unsafe { File::from_raw_fd(slave) };
+    let slave_fd = slave.as_raw_fd();
+    let mut command = Command::new("/opt/homebrew/bin/tmux");
+    command
+        .args(["-N", "-S"])
+        .arg(&socket)
+        .args(["attach-session", "-t", "private-k50"])
+        .stdin(slave.try_clone().unwrap())
+        .stdout(slave.try_clone().unwrap())
+        .stderr(slave.try_clone().unwrap());
+    unsafe {
+        command.pre_exec(move || {
+            if libc::setsid() < 0 || libc::ioctl(slave_fd, libc::TIOCSCTTY.into(), 0) < 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+            Ok(())
+        });
+    }
+    let mut child = command.spawn().unwrap();
+    drop(command);
+    drop(slave);
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(ready)
+        .unwrap()
+        .write_all(child.id().to_string().as_bytes())
+        .unwrap();
+    let mut line = Vec::new();
+    loop {
+        if child.try_wait().unwrap().is_some() {
+            break;
+        }
+        let mut descriptors = [
+            libc::pollfd {
+                fd: master,
+                events: libc::POLLIN,
+                revents: 0,
+            },
+            libc::pollfd {
+                fd: 0,
+                events: libc::POLLIN,
+                revents: 0,
+            },
+        ];
+        assert!(unsafe { libc::poll(descriptors.as_mut_ptr(), 2, 100) } >= 0);
+        if descriptors[0].revents != 0 {
+            let mut bytes = [0; 65536];
+            if terminal.read(&mut bytes).unwrap_or(0) == 0 {
+                break;
+            }
+        }
+        if descriptors[1].revents != 0 {
+            let mut byte = [0];
+            if unsafe { libc::read(0, byte.as_mut_ptr().cast(), 1) } <= 0 {
+                break;
+            }
+            if byte[0] == b'\n' {
+                if line == b"quit" {
+                    terminal.write_all(b"\x02d").unwrap();
+                    break;
+                }
+                let text = std::str::from_utf8(&line).unwrap();
+                let bytes: Vec<u8> = (0..text.len())
+                    .step_by(2)
+                    .map(|n| u8::from_str_radix(&text[n..n + 2], 16).unwrap())
+                    .collect();
+                terminal.write_all(&bytes).unwrap();
+                line.clear();
+            } else {
+                line.push(byte[0]);
+            }
+        }
+    }
+    drop(terminal);
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while child.try_wait().unwrap().is_none() {
+        assert!(
+            Instant::now() < deadline,
+            "owned attached client exit unresolved"
+        );
+        std::thread::sleep(Duration::from_millis(5));
+    }
 }

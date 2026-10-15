@@ -356,7 +356,11 @@ pub fn screen(glyph: char, capture: &str, x: usize, y: usize, width: usize, wire
     };
     if !prefix.chars().all(|c| c == ' ' || c == '\u{a0}')
         || row.has_dim_style
-        || row.has_background_style
+        || (row.has_background_style
+            && !(glyph == '›'
+                && raw
+                    .strip_prefix("\x1b[1m›\x1b[0m\x1b[48;2;57;57;71m ")
+                    .is_some_and(|tail| tail.trim_end_matches(['\r', '\n']) == wire)))
     {
         return Screen::Hold;
     }

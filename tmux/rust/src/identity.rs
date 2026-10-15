@@ -373,12 +373,10 @@ impl Namespace {
     }
     pub fn command(&self, args: &[&str]) -> Result<String> {
         self.verify()?;
-        let mut command = Command::new("/usr/bin/python3");
-        command
-            .arg(delivery_helper())
-            .args(["run", "tmux", "-S"])
-            .arg(&self.socket)
-            .args(args);
+        validate_delivery(args, false)?;
+        delivery_attest(&self.socket)?;
+        let mut command = Command::new(&self.executable);
+        command.arg("-N").arg("-S").arg(&self.socket).args(args);
         let bytes = crate::runtime::capture(&mut command)?;
         self.verify()?;
         String::from_utf8(bytes).map_err(|e| e.to_string())
@@ -391,18 +389,329 @@ impl Namespace {
     }
 }
 use std::os::unix::fs::OpenOptionsExt;
-#[cfg(test)]
-pub fn helper() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/cleanup_guard.py")
+pub fn validate_delivery(args: &[&str], nested: bool) -> Result<()> {
+    fn pane(value: &str) -> bool {
+        value
+            .strip_prefix('%')
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+    }
+    fn buffer(value: &str) -> bool {
+        value.strip_prefix("relay-").is_some_and(|n| {
+            n.len() == 32
+                && n.bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        })
+    }
+    if !nested
+        && args.len() == 5
+        && args[..2] == ["set-buffer", "-b"]
+        && buffer(args[2])
+        && args[3] == "--"
+        && !args[4].contains(['\n', '\r'])
+    {
+        return Ok(());
+    }
+    if args.is_empty()
+        || args.iter().any(|s| {
+            ["#(", "#{E:", "#{T:", "\n", "\r"]
+                .iter()
+                .any(|token| s.contains(token))
+        })
+    {
+        return Err("delivery command refused".into());
+    }
+    match args[0] {
+        "if-shell" if args.len() == 7 && args[1..3] == ["-F", "-t"] && pane(args[3]) => {
+            for branch in &args[5..] {
+                for words in delivery_words(branch)? {
+                    let words: Vec<_> = words.iter().map(String::as_str).collect();
+                    validate_delivery(&words, true)?;
+                }
+            }
+            Ok(())
+        }
+        "display-message"
+            if (args.len() == 3 && args[1] == "-p")
+                || (args.len() == 5 && args[1..3] == ["-p", "-t"] && pane(args[3])) =>
+        {
+            Ok(())
+        }
+        "list-panes" if !nested && args.len() == 4 && args[1..3] == ["-a", "-F"] => Ok(()),
+        "capture-pane"
+            if !nested && args.len() == 5 && args[1..4] == ["-p", "-e", "-t"] && pane(args[4]) =>
+        {
+            Ok(())
+        }
+        "paste-buffer"
+            if nested
+                && args.len() == 5
+                && args[1] == "-b"
+                && buffer(args[2])
+                && args[3] == "-t"
+                && pane(args[4]) =>
+        {
+            Ok(())
+        }
+        "send-keys"
+            if nested
+                && args.len() == 4
+                && args[1] == "-t"
+                && pane(args[2])
+                && args[3] == "Enter" =>
+        {
+            Ok(())
+        }
+        _ => Err("delivery command refused".into()),
+    }
 }
-pub fn delivery_helper() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/delivery_guard.py")
+fn delivery_words(text: &str) -> Result<Vec<Vec<String>>> {
+    let mut commands = Vec::new();
+    let mut words = Vec::new();
+    let mut word = String::new();
+    let mut started = false;
+    let mut quote = None;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match (quote, c) {
+            (Some('\''), '\'') | (Some('"'), '"') => quote = None,
+            (Some('\''), c) => word.push(c),
+            (_, '\\') => {
+                let next = chars.next().ok_or("unfinished delivery escape")?;
+                if quote == Some('"') && !['"', '\\'].contains(&next) {
+                    word.push('\\');
+                }
+                word.push(next);
+                started = true;
+            }
+            (Some(_), c) => word.push(c),
+            (None, '\'' | '"') => {
+                quote = Some(c);
+                started = true;
+            }
+            (None, ';') => {
+                if started {
+                    words.push(std::mem::take(&mut word));
+                    started = false;
+                }
+                commands.push(std::mem::take(&mut words));
+            }
+            (None, c) if c.is_ascii_whitespace() => {
+                if started {
+                    words.push(std::mem::take(&mut word));
+                    started = false;
+                }
+            }
+            (None, c) => {
+                word.push(c);
+                started = true;
+            }
+        }
+    }
+    if quote.is_some() {
+        return Err("unfinished delivery quote".into());
+    }
+    if started {
+        words.push(word);
+    }
+    commands.push(words);
+    Ok(commands)
+}
+pub(crate) fn signed(body: serde_json::Value, key: &str) -> Result<serde_json::Value> {
+    if key.len() != 64
+        || !key
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
+        return Err("invalid lease key".into());
+    }
+    let bytes: Vec<u8> = (0..64)
+        .step_by(2)
+        .map(|n| u8::from_str_radix(&key[n..n + 2], 16).map_err(|e| e.to_string()))
+        .collect::<Result<_>>()?;
+    let mut inner = [0x36u8; 64];
+    let mut outer = [0x5cu8; 64];
+    for (n, b) in bytes.iter().enumerate() {
+        inner[n] ^= b;
+        outer[n] ^= b;
+    }
+    let mut digest = Sha256::new();
+    digest.update(inner);
+    let json = serde_json::to_string(&body).map_err(|e| e.to_string())?;
+    let mut encoded = String::new();
+    for c in json.chars() {
+        if c as u32 >= 127 {
+            for unit in c.encode_utf16(&mut [0; 2]) {
+                encoded.push_str(&format!("\\u{unit:04x}"));
+            }
+        } else {
+            encoded.push(c);
+        }
+    }
+    digest.update(encoded.as_bytes());
+    let mut mac = Sha256::new();
+    mac.update(outer);
+    mac.update(digest.finalize());
+    Ok(serde_json::json!({"body":body,"mac":format!("{:x}",mac.finalize())}))
+}
+fn verify_signed(value: &serde_json::Value, body: serde_json::Value, key: &str) -> Result<bool> {
+    let expected = signed(body, key)?;
+    let actual = value["mac"].as_str().ok_or("missing lease mac")?;
+    let mac = expected["mac"].as_str().ok_or("missing expected mac")?;
+    let difference = actual
+        .as_bytes()
+        .iter()
+        .zip(mac.as_bytes())
+        .fold(0u8, |value, (a, b)| value | (a ^ b));
+    Ok(value.as_object().is_some_and(|o| o.len() == 2)
+        && value["body"] == expected["body"]
+        && actual.len() == mac.len()
+        && difference == 0)
+}
+pub(crate) fn read_private(path: &Path) -> Result<serde_json::Value> {
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    private(&file, false)?;
+    if file.metadata().map_err(|e| e.to_string())?.len() > 8192 {
+        return Err("oversized lease".into());
+    }
+    serde_json::from_reader(file).map_err(|e| e.to_string())
+}
+pub(crate) fn fixture_lease() -> Result<serde_json::Value> {
+    let lease: serde_json::Value =
+        serde_json::from_str(&std::env::var("KS01_RUN_CAP").map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    let object = lease.as_object().ok_or("invalid run capability")?;
+    if object.len() != 5
+        || ["root", "nonce", "key", "owner", "owner_generation"]
+            .iter()
+            .any(|k| !object.contains_key(*k))
+    {
+        return Err("invalid run capability".into());
+    }
+    let root = Path::new(lease["root"].as_str().ok_or("lease root absent")?);
+    let desk = PathBuf::from(std::env::var_os("HOME").ok_or("home absent")?).join("desk/tmp");
+    if !root.starts_with(desk) || std::fs::canonicalize(root).map_err(|e| e.to_string())? != root {
+        return Err("lease outside desk/tmp".into());
+    }
+    private(&open_dir(root)?, true)?;
+    let mut body = lease.clone();
+    body.as_object_mut().ok_or("lease object")?.remove("key");
+    let key = lease["key"].as_str().ok_or("lease key absent")?;
+    let nonce = lease["nonce"].as_str().ok_or("lease nonce absent")?;
+    if nonce.len() != 64
+        || !nonce
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
+        return Err("invalid nonce".into());
+    }
+    let owner = u32::try_from(lease["owner"].as_u64().ok_or("lease owner absent")?)
+        .map_err(|e| e.to_string())?;
+    let process = kernel_process(owner).ok_or("lease owner absent")?;
+    if !verify_signed(&read_private(&root.join("lease.json"))?, body, key)?
+        || lease["owner_generation"]
+            != serde_json::json!([process.start_seconds, process.start_microseconds])
+    {
+        return Err("stale run lease".into());
+    }
+    Ok(lease)
+}
+pub fn delivery_attest(path: &Path) -> Result<serde_json::Value> {
+    use std::os::unix::fs::FileTypeExt;
+    let info = std::fs::symlink_metadata(path).map_err(|e| e.to_string())?;
+    if !info.file_type().is_socket()
+        || info.uid() != unsafe { libc::geteuid() }
+        || std::fs::canonicalize(path).map_err(|e| e.to_string())? != path
+    {
+        return Err("delivery socket refused".into());
+    }
+    let default = PathBuf::from(format!("/private/tmp/tmux-{}/default", unsafe {
+        libc::geteuid()
+    }));
+    if path == default {
+        let mut command = Command::new("/opt/homebrew/bin/tmux");
+        command
+            .args(["-N", "-S"])
+            .arg(path)
+            .args(["display-message", "-p", "#{pid}"]);
+        let raw = crate::runtime::capture(&mut command)?;
+        let pid = String::from_utf8(raw)
+            .map_err(|e| e.to_string())?
+            .trim()
+            .parse::<u32>()
+            .map_err(|e| e.to_string())?;
+        let process = kernel_process(pid).ok_or("server absent")?;
+        let after = std::fs::symlink_metadata(path).map_err(|e| e.to_string())?;
+        if (info.dev(), info.ino()) != (after.dev(), after.ino()) {
+            return Err("default socket changed".into());
+        }
+        return Ok(
+            serde_json::json!({"pid":pid,"generation":[process.start_seconds,process.start_microseconds],"owner":pid,"nonce":format!("default-server:{}:{}:[{}, {}]",info.dev(),info.ino(),process.start_seconds,process.start_microseconds),"authority":"delivery-only; not a signed fixture lease"}),
+        );
+    }
+    let lease = fixture_lease()?;
+    let root = Path::new(lease["root"].as_str().ok_or("lease root")?);
+    if !path.starts_with(root) || path.as_os_str().len() >= 104 {
+        return Err("handoff outside lease".into());
+    }
+    private(&open_dir(path.parent().ok_or("socket parent")?)?, true)?;
+    let filename = format!("{:x}.json", Sha256::digest(path.as_os_str().as_bytes()));
+    let record = read_private(&root.join(filename))?;
+    let body = &record["body"];
+    if body.as_object().is_none_or(|o| o.len() != 10)
+        || body["path"] != path.to_string_lossy().as_ref()
+        || ["nonce", "owner", "owner_generation"]
+            .iter()
+            .any(|k| body[k] != lease[k])
+        || !verify_signed(
+            &record,
+            body.clone(),
+            lease["key"].as_str().ok_or("lease key")?,
+        )?
+    {
+        return Err("forged socket lease".into());
+    }
+    let pid =
+        u32::try_from(body["pid"].as_u64().ok_or("server pid")?).map_err(|e| e.to_string())?;
+    let process = kernel_process(pid).ok_or("server absent")?;
+    let marker = body["marker"].as_str().ok_or("server marker")?;
+    if marker.len() != 64
+        || !marker
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        || body["server_start"].as_u64().is_none_or(|n| n == 0)
+        || body["device"] != info.dev()
+        || body["inode"] != info.ino()
+        || body["generation"]
+            != serde_json::json!([process.start_seconds, process.start_microseconds])
+    {
+        return Err("socket identity changed".into());
+    }
+    let connection = std::os::unix::net::UnixStream::connect(path).map_err(|e| e.to_string())?;
+    let mut peer = 0i32;
+    let mut size = std::mem::size_of::<i32>() as libc::socklen_t;
+    if unsafe {
+        libc::getsockopt(
+            connection.as_raw_fd(),
+            0,
+            2,
+            (&mut peer as *mut i32).cast(),
+            &mut size,
+        )
+    } != 0
+        || peer <= 0
+        || peer as u32 != pid
+        || size != 4
+    {
+        return Err("wrong socket peer".into());
+    }
+    Ok(body.clone())
 }
 pub fn connect_delivery(socket: &Path) -> Result<Namespace> {
-    let mut command = Command::new("/usr/bin/python3");
-    command.arg(delivery_helper()).arg("attest").arg(socket);
-    let raw = crate::runtime::capture(&mut command)?;
-    let record: serde_json::Value = serde_json::from_slice(&raw).map_err(|e| e.to_string())?;
+    let record = delivery_attest(socket)?;
     let pid = u32::try_from(record["pid"].as_u64().ok_or("missing server pid")?)
         .map_err(|e| e.to_string())?;
     let server = kernel_process(pid).ok_or("missing server")?;
@@ -599,6 +908,10 @@ impl Client {
                 {
                     let m = file.metadata().map_err(|e| e.to_string())?;
                     let profile = match m.len() {
+                        249556880 => Some((
+                            '❯',
+                            "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",
+                        )),
                         247931696 => Some((
                             '❯',
                             "ba5ab7b8c195fa03ab8d5bf3915c76153b576a2c40e79a5c46e265e7ed9744b3",

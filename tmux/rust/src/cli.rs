@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nRequires explicit role routing and ANGELSTAR_RELAY_STORE; sends require ANGELSTAR_RELAY_SOCKET and delivery authority. Missing message reads stdin for relay, cc-msg, codex-send. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
+pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nRequires explicit role routing and delivery authority. Store defaults to $HOME/desk/relay-rust-store; socket defaults to TMUX or the UID default socket. ANGELSTAR_RELAY_STORE and ANGELSTAR_RELAY_SOCKET override these defaults. Missing message reads stdin for relay, cc-msg, codex-send. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operation {
@@ -249,7 +249,10 @@ fn execute(
         } else {
             0
         };
-        let path = PathBuf::from(required(env, "ANGELSTAR_RELAY_STORE")?);
+        let path = match env.get("ANGELSTAR_RELAY_STORE") {
+            Some(_) => PathBuf::from(required(env, "ANGELSTAR_RELAY_STORE")?),
+            None => PathBuf::from(required(env, "HOME")?).join("desk/relay-rust-store"),
+        };
         let mut store = store::Store::open(&path).map_err(|e| format!("store: {e:?}"))?;
         match op {
             Operation::Status(id) => Ok(announcement(&mut store, &id, out, err, true)),
@@ -265,10 +268,25 @@ fn execute(
                 message,
             } => {
                 let original = message.ok_or("message missing")?;
-                let ns = target::connect_delivery(&PathBuf::from(required(
-                    env,
-                    "ANGELSTAR_RELAY_SOCKET",
-                )?))?;
+                let socket = match env.get("ANGELSTAR_RELAY_SOCKET") {
+                    Some(_) => required(env, "ANGELSTAR_RELAY_SOCKET")?,
+                    None => match env.get("TMUX") {
+                        Some(context) => {
+                            let parts: Vec<_> = context.rsplitn(3, ',').collect();
+                            if parts.len() != 3
+                                || parts[..2]
+                                    .iter()
+                                    .any(|s| s.is_empty() || !s.bytes().all(|b| b.is_ascii_digit()))
+                                || parts[2].is_empty()
+                            {
+                                return Err("invalid TMUX context".into());
+                            }
+                            parts[2].into()
+                        }
+                        None => format!("/private/tmp/tmux-{}/default", unsafe { libc::geteuid() }),
+                    },
+                };
+                let ns = target::connect_delivery(&PathBuf::from(socket))?;
                 let prepared = runtime::Prepared::new(&ns, &session, &window, pane, &original)?;
                 let budgets = store::Budgets {
                     stop_ms: 30,
