@@ -22,7 +22,8 @@ pub fn supervised(selection: &str) -> bool {
     if std::env::var_os("KS01_RUN_CAP").is_some() {
         return false;
     }
-    let root = PathBuf::from(std::env::var_os("HOME").unwrap())
+    let root = identity::account_home()
+        .unwrap()
         .join("desk/tmp")
         .join(format!("s7x-{}", &crate::runtime::fresh_id().unwrap()[..8]));
     std::fs::DirBuilder::new()
@@ -50,6 +51,7 @@ pub fn supervised(selection: &str) -> bool {
         .unwrap();
     assert!(out.status.success(), "private supervisor: {out:?}");
     println!("{}", String::from_utf8_lossy(&out.stdout));
+    eprint!("{}", String::from_utf8_lossy(&out.stderr));
     true
 }
 pub struct Server {
@@ -215,7 +217,7 @@ impl Drop for Server {
             "private cleanup: {out:?}"
         );
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-        while identity::kernel_process(pid).is_some_and(|p| p.same(before)) {
+        while !identity::process_retired(before).unwrap() {
             assert!(std::time::Instant::now() < deadline);
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
@@ -351,4 +353,20 @@ fn lease_rejections() {
     std::os::unix::fs::symlink(&server.socket, &alias).unwrap();
     assert!(identity::delivery_attest(&alias).is_err());
     identity::delivery_attest(&server.socket).unwrap();
+}
+
+#[test]
+#[ignore = "explicit distinct signed-server retirement observations"]
+fn retirement_observations() {
+    if supervised("test_server::retirement_observations") {
+        return;
+    }
+    for observation in 0..16 {
+        let server = Server::new();
+        println!(
+            "retirement observation {observation} {}",
+            server.socket.display()
+        );
+        drop(server);
+    }
 }

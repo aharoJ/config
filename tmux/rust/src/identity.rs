@@ -100,6 +100,24 @@ pub fn kernel_process(pid: u32) -> Option<ProcessIdentity> {
         start_microseconds: info.micros,
     })
 }
+#[cfg(test)]
+pub(crate) fn process_retired(expected: ProcessIdentity) -> Result<bool> {
+    if let Some(process) = kernel_process(expected.pid) {
+        return Ok(!process.same(expected));
+    }
+    let pid = i32::try_from(expected.pid).map_err(|e| e.to_string())?;
+    if pid <= 0 {
+        return Err("positive process identity required".into());
+    }
+    if unsafe { libc::kill(pid, 0) } == 0 {
+        return Ok(false);
+    }
+    match unsafe { *libc::__error() } {
+        libc::ESRCH => Ok(true),
+        libc::EPERM => Ok(false),
+        _ => Err("process retirement unavailable".into()),
+    }
+}
 pub fn kernel_ancestry(mut pid: u32) -> Result<Vec<ProcessIdentity>> {
     let mut chain = Vec::new();
     for _ in 0..64 {
@@ -579,6 +597,48 @@ pub(crate) fn read_private(path: &Path) -> Result<serde_json::Value> {
     }
     serde_json::from_reader(file).map_err(|e| e.to_string())
 }
+pub(crate) fn account_home() -> Result<PathBuf> {
+    let uid = unsafe { libc::geteuid() };
+    let mut buffer = vec![0u8; 1024];
+    loop {
+        let mut account = std::mem::MaybeUninit::<libc::passwd>::uninit();
+        let mut found = std::ptr::null_mut();
+        let code = unsafe {
+            libc::getpwuid_r(
+                uid,
+                account.as_mut_ptr(),
+                buffer.as_mut_ptr().cast(),
+                buffer.len(),
+                &mut found,
+            )
+        };
+        if code == libc::ERANGE {
+            buffer.resize(
+                buffer
+                    .len()
+                    .checked_mul(2)
+                    .ok_or("account buffer overflow")?,
+                0,
+            );
+            continue;
+        }
+        if code != 0 || found.is_null() {
+            return Err("account home unavailable".into());
+        }
+        let account = unsafe { account.assume_init() };
+        if account.pw_uid != uid || account.pw_dir.is_null() {
+            return Err("account identity changed".into());
+        }
+        let home = PathBuf::from(std::ffi::OsStr::from_bytes(
+            unsafe { CStr::from_ptr(account.pw_dir) }.to_bytes(),
+        ));
+        return if home.is_absolute() {
+            Ok(home)
+        } else {
+            Err("account home must be absolute".into())
+        };
+    }
+}
 pub(crate) fn fixture_lease() -> Result<serde_json::Value> {
     let lease: serde_json::Value =
         serde_json::from_str(&std::env::var("KS01_RUN_CAP").map_err(|e| e.to_string())?)
@@ -592,7 +652,7 @@ pub(crate) fn fixture_lease() -> Result<serde_json::Value> {
         return Err("invalid run capability".into());
     }
     let root = Path::new(lease["root"].as_str().ok_or("lease root absent")?);
-    let desk = PathBuf::from(std::env::var_os("HOME").ok_or("home absent")?).join("desk/tmp");
+    let desk = account_home()?.join("desk/tmp");
     if !root.starts_with(desk) || std::fs::canonicalize(root).map_err(|e| e.to_string())? != root {
         return Err("lease outside desk/tmp".into());
     }
@@ -908,6 +968,10 @@ impl Client {
                 {
                     let m = file.metadata().map_err(|e| e.to_string())?;
                     let profile = match m.len() {
+                        240664432 => Some((
+                            '❯',
+                            "c9b5341637becbd423ddffc5b254afb645682a3868cb708bbc6cc0e7bb419937",
+                        )),
                         249556880 => Some((
                             '❯',
                             "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",

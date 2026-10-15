@@ -105,3 +105,66 @@ fn routing_source() {
         assert!(Snapshot::parse(raw).is_err());
     }
 }
+
+#[test]
+fn account_home_does_not_follow_environment() {
+    let account = account_home().unwrap();
+    let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+    let output = command
+        .args([
+            "--exact",
+            "identity::tests::account_home_child",
+            "--nocapture",
+        ])
+        .env("HOME", account.join("desk/tmp/nonaccount-home"))
+        .env("ANGELSTAR_EXPECTED_ACCOUNT_HOME", &account)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+}
+#[test]
+fn account_home_child() {
+    if let Some(expected) = std::env::var_os("ANGELSTAR_EXPECTED_ACCOUNT_HOME") {
+        assert_eq!(account_home().unwrap(), PathBuf::from(expected));
+        assert_ne!(
+            account_home().unwrap(),
+            PathBuf::from(std::env::var_os("HOME").unwrap())
+        );
+    }
+}
+#[test]
+#[ignore = "authorized read-only running native identity profile"]
+fn running_native_binding() {
+    let pane = std::env::var("ANGELSTAR_BIND_PANE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let expected = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
+        .unwrap()
+        .parse::<u32>()
+        .unwrap();
+    let client = Client::bind(pane).unwrap();
+    assert_eq!(client.process.pid, expected);
+    assert_eq!(client.glyph, '❯');
+    client.current().unwrap();
+}
+
+#[test]
+fn process_retirement_requires_reaping() {
+    let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "identity::tests::account_home_child"])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let process = kernel_process(child.id()).unwrap();
+    let mut bytes = Vec::new();
+    child
+        .stdout
+        .take()
+        .unwrap()
+        .read_to_end(&mut bytes)
+        .unwrap();
+    assert!(!process_retired(process).unwrap());
+    assert!(child.wait().unwrap().success());
+    assert!(process_retired(process).unwrap());
+}
