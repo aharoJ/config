@@ -858,10 +858,10 @@ fn attached_worker() {
 fn overflow_receiver_instruction() {
     let path = identity::account_home()
         .unwrap()
-        .join("desk/relay-rust-store/0123456789abcdef0123456789abcdef.original");
+        .join("desk/tmp/relay-rust-store/0123456789abcdef0123456789abcdef.original");
     let pointer = overflow_pointer("peer", "#abc123", &path);
-    assert!(pointer.contains("[read and execute; do not forward: ~/desk/relay-rust-store/"));
-    assert!(pointer.ends_with("0123456789abcdef0123456789abcdef.original]"));
+    assert!(pointer.contains("read and execute; do not forward: ~/desk/tmp/relay-rust-store/"));
+    assert!(pointer.ends_with("0123456789abcdef0123456789abcdef.original"));
     assert!(!pointer.contains("-- full:"));
 }
 
@@ -869,7 +869,7 @@ fn overflow_receiver_instruction() {
 fn overflow_ordinary_width_capacity() {
     let path = identity::account_home()
         .unwrap()
-        .join("desk/relay-rust-store/0123456789abcdef0123456789abcdef.original");
+        .join("desk/tmp/relay-rust-store/0123456789abcdef0123456789abcdef.original");
     let pointer = overflow_pointer("peer", "#abc123", &path);
     let mut capacity = store::Capacity {
         width: 120,

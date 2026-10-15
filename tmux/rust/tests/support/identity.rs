@@ -168,3 +168,27 @@ fn process_retirement_requires_reaping() {
     assert!(child.wait().unwrap().success());
     assert!(process_retired(process).unwrap());
 }
+
+#[test]
+fn caller_context_prefers_ancestry_then_exact_tmux_pane() {
+    let snapshot =
+        Snapshot::parse(b"$0\t@1\t%2\t42\t0\t3:a:b3:w,#\n$1\t@2\t%3\t43\t0\t1:x1:y\n").unwrap();
+    let parents = HashMap::from([(99, 42)]);
+    assert_eq!(
+        source_context(&snapshot, 99, &parents, Some("%3")),
+        Some(snapshot.targets[0].clone())
+    );
+    assert_eq!(
+        source_context(&snapshot, 77, &HashMap::new(), Some("%3")),
+        Some(snapshot.targets[1].clone())
+    );
+    for pane in [None, Some("3"), Some("%99"), Some("")] {
+        assert!(source_context(&snapshot, 77, &HashMap::new(), pane).is_none());
+    }
+    let mut ambiguous = snapshot.clone();
+    ambiguous.targets.push(snapshot.targets[1].clone());
+    assert!(source_context(&ambiguous, 77, &HashMap::new(), Some("%3")).is_none());
+    let mut dead = snapshot;
+    dead.targets[1].pane.dead = true;
+    assert!(source_context(&dead, 77, &HashMap::new(), Some("%3")).is_none());
+}

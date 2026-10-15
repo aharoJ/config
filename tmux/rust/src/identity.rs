@@ -942,6 +942,22 @@ pub fn source_candidate(
     }
     None
 }
+pub fn source_context(
+    snapshot: &Snapshot,
+    pid: u32,
+    parents: &HashMap<u32, u32>,
+    pane: Option<&str>,
+) -> Option<Target> {
+    source_candidate(snapshot, pid, parents).or_else(|| {
+        let pane = pane?;
+        let mut matches = snapshot
+            .targets
+            .iter()
+            .filter(|t| !t.pane.dead && format!("%{}", t.pane.id.0) == pane);
+        let first = matches.next()?;
+        matches.next().is_none().then(|| first.clone())
+    })
+}
 pub struct Client {
     file: File,
     path: PathBuf,

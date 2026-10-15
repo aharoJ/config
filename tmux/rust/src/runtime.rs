@@ -301,13 +301,15 @@ fn overflow_pointer(label: &str, codes: &str, path: &std::path::Path) -> String 
         .and_then(|home| path.strip_prefix(home).ok())
         .map(|suffix| format!("~/{}", suffix.display()))
         .unwrap_or_else(|| path.display().to_string());
-    format!("{label}: {codes} [read and execute; do not forward: {compact}]")
+    format!("{label}: {codes} read and execute; do not forward: {compact}")
 }
 pub struct Prepared {
+    pub(crate) client: Option<char>,
     id: String,
     message: String,
     target: Target,
     source: Option<Target>,
+    source_pane: Option<String>,
     ancestry: Vec<identity::ProcessIdentity>,
     attribution: Attribution,
     wire: String,
@@ -321,10 +323,25 @@ impl Prepared {
         message: &str,
     ) -> Result<Self> {
         let snapshot = ns.capture()?;
-        let target = identity::resolve(&snapshot, session, window, pane)?;
         let ancestry = identity::kernel_ancestry(std::process::id())?;
         let parents = ancestry.iter().map(|p| (p.pid, p.parent)).collect();
-        let source = identity::source_candidate(&snapshot, std::process::id(), &parents);
+        let source_pane = std::env::var("TMUX_PANE").ok();
+        let source = identity::source_context(
+            &snapshot,
+            std::process::id(),
+            &parents,
+            source_pane.as_deref(),
+        );
+        let session = if session.is_empty() {
+            source
+                .as_ref()
+                .ok_or("caller session unavailable")?
+                .session_name
+                .as_str()
+        } else {
+            session
+        };
+        let target = identity::resolve(&snapshot, session, window, pane)?;
         for p in &ancestry {
             if snapshot
                 .targets
@@ -382,10 +399,12 @@ impl Prepared {
             },
         };
         let prepared = Self {
+            client: None,
             id,
             message: normalized.clone(),
             target,
             source,
+            source_pane,
             ancestry,
             attribution: Attribution {
                 source: source_proof,
@@ -409,8 +428,23 @@ impl Prepared {
             return Err("target or source changed".into());
         }
         let parents = self.ancestry.iter().map(|p| (p.pid, p.parent)).collect();
-        if identity::source_candidate(&snapshot, std::process::id(), &parents) != self.source {
+        if identity::source_context(
+            &snapshot,
+            std::process::id(),
+            &parents,
+            self.source_pane.as_deref(),
+        ) != self.source
+        {
             return Err("source changed".into());
+        }
+        if let (Some(source), Source::Known { generation, .. }) =
+            (&self.source, &self.attribution.source)
+        {
+            if identity::kernel_process(source.pane.pid).and_then(|p| p.generation().ok())
+                != Some(*generation)
+            {
+                return Err("source generation changed".into());
+            }
         }
         Ok(())
     }
@@ -611,6 +645,13 @@ impl<'a> Runtime<'a> {
             .as_ref()
             .map_err(|e| format!("client-bind: {e}"))?;
         client.current()?;
+        if self
+            .prepared
+            .client
+            .is_some_and(|glyph| glyph != client.glyph)
+        {
+            return Err("target client does not match helper".into());
+        }
         let pane = self.prepared.target.selector();
         let format="#{cursor_x}|#{cursor_y}|#{pane_width}|#{pane_height}|#{pane_dead}|#{pane_in_mode}|#{version}";
         let meta = self

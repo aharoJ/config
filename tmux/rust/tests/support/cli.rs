@@ -19,6 +19,7 @@ fn grammar() {
     assert_eq!(
         parse("cc-msg", &args(&["--", "--keys", "#x"]), &env).unwrap(),
         Operation::Send {
+            client: Some('❯'),
             session: "s:#".into(),
             window: "w,}".into(),
             pane: Some(target::PaneId(12)),
@@ -30,7 +31,10 @@ fn grammar() {
     assert!(
         matches!(parse("codex-send",&[],&env).unwrap(),Operation::Send{window,message:None,..} if window=="codex")
     );
-    assert!(parse("codex-send-to", &args(&["w"]), &env).is_err());
+    assert!(matches!(
+        parse("codex-send-to", &args(&["w"]), &env).unwrap(),
+        Operation::Send { message: None, .. }
+    ));
     for op in ["prune", "recover"] {
         assert!(parse(
             "relay",
@@ -61,6 +65,7 @@ fn grammar() {
     assert_eq!(
         execute(
             Operation::Send {
+                client: None,
                 session: "s".into(),
                 window: "w".into(),
                 pane: None,
@@ -425,4 +430,72 @@ fn unchanged_reader_parses() {
     ] {
         assert!(reader_line(line).is_none());
     }
+}
+
+#[test]
+fn codex_routing_uses_caller_session_when_unset() {
+    let mut env = Env::new();
+    for surface in ["codex-send", "codex-send-to"] {
+        let argv = if surface == "codex-send" {
+            args(&["--", "task"])
+        } else {
+            args(&["sol", "--", "task"])
+        };
+        assert!(
+            matches!(parse(surface, &argv, &env).unwrap(), Operation::Send { session, .. } if session.is_empty())
+        );
+        env.insert("CODEX_SEND_SESSION".into(), "".into());
+        assert!(
+            matches!(parse(surface, &argv, &env).unwrap(), Operation::Send { session, .. } if session.is_empty())
+        );
+        env.insert("CODEX_SEND_SESSION".into(), "explicit".into());
+        assert!(
+            matches!(parse(surface, &argv, &env).unwrap(), Operation::Send { session, .. } if session == "explicit")
+        );
+        env.clear();
+    }
+    env.insert("CODEX_SEND_WINDOW".into(), "".into());
+    env.insert("CODEX_SEND_PANE".into(), "".into());
+    assert!(
+        matches!(parse("codex-send", &args(&["task"]), &env).unwrap(), Operation::Send { window, pane: None, .. } if window == "codex")
+    );
+    env.insert("CODEX_SEND_WINDOW".into(), "other".into());
+    assert!(
+        matches!(parse("codex-send-to", &args(&["sol", "task"]), &env).unwrap(), Operation::Send { window, .. } if window == "sol")
+    );
+}
+
+#[test]
+fn default_store_uses_desk_tmp() {
+    use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
+    let home = target::account_home()
+        .unwrap()
+        .join("desk/tmp")
+        .join(format!("s10x-home-{}", runtime::fresh_id().unwrap()));
+    for path in [&home, &home.join("desk"), &home.join("desk/tmp")] {
+        std::fs::DirBuilder::new().mode(0o700).create(path).unwrap();
+    }
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    assert_eq!(
+        execute(
+            Operation::Status("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()),
+            &Env::from([("HOME".into(), home.to_str().unwrap().into())]),
+            &mut &b""[..],
+            &mut out,
+            &mut err
+        ),
+        1
+    );
+    assert!(home.join("desk/tmp/relay-rust-store/ledger.json").is_file());
+    assert_eq!(
+        std::fs::metadata(home.join("desk/tmp/relay-rust-store"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
+    assert!(!home.join("desk/relay-rust-store").exists());
+    std::fs::remove_dir_all(home).unwrap();
 }

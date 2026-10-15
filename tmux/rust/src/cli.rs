@@ -9,12 +9,13 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nRequires explicit role routing and delivery authority. Store defaults to $HOME/desk/relay-rust-store; socket defaults to TMUX or the UID default socket. ANGELSTAR_RELAY_STORE and ANGELSTAR_RELAY_SOCKET override these defaults. Missing message reads stdin for relay, cc-msg, codex-send. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
+pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nCC_MSG_SESSION and CC_MSG_WINDOW select the exact Claude target. Codex helpers infer the caller session unless CODEX_SEND_SESSION is set; codex-send defaults to window codex. Store defaults to $HOME/desk/tmp/relay-rust-store; socket defaults to TMUX or the UID default socket. ANGELSTAR_RELAY_STORE and ANGELSTAR_RELAY_SOCKET override these defaults. Missing message reads stdin for all four helpers. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operation {
     Help,
     Send {
+        client: Option<char>,
         session: String,
         window: String,
         pane: Option<target::PaneId>,
@@ -44,6 +45,7 @@ fn id(s: &str) -> Result<String> {
 
 fn pane(env: &Env, key: &str) -> Result<Option<target::PaneId>> {
     env.get(key)
+        .filter(|v| !v.is_empty())
         .map(|v| {
             let n = v
                 .strip_prefix('%')
@@ -105,12 +107,11 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
             0,
         ),
         "codex-send" => (
-            required(env, "CODEX_SEND_SESSION")?,
-            match env.get("CODEX_SEND_WINDOW") {
-                Some(v) if v.is_empty() => return Err("empty CODEX_SEND_WINDOW".into()),
-                Some(v) => v.clone(),
-                None => "codex".into(),
-            },
+            env.get("CODEX_SEND_SESSION").cloned().unwrap_or_default(),
+            env.get("CODEX_SEND_WINDOW")
+                .filter(|v| !v.is_empty())
+                .cloned()
+                .unwrap_or("codex".into()),
             pane(env, "CODEX_SEND_PANE")?,
             0,
         ),
@@ -120,7 +121,7 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
                 .filter(|s| !s.is_empty() && !s.starts_with('-'))
                 .ok_or("missing exact window")?;
             (
-                required(env, "CODEX_SEND_SESSION")?,
+                env.get("CODEX_SEND_SESSION").cloned().unwrap_or_default(),
                 w.clone(),
                 pane(env, "CODEX_SEND_PANE")?,
                 1,
@@ -136,10 +137,12 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
     if !literal && words.first().is_some_and(|s| s.starts_with('-')) {
         return Err("unsupported message option; use -- for literal text".into());
     }
-    if surface == "codex-send-to" && words.is_empty() {
-        return Err("codex-send-to requires argv message".into());
-    }
     Ok(Operation::Send {
+        client: match surface {
+            "cc-msg" => Some('❯'),
+            "relay" => None,
+            _ => Some('›'),
+        },
         session,
         window,
         pane: selected,
@@ -237,6 +240,7 @@ fn execute(
     let request: Result<i32> = (|| {
         let op = match op {
             Operation::Send {
+                client,
                 session,
                 window,
                 pane,
@@ -252,6 +256,7 @@ fn execute(
                 };
                 runtime::normalize(&original)?;
                 Operation::Send {
+                    client,
                     session,
                     window,
                     pane,
@@ -267,7 +272,7 @@ fn execute(
         };
         let path = match env.get("ANGELSTAR_RELAY_STORE") {
             Some(_) => PathBuf::from(required(env, "ANGELSTAR_RELAY_STORE")?),
-            None => PathBuf::from(required(env, "HOME")?).join("desk/relay-rust-store"),
+            None => PathBuf::from(required(env, "HOME")?).join("desk/tmp/relay-rust-store"),
         };
         let mut store = store::Store::open(&path).map_err(|e| format!("store: {e:?}"))?;
         match op {
@@ -278,6 +283,7 @@ fn execute(
                 Ok(0)
             }
             Operation::Send {
+                client,
                 session,
                 window,
                 pane,
@@ -303,7 +309,8 @@ fn execute(
                     },
                 };
                 let ns = target::connect_delivery(&PathBuf::from(socket))?;
-                let prepared = runtime::Prepared::new(&ns, &session, &window, pane, &original)?;
+                let mut prepared = runtime::Prepared::new(&ns, &session, &window, pane, &original)?;
+                prepared.client = client;
                 let budgets = store::Budgets {
                     stop_ms: 30,
                     drain_ms: 30,
