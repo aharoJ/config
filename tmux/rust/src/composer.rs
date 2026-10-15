@@ -335,6 +335,73 @@ pub enum Screen {
     Staged(Vec<u8>),
     Hold,
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Receipt {
+    pub submitted: usize,
+    pub queued: usize,
+    pub queue_prompt: bool,
+}
+pub fn receipt(
+    glyph: char,
+    capture: &str,
+    x: usize,
+    y: usize,
+    width: usize,
+    wire: &str,
+) -> Receipt {
+    let rows: Vec<_> = capture.lines().collect();
+    if y >= rows.len() || width < 8 || !wire.bytes().all(|b| (32..=126).contains(&b)) {
+        return Receipt::default();
+    }
+    let normal = match glyph {
+        '❯' => format!("\x1b[38;5;246m\x1b[48;5;237m❯ \x1b[38;5;231m{wire}\x1b[39m"),
+        '›' => format!("\x1b[1m›\x1b[0m {wire}"),
+        _ => return Receipt::default(),
+    };
+    let mut result = Receipt {
+        submitted: rows[..y].iter().filter(|row| **row == normal).count(),
+        ..Default::default()
+    };
+    if glyph == '❯'
+        && y >= 6
+        && divider_width(rows[y - 1]) == Some(width)
+        && rows.get(y + 1).and_then(|row| divider_width(row)) == Some(width)
+        && rows[y - 5] == "\x1b[49m  \x1b[38;5;246mctrl+x ctrl+s to send now\x1b[39m"
+        && rows[y - 4].is_empty()
+        && rows[y - 2].is_empty()
+    {
+        result.queue_prompt = x == 2
+            && rows[y]
+                == "\x1b[38;5;246m❯\u{a0}\x1b[2m\x1b[39mPress up to edit queued messages\x1b[0m";
+        let queued = format!("\x1b[38;5;246m\x1b[48;5;237m❯ {wire}\x1b[39m");
+        for raw in rows[..=y - 6]
+            .iter()
+            .rev()
+            .take_while(|raw| raw.starts_with("\x1b[38;5;246m\x1b[48;5;237m❯ "))
+        {
+            result.queued += usize::from(*raw == queued);
+        }
+    }
+    if glyph == '›' && y >= 3 && rows[y - 1].is_empty() {
+        result.queue_prompt = x == 2
+            && rows[y] == "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m"
+            && classify(capture, glyph, x, y, width) == Composer::EmptyCandidate;
+        let header = "\x1b[2m• \x1b[0mMessages to be submitted after next tool call\x1b[2m (press \x1b[0;1mesc\x1b[0;2m to interrupt and send immediately)\x1b[0m";
+        if let Some(start) = rows[..y - 1].iter().rposition(|raw| *raw == header) {
+            if rows[start + 1..y - 1]
+                .iter()
+                .all(|raw| raw.starts_with("\x1b[2m  ↳ ") && raw.ends_with("\x1b[0m"))
+            {
+                let queued = format!("\x1b[2m  ↳ {wire}\x1b[0m");
+                result.queued = rows[start + 1..y - 1]
+                    .iter()
+                    .filter(|raw| **raw == queued)
+                    .count();
+            }
+        }
+    }
+    result
+}
 /// Conservative one-line staged-byte oracle. Unrecognized layouts, styles,
 /// wrapping, cursor edits and Unicode wires cannot authorize Enter.
 pub fn screen(glyph: char, capture: &str, x: usize, y: usize, width: usize, wire: &str) -> Screen {

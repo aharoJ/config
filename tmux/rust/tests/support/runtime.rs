@@ -148,6 +148,7 @@ pub(super) fn fixture_view(
         return Err("unknown fixture geometry".into());
     }
     Ok(View {
+        receipt: Default::default(),
         bytes,
         busy: value["busy"].as_bool().ok_or("busy missing")?,
         copy: v[4] != 0,

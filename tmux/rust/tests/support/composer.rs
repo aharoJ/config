@@ -1,5 +1,80 @@
 use super::*;
 #[test]
+fn captured_busy_queue_receipts() {
+    let claude = include_str!("../fixtures/claude-busy-queued.ansi");
+    let codex = include_str!("../fixtures/codex-busy-queued.ansi");
+    for (glyph, capture, y, wire, hint, ghost) in [
+        (
+            '❯',
+            claude,
+            20,
+            "sol (config-tt:sol): #s11r9stable Reply ACK_S11R9_STABLE only; no tools.",
+            "ctrl+x ctrl+s to send now",
+            "Press up to edit queued messages",
+        ),
+        (
+            '›',
+            codex,
+            19,
+            "sol (config-tt:sol): #s11k9stable Reply ACK_S11K9_STABLE only; no tools.",
+            "Messages to be submitted after next tool call",
+            "Ask Codex to do anything",
+        ),
+    ] {
+        let observed = receipt(glyph, capture, 2, y, 180, wire);
+        assert_eq!(
+            observed,
+            Receipt {
+                submitted: 0,
+                queued: 1,
+                queue_prompt: true
+            }
+        );
+        assert_eq!(receipt(glyph, capture, 2, y, 180, "unrelated").queued, 0);
+        assert_eq!(
+            receipt(
+                glyph,
+                &capture.replace(hint, "unknown layout"),
+                2,
+                y,
+                180,
+                wire
+            )
+            .queued,
+            0
+        );
+        assert!(
+            !receipt(
+                glyph,
+                &capture.replace(ghost, "unknown prompt"),
+                2,
+                y,
+                180,
+                wire
+            )
+            .queue_prompt
+        );
+        assert!(!receipt(glyph, capture, 3, y, 180, wire).queue_prompt);
+        assert_eq!(receipt(glyph, capture, 2, y + 1, 180, wire).queued, 0);
+        let staged = capture.replace(ghost, wire);
+        let before = receipt(glyph, &staged, wire.len() + 2, y, 180, wire);
+        assert_eq!(before.queued, observed.queued);
+        assert!(!before.queue_prompt);
+        let accepted = match glyph {
+            '❯' => format!("\x1b[38;5;246m\x1b[48;5;237m❯ \x1b[38;5;231m{wire}\x1b[39m\n"),
+            _ => format!("\x1b[1m›\x1b[0m {wire}\n"),
+        };
+        assert_eq!(
+            receipt(glyph, &accepted, wire.len() + 2, 0, 180, wire).submitted,
+            0
+        );
+        assert_eq!(
+            receipt(glyph, &(accepted + capture), 2, y + 1, 180, wire).submitted,
+            1
+        );
+    }
+}
+#[test]
 fn codex_162_current_composer() {
     let capture = include_str!("../../../tests/fixtures/codex-162-empty-composer.ansi");
     assert_eq!(classify(capture, '›', 2, 0, 215), Composer::EmptyCandidate);

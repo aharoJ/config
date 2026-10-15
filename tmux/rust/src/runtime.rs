@@ -450,6 +450,7 @@ impl Prepared {
     }
 }
 struct View {
+    receipt: composer::Receipt,
     bytes: Vec<u8>,
     busy: bool,
     copy: bool,
@@ -474,6 +475,7 @@ pub struct Runtime<'a> {
     evidence: Evidence,
     geometry: Option<(u64, u64, u64)>,
     closed: bool,
+    receipt_before: Option<composer::Receipt>,
     #[cfg(test)]
     fixture: Option<std::path::PathBuf>,
     #[cfg(test)]
@@ -590,6 +592,7 @@ impl<'a> Runtime<'a> {
             },
             geometry: None,
             closed: false,
+            receipt_before: None,
             #[cfg(test)]
             fixture: tests::cli_fixture(),
             #[cfg(test)]
@@ -694,6 +697,14 @@ impl<'a> Runtime<'a> {
             composer::Screen::Hold => (Vec::new(), true),
         };
         Ok(View {
+            receipt: composer::receipt(
+                client.glyph,
+                &capture,
+                x as usize,
+                y as usize,
+                width as usize,
+                &self.prepared.wire,
+            ),
             bytes,
             busy,
             copy,
@@ -707,7 +718,26 @@ impl<'a> Runtime<'a> {
         view.bytes == self.prepared.wire.as_bytes()
             && !view.busy
             && !view.copy
-            && self.geometry == Some((view.width, view.height, view.y))
+            && self.geometry.is_some_and(|(width, height, y)| {
+                width == view.width && height == view.height && (self.receipt_mode() || y == view.y)
+            })
+    }
+    fn receipt_mode(&self) -> bool {
+        self.client
+            .as_ref()
+            .is_ok_and(|client| self.prepared.client == Some(client.glyph))
+    }
+    fn wait_for_renderer(&mut self) -> Result<State> {
+        if self.state == State::WaitingForFocusRelease {
+            return Ok(self.state);
+        }
+        self.commit(
+            State::WaitingForFocusRelease,
+            Evidence {
+                diagnostics: vec!["renderer changed before unreleased Enter; no new input".into()],
+                ..Default::default()
+            },
+        )
     }
     pub fn tick(&mut self) -> Result<State> {
         match self.state {
@@ -859,7 +889,9 @@ impl<'a> Runtime<'a> {
         self.verify()?;
         let t = &self.prepared.target;
         let v = self.view()?;
-        if self.geometry != Some((v.width, v.height, v.y)) {
+        if self.geometry != Some((v.width, v.height, v.y))
+            && !(self.receipt_mode() && self.staged(&v))
+        {
             return Err("geometry changed before effect".into());
         }
         let literal = |s: &str| {
@@ -961,11 +993,19 @@ impl<'a> Runtime<'a> {
             evidence,
         )?;
         if enter {
-            let final_view = self.view()?;
+            let final_view = match self.view() {
+                Ok(view) => view,
+                Err(error) if error == "renderer changed during capture" => {
+                    self.producers[i].input.take();
+                    return Ok("unstable".into());
+                }
+                Err(error) => return Err(error),
+            };
             if !self.staged(&final_view) {
                 self.unknown("input change before Enter release")?;
                 return Err("staged input changed".into());
             }
+            self.receipt_before = Some(final_view.receipt);
         } else {
             let ready = self.view()?;
             if ready.busy
@@ -1006,12 +1046,21 @@ impl<'a> Runtime<'a> {
             .as_secs();
         let before = match self.view() {
             Ok(v) => v,
+            Err(error) if self.receipt_mode() && error == "renderer changed during capture" => {
+                return self.wait_for_renderer()
+            }
             Err(error) => return self.unknown(&format!("staged-view: {error}")),
         };
         if !self.staged(&before) {
             return self.unknown("staged bytes or geometry changed");
         }
-        let condition = self.condition()?;
+        let condition = match self.condition() {
+            Ok(condition) => condition,
+            Err(error) if self.receipt_mode() && error == "renderer changed during capture" => {
+                return self.wait_for_renderer()
+            }
+            Err(error) => return Err(error),
+        };
         self.commit(
             State::SubmitIntent,
             Evidence {
@@ -1035,8 +1084,14 @@ impl<'a> Runtime<'a> {
             quote(&no_activity_condition(second)),
             quote(&guarded)
         );
-        let result = self.effect(&no_focus_condition(&pane), &action, true)?;
+        let focus = if self.receipt_mode() {
+            "1".into()
+        } else {
+            no_focus_condition(&pane)
+        };
+        let result = self.effect(&focus, &action, true)?;
         match result.trim() {
+            "unstable" => self.wait_for_renderer(),
             "focused" | "activity" => self.commit(
                 State::WaitingForFocusRelease,
                 Evidence {
@@ -1044,6 +1099,30 @@ impl<'a> Runtime<'a> {
                     ..Default::default()
                 },
             ),
+            "applied" if self.receipt_mode() => {
+                let prior = self
+                    .receipt_before
+                    .ok_or("pre-Enter receipt observation absent")?;
+                let deadline = Instant::now() + Duration::from_secs(2);
+                loop {
+                    if let Ok(after) = self.view() {
+                        if !after.copy
+                            && after.width == before.width
+                            && after.height == before.height
+                            && ((after.receipt.queue_prompt && after.receipt.queued > prior.queued)
+                                || (!after.busy
+                                    && after.bytes.is_empty()
+                                    && after.receipt.submitted > prior.submitted))
+                        {
+                            return self.commit(State::Submitted, Evidence { submission_proof: Some("bound native UI positively accepted exact own wire after guarded Enter".into()), diagnostics: vec!["native acceptance observed; application work completion unproved".into()], ..Default::default() });
+                        }
+                    }
+                    if Instant::now() >= deadline {
+                        return self.unknown("guarded Enter completed; native acceptance unproved");
+                    }
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+            }
             "applied" => self.commit(
                 State::Submitted,
                 Evidence {
