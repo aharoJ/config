@@ -1053,6 +1053,9 @@ impl Client {
     pub fn current(&self) -> Result<()> {
         self.verify()
     }
+    pub(crate) fn process_identity(&self) -> ProcessIdentity {
+        self.process
+    }
     pub fn verify(&self) -> Result<()> {
         if !kernel_ancestry(self.process.pid)?.contains(&self.pane) {
             return Err("client ancestry changed".into());
