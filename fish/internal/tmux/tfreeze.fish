@@ -11,7 +11,7 @@ function tfreeze --description 'tmux: capture frozen production server'
 
     set -l target /private/tmp/tmux-501/default
     set -l output_root "$HOME/desk/incidents/tmux"
-    set -l capture "$HOME/.config/tmux/tools/tmux-freeze-capture.fish"
+    set -l capture "$HOME/.local/bin/tmux-freeze-capture.fish"
     set -l lab 0
 
     if set -q TMUX_SHORTCUTS_LAB
