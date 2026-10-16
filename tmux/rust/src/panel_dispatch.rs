@@ -1159,7 +1159,7 @@ fn verify(args: &Args) -> Result<Value> {
 fn collect(args: &Args) -> Result<Value> {
     crate::panel_collect::collect(args)
 }
-const HELP:&str="usage: panel-dispatch <prepare|launch|own|wait|collect|retain|verify|cleanup> [options]\nEvery phase requires --sha256 and its explicit path/hash authority options.\n";
+const HELP:&str="usage: panel-dispatch <prepare|launch|own|wait|collect|retain|verify|cleanup> [options]\n       panel-dispatch codex-path\nEvery phase requires --sha256 and its explicit path/hash authority options.\n";
 fn parse(args: &[String]) -> Result<Option<(String, Args)>> {
     if args == ["--help"] || args == ["-h"] {
         return Ok(None);
@@ -1226,6 +1226,18 @@ fn parse(args: &[String]) -> Result<Option<(String, Args)>> {
     Ok(Some((phase.clone(), values)))
 }
 pub fn main_entry(args: &[String]) -> i32 {
+    if args == ["codex-path"] {
+        return match crate::panel_launch::executable("codex") {
+            Ok(path) => {
+                println!("{}", path.display());
+                0
+            }
+            Err(error) => {
+                eprintln!("panel-dispatch: {error}");
+                1
+            }
+        };
+    }
     let (phase, args) = match parse(args) {
         Ok(Some(v)) => v,
         Ok(None) => {

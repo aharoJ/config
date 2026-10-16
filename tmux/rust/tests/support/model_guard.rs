@@ -1,5 +1,5 @@
 use super::*;
-const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../tests/fixtures");
+const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/legacy");
 fn fixture(name: &str) -> String {
     std::fs::read_to_string(format!("{FIXTURES}/{name}")).unwrap()
 }

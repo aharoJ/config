@@ -149,10 +149,7 @@ function __tai_spawn
     end
     set -l commandline (string join ' ' -- $parts)
 
-    set -l pane (tmux new-window -t "=$session:" -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args "$fish_bin -l")
-    or return $status
-
-    tmux send-keys -t "$pane" "$commandline" Enter
+    tmux new-window -t "=$session:" -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args -- "$fish_bin" -C "$commandline"
     or return $status
     echo "tai: $window_name -> $commandline"
 end
@@ -179,7 +176,9 @@ function __tai_seat
             set isolation --sandbox
         case astra
             set trust_kind codex
-            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home _agent_limit codex --no-daemon --strict-config
+            set -l native_codex ($HOME/.local/bin/panel-dispatch codex-path)
+            or return $status
+            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home _agent_limit "$native_codex" --no-daemon --strict-config
             set defaults -m gpt-6-sol -c 'model_reasoning_effort="low"'
             set isolation -a never -c 'default_permissions="panel-seat"' -c 'permissions.panel-seat.filesystem={":root"="deny",":minimal"="read",":slash_tmp"="deny",":workspace_roots"="write"}' -c 'permissions.panel-seat.network.enabled=false'
             __tai_validate codex $argv
@@ -213,7 +212,7 @@ function __tai_seat
         end
     end
 
-    $HOME/.config/tmux/tools/panel-seat-trust $trust_kind "$launch_dir"
+    $HOME/.local/bin/panel-seat-trust $trust_kind "$launch_dir"
     or return $status
 
     set -l seat_env "--env=TMPDIR=$launch_dir/scratch"

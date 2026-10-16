@@ -709,5 +709,5 @@ pub(crate) fn entry(args: &[String]) -> i32 {
 }
 
 #[cfg(test)]
-#[path = "../../tests/codex_new_chat.rs"]
+#[path = "../tests/support/codex_new_chat.rs"]
 mod tests;

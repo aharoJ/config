@@ -460,6 +460,8 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
         "codex-new-guard" => return crate::new_guard::entry(args),
         "panel-dispatch" => return crate::panel_dispatch::main_entry(args),
         "panel-seat-trust" => return crate::panel_trust::main_entry(args),
+        "panel-catch" => return crate::panel_catch::entry(args),
+        "mem-cpu" | "mem-cpu.sh" => return crate::mem_cpu::entry(args),
         _ => (),
     }
     INTERRUPTED.store(false, Ordering::Relaxed);

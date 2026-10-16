@@ -95,8 +95,6 @@ struct Smoke {
     pane_pid: String,
     name: String,
     children: Vec<Child>,
-    live: bool,
-    passed: bool,
 }
 impl Smoke {
     fn owned(&self) -> bool {
@@ -162,17 +160,6 @@ impl Smoke {
 }
 impl Drop for Smoke {
     fn drop(&mut self) {
-        if !self.passed && self.live {
-            let status = Command::new("/bin/ln")
-                .arg("-sfn")
-                .arg(
-                    PathBuf::from(std::env::var_os("HOME").unwrap())
-                        .join(".scripts/tmux/pane-watch/pane-watch.sh"),
-                )
-                .arg(PathBuf::from(std::env::var_os("HOME").unwrap()).join(".local/bin/pane-watch"))
-                .status();
-            let _ = fs::write(self.root.join("rollback.txt"), format!("{status:?}\n"));
-        }
         for child in &mut self.children {
             if child.try_wait().ok().flatten().is_none() {
                 let _ = child.kill();
@@ -242,8 +229,6 @@ fn release_watch_smoke() {
         pane_pid: parts[2].into(),
         name,
         children: vec![],
-        live: phase == "live",
-        passed: false,
     };
     save(
         &root.join("launch.json"),
@@ -404,7 +389,6 @@ fn release_watch_smoke() {
         &root.join("result.json"),
         &json!({"status":"PASS","phase":phase,"two_real_hot_turns":true,"hot":"PW_RELEASE_OMEGA","resize":[45,35,45],"replaced_exit":143,"target_exit":3,"watcher_lock_absent":true,"owned_pane_process_absent":true,"focus_unchanged":true,"executable":executable}),
     );
-    smoke.passed = true;
 }
 
 #[test]

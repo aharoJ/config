@@ -927,7 +927,7 @@ mod tests {
     }
     fn replay(name: &str, ack: bool) -> Vec<String> {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../tools/pane-watch/tests/fx")
+            .join("tests/fixtures/watch")
             .join(name);
         let max = fs::read_dir(&root)
             .unwrap()
@@ -1042,7 +1042,7 @@ mod tests {
     }
     pub(super) fn fixture(name: &str, n: usize) -> String {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../tools/pane-watch/tests/fx")
+            .join("tests/fixtures/watch")
             .join(name);
         fs::read_to_string(root.join(format!("{n}.full")))
             .or_else(|_| fs::read_to_string(root.join(format!("{n}.vis"))))
@@ -1057,7 +1057,7 @@ mod tests {
             ("ground_queue", "queued"),
         ] {
             let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../tools/pane-watch/tests/fx")
+                .join("tests/fixtures/watch")
                 .join(name);
             if root.exists() {
                 let f = extract(&fixture(name, 1), 59);

@@ -1,7 +1,7 @@
 use super::*;
 #[test]
 fn agy_busy_receipt_does_not_authorize_input() {
-    let capture = include_str!("../../../tests/fixtures/rt2-agy-busy-generating.ansi");
+    let capture = include_str!("../fixtures/legacy/rt2-agy-busy-generating.ansi");
     let y = capture
         .lines()
         .position(|line| line == "\x1b[94m>\x1b[39m")
@@ -309,7 +309,7 @@ fn captured_busy_queue_receipts() {
 }
 #[test]
 fn codex_162_current_composer() {
-    let capture = include_str!("../../../tests/fixtures/codex-162-empty-composer.ansi");
+    let capture = include_str!("../fixtures/legacy/codex-162-empty-composer.ansi");
     assert_eq!(classify(capture, '›', 2, 0, 215), Composer::EmptyCandidate);
     assert_eq!(screen('›', capture, 2, 0, 215, "relay: #x"), Screen::Empty);
 }
