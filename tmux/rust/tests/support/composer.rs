@@ -1,5 +1,74 @@
 use super::*;
 #[test]
+fn captured_fresh_and_background_codex_acceptance() {
+    for (capture, y, width, wire) in [
+        (include_str!("../fixtures/codex-fresh-accepted.ansi"), 12, 149, "s15x-haiku-final (config-tt:s15x-haiku-final): #s15xfresh16 Reply ACK_S15X_FRESH16 only; no tools."),
+        (include_str!("../fixtures/codex-background-accepted.ansi"), 47, 183, "s15x-haiku-final (config-tt:s15x-haiku-final): #s15xbgprobe16 Reply ACK_S15X_BG16 only; no tools."),
+    ] {
+        assert_eq!(classify(capture, '›', 2, y, width), Composer::EmptyCandidate);
+        assert_eq!(receipt('›', capture, 2, y, width, wire).submitted, 1);
+        for changed in [capture.replace(wire, &format!("{wire} suffix")), capture.replace("\x1b[1;2m› ", "\x1b[2m› ")] {
+            assert_ne!(changed, capture);
+            assert_eq!(receipt('›', &changed, 2, y, width, wire).submitted, 0);
+        }
+        assert_eq!(receipt('›', capture, 2, y, width, "unrelated").submitted, 0);
+        assert!(ready('›', capture, 2, y, width));
+        assert!(!ready('›', capture, 3, y, width));
+        assert!(!ready('›', "", 0, 0, width));
+    }
+}
+#[test]
+fn codex_queue_uses_the_observed_background_ghost() {
+    let old = include_str!("../fixtures/codex-busy-queued.ansi");
+    let capture = old.replace("\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m", "\x1b[1m›\x1b[0m\x1b[48;2;57;57;71m \x1b[2mAsk Codex to do anything\x1b[0m\x1b[48;2;57;57;71m");
+    let wire = "sol (config-tt:sol): #s11k9stable Reply ACK_S11K9_STABLE only; no tools.";
+    assert_ne!(capture, old);
+    assert_eq!(
+        receipt('›', &capture, 2, 19, 180, wire),
+        Receipt {
+            submitted: 0,
+            queued: 1,
+            queue_prompt: true
+        }
+    );
+    assert!(
+        !receipt(
+            '›',
+            &capture.replace("57;57;71", "57;57;72"),
+            2,
+            19,
+            180,
+            wire
+        )
+        .queue_prompt
+    );
+}
+#[test]
+fn captured_claude_generating_queue_without_spinner_row() {
+    let capture = include_str!("../fixtures/claude-generating-queued.ansi");
+    let wire = "sol (config-tt:sol): #s15xgenreal16 Reply ACK_S15X_GEN_REAL16 only after your current answer; no tools.";
+    assert_eq!(
+        receipt('❯', capture, 2, 45, 183, wire),
+        Receipt {
+            submitted: 0,
+            queued: 1,
+            queue_prompt: true
+        }
+    );
+    for changed in [
+        capture.replace(wire, &format!("{wire} suffix")),
+        capture.replace("ctrl+x ctrl+s to send now", "ctrl+x ctrl+s unknown"),
+        capture.replace("messages", "drafts"),
+        capture.replace("48;5;237", "48;5;238"),
+    ] {
+        assert_ne!(changed, capture);
+        let receipt = receipt('❯', &changed, 2, 45, 183, wire);
+        assert!(!receipt.queue_prompt || receipt.queued == 0);
+    }
+    assert!(!receipt('❯', capture, 3, 45, 183, wire).queue_prompt);
+    assert_eq!(receipt('❯', capture, 2, 45, 183, "unrelated").queued, 0);
+}
+#[test]
 fn captured_long_lived_codex_acceptance() {
     let composer = include_str!("../fixtures/codex-sol-live-composer.ansi");
     let accepted = include_str!("../fixtures/codex-sol-accepted-line.ansi");
@@ -169,6 +238,12 @@ fn codex_162_current_composer() {
     let capture = include_str!("../../../tests/fixtures/codex-162-empty-composer.ansi");
     assert_eq!(classify(capture, '›', 2, 0, 215), Composer::EmptyCandidate);
     assert_eq!(screen('›', capture, 2, 0, 215, "relay: #x"), Screen::Empty);
+}
+#[test]
+fn startup_ghost_without_footer_cannot_authorize_paste() {
+    let capture = "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m\n\n\n";
+    assert_eq!(classify(capture, '›', 2, 0, 180), Composer::EmptyCandidate);
+    assert!(!ready('›', capture, 2, 0, 180));
 }
 
 #[test]

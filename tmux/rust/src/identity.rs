@@ -487,6 +487,17 @@ pub fn validate_delivery(args: &[&str], nested: bool) -> Result<()> {
         }
         "send-keys"
             if nested
+                && args.len() == 6
+                && args[1] == "-t"
+                && pane(args[2])
+                && args[3] == "-N"
+                && args[4].parse::<u16>().is_ok_and(|n| n > 0)
+                && args[5] == "BSpace" =>
+        {
+            Ok(())
+        }
+        "send-keys"
+            if nested
                 && args.len() == 4
                 && args[1] == "-t"
                 && pane(args[2])
@@ -1016,6 +1027,10 @@ impl Client {
                             249556880 => Some((
                                 '❯',
                                 "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",
+                            )),
+                            250541840 => Some((
+                                '❯',
+                                "1f04c69e1c24e4d0a716a863af0aad8fc64d49a499334c29701f073700276b99",
                             )),
                             247931696 => Some((
                                 '❯',

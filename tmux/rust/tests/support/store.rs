@@ -209,6 +209,24 @@ fn serialization() {
         .is_err());
 }
 #[test]
+fn brief_contention_waits_without_replaying_a_transition() {
+    let path = root();
+    let (mut store, mut handle) = accepted(&path);
+    let lock = store.root_lock().unwrap();
+    let worker = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(120));
+        drop(lock);
+    });
+    let start = std::time::Instant::now();
+    store
+        .transition(&mut handle, State::InputIntent, intent())
+        .unwrap();
+    worker.join().unwrap();
+    assert!(start.elapsed() >= std::time::Duration::from_millis(100));
+    assert!(start.elapsed() < std::time::Duration::from_secs(1));
+    assert_eq!(store.attempt(ATTEMPT).unwrap().history.len(), 2);
+}
+#[test]
 fn durable_barriers() {
     let path = root();
     let (mut store, mut handle) = accepted(&path);

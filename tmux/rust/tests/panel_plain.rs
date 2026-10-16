@@ -543,6 +543,9 @@ fn native_owned_custody_cleanup() {
             "-P",
             "-F",
             "#{pane_id}",
+            "--",
+            "/bin/sleep",
+            "120",
         ])
         .output()
         .unwrap();
