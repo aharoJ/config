@@ -98,6 +98,34 @@ fn captured_long_lived_codex_acceptance() {
     );
 }
 #[test]
+fn captured_claude_busy_queue_with_status_and_tip() {
+    let capture = include_str!("../fixtures/claude-busy-queued-with-tip.ansi");
+    let wire = "sol (config-tt:sol): #rf-p6 -- full: ~/desk/tmp/relay-rust-store/d1cc2d94966b184255b27c7813766208.original";
+    assert_eq!(
+        receipt('❯', capture, 2, 28, 149, wire),
+        Receipt {
+            submitted: 0,
+            queued: 1,
+            queue_prompt: true
+        }
+    );
+    for changed in [
+        capture.replace(wire, &format!("{wire} suffix")),
+        capture.replace("ctrl+x ctrl+s to send now", "unknown queue hint"),
+        capture.replace("Press up to edit queued messages", "unknown prompt"),
+        capture.replace("48;5;237", "48;5;238"),
+        capture.replace(&"─".repeat(149), &"─".repeat(148)),
+    ] {
+        assert_ne!(changed, capture);
+        let observed = receipt('❯', &changed, 2, 28, 149, wire);
+        assert!(!observed.queue_prompt || observed.queued == 0);
+    }
+    assert!(!receipt('❯', capture, 3, 28, 149, wire).queue_prompt);
+    assert_eq!(receipt('❯', capture, 2, 28, 149, "unrelated").queued, 0);
+    assert_eq!(receipt('›', capture, 2, 28, 149, wire).queued, 0);
+    assert_eq!(receipt('❯', capture, 2, 27, 149, wire).queued, 0);
+}
+#[test]
 fn captured_claude_busy_queue_word_styles() {
     let capture = include_str!("../fixtures/claude-busy-queued-word-styles.ansi");
     let wire = "sol (config-tt:sol): #s12r11rust Reply ACK_S12R11_RUST only; no tools.";
