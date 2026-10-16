@@ -126,6 +126,8 @@ pub enum Composer {
 }
 
 pub fn classify(capture: &str, glyph: char, x: usize, y: usize, width: usize) -> Composer {
+    let normalized = crate::model_guard::normalize(capture, true);
+    let capture = normalized.as_str();
     if width == 0 || x > width {
         return Composer::Unrecognized;
     }
@@ -362,6 +364,8 @@ pub fn receipt(
     width: usize,
     wire: &str,
 ) -> Receipt {
+    let normalized = crate::model_guard::normalize(capture, true);
+    let capture = normalized.as_str();
     let rows: Vec<_> = capture.lines().collect();
     if y >= rows.len() || width < 8 || !wire.bytes().all(|b| (32..=126).contains(&b)) {
         return Receipt::default();
@@ -447,6 +451,8 @@ pub fn receipt(
 /// Conservative one-line staged-byte oracle. Unrecognized layouts, styles,
 /// wrapping, cursor edits and Unicode wires cannot authorize Enter.
 pub fn screen(glyph: char, capture: &str, x: usize, y: usize, width: usize, wire: &str) -> Screen {
+    let normalized = crate::model_guard::normalize(capture, true);
+    let capture = normalized.as_str();
     if classify(capture, glyph, x, y, width) == Composer::EmptyCandidate {
         return Screen::Empty;
     }
