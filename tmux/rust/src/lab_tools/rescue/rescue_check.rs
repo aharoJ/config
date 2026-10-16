@@ -136,6 +136,78 @@ mod tests {
     }
 
     #[test]
+    fn delayed_breakpoint_stop_is_confirmed_before_final_checks() {
+        let mut replies = std::collections::VecDeque::from([
+            ("process status", "Process 123 is running.\n"),
+            ("process status", "Process 123 is running.\n"),
+            ("process status", "Process 123 stopped\n"),
+            (
+                "thread info",
+                "thread #1: tid = 0x12, stop reason = breakpoint 7.1\n",
+            ),
+        ]);
+        await_breakpoint(Instant::now() + Duration::from_secs(1), 123, 7, |command| {
+            let (expected, reply) = replies.pop_front().expect("unexpected debugger command");
+            assert_eq!(command, expected);
+            Ok(reply.into())
+        })
+        .unwrap();
+        assert!(replies.is_empty());
+    }
+
+    #[test]
+    fn breakpoint_wait_rejects_wrong_process_or_stop_reason() {
+        for (status, thread, error) in [
+            (
+                "Process 124 stopped",
+                "",
+                "pid-mismatch-or-process-not-stopped",
+            ),
+            (
+                "Process 123 stopped",
+                "thread #1: tid = 0x12, stop reason = breakpoint 8.1",
+                "breakpoint-mismatch-or-unexpected-stop-reason",
+            ),
+            (
+                "Process 123 stopped",
+                "thread #1: tid = 0x12, stop reason = signal SIGSTOP",
+                "breakpoint-mismatch-or-unexpected-stop-reason",
+            ),
+        ] {
+            let result =
+                await_breakpoint(Instant::now() + Duration::from_secs(1), 123, 7, |command| {
+                    Ok(if command == "process status" {
+                        status
+                    } else {
+                        thread
+                    }
+                    .into())
+                });
+            assert_eq!(result.unwrap_err(), error);
+        }
+    }
+
+    #[test]
+    fn breakpoint_wait_keeps_deadline_and_command_failure() {
+        assert_eq!(
+            await_breakpoint(Instant::now(), 123, 7, |_| panic!("deadline was extended"))
+                .unwrap_err(),
+            "debugger transaction timed out"
+        );
+        let mut calls = 0;
+        let result = await_breakpoint(Instant::now() + Duration::from_secs(1), 123, 7, |_| {
+            calls += 1;
+            if calls == 1 {
+                Ok("Process 123 is running.".into())
+            } else {
+                Err("debugger transaction interrupted".into())
+            }
+        });
+        assert_eq!(result.unwrap_err(), "debugger transaction interrupted");
+        assert_eq!(calls, 2);
+    }
+
+    #[test]
     fn breakpoint_reason_cannot_come_from_a_thread_name() {
         assert!(stopped_at_breakpoint(
             "thread #1: tid = 0x12, stop reason = breakpoint 1.1",

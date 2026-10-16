@@ -66,6 +66,9 @@ impl Debugger {
         d.command("settings set auto-confirm true")?;
         Ok(d)
     }
+    pub(super) fn deadline(&self) -> Instant {
+        self.deadline
+    }
     pub(super) fn command(&mut self, command: &str) -> Result<String> {
         if command.contains(['\r', '\n']) {
             return Err("invalid debugger command".into());

@@ -306,9 +306,11 @@ fn create(root: &Path) -> Owner {
                 "-n",
                 "hold",
                 "--",
+                &runtime().to_string_lossy(),
+                "--surface",
+                "tmux-lab",
+                "hold",
             ])
-            .arg(runtime())
-            .args(["--surface", "tmux-lab", "hold"])
             .env_remove("TMUX")
             .env_remove("TMUX_PANE"),
         5,

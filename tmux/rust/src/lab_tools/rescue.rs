@@ -418,6 +418,43 @@ struct Proof<'a> {
     bound: u32,
     deadline: u64,
 }
+fn await_breakpoint(
+    deadline: Instant,
+    pid: u32,
+    id: u64,
+    mut command: impl FnMut(&str) -> Result<String>,
+) -> Result<()> {
+    loop {
+        if Instant::now() >= deadline {
+            return Err("debugger transaction timed out".into());
+        }
+        let status = command("process status")?;
+        if Instant::now() >= deadline {
+            return Err("debugger transaction timed out".into());
+        }
+        if status
+            .lines()
+            .any(|l| l == format!("Process {pid} stopped"))
+        {
+            let thread = command("thread info")?;
+            if Instant::now() >= deadline {
+                return Err("debugger transaction timed out".into());
+            }
+            return if rescue_check::stopped_at_breakpoint(&thread, id) {
+                Ok(())
+            } else {
+                Err("breakpoint-mismatch-or-unexpected-stop-reason".into())
+            };
+        }
+        if !status
+            .lines()
+            .any(|l| l == format!("Process {pid} is running."))
+        {
+            return Err("pid-mismatch-or-process-not-stopped".into());
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
 fn final_transaction(c: &Config, e: &mut Evidence, p: Proof<'_>) -> Transaction {
     let Proof {
         exe,
@@ -456,6 +493,7 @@ fn final_transaction(c: &Config, e: &mut Evidence, p: Proof<'_>) -> Transaction 
         if !rescue_check::fresh(epoch_ms(), deadline) {
             return Err("observation-expired".into());
         }
+        await_breakpoint(d.deadline(), c.pid, id, |command| d.command(command))?;
         let status = d.command("process status")?;
         if !status
             .lines()
@@ -1040,6 +1078,7 @@ mod tests {
                     "lab-p4x-rescue",
                     "-n",
                     "hold",
+                    "--",
                     &binary.to_string_lossy(),
                     "--surface",
                     "tmux-lab",
