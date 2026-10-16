@@ -462,6 +462,15 @@ struct View {
     x: u64,
     y: u64,
 }
+impl View {
+    fn accepted(&self, prior: composer::Receipt, dimensions: (u64, u64), applied: bool) -> bool {
+        !self.copy
+            && (self.width, self.height) == dimensions
+            && ((self.receipt.queue_prompt && self.receipt.queued > prior.queued)
+                || self.receipt.submitted > prior.submitted
+                || (applied && !self.busy && self.bytes.is_empty()))
+    }
+}
 pub struct Runtime<'a> {
     ns: &'a Namespace,
     prepared: Prepared,
@@ -479,6 +488,8 @@ pub struct Runtime<'a> {
     geometry: Option<(u64, u64, u64)>,
     closed: bool,
     receipt_before: Option<composer::Receipt>,
+    enter_pending: bool,
+    enter_applied: bool,
     ready_since: Option<(Instant, u64, u64, u64)>,
     binding_since: Instant,
     #[cfg(test)]
@@ -598,6 +609,8 @@ impl<'a> Runtime<'a> {
             geometry: None,
             closed: false,
             receipt_before: None,
+            enter_pending: false,
+            enter_applied: false,
             ready_since: None,
             binding_since: Instant::now(),
             #[cfg(test)]
@@ -882,9 +895,9 @@ impl<'a> Runtime<'a> {
         self.ns.directory().sync_all().map_err(|e| e.to_string())?;
         self.marked = true;
         checkpoint("paste-launch:before");
-        let condition = self.condition()?;
+        let condition = self.condition_for(&ready)?;
         let action = format!("paste-buffer -b {buffer} -t {pane} ; display-message -p applied");
-        let result = self.effect(&condition, &action, false)?;
+        let result = self.effect(&condition, &action, false, &ready)?;
         checkpoint("paste-observation");
         if result.trim() == "refused" {
             return self.commit(
@@ -909,15 +922,7 @@ impl<'a> Runtime<'a> {
         let deadline = Instant::now() + Duration::from_secs(2);
         loop {
             match self.view() {
-                Ok(after)
-                    if after.bytes == wire.as_bytes()
-                        && (after.width, after.height, after.y)
-                            == (before.width, before.height, before.y)
-                        && !after.busy
-                        && !after.copy =>
-                {
-                    break
-                }
+                Ok(after) if self.staged(&after) => break,
                 Ok(after) if !after.bytes.is_empty() => {
                     return self.unknown("post-paste bytes changed; no Enter")
                 }
@@ -928,15 +933,15 @@ impl<'a> Runtime<'a> {
         self.geometry = Some((before.width, before.height, before.y));
         self.evidence.paste_proof = Some("exact own staged bytes and unchanged geometry".into());
         self.commit(State::Pasted, self.evidence.clone())?;
+        self.ready_since = None;
         checkpoint("after-postcheck");
         self.enter()
     }
-    fn condition(&self) -> Result<String> {
+    fn condition_for(&self, v: &View) -> Result<String> {
         self.verify()?;
         let t = &self.prepared.target;
-        let v = self.view()?;
         if self.geometry != Some((v.width, v.height, v.y))
-            && !(self.receipt_mode() && self.staged(&v))
+            && !(self.receipt_mode() && self.staged(v))
         {
             return Err("geometry changed before effect".into());
         }
@@ -974,7 +979,13 @@ impl<'a> Runtime<'a> {
                 .join(",")
         ))
     }
-    fn effect(&mut self, condition: &str, action: &str, enter: bool) -> Result<String> {
+    fn effect(
+        &mut self,
+        condition: &str,
+        action: &str,
+        enter: bool,
+        expected: &View,
+    ) -> Result<String> {
         self.verify()?;
         let pane = self.prepared.target.selector();
         let args = [
@@ -1047,9 +1058,23 @@ impl<'a> Runtime<'a> {
                 }
                 Err(error) => return Err(error),
             };
+            if final_view.busy || final_view.copy {
+                self.producers[i].input.take();
+                return Ok("unstable".into());
+            }
             if !self.staged(&final_view) {
                 self.unknown("input change before Enter release")?;
                 return Err("staged input changed".into());
+            }
+            if (
+                final_view.x,
+                final_view.y,
+                final_view.width,
+                final_view.height,
+            ) != (expected.x, expected.y, expected.width, expected.height)
+            {
+                self.producers[i].input.take();
+                return Ok("unstable".into());
             }
             self.receipt_before = Some(final_view.receipt);
         } else {
@@ -1074,8 +1099,19 @@ impl<'a> Runtime<'a> {
         } else {
             "paste-dispatch:before"
         });
+        if enter {
+            self.enter_pending = true;
+        }
         match self.producers[i].execute() {
-            Ok(result) => Ok(result),
+            Ok(result) => {
+                if enter {
+                    self.enter_applied = result.trim() == "applied";
+                    if matches!(result.trim(), "refused" | "focused" | "activity") {
+                        self.enter_pending = false;
+                    }
+                }
+                Ok(result)
+            }
             Err(_) => {
                 self.unknown("dispatched effect unproved")?;
                 Err("input outcome unproved".into())
@@ -1083,6 +1119,9 @@ impl<'a> Runtime<'a> {
         }
     }
     fn enter(&mut self) -> Result<State> {
+        if self.enter_pending {
+            return self.unknown("prior Enter unresolved; no second submission");
+        }
         let second = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| e.to_string())?
@@ -1094,10 +1133,30 @@ impl<'a> Runtime<'a> {
             }
             Err(error) => return self.unknown(&format!("staged-view: {error}")),
         };
+        if before.copy || before.busy {
+            return self.wait_for_renderer();
+        }
         if !self.staged(&before) {
             return self.unknown("staged bytes or geometry changed");
         }
-        let condition = match self.condition() {
+        if self.receipt_mode() {
+            match self.ready_since {
+                Some((since, width, height, y))
+                    if (width, height, y) == (before.width, before.height, before.y)
+                        && since.elapsed() >= Duration::from_millis(50) => {}
+                Some((_, width, height, y))
+                    if (width, height, y) == (before.width, before.height, before.y) =>
+                {
+                    return self.wait_for_renderer();
+                }
+                _ => {
+                    self.ready_since =
+                        Some((Instant::now(), before.width, before.height, before.y));
+                    return self.wait_for_renderer();
+                }
+            }
+        }
+        let condition = match self.condition_for(&before) {
             Ok(condition) => condition,
             Err(error) if self.receipt_mode() && error == "renderer changed during capture" => {
                 return self.wait_for_renderer()
@@ -1136,10 +1195,10 @@ impl<'a> Runtime<'a> {
         } else {
             no_focus_condition(&pane)
         };
-        let result = self.effect(&focus, &action, true)?;
+        let result = self.effect(&focus, &action, true, &before)?;
         match result.trim() {
             "unstable" => self.wait_for_renderer(),
-            "focused" | "activity" => self.commit(
+            "refused" | "focused" | "activity" => self.commit(
                 State::WaitingForFocusRelease,
                 Evidence {
                     diagnostics: vec![format!("submit-{}-guard", result.trim())],
@@ -1153,13 +1212,7 @@ impl<'a> Runtime<'a> {
                 let deadline = Instant::now() + Duration::from_secs(2);
                 loop {
                     if let Ok(after) = self.view() {
-                        if !after.copy
-                            && after.width == before.width
-                            && after.height == before.height
-                            && ((after.receipt.queue_prompt && after.receipt.queued > prior.queued)
-                                || (!after.busy
-                                    && after.bytes.is_empty()
-                                    && after.receipt.submitted > prior.submitted))
+                        if after.accepted(prior, (before.width, before.height), self.enter_applied)
                         {
                             return self.commit(State::Submitted, Evidence { submission_proof: Some("bound native UI positively accepted exact own wire after guarded Enter".into()), diagnostics: vec!["native acceptance observed; application work completion unproved".into()], ..Default::default() });
                         }
@@ -1186,90 +1239,128 @@ impl<'a> Runtime<'a> {
     }
     fn remove_staged(&mut self) -> Result<()> {
         let deadline = Instant::now() + Duration::from_secs(2);
-        let before = loop {
-            match self.view() {
-                Ok(view) if !view.busy && !view.copy && view.bytes.is_empty() => {
-                    self.store.diagnostics(&self.id, vec!["failure cleanup: composer already empty; no removal input".into()])
-                        .map_err(|e| format!("removal observation: {e:?}"))?;
-                    return Ok(());
-                }
-                Ok(view) if self.staged(&view) => break view,
-                Err(error)
-                    if error == "renderer changed during capture" && Instant::now() < deadline => {}
-                _ => {
-                    return Err(
-                        "failure cleanup: exact own staged bytes unproved; no removal input".into(),
-                    )
-                }
-            }
-            std::thread::sleep(Duration::from_millis(5));
-        };
-        let pane = self.prepared.target.selector();
-        let condition = self.condition()?;
-        let action = format!(
-            "send-keys -t {pane} -N {} BSpace ; display-message -p removed",
-            self.prepared.wire.len()
-        );
-        let producer = Producer::spawn(
-            self.ns,
-            &[
-                "if-shell",
-                "-F",
-                "-t",
-                &pane,
-                &condition,
-                &action,
-                "display-message -p refused",
-            ],
-        )?;
-        self.producers.push(producer);
-        let index = self.producers.len() - 1;
-        let child = self.producers[index]
-            .child
-            .identity
-            .ok_or("removal producer unattested")?;
-        self.store
-            .diagnostics(
-                &self.id,
-                vec![format!(
-            "failure cleanup intent: exact own wire {} bytes; owned producer {}:{}; no replay",
-            self.prepared.wire.len(), child.pid, child.generation()?
-        )],
-            )
-            .map_err(|e| format!("removal intent: {e:?}"))?;
-        checkpoint("removal-dispatch:before");
-        let final_view = self.view()?;
-        if !self.staged(&final_view)
-            || (
-                final_view.x,
-                final_view.y,
-                final_view.width,
-                final_view.height,
-            ) != (before.x, before.y, before.width, before.height)
-        {
-            self.producers[index].input.take();
-            return Err(
-                "failure cleanup: staged bytes changed before removal; no removal input".into(),
-            );
-        }
-        if self.producers[index].execute()?.trim() != "removed" {
-            return Err("failure cleanup: guarded removal refused".into());
-        }
-        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut removed = false;
         loop {
-            if let Ok(after) = self.view() {
-                if !after.busy
-                    && !after.copy
-                    && after.bytes.is_empty()
-                    && (after.width, after.height) == (before.width, before.height)
-                {
-                    self.store.diagnostics(&self.id, vec!["failure cleanup: exact own staged bytes removed; empty native composer proven".into()])
-                        .map_err(|e| format!("removal proof: {e:?}"))?;
-                    return Ok(());
-                }
-            }
             if Instant::now() >= deadline {
                 return Err("failure cleanup: removal outcome unproved".into());
+            }
+            let before = match self.view() {
+                Ok(view) => view,
+                Err(error) if error == "renderer changed during capture" => {
+                    std::thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(error) => return Err(error),
+            };
+            if self.receipt_mode()
+                && self.receipt_before.is_some_and(|prior| {
+                    self.geometry.is_some_and(|(width, height, _)| {
+                        before.accepted(prior, (width, height), self.enter_applied)
+                    })
+                })
+            {
+                self.commit(State::Submitted, Evidence {
+                    submission_proof: Some("bound native UI accepted own wire during final confirmation; no second Enter".into()),
+                    ..Default::default()
+                })?;
+                return Ok(());
+            }
+            if !before.busy && !before.copy && before.bytes.is_empty() {
+                if !removed && self.enter_pending {
+                    return Err(
+                        "failure cleanup: empty composer but prior Enter unproved; no replay"
+                            .into(),
+                    );
+                }
+                let proof = if removed {
+                    "failure cleanup: exact own staged bytes removed; empty native composer proven"
+                } else {
+                    "failure cleanup: composer already empty; no removal input"
+                };
+                self.commit(
+                    State::Refused,
+                    Evidence {
+                        composer_proof: Some(proof.into()),
+                        no_effect_proof: Some(NoEffectProof::Removed {
+                            evidence:
+                                "all owned producers reaped/output closed; exact own residue absent"
+                                    .into(),
+                            producers_closed: self.producers.iter().all(|p| {
+                                p.child.status.is_some()
+                                    && !p.child.reader_fault
+                                    && p.child.readers.iter().all(|r| r.eof)
+                            }),
+                        }),
+                        diagnostics: vec![proof.into()],
+                        ..Default::default()
+                    },
+                )?;
+                return Ok(());
+            }
+            if before.copy || before.busy || removed {
+                std::thread::sleep(Duration::from_millis(5));
+                continue;
+            }
+            if !self.staged(&before) {
+                return Err(
+                    "failure cleanup: exact own staged bytes unproved; no removal input".into(),
+                );
+            }
+            let pane = self.prepared.target.selector();
+            let condition = self.condition_for(&before)?;
+            let action = format!(
+                "send-keys -t {pane} -N {} BSpace ; display-message -p removed",
+                self.prepared.wire.len()
+            );
+            let producer = Producer::spawn(
+                self.ns,
+                &[
+                    "if-shell",
+                    "-F",
+                    "-t",
+                    &pane,
+                    &condition,
+                    &action,
+                    "display-message -p refused",
+                ],
+            )?;
+            self.producers.push(producer);
+            let index = self.producers.len() - 1;
+            let child = self.producers[index]
+                .child
+                .identity
+                .ok_or("removal producer unattested")?;
+            self.unknown(&format!(
+                "failure cleanup intent: exact own wire {} bytes; owned producer {}:{}; no replay",
+                self.prepared.wire.len(),
+                child.pid,
+                child.generation()?
+            ))?;
+            checkpoint("removal-dispatch:before");
+            let final_view = self.view();
+            let coherent = final_view.as_ref().is_ok_and(|view| {
+                self.staged(view)
+                    && (view.x, view.y, view.width, view.height)
+                        == (before.x, before.y, before.width, before.height)
+            });
+            if !coherent {
+                self.producers[index].input.take();
+                let budgets = self
+                    .evidence
+                    .budgets
+                    .as_ref()
+                    .ok_or("cleanup budgets missing")?;
+                self.producers[index].child.cleanup(budgets);
+                if !self.producers[index].child.poll()? {
+                    return Err("failure cleanup: unreleased removal producer not closed".into());
+                }
+                std::thread::sleep(Duration::from_millis(5));
+                continue;
+            }
+            match self.producers[index].execute()?.trim() {
+                "removed" => removed = true,
+                "refused" => (),
+                _ => return Err("failure cleanup: removal outcome unproved".into()),
             }
             std::thread::sleep(Duration::from_millis(5));
         }
@@ -1280,9 +1371,18 @@ impl<'a> Runtime<'a> {
             return Ok(());
         }
         self.closed = true;
-        let restart = self.store.record_restart(&self.id);
-        if let Ok(a) = &restart {
+        let observed = self.store.attempt(&self.id);
+        if let Ok(a) = &observed {
             self.state = a.state();
+        }
+        if matches!(
+            self.state,
+            State::InputIntent
+                | State::Pasted
+                | State::WaitingForFocusRelease
+                | State::SubmitIntent
+        ) {
+            self.unknown("live owner finalizing incomplete input; no replay")?;
         }
         let budgets = self
             .evidence
@@ -1311,7 +1411,13 @@ impl<'a> Runtime<'a> {
                 && !p.child.reader_fault
                 && p.child.readers.iter().all(|r| r.eof)
         });
-        if self.marked && producers_closed && self.state != State::Submitted {
+        if self.marked
+            && producers_closed
+            && !matches!(
+                self.state,
+                State::Submitted | State::TerminalNoInput | State::Refused
+            )
+        {
             if let Err(error) = self.remove_staged() {
                 notes.push(error.clone());
                 removal_error = Some(error);
@@ -1328,7 +1434,10 @@ impl<'a> Runtime<'a> {
         }
         if self.marked
             && producers_closed
-            && matches!(self.state, State::Submitted | State::TerminalNoInput)
+            && matches!(
+                self.state,
+                State::Submitted | State::TerminalNoInput | State::Refused
+            )
         {
             if let Some(lock) = &self.lock {
                 lock.set_len(0)
@@ -1344,7 +1453,7 @@ impl<'a> Runtime<'a> {
                 .diagnostics(&self.id, notes)
                 .map_err(|e| format!("cleanup warning: {e:?}"))?;
         }
-        restart.map_err(|e| format!("restart: {e:?}"))?;
+        observed.map_err(|e| format!("finalization: {e:?}"))?;
         if let Some(error) = removal_error {
             if self.state != State::InputUnknown {
                 return Err(error);

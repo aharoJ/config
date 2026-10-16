@@ -343,6 +343,41 @@ fn durable_barriers() {
     }
 }
 #[test]
+fn clean_refusal_requires_closed_producers_and_empty_composer_proof() {
+    let path = root();
+    let (mut store, mut handle) = accepted(&path);
+    store
+        .transition(&mut handle, State::InputIntent, intent())
+        .unwrap();
+    assert!(store
+        .transition(&mut handle, State::Refused, Evidence::default())
+        .is_err());
+    for closed in [false, true] {
+        let evidence = Evidence {
+            composer_proof: Some("exact own staged bytes removed; composer empty".into()),
+            no_effect_proof: Some(NoEffectProof::Removed {
+                evidence: "owned producer retirement attested".into(),
+                producers_closed: closed,
+            }),
+            ..Default::default()
+        };
+        let result = store.transition(&mut handle, State::Refused, evidence);
+        if closed {
+            result.unwrap();
+        } else {
+            assert!(result.is_err());
+        }
+    }
+    assert_eq!(store.attempt(ATTEMPT).unwrap().state(), State::Refused);
+    assert_eq!(
+        store.record_restart(ATTEMPT).unwrap().state(),
+        State::Refused
+    );
+    assert!(store
+        .transition(&mut handle, State::SubmitIntent, Evidence::default())
+        .is_err());
+}
+#[test]
 fn restart_no_replay() {
     for state in [
         State::InputIntent,

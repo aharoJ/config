@@ -7,6 +7,7 @@ pub enum State {
     WaitingForFocusRelease,
     SubmitIntent,
     Submitted,
+    Refused,
     TerminalNoInput,
     InputUnknown,
 }
@@ -28,6 +29,7 @@ pub fn reader_state(state: State) -> &'static str {
     match state {
         State::Submitted => "delivered",
         State::TerminalNoInput => "error",
+        State::Refused => "refused",
         State::PendingNoInput => "pending",
         _ => "unknown",
     }
@@ -241,6 +243,10 @@ pub struct SubmissionBoundary {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum NoEffectProof {
+    Removed {
+        evidence: String,
+        producers_closed: bool,
+    },
     NeverLaunched {
         evidence: String,
     },
@@ -296,6 +302,7 @@ impl Attempt {
         self.history.last().expect("validated history").sequence
     }
 
+    #[cfg(test)]
     pub fn recovered_state(&self) -> State {
         match self.state() {
             State::InputIntent
@@ -418,13 +425,20 @@ fn allowed(from: State, to: State) -> bool {
     use State::*;
     match from {
         PendingNoInput => matches!(to, InputIntent | TerminalNoInput),
-        InputIntent => matches!(to, InputIntent | Pasted | TerminalNoInput | InputUnknown),
-        Pasted => matches!(to, WaitingForFocusRelease | SubmitIntent | InputUnknown),
-        WaitingForFocusRelease => matches!(to, SubmitIntent | InputUnknown),
+        InputIntent => matches!(
+            to,
+            InputIntent | Pasted | TerminalNoInput | Refused | InputUnknown
+        ),
+        Pasted => matches!(
+            to,
+            WaitingForFocusRelease | SubmitIntent | Refused | InputUnknown
+        ),
+        WaitingForFocusRelease => matches!(to, SubmitIntent | Refused | InputUnknown),
         SubmitIntent => matches!(
             to,
-            SubmitIntent | WaitingForFocusRelease | Submitted | InputUnknown
+            SubmitIntent | WaitingForFocusRelease | Submitted | Refused | InputUnknown
         ),
+        InputUnknown => matches!(to, Submitted | Refused),
         _ => false,
     }
 }
@@ -441,7 +455,11 @@ fn transition_valid(a: &Attempt, i: usize) -> bool {
     if old.state == t.state
         && matches!(
             t.state,
-            State::PendingNoInput | State::InputUnknown | State::TerminalNoInput | State::Submitted
+            State::PendingNoInput
+                | State::InputUnknown
+                | State::TerminalNoInput
+                | State::Submitted
+                | State::Refused
         )
         && !e.diagnostics.is_empty()
     {
@@ -543,8 +561,12 @@ fn transition_valid(a: &Attempt, i: usize) -> bool {
                                 .as_ref()
                                 .is_some_and(|o| o.child.is_some())
                     }
-                    None => false,
+                    Some(NoEffectProof::Removed { .. }) | None => false,
                 }
+        }
+        State::Refused => {
+            text(&e.composer_proof)
+                && matches!(&e.no_effect_proof, Some(NoEffectProof::Removed { evidence, producers_closed: true }) if !evidence.is_empty())
         }
         State::Submitted => text(&e.submission_proof),
         State::WaitingForFocusRelease | State::InputUnknown => true,
@@ -1119,6 +1141,7 @@ impl Store {
         handle.sequence = sequence;
         Ok(())
     }
+    #[cfg(test)]
     pub fn record_restart(&mut self, id: &str) -> Result<Attempt> {
         let _lock = self.lock()?;
         let i = self

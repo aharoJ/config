@@ -153,7 +153,7 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
 pub fn outcome(state: State) -> i32 {
     match state {
         State::Submitted => 0,
-        State::TerminalNoInput => 1,
+        State::TerminalNoInput | State::Refused => 1,
         State::PendingNoInput => 6,
         _ => 4,
     }
@@ -373,6 +373,9 @@ fn execute(
     }
 }
 pub fn main_entry(surface: &str, args: &[String]) -> i32 {
+    if let Some(code) = crate::tmux_lab::entry(surface, args) {
+        return code;
+    }
     if let Some(code) = crate::lab_tools::entry(surface, args) {
         return code;
     }
@@ -380,6 +383,7 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
         return code;
     }
     match surface {
+        "tmux-freeze-capture.fish" => return crate::lab_tools::freeze::entry(args),
         "codex-new-chat" => return crate::new_chat::entry(args),
         "codex-new-guard" => return crate::new_guard::entry(args),
         "panel-dispatch" => return crate::panel_dispatch::main_entry(args),
