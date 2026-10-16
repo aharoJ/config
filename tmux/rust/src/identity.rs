@@ -153,6 +153,14 @@ pub(crate) fn process_path(pid: u32) -> Result<PathBuf> {
     std::fs::canonicalize(Path::new(std::ffi::OsStr::from_bytes(&path[..end])))
         .map_err(|e| e.to_string())
 }
+fn running_process_path(pid: u32) -> Result<PathBuf> {
+    let info = bsd_info(pid).ok_or("running process unavailable")?;
+    let uid = unsafe { libc::geteuid() };
+    if info.head[5] != uid || info.head[7] != uid {
+        return Err("running client belongs to another user".into());
+    }
+    crate::model_identity::executable_path(pid).ok_or("kernel executable path unavailable".into())
+}
 pub fn no_acl(file: &File) -> Result<()> {
     unsafe extern "C" {
         fn acl_get_fd_np(fd: i32, kind: i32) -> *mut libc::c_void;
@@ -984,9 +992,7 @@ pub fn source_context(
     })
 }
 pub struct Client {
-    file: File,
     path: PathBuf,
-    stamp: (u64, u64, u64, i64, i64, i64, i64),
     process: ProcessIdentity,
     pane: ProcessIdentity,
     pub glyph: char,
@@ -1007,35 +1013,19 @@ impl Client {
             if !seen.insert(pid) || seen.len() > 64 || depth > 8 {
                 return Err("ambiguous ancestry".into());
             }
-            if let (Some(process), Ok(path)) = (kernel_process(pid), process_path(pid)) {
-                if let Ok(file) = std::fs::OpenOptions::new()
-                    .read(true)
-                    .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-                    .open(&path)
-                {
-                    let m = file.metadata().map_err(|e| e.to_string())?;
-                    let glyph = if operator.is_some() {
-                        crate::model_identity::agent_image(pid, pane, &path)
-                    } else {
-                        crate::model_identity::relay_image(pid, pane, &path)
-                    };
-                    if let Some(glyph) = glyph {
-                        if m.is_file()
-                            && m.mode() & 0o6022 == 0
-                            && m.mode() & 0o111 != 0
-                            && [0, unsafe { libc::geteuid() }].contains(&m.uid())
-                            && no_acl(&file).is_ok()
-                        {
-                            matches.push(Self {
-                                file,
-                                path,
-                                stamp: stamp(&m),
-                                process,
-                                pane: pane_identity,
-                                glyph,
-                            });
-                        }
-                    }
+            if let (Some(process), Ok(path)) = (kernel_process(pid), running_process_path(pid)) {
+                let glyph = if operator.is_some() {
+                    crate::model_identity::agent_image(pid, pane, &path)
+                } else {
+                    crate::model_identity::relay_image(pid, pane, &path)
+                };
+                if let Some(glyph) = glyph {
+                    matches.push(Self {
+                        path,
+                        process,
+                        pane: pane_identity,
+                        glyph,
+                    });
                 }
             }
             let mut children = [0i32; 64];
@@ -1070,7 +1060,7 @@ impl Client {
             }
         }
         if matches.is_empty() {
-            return Err("no admitted native client: require the installed Claude/Codex/Agy path, a native Agy Mach-O image, and the pane foreground process group/TTY".into());
+            return Err("no admitted native client: require a kernel executable path under the Claude/Codex/Agy install root, the owning user, and the pane foreground process group/TTY".into());
         }
         if matches.len() != 1 {
             return Err(format!(
@@ -1100,11 +1090,10 @@ impl Client {
             "{:x}",
             Sha256::digest(
                 format!(
-                    "{:?}:{:?}:{}:{:?}:{details:?}",
+                    "{:?}:{:?}:{}:{details:?}",
                     self.process,
                     self.pane,
-                    self.path.display(),
-                    self.stamp
+                    self.path.display()
                 )
                 .as_bytes()
             )
@@ -1119,10 +1108,8 @@ impl Client {
         }
         if kernel_process(self.pane.pid) != Some(self.pane)
             || kernel_process(self.process.pid) != Some(self.process)
-            || process_path(self.process.pid)? != self.path
-            || stamp(&self.file.metadata().map_err(|e| e.to_string())?) != self.stamp
-            || stamp(&std::fs::symlink_metadata(&self.path).map_err(|e| e.to_string())?)
-                != self.stamp
+            || running_process_path(self.process.pid)? != self.path
+            || !crate::model_identity::foreground(self.process.pid, self.pane.pid)
         {
             return Err("client changed".into());
         }
