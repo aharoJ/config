@@ -95,8 +95,16 @@ fn private_idle_and_generating_ack() {
     let root = PathBuf::from(std::env::var_os("AGY_RELEASE_EVIDENCE").unwrap());
     let alias = PathBuf::from(std::env::var_os("AGY_RELEASE_ALIAS").unwrap());
     let window = std::env::var("AGY_RELEASE_WINDOW").unwrap();
+    let live = std::env::var("AGY_RELEASE_LIVE").is_ok_and(|value| value == "1");
     assert_eq!(alias.file_name().unwrap(), "agy-send-to");
-    assert!(alias.starts_with(&root));
+    if live {
+        assert_eq!(
+            alias,
+            PathBuf::from(std::env::var_os("HOME").unwrap()).join(".local/bin/agy-send-to")
+        );
+    } else {
+        assert!(alias.starts_with(&root));
+    }
     let caller = std::env::var("TMUX_PANE").unwrap();
     let session = query(&["display-message", "-p", "-t", &caller, "#{session_name}"]);
     assert_eq!(session, "config-tt");
@@ -174,5 +182,5 @@ fn private_idle_and_generating_ack() {
         "#{pane_id}|#{pane_pid}|#{pane_current_command}|#{pane_width}|#{pane_height}",
     ]);
     assert_eq!(metadata, after);
-    fs::write(root.join("RESULT.json"), serde_json::to_vec_pretty(&json!({"status":"PASS","caller":caller,"target":metadata,"route":{"AGY_SEND_SESSION":"config-tt","window":window},"idle_ack":idle_ack,"busy_ack":busy_ack,"idle":idle_result,"generator":generator_result,"busy":busy_result,"public_links_changed":false})).unwrap()).unwrap();
+    fs::write(root.join("RESULT.json"), serde_json::to_vec_pretty(&json!({"status":"PASS","caller":caller,"target":metadata,"route":{"AGY_SEND_SESSION":"config-tt","window":window},"idle_ack":idle_ack,"busy_ack":busy_ack,"idle":idle_result,"generator":generator_result,"busy":busy_result,"public_links_changed":live})).unwrap()).unwrap();
 }
