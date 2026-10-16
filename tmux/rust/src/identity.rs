@@ -3,7 +3,6 @@ use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::ffi::{CStr, CString};
 use std::fs::File;
-use std::io::Read;
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::MetadataExt;
@@ -1015,53 +1014,26 @@ impl Client {
                     .open(&path)
                 {
                     let m = file.metadata().map_err(|e| e.to_string())?;
-                    let profile = if operator.is_some() {
+                    let glyph = if operator.is_some() {
                         crate::model_identity::agent_image(pid, pane, &path)
-                            .map(|glyph| (glyph, ""))
                     } else {
                         crate::model_identity::relay_image(pid, pane, &path)
-                            .map(|glyph| (glyph, ""))
-                            .or(match m.len() {
-                            180917280 => Some((
-                                '>',
-                                "ebd71c4db14f79fca3fd0160332a38d9037146737422dcfc1f1d21ba01a13fff",
-                            )),
-                            183407440 => Some((
-                                '>',
-                                "827ba22b4aa33557614a57aac2cc13f386e17db6b802febd3932226906ac05ab",
-                            )),
-                            _ => None,
-                            })
                     };
-                    if let Some((glyph, hash)) = profile {
+                    if let Some(glyph) = glyph {
                         if m.is_file()
                             && m.mode() & 0o6022 == 0
                             && m.mode() & 0o111 != 0
                             && [0, unsafe { libc::geteuid() }].contains(&m.uid())
                             && no_acl(&file).is_ok()
                         {
-                            let mut bytes = std::io::BufReader::new(
-                                file.try_clone().map_err(|e| e.to_string())?,
-                            );
-                            let mut digest = Sha256::new();
-                            let mut buffer = [0u8; 65536];
-                            while !hash.is_empty() {
-                                let n = bytes.read(&mut buffer).map_err(|e| e.to_string())?;
-                                if n == 0 {
-                                    break;
-                                }
-                                digest.update(&buffer[..n]);
-                            }
-                            if hash.is_empty() || format!("{:x}", digest.finalize()) == hash {
-                                matches.push(Self {
-                                    file,
-                                    path,
-                                    stamp: stamp(&m),
-                                    process,
-                                    pane: pane_identity,
-                                    glyph,
-                                });
-                            }
+                            matches.push(Self {
+                                file,
+                                path,
+                                stamp: stamp(&m),
+                                process,
+                                pane: pane_identity,
+                                glyph,
+                            });
                         }
                     }
                 }
@@ -1098,7 +1070,7 @@ impl Client {
             }
         }
         if matches.is_empty() {
-            return Err("unsupported native client path or foreground process shape".into());
+            return Err("no admitted native client: require the installed Claude/Codex/Agy path, a native Agy Mach-O image, and the pane foreground process group/TTY".into());
         }
         if matches.len() != 1 {
             return Err(format!(
