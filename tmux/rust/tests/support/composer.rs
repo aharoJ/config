@@ -34,6 +34,16 @@ fn native_agy_staged_and_receipt() {
     );
     let accepted = format!("\x1b[1m\x1b[34m> {wire}\x1b[0m\nanswer\n{staged}");
     assert_eq!(receipt('>', &accepted, 2, 3, 183, wire).submitted, 1);
+    let linked = staged.replace(
+        "Gemini ",
+        "\x1b]8;;https://example.test/\x07Gemini \x1b]8;;\x07",
+    );
+    assert_eq!(
+        screen('>', &linked, 2 + wire.len(), 1, 183, wire),
+        Screen::Staged(wire.as_bytes().to_vec())
+    );
+    let linked = format!("\x1b]8;;https://example.test/\x1b\\{accepted}\x1b]8;;\x1b\\");
+    assert_eq!(receipt('>', &linked, 2, 3, 183, wire).submitted, 1);
 }
 #[test]
 fn captured_fresh_and_background_codex_acceptance() {
