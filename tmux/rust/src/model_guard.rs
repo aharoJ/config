@@ -59,11 +59,17 @@ pub fn re(pattern: &str) -> Regex {
         .or_insert_with(|| Regex::new(pattern).unwrap())
         .clone()
 }
-pub fn visible(raw: &str) -> String {
+pub fn normalize(raw: &str, keep_styles: bool) -> String {
     let raw = re(r"\x1b\]8;[^\x07\x1b]*(?:\x07|\x1b\\)").replace_all(raw, "");
+    if keep_styles {
+        return raw.into_owned();
+    }
     re(r"\x1b\[[0-?]*[ -/]*[@-~]")
         .replace_all(&raw, "")
         .into_owned()
+}
+pub fn visible(raw: &str) -> String {
+    normalize(raw, false)
 }
 pub fn rows(capture: &str) -> Vec<String> {
     capture
@@ -114,6 +120,7 @@ pub fn desired(capture: &str, model: &str, effort: &str) -> Option<String> {
     Some(format!("{fast} · {model} {effort} · {cwd}"))
 }
 pub fn highlighted(raw: &str) -> bool {
+    let raw = normalize(raw, true);
     let Some(end) = raw.find(['›', '»']) else {
         return false;
     };
@@ -342,7 +349,7 @@ pub fn check(mode: &str, capture: &str, expected: &str) -> bool {
             .contains(&content[2])
         };
         let tip = {
-            ["  Tip: Use /title.", "  Tip: When worktree support is available, use /worktree to start or continue a conversation in a separate Git worktree.", "  Tip: Use the desktop app. Run codex app to open it. It installs automatically if needed."].contains(&content[3])
+            ["  Tip: Use /title.", "  Tip: When worktree support is available, use /worktree to start or continue a conversation in a separate Git worktree.", "  Tip: Use the desktop app. Run codex app to open it. It installs automatically if needed.", "  Tip: Visit the Codex community forum (https://community.openai.com/c/codex/37)."].contains(&content[3])
         };
         return re(r"^  >_ OpenAI Codex \(v[0-9]+\.[0-9]+\.[0-9]+\)$").is_match(content[0])
             && content[1] == format!("     {}", previous.3)
