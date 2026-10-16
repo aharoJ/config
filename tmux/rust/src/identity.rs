@@ -1040,6 +1040,14 @@ impl Client {
                                 '›',
                                 "74c6a6d263f40d65f99c27a815275f5b4ed0bcc2baecc396b4cf3255498bdfc0",
                             )),
+                            180917280 => Some((
+                                '>',
+                                "ebd71c4db14f79fca3fd0160332a38d9037146737422dcfc1f1d21ba01a13fff",
+                            )),
+                            183407440 => Some((
+                                '>',
+                                "827ba22b4aa33557614a57aac2cc13f386e17db6b802febd3932226906ac05ab",
+                            )),
                             _ => None,
                         }
                     };

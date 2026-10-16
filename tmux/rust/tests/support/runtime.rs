@@ -1,6 +1,30 @@
 use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 #[test]
+fn agy_generation_accepts_only_a_fresh_own_receipt() {
+    let capture = include_str!("../fixtures/rt2-agy-busy-generating.ansi");
+    let y = capture
+        .lines()
+        .position(|row| row == "\x1b[94m>\x1b[39m")
+        .unwrap();
+    let wire = "RT2-workflow-14 probe: reply \"ack\" and take no action";
+    let mut view = View {
+        receipt: composer::receipt('>', capture, 2, y, 215, wire),
+        bytes: Vec::new(),
+        busy: true,
+        copy: false,
+        width: 215,
+        height: 45,
+        x: 2,
+        y: y as u64,
+    };
+    assert!(view.accepted(Default::default(), (215, 45), false));
+    assert!(!view.accepted(view.receipt, (215, 45), true));
+    assert!(!view.accepted(Default::default(), (214, 45), true));
+    view.copy = true;
+    assert!(!view.accepted(Default::default(), (215, 45), true));
+}
+#[test]
 fn captured_lab_unknown_requires_retired_producers_and_distinct_request() {
     let attempt: store::Attempt =
         serde_json::from_str(include_str!("../fixtures/lab-unsettled-attempt.json")).unwrap();

@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\nCC_MSG_SESSION and CC_MSG_WINDOW select the exact Claude target. Codex helpers infer the caller session unless CODEX_SEND_SESSION is set; codex-send defaults to window codex. Store defaults to $HOME/desk/tmp/relay-rust-store; socket defaults to TMUX or the UID default socket. ANGELSTAR_RELAY_STORE and ANGELSTAR_RELAY_SOCKET override these defaults. Missing message reads stdin for all four helpers. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
+pub const HELP: &str = "usage: relay <session>:<window> [--] <message...>\n       relay status <attempt-id>\n       relay read <archive-id> [original|wire]\n       cc-msg [--] <message...>\n       codex-send [--] <message...>\n       codex-send-to <window> [--] <message...>\n       agy-send-to <window> [--] <message...>\nCC_MSG_SESSION and CC_MSG_WINDOW select the exact Claude target. Codex and Agy helpers infer the caller session unless their SEND_SESSION prefix is set; codex-send defaults to window codex. Store defaults to $HOME/desk/tmp/relay-rust-store; socket defaults to TMUX or the UID default socket. ANGELSTAR_RELAY_STORE and ANGELSTAR_RELAY_SOCKET override these defaults. Missing message reads stdin for all helpers. Prune/reuse/recover are deferred. Legacy operator/clear/keys modes refuse.\n";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operation {
@@ -59,7 +59,15 @@ fn pane(env: &Env, key: &str) -> Result<Option<target::PaneId>> {
 }
 
 pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
-    if !["relay", "cc-msg", "codex-send", "codex-send-to"].contains(&surface) {
+    if ![
+        "relay",
+        "cc-msg",
+        "codex-send",
+        "codex-send-to",
+        "agy-send-to",
+    ]
+    .contains(&surface)
+    {
         return Err("unknown entry point".into());
     }
     if args == ["--help"] || args == ["-h"] || (surface == "relay" && args.is_empty()) {
@@ -116,14 +124,21 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
             0,
         ),
         _ => {
+            let prefix = if surface == "agy-send-to" {
+                "AGY_SEND"
+            } else {
+                "CODEX_SEND"
+            };
             let w = args
                 .first()
                 .filter(|s| !s.is_empty() && !s.starts_with('-'))
                 .ok_or("missing exact window")?;
             (
-                env.get("CODEX_SEND_SESSION").cloned().unwrap_or_default(),
+                env.get(&format!("{prefix}_SESSION"))
+                    .cloned()
+                    .unwrap_or_default(),
                 w.clone(),
-                pane(env, "CODEX_SEND_PANE")?,
+                pane(env, &format!("{prefix}_PANE"))?,
                 1,
             )
         }
@@ -141,6 +156,7 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
         client: match surface {
             "cc-msg" => Some('❯'),
             "relay" => None,
+            "agy-send-to" => Some('>'),
             _ => Some('›'),
         },
         session,

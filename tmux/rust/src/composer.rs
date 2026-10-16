@@ -369,6 +369,7 @@ pub fn receipt(
     let normal = match glyph {
         '❯' => format!("\x1b[38;5;246m\x1b[48;5;237m❯ \x1b[38;5;231m{wire}\x1b[39m"),
         '›' => format!("\x1b[1m›\x1b[0m {wire}"),
+        '>' => format!("\x1b[1m\x1b[34m> {wire}\x1b[0m"),
         _ => return Receipt::default(),
     };
     let mut result = Receipt {
@@ -484,10 +485,29 @@ pub fn screen(glyph: char, capture: &str, x: usize, y: usize, width: usize, wire
     // classifier to require the recognized application's surrounding layout.
     let empty = match glyph {
         '❯' => format!("{prefix}❯\u{a0}\n"),
+        '>' => "\x1b[94m>\x1b[39m\n".into(),
         _ => format!("{prefix}›\x1b[2m \x1b[0m\n"),
     };
     let mut check = rows.iter().map(|r| (*r).to_owned()).collect::<Vec<_>>();
     check[y] = empty;
+    if glyph == '>' {
+        let Some(footer) = rows.get(y + 2) else {
+            return Screen::Hold;
+        };
+        let Some((padding, model)) = footer
+            .strip_prefix("\x1b[39m")
+            .and_then(|s| s.split_once("\x1b[2mGemini "))
+        else {
+            return Screen::Hold;
+        };
+        if !padding.chars().all(|c| c == ' ')
+            || !model.contains(" · ")
+            || crate::composer::row(footer).is_err()
+        {
+            return Screen::Hold;
+        }
+        check[y + 2] = "? for shortcuts\n".into();
+    }
     if classify(&check.concat(), glyph, prompt_x, y, width) != Composer::EmptyCandidate {
         return Screen::Hold;
     }

@@ -1,5 +1,41 @@
 use super::*;
 #[test]
+fn agy_busy_receipt_does_not_authorize_input() {
+    let capture = include_str!("../../../tests/fixtures/rt2-agy-busy-generating.ansi");
+    let y = capture
+        .lines()
+        .position(|line| line == "\x1b[94m>\x1b[39m")
+        .unwrap();
+    let wire = "RT2-workflow-14 probe: reply \"ack\" and take no action";
+    assert_eq!(receipt('>', capture, 2, y, 215, wire).submitted, 1);
+    assert_eq!(receipt('>', capture, 2, y, 215, "unrelated").submitted, 0);
+    assert_eq!(screen('>', capture, 2, y, 215, "new request"), Screen::Hold);
+    assert!(!ready('>', capture, 2, y, 215));
+}
+#[test]
+fn native_agy_staged_and_receipt() {
+    let staged = include_str!("../fixtures/agy-native-staged.ansi");
+    let wire = "#p4x fixture";
+    assert_eq!(
+        screen('>', staged, 2 + wire.len(), 1, 183, wire),
+        Screen::Staged(wire.as_bytes().to_vec())
+    );
+    assert_eq!(screen('>', staged, 2, 1, 183, wire), Screen::Hold);
+    assert_eq!(
+        screen(
+            '>',
+            &staged.replace("Gemini ", "esc to cancel "),
+            2 + wire.len(),
+            1,
+            183,
+            wire
+        ),
+        Screen::Hold
+    );
+    let accepted = format!("\x1b[1m\x1b[34m> {wire}\x1b[0m\nanswer\n{staged}");
+    assert_eq!(receipt('>', &accepted, 2, 3, 183, wire).submitted, 1);
+}
+#[test]
 fn captured_fresh_and_background_codex_acceptance() {
     for (capture, y, width, wire) in [
         (include_str!("../fixtures/codex-fresh-accepted.ansi"), 12, 149, "s15x-haiku-final (config-tt:s15x-haiku-final): #s15xfresh16 Reply ACK_S15X_FRESH16 only; no tools."),

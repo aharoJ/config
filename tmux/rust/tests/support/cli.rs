@@ -81,6 +81,27 @@ fn grammar() {
     assert!(String::from_utf8(err).unwrap().contains("control"));
 }
 #[test]
+fn agy_route_uses_documented_context() {
+    let env = Env::from([
+        ("AGY_SEND_SESSION".into(), "session".into()),
+        ("AGY_SEND_PANE".into(), "%42".into()),
+    ]);
+    assert_eq!(
+        parse("agy-send-to", &args(&["seat", "#test", "message"]), &env).unwrap(),
+        Operation::Send {
+            client: Some('>'),
+            session: "session".into(),
+            window: "seat".into(),
+            pane: Some(target::PaneId(42)),
+            message: Some("#test message".into())
+        }
+    );
+    assert!(
+        matches!(parse("agy-send-to",&args(&["seat"]),&Env::new()).unwrap(),Operation::Send{client:Some('>'),session,message:None,..}if session.is_empty())
+    );
+    assert!(parse("agy-send-to", &[], &env).is_err());
+}
+#[test]
 fn exits_announcements() {
     for (state, code) in [
         (State::PendingNoInput, 6),
