@@ -7,7 +7,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+pub(crate) mod debugger;
 pub(crate) mod freeze;
+#[path = "lab_tools/rescue_native.rs"]
+pub(crate) mod lab;
+pub(crate) mod rescue;
 type Result<T> = std::result::Result<T, String>;
 pub(crate) const TMUX: &str = "/opt/homebrew/Cellar/tmux/3.7c/bin/tmux";
 
@@ -76,6 +80,20 @@ pub(crate) fn write(path: &Path, bytes: impl AsRef<[u8]>) -> Result<()> {
         .map_err(|e| e.to_string())?;
     file.write_all(bytes.as_ref()).map_err(|e| e.to_string())
 }
+pub(crate) fn integer(key: &str, default: u64, max: u64, zero: bool) -> Result<u64> {
+    let raw = std::env::var(key).unwrap_or_else(|_| default.to_string());
+    if raw.is_empty()
+        || !raw.bytes().all(|b| b.is_ascii_digit())
+        || (raw.len() > 1 && raw.starts_with('0'))
+    {
+        return Err(format!("{key} must be a decimal integer"));
+    }
+    let n = raw.parse::<u64>().map_err(|_| format!("invalid {key}"))?;
+    if n > max || (!zero && n == 0) {
+        return Err(format!("{key} must be {}..{max}", if zero { 0 } else { 1 }));
+    }
+    Ok(n)
+}
 pub(crate) fn is_socket(path: &Path) -> bool {
     fs::metadata(path).is_ok_and(|m| m.file_type().is_socket())
 }
@@ -88,6 +106,139 @@ impl Output {
     pub fn text(&self) -> String {
         String::from_utf8_lossy(&self.out).into_owned()
     }
+}
+pub(crate) fn bounded(command: &mut Command, seconds: u64) -> Result<Output> {
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .process_group(0);
+    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    #[cfg(test)]
+    rescue::record_spawn_for_fixture(child.id(), command);
+    let child_identity = crate::identity::kernel_process(child.id());
+    let mut pipes: Vec<File> = vec![
+        File::from(OwnedFd::from(child.stdout.take().unwrap())),
+        File::from(OwnedFd::from(child.stderr.take().unwrap())),
+    ];
+    for pipe in &pipes {
+        let flags = unsafe { libc::fcntl(pipe.as_raw_fd(), libc::F_GETFL) };
+        if flags < 0
+            || unsafe { libc::fcntl(pipe.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0
+        {
+            return Err("cannot bound command output".into());
+        }
+    }
+    let mut deadline = Instant::now() + Duration::from_secs(seconds);
+    let mut timeout_stage = 0;
+    let mut bytes = [Vec::new(), Vec::new()];
+    let mut eof = [false; 2];
+    loop {
+        for (i, pipe) in pipes.iter_mut().enumerate() {
+            let mut buf = [0; 16384];
+            for _ in 0..16 {
+                match pipe.read(&mut buf) {
+                    Ok(0) => {
+                        eof[i] = true;
+                        break;
+                    }
+                    Ok(n) => bytes[i].extend_from_slice(&buf[..n]),
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
+                    Err(e) => return Err(e.to_string()),
+                }
+            }
+        }
+        let status = child.try_wait().map_err(|e| e.to_string())?;
+        if let Some(status) = status {
+            if eof.iter().all(|v| *v) {
+                #[cfg(test)]
+                rescue::record_lifecycle_for_fixture(child.id(), "reaped");
+                return Ok(Output {
+                    code: if timeout_stage > 0 {
+                        124
+                    } else {
+                        status.code().unwrap_or(1)
+                    },
+                    out: std::mem::take(&mut bytes[0]),
+                    err: std::mem::take(&mut bytes[1]),
+                });
+            }
+        }
+        if Instant::now() >= deadline {
+            if timeout_stage < 2
+                && child_identity.is_some_and(|p| {
+                    crate::identity::kernel_process(child.id())
+                        .is_some_and(|live| live.same(p) && live.parent == std::process::id())
+                })
+            {
+                #[cfg(test)]
+                rescue::record_lifecycle_for_fixture(
+                    child.id(),
+                    if timeout_stage == 0 {
+                        "TERM-deadline"
+                    } else {
+                        "KILL-deadline"
+                    },
+                );
+                unsafe {
+                    libc::kill(
+                        -(child.id() as i32),
+                        if timeout_stage == 0 {
+                            libc::SIGTERM
+                        } else {
+                            libc::SIGKILL
+                        },
+                    );
+                }
+                timeout_stage += 1;
+                deadline = Instant::now() + Duration::from_secs(1);
+                continue;
+            }
+            let _ = child.try_wait();
+            return Ok(Output {
+                code: 124,
+                out: std::mem::take(&mut bytes[0]),
+                err: std::mem::take(&mut bytes[1]),
+            });
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+#[cfg(test)]
+pub(crate) fn tmux(socket: &Path, args: &[&str], seconds: u64) -> Result<Output> {
+    bounded(
+        Command::new(TMUX)
+            .arg("-N")
+            .arg("-S")
+            .arg(socket)
+            .args(args)
+            .env_remove("TMUX")
+            .env_remove("TMUX_PANE"),
+        seconds,
+    )
+}
+#[cfg(test)]
+pub(crate) fn query(socket: &Path, args: &[&str], seconds: u64) -> Result<String> {
+    let o = tmux(socket, args, seconds)?;
+    if o.code == 0 {
+        Ok(o.text().trim_end_matches('\n').into())
+    } else {
+        Err(if o.code == 124 {
+            "tmux request timed out".into()
+        } else {
+            String::from_utf8_lossy(&o.err).into_owned()
+        })
+    }
+}
+
+pub(crate) fn entry(surface: &str, args: &[String]) -> Option<i32> {
+    Some(match surface {
+        "tmux-loop-rescue" => rescue::entry(args),
+        "tmux-lab" if args == ["hold"] => loop {
+            std::thread::park_timeout(Duration::from_secs(3600));
+        },
+        _ => return None,
+    })
 }
 pub(crate) fn bounded_status(
     command: &mut Command,
