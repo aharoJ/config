@@ -2,6 +2,33 @@ use super::*;
 use std::io::Read;
 use std::os::unix::fs::DirBuilderExt;
 #[test]
+#[ignore = "read-only kernel/process admission proof for an explicitly selected live native client"]
+fn live_running_client_binding() {
+    let pane = std::env::var("ANGELSTAR_BIND_PANE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let expected: u32 = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let glyph = std::env::var("ANGELSTAR_BIND_GLYPH")
+        .unwrap()
+        .chars()
+        .next()
+        .unwrap();
+    let client = Client::bind(pane).unwrap();
+    assert_eq!(client.process.pid, expected);
+    assert_eq!(client.glyph, glyph);
+    client.current().unwrap();
+    println!(
+        "running client PID{} executable={} proof={}",
+        expected,
+        client.path.display(),
+        client.proof().unwrap()
+    );
+}
+#[test]
 #[ignore = "read-only owned live Agy process/TTY admission; never launches a client"]
 fn live_native_agy_binding() {
     let pane = std::env::var("ANGELSTAR_BIND_PANE_PID")
@@ -40,23 +67,137 @@ fn live_codex_descendant_binding() {
 }
 
 #[test]
-fn bound_client_checks_identity_without_rebinding_image() {
-    let process = kernel_process(std::process::id()).unwrap();
-    let path = process_path(process.pid).unwrap();
-    let file = File::open(&path).unwrap();
-    // Stand in for an already hash-proven binding. This test image is not a
-    // vendor profile, so calling bind again would fail rather than succeed.
-    let mut client = Client {
-        stamp: stamp(&file.metadata().unwrap()),
-        file,
-        path,
-        process,
-        pane: process,
-        glyph: '›',
-    };
+#[ignore = "owned native PTY regression child only"]
+fn running_image_child() {
+    assert_eq!(std::env::var("ANGELSTAR_RUNNING_IMAGE_CHILD").unwrap(), "1");
+    std::fs::write(
+        std::env::var_os("ANGELSTAR_RUNNING_IMAGE_READY").unwrap(),
+        b"ready",
+    )
+    .unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(120));
+}
+
+#[test]
+fn running_client_survives_replaced_and_deleted_executable() {
+    use std::os::unix::process::CommandExt;
+    struct Seat {
+        child: std::process::Child,
+        _terminal: File,
+    }
+    impl Drop for Seat {
+        fn drop(&mut self) {
+            if self.child.try_wait().unwrap().is_none() {
+                self.child.kill().unwrap();
+            }
+            self.child.wait().unwrap();
+        }
+    }
+    fn seat(path: &Path, arg0: Option<&Path>) -> Seat {
+        let (mut master, mut slave) = (-1, -1);
+        assert_eq!(
+            unsafe {
+                libc::openpty(
+                    &mut master,
+                    &mut slave,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                )
+            },
+            0
+        );
+        let terminal = unsafe { File::from_raw_fd(master) };
+        let slave = unsafe { File::from_raw_fd(slave) };
+        assert_eq!(
+            unsafe { libc::fcntl(master, libc::F_SETFD, libc::FD_CLOEXEC) },
+            0
+        );
+        let fd = slave.as_raw_fd();
+        let ready = path.with_extension("ready");
+        let mut command = Command::new(path);
+        command
+            .args([
+                "--ignored",
+                "--exact",
+                "identity::tests::running_image_child",
+                "--nocapture",
+            ])
+            .env("ANGELSTAR_RUNNING_IMAGE_CHILD", "1")
+            .env("ANGELSTAR_RUNNING_IMAGE_READY", &ready)
+            .stdin(slave.try_clone().unwrap())
+            .stdout(slave.try_clone().unwrap())
+            .stderr(slave.try_clone().unwrap());
+        if let Some(arg0) = arg0 {
+            command.arg0(arg0);
+        }
+        unsafe {
+            command.pre_exec(move || {
+                if libc::setsid() < 0
+                    || libc::ioctl(fd, libc::TIOCSCTTY.into(), 0) < 0
+                    || libc::tcsetpgrp(fd, libc::getpid()) < 0
+                {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+        let child = command.spawn().unwrap();
+        let mut seat = Seat {
+            child,
+            _terminal: terminal,
+        };
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while !ready.is_file() {
+            assert!(
+                seat.child.try_wait().unwrap().is_none(),
+                "owned PTY child exited before ready"
+            );
+            assert!(
+                std::time::Instant::now() < deadline,
+                "owned PTY child did not enter its test body"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        seat
+    }
+    let root = account_home().unwrap().join("desk/tmp").join(format!(
+        "running-image-{}",
+        crate::runtime::fresh_id().unwrap()
+    ));
+    let image = root.join("node_modules/@openai/codex/vendor/aarch64-apple-darwin/bin/codex");
+    std::fs::create_dir_all(image.parent().unwrap()).unwrap();
+    std::fs::copy(std::env::current_exe().unwrap(), &image).unwrap();
+    let running = seat(&image, None);
+    let pid = running.child.id();
+    let mut client = Client::bind(pid).unwrap();
+    assert_eq!(client.glyph, '›');
+    let proof = client.proof().unwrap();
+    let retired = root.join("retired-image");
+    std::fs::rename(&image, &retired).unwrap();
+    std::fs::copy("/bin/sleep", &image).unwrap();
     client.current().unwrap();
-    client.stamp.0 ^= 1;
+    assert_eq!(client.proof().unwrap(), proof);
+    assert_eq!(Client::bind(pid).unwrap().process, client.process);
+    std::fs::remove_file(&retired).unwrap();
+    std::fs::remove_file(&image).unwrap();
+    assert!(process_path(pid).is_err());
+    client.current().unwrap();
+    assert_eq!(Client::bind(pid).unwrap().process, client.process);
+    assert_eq!(Client::bind_codex(pid).unwrap().process, client.process);
+    client.process.start_microseconds ^= 1;
     assert!(client.current().is_err());
+    let other = root.join("not-a-client");
+    std::fs::copy(std::env::current_exe().unwrap(), &other).unwrap();
+    let non_client = seat(&other, Some(&image));
+    assert!(Client::bind(non_client.child.id()).is_err());
+    drop(non_client);
+    drop(running);
+    assert!(Command::new("/usr/bin/trash")
+        .arg(root)
+        .status()
+        .unwrap()
+        .success());
 }
 
 #[test]

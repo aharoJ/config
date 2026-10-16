@@ -1,8 +1,7 @@
 use crate::identity;
-use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-fn arguments(pid: u32) -> Option<Vec<String>> {
+fn process_arguments(pid: u32) -> Option<(PathBuf, Vec<String>)> {
     let mut mib = [libc::CTL_KERN, libc::KERN_PROCARGS2, pid as i32];
     let mut bytes = vec![0u8; 262144];
     let mut length = bytes.len();
@@ -29,6 +28,10 @@ fn arguments(pid: u32) -> Option<Vec<String>> {
     while *bytes.get(at)? != 0 {
         at += 1;
     }
+    let executable = PathBuf::from(std::str::from_utf8(&bytes[4..at]).ok()?);
+    if !executable.is_absolute() {
+        return None;
+    }
     while bytes.get(at) == Some(&0) {
         at += 1;
     }
@@ -38,7 +41,13 @@ fn arguments(pid: u32) -> Option<Vec<String>> {
         result.push(std::str::from_utf8(&bytes[at..end]).ok()?.into());
         at = end + 1;
     }
-    Some(result)
+    Some((executable, result))
+}
+fn arguments(pid: u32) -> Option<Vec<String>> {
+    Some(process_arguments(pid)?.1)
+}
+pub(crate) fn executable_path(pid: u32) -> Option<PathBuf> {
+    Some(process_arguments(pid)?.0)
 }
 pub fn app(pid: u32, path: &Path) -> Option<&'static str> {
     let path_text = path.to_str()?;
@@ -89,10 +98,17 @@ fn groups(pid: u32) -> Option<(u32, u32, u32)> {
         u32::from_ne_bytes(bytes[108..112].try_into().ok()?),
     ))
 }
+pub(crate) fn foreground(pid: u32, pane: u32) -> bool {
+    let Some((group, _, tty)) = groups(pid) else {
+        return false;
+    };
+    let Some((_, foreground, root_tty)) = groups(pane) else {
+        return false;
+    };
+    foreground != 0 && group == foreground && tty == root_tty
+}
 pub(crate) fn agent_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
-    let (group, _, tty) = groups(pid)?;
-    let (_, foreground, root_tty) = groups(pane)?;
-    if foreground == 0 || group != foreground || tty != root_tty {
+    if !foreground(pid, pane) {
         return None;
     }
     let name = path.file_name()?.to_str()?;
@@ -113,31 +129,16 @@ pub(crate) fn native_codex_path(path: &Path) -> bool {
 }
 fn native_agy_path(path: &Path, home: &Path) -> bool {
     let installed = home.join(".local/bin/agy");
-    if path != installed
-        && !std::fs::canonicalize(&installed).is_ok_and(|resolved| resolved == path)
-    {
-        return false;
-    }
-    let cpu: u32 = match std::env::consts::ARCH {
-        "aarch64" => 0x0100000c,
-        "x86_64" => 0x01000007,
-        _ => return false,
-    };
-    let mut header = [0; 16];
-    std::fs::File::open(path)
-        .and_then(|mut file| file.read_exact(&mut header))
-        .is_ok()
-        && header[..4] == [0xcf, 0xfa, 0xed, 0xfe]
-        && header[4..8] == cpu.to_le_bytes()
-        && header[12..16] == 2u32.to_le_bytes()
+    path == installed || std::fs::canonicalize(&installed).is_ok_and(|resolved| resolved == path)
 }
 fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
     if native_agy_path(path, home) {
         return Some('>');
     }
-    if path.parent()? == home.join(".local/share/claude/versions")
-        && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
-            .is_match(path.file_name()?.to_str()?)
+    if path == home.join(".local/bin/claude")
+        || (path.parent()? == home.join(".local/share/claude/versions")
+            && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
+                .is_match(path.file_name()?.to_str()?))
     {
         return Some('❯');
     }
@@ -158,6 +159,18 @@ pub(crate) fn detail(pid: u32) -> identity::Result<String> {
 #[cfg(test)]
 mod relay_tests {
     use super::*;
+    #[test]
+    #[ignore = "read-only kernel executable evidence for an explicitly selected process"]
+    fn live_kernel_executable() {
+        let pid = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
+            .unwrap()
+            .parse()
+            .unwrap();
+        println!(
+            "kernel executable: {}",
+            executable_path(pid).unwrap().display()
+        );
+    }
     #[test]
     fn native_agy_install_and_resolved_target_without_version_pins() {
         let home = identity::account_home()
@@ -185,9 +198,7 @@ mod relay_tests {
             assert_eq!(native_relay_path(&installed, &home), Some('>'));
         }
         assert_eq!(native_relay_path(&other, &home), None);
-        std::fs::rename(&installed, home.join("native-link")).unwrap();
-        std::fs::write(&installed, "#!/bin/sh\nexit 0\n").unwrap();
-        assert_eq!(native_relay_path(&installed, &home), None);
+        assert_eq!(native_relay_path(Path::new("/bin/sh"), &home), None);
         assert!(std::process::Command::new("/usr/bin/trash")
             .arg(&home)
             .status()
@@ -237,6 +248,10 @@ mod relay_tests {
             crate::composer::Composer::EmptyCandidate
         );
         let home = Path::new("/test-account");
+        assert_eq!(
+            native_relay_path(&home.join(".local/bin/claude"), home),
+            Some('❯')
+        );
         for version in ["2.1.296", "2.1.302", "3.20.100", "3.0.0-beta.1"] {
             assert_eq!(
                 native_relay_path(
