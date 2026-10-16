@@ -104,9 +104,72 @@ pub(crate) fn agent_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
         _=>None,
     }
 }
+fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
+    if path.parent()? == home.join(".local/share/claude/versions")
+        && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
+            .is_match(path.file_name()?.to_str()?)
+    {
+        return Some('❯');
+    }
+    crate::model_guard::re(r"/node_modules/@openai/codex(?:/node_modules/@openai/codex-[^/]+)?/vendor/[^/]+/(?:bin/)?codex$")
+        .is_match(path.to_str()?)
+        .then_some('›')
+}
+pub(crate) fn relay_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
+    let expected = native_relay_path(path, &identity::account_home().ok()?)?;
+    (agent_image(pid, pane, path)? == expected).then_some(expected)
+}
+
 pub(crate) fn detail(pid: u32) -> identity::Result<String> {
     let process = identity::kernel_process(pid).ok_or("foreground ancestry changed")?;
     let groups = groups(pid).ok_or("foreground group unavailable")?;
     let argv = arguments(pid).ok_or("foreground arguments unavailable")?;
     Ok(format!("{process:?}:{groups:?}:{argv:?}"))
+}
+
+#[cfg(test)]
+mod relay_tests {
+    use super::*;
+    #[test]
+    fn native_relay_versions_and_non_client_paths() {
+        assert_eq!(
+            crate::composer::classify(
+                include_str!("../tests/fixtures/claude-native302-idle.ansi"),
+                '❯',
+                2,
+                8,
+                149
+            ),
+            crate::composer::Composer::EmptyCandidate
+        );
+        let home = Path::new("/test-account");
+        for version in ["2.1.296", "2.1.302", "3.20.100", "3.0.0-beta.1"] {
+            assert_eq!(
+                native_relay_path(
+                    &home.join(format!(".local/share/claude/versions/{version}")),
+                    home
+                ),
+                Some('❯')
+            );
+        }
+        let codex = home.join(".local/share/fnm/node-versions/v22.19.0/installation/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex");
+        assert_eq!(native_relay_path(&codex, home), Some('›'));
+        for path in [
+            "/bin/sleep",
+            "/tmp/claude",
+            "/other-account/.local/share/claude/versions/2.1.302",
+            "/test-account/.local/share/claude/versions/latest",
+            "/test-account/.local/share/claude/versions/2.1.302/claude",
+            "/tmp/node_modules/@openai/codex/vendor/aarch64-apple-darwin/bin/codex-code-mode-host",
+        ] {
+            assert_eq!(native_relay_path(Path::new(path), home), None, "{path}");
+        }
+        assert!(relay_image(
+            std::process::id(),
+            std::process::id(),
+            &std::env::current_exe().unwrap()
+        )
+        .is_none());
+        assert!(identity::Client::bind(std::process::id()).is_err());
+    }
 }

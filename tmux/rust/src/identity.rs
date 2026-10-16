@@ -1019,27 +1019,9 @@ impl Client {
                         crate::model_identity::agent_image(pid, pane, &path)
                             .map(|glyph| (glyph, ""))
                     } else {
-                        match m.len() {
-                            240664432 => Some((
-                                '❯',
-                                "c9b5341637becbd423ddffc5b254afb645682a3868cb708bbc6cc0e7bb419937",
-                            )),
-                            249556880 => Some((
-                                '❯',
-                                "475517caa611e3318a2f298fa071287ec98955538df78c58f709ecc01e5ae2d3",
-                            )),
-                            250541840 => Some((
-                                '❯',
-                                "1f04c69e1c24e4d0a716a863af0aad8fc64d49a499334c29701f073700276b99",
-                            )),
-                            247931696 => Some((
-                                '❯',
-                                "ba5ab7b8c195fa03ab8d5bf3915c76153b576a2c40e79a5c46e265e7ed9744b3",
-                            )),
-                            246642624 => Some((
-                                '›',
-                                "74c6a6d263f40d65f99c27a815275f5b4ed0bcc2baecc396b4cf3255498bdfc0",
-                            )),
+                        crate::model_identity::relay_image(pid, pane, &path)
+                            .map(|glyph| (glyph, ""))
+                            .or(match m.len() {
                             180917280 => Some((
                                 '>',
                                 "ebd71c4db14f79fca3fd0160332a38d9037146737422dcfc1f1d21ba01a13fff",
@@ -1049,7 +1031,7 @@ impl Client {
                                 "827ba22b4aa33557614a57aac2cc13f386e17db6b802febd3932226906ac05ab",
                             )),
                             _ => None,
-                        }
+                            })
                     };
                     if let Some((glyph, hash)) = profile {
                         if m.is_file()
@@ -1063,14 +1045,14 @@ impl Client {
                             );
                             let mut digest = Sha256::new();
                             let mut buffer = [0u8; 65536];
-                            while operator.is_none() {
+                            while !hash.is_empty() {
                                 let n = bytes.read(&mut buffer).map_err(|e| e.to_string())?;
                                 if n == 0 {
                                     break;
                                 }
                                 digest.update(&buffer[..n]);
                             }
-                            if operator.is_some() || format!("{:x}", digest.finalize()) == hash {
+                            if hash.is_empty() || format!("{:x}", digest.finalize()) == hash {
                                 matches.push(Self {
                                     file,
                                     path,
@@ -1116,7 +1098,7 @@ impl Client {
             }
         }
         if matches.is_empty() {
-            return Err("unsupported client".into());
+            return Err("unsupported native client path or foreground process shape".into());
         }
         if matches.len() != 1 {
             return Err(format!(
