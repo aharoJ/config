@@ -59,18 +59,11 @@ const ADVANCED: &[(&str, &str)] = &[
 ];
 
 pub(crate) fn rows(capture: &str) -> Vec<String> {
-    capture
-        .lines()
-        .map(|line| {
-            re(r"\x1b\[[0-?]*[ -/]*[@-~]")
-                .replace_all(line, "")
-                .trim_end()
-                .to_owned()
-        })
-        .collect()
+    crate::model_guard::rows(capture)
 }
 
 fn highlighted(raw: &str) -> bool {
+    let raw = crate::model_guard::normalize(raw, true);
     let Some((prefix, _)) = raw.split_once('›') else {
         return false;
     };

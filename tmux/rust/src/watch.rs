@@ -134,6 +134,7 @@ fn fingerprint(s: &str) -> String {
     format!("{:x}", Sha256::digest(s.as_bytes()))[..12].into()
 }
 fn extract(capture: &str, height: usize) -> Frame {
+    let capture = crate::model_guard::visible(capture);
     let all: Vec<_> = capture.split_terminator('\n').collect();
     let rows = &all[all.len().saturating_sub(height)..];
     let mut f = Frame {
@@ -902,6 +903,28 @@ pub(crate) fn entry(args: &[String]) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn osc8_captures_keep_idle_busy_and_draft_grammar() {
+        for capture in [
+            include_str!("../tests/fixtures/codex-osc8-reset-tip.ansi"),
+            include_str!("../tests/fixtures/codex-batch2-update-idle.ansi"),
+        ] {
+            for capture in [capture.to_owned(), capture.replace("\x1b\\", "\x07")] {
+                let plain = crate::model_guard::visible(&capture);
+                let frame = extract(&capture, 45);
+                assert_eq!(frame.state, "idle");
+                assert_eq!(frame.model, extract(&plain, 45).model);
+                assert_eq!(frame.turn, extract(&plain, 45).turn);
+                let draft = capture.replace("Ask Codex to do anything", "typed draft");
+                assert_eq!(extract(&draft, 45).state, "unknown");
+                let busy = capture.replace(
+                    "\x1b[1m›\x1b[0m",
+                    "• Working (1s · esc to interrupt)\n\n\x1b[1m›\x1b[0m",
+                );
+                assert_eq!(extract(&busy, 45).state, "busy");
+            }
+        }
+    }
     fn replay(name: &str, ack: bool) -> Vec<String> {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../tools/pane-watch/tests/fx")

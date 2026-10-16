@@ -13,7 +13,9 @@ pub fn row(raw: &str) -> Result<Row, InvalidStyle> {
     scan(raw, false).map(|(row, _)| row)
 }
 
-fn scan(mut raw: &str, mut dim: bool) -> Result<(Row, bool), InvalidStyle> {
+fn scan(raw: &str, mut dim: bool) -> Result<(Row, bool), InvalidStyle> {
+    let normalized = crate::model_guard::normalize(raw, true);
+    let mut raw = normalized.as_str();
     let mut text = String::new();
     let mut visible = false;
     let mut all_dim = true;

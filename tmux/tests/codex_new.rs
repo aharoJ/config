@@ -13,6 +13,67 @@ fn fixture(name: &str) -> String {
 }
 const FOOTER: &str = "Fast off · GPT-6-Astra low · ~/.config";
 
+#[test]
+fn osc8_captures_share_normalization_without_admitting_drafts_or_busy_resets() {
+    let tip = include_str!("../rust/tests/fixtures/codex-osc8-reset-tip.ansi");
+    let update = include_str!("../rust/tests/fixtures/codex-batch2-update-idle.ansi");
+    for capture in [tip, update] {
+        for capture in [capture.to_owned(), capture.replace("\x1b\\", "\x07")] {
+            let plain = crate::model_guard::rows(&capture);
+            assert_eq!(rows(&capture), plain);
+            assert!(!plain.concat().contains('\x1b'));
+            for (raw, text) in capture.lines().zip(&plain) {
+                assert_eq!(composer::row(raw).unwrap().text.trim_end(), text);
+            }
+            let y = plain
+                .iter()
+                .position(|s| s == "› Ask Codex to do anything")
+                .unwrap();
+            let footer = check("footer", &capture, "").unwrap();
+            assert_eq!(
+                crate::model_guard::footer(&capture).as_deref(),
+                Some(footer.as_str())
+            );
+            assert!(check("fresh", &capture, &footer).is_some());
+            assert!(check("busy", &capture, "").is_none());
+            assert_eq!(
+                composer::classify(&capture, '›', 2, y, 149),
+                Composer::EmptyCandidate
+            );
+            assert_eq!(crate::model_payload::input(&capture, '›', 2, y, 149), 0);
+            let draft = capture.replace("\x1b[2mAsk Codex to do anything\x1b[0m", "typed draft");
+            assert_ne!(draft, capture);
+            assert_eq!(composer::classify(&draft, '›', 13, y, 149), Composer::Draft);
+            assert_eq!(crate::model_payload::input(&draft, '›', 13, y, 149), 1);
+            assert!(check("direct-reset", &draft, &footer).is_none());
+            let busy = capture.replace(
+                "\x1b[1m›\x1b[0m",
+                "• Working (1s · esc to interrupt)\n\n\x1b[1m›\x1b[0m",
+            );
+            assert!(check("busy", &busy, "").is_some());
+            assert!(crate::model_payload::busy(&busy, '›', y + 2));
+            assert!(check("direct-reset", &busy, &footer).is_none());
+            if capture.contains("community forum") {
+                assert!(check("direct-reset", &capture, &footer).is_some());
+                assert!(crate::model_guard::check(
+                    "settling-reset",
+                    &capture,
+                    &footer
+                ));
+                assert!(!crate::model_guard::check(
+                    "settling-reset",
+                    &draft,
+                    &footer
+                ));
+                assert!(!crate::model_guard::check("settling-reset", &busy, &footer));
+            }
+        }
+    }
+    for invalid in ["\x1b]8;;unterminated", "\x1b]9;;other\x07", "\x1b[8mhidden"] {
+        assert!(composer::row(invalid).is_err());
+    }
+}
+
 fn variants(raw: &str) -> Vec<String> {
     let sgr = re(r"\x1b\[[0-9;]*m");
     let duplicate = sgr
