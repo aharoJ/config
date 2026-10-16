@@ -63,15 +63,29 @@ fn finish(child: &mut Child, root: &Path, name: &str) -> Value {
         assert!(Instant::now() < deadline, "{name}: deadline; no replay");
         std::thread::sleep(Duration::from_millis(20));
     };
-    let stdout = fs::read_to_string(root.join(format!("{name}.stdout"))).unwrap();
     let stderr = fs::read_to_string(root.join(format!("{name}.stderr"))).unwrap();
     fs::write(root.join(format!("{name}.exit")), format!("{code:?}\n")).unwrap();
     assert_eq!(code, Some(0), "{name}: {stderr}");
-    let result: Value = stdout
+    completed(root, name)
+}
+
+fn completed(root: &Path, name: &str) -> Value {
+    assert_eq!(
+        fs::read_to_string(root.join(format!("{name}.exit"))).unwrap(),
+        "Some(0)\n"
+    );
+    let stdout = fs::read_to_string(root.join(format!("{name}.stdout"))).unwrap();
+    let path = stdout
         .lines()
-        .find_map(|line| serde_json::from_str(line).ok())
+        .find_map(|line| line.split_once("; record ").map(|(_, path)| path))
         .unwrap();
-    assert_eq!(result["submission"], "proved");
+    let result: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    assert_eq!(result["state"], "delivered");
+    fs::write(
+        root.join(format!("{name}.record.json")),
+        serde_json::to_vec_pretty(&result).unwrap(),
+    )
+    .unwrap();
     result
 }
 
@@ -109,15 +123,19 @@ fn private_idle_and_generating_ack() {
         .unwrap();
     fs::write(root.join("missing.stderr"), &missing.stderr).unwrap();
     assert_eq!(missing.status.code(), Some(1));
-    let idle_ack = format!("AGY_IDLE_{}", std::process::id());
-    let mut idle = send(
-        &alias,
-        &root,
-        "idle",
-        &window,
-        &format!("#agyidle Reply {idle_ack} only; no tools."),
-    );
-    let idle_result = finish(&mut idle, &root, "idle");
+    let resume = std::env::var("AGY_RELEASE_RESUME_IDLE_ACK").ok();
+    let idle_ack = resume
+        .clone()
+        .unwrap_or_else(|| format!("AGY_IDLE_{}", std::process::id()));
+    let idle_message = format!("#agyidle Reply {idle_ack} only; no tools.");
+    let idle_result = if resume.is_some() {
+        completed(&root, "idle")
+    } else {
+        let mut idle = send(&alias, &root, "idle", &window, &idle_message);
+        finish(&mut idle, &root, "idle")
+    };
+    assert_eq!(idle_result["message"], idle_message);
+    assert_eq!(idle_result["target"]["pane_id"], pane);
     wait_screen(&pane, &root, "idle-ack", |text| {
         text.lines().any(|line| line.trim() == idle_ack)
             && text.contains("? for shortcuts")
