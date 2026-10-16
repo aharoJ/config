@@ -373,6 +373,9 @@ fn execute(
     }
 }
 pub fn main_entry(surface: &str, args: &[String]) -> i32 {
+    if let Some(code) = crate::lab_tools::entry(surface, args) {
+        return code;
+    }
     if let Some(code) = crate::model::entry(surface, args) {
         return code;
     }

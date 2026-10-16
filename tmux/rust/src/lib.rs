@@ -1,6 +1,7 @@
 pub mod cli;
 mod composer;
 mod identity;
+mod lab_tools;
 pub mod model;
 pub mod model_guard;
 mod model_identity;
