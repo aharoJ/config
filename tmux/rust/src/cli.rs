@@ -146,9 +146,6 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
     let tail = &args[start..];
     let literal = tail.first().is_some_and(|s| s == "--");
     let words = if literal { &tail[1..] } else { tail };
-    if surface == "cc-msg" && words.first().is_some_and(|s| s.contains(':')) {
-        return Err("cc-msg does not accept a positional route".into());
-    }
     if !literal && words.first().is_some_and(|s| s.starts_with('-')) {
         return Err("unsupported message option; use -- for literal text".into());
     }
@@ -164,6 +161,50 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
         pane: selected,
         message: (!words.is_empty()).then(|| words.join(" ")),
     })
+}
+
+fn cc_route_token(args: &[String]) -> Option<(&str, &str)> {
+    let first = if args.first().is_some_and(|s| s == "--") {
+        args.get(1)?
+    } else {
+        args.first()?
+    };
+    if first.chars().any(char::is_whitespace) || first.contains("://") {
+        return None;
+    }
+    let (session, window) = target::split_route(first).ok()?;
+    (!(session.bytes().all(|b| b.is_ascii_digit()) && window.bytes().all(|b| b.is_ascii_digit())))
+        .then_some((session, window))
+}
+
+fn cc_positional_target(args: &[String], snapshot: &target::Snapshot) -> bool {
+    cc_route_token(args).is_some_and(|(session, window)| {
+        snapshot
+            .targets
+            .iter()
+            .any(|t| !t.pane.dead && t.session_name == session && t.window.name == window)
+    })
+}
+
+fn delivery_socket(env: &Env) -> Result<PathBuf> {
+    Ok(PathBuf::from(match env.get("ANGELSTAR_RELAY_SOCKET") {
+        Some(_) => required(env, "ANGELSTAR_RELAY_SOCKET")?,
+        None => match env.get("TMUX") {
+            Some(context) => {
+                let parts: Vec<_> = context.rsplitn(3, ',').collect();
+                if parts.len() != 3
+                    || parts[..2]
+                        .iter()
+                        .any(|s| s.is_empty() || !s.bytes().all(|b| b.is_ascii_digit()))
+                    || parts[2].is_empty()
+                {
+                    return Err("invalid TMUX context".into());
+                }
+                parts[2].into()
+            }
+            None => format!("/private/tmp/tmux-{}/default", unsafe { libc::geteuid() }),
+        },
+    }))
 }
 
 pub fn outcome(state: State) -> i32 {
@@ -306,25 +347,7 @@ pub(crate) fn execute(
                 message,
             } => {
                 let original = message.ok_or("message missing")?;
-                let socket = match env.get("ANGELSTAR_RELAY_SOCKET") {
-                    Some(_) => required(env, "ANGELSTAR_RELAY_SOCKET")?,
-                    None => match env.get("TMUX") {
-                        Some(context) => {
-                            let parts: Vec<_> = context.rsplitn(3, ',').collect();
-                            if parts.len() != 3
-                                || parts[..2]
-                                    .iter()
-                                    .any(|s| s.is_empty() || !s.bytes().all(|b| b.is_ascii_digit()))
-                                || parts[2].is_empty()
-                            {
-                                return Err("invalid TMUX context".into());
-                            }
-                            parts[2].into()
-                        }
-                        None => format!("/private/tmp/tmux-{}/default", unsafe { libc::geteuid() }),
-                    },
-                };
-                let ns = target::connect_delivery(&PathBuf::from(socket))?;
+                let ns = target::connect_delivery(&delivery_socket(env)?)?;
                 let mut prepared = runtime::Prepared::new(&ns, &session, &window, pane, &original)?;
                 prepared.client = client;
                 let budgets = store::Budgets {
@@ -447,7 +470,15 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
     let env: Env = std::env::vars_os()
         .filter_map(|(k, v)| Some((k.into_string().ok()?, v.into_string().ok()?)))
         .collect();
-    match parse(surface, args, &env) {
+    match parse(surface, args, &env).and_then(|op| {
+        if surface == "cc-msg" && cc_route_token(args).is_some() {
+            let ns = target::connect_delivery(&delivery_socket(&env)?)?;
+            if cc_positional_target(args, &ns.capture()?) {
+                return Err("cc-msg does not accept a positional route".into());
+            }
+        }
+        Ok(op)
+    }) {
         Ok(op) => execute(
             op,
             &env,

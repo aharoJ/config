@@ -330,13 +330,35 @@ fn cc_route_first_word_refuses() {
         ("CC_MSG_SESSION".into(), "s".into()),
         ("CC_MSG_WINDOW".into(), "w".into()),
     ]);
+    let snapshot = target::Snapshot::parse(b"$0\t@1\t%2\t42\t0\t7:session6:window\n").unwrap();
     for words in [
         args(&["session:window", "task"]),
         args(&["--", "session:window"]),
     ] {
-        assert!(parse("cc-msg", &words, &env).is_err());
+        assert!(cc_positional_target(&words, &snapshot));
     }
-    assert!(parse("cc-msg", &args(&["Explain", "session:window"]), &env).is_ok());
+    for words in [
+        args(&["Explain", "session:window"]),
+        args(&["Note: x"]),
+        args(&["Note:", "x"]),
+        args(&["a: b c"]),
+        args(&["a:", "b", "c"]),
+        args(&["https://example.test/a:b"]),
+        args(&["15:18"]),
+        args(&["not-live:target", "task"]),
+        args(&["session:window task"]),
+    ] {
+        assert!(!cc_positional_target(&words, &snapshot), "{words:?}");
+        for surface in ["cc-msg", "codex-send", "codex-send-to"] {
+            let mut argv = words.clone();
+            if surface == "codex-send-to" {
+                argv.insert(0, "target".into());
+            }
+            assert!(
+                matches!(parse(surface, &argv, &env).unwrap(), Operation::Send { message: Some(message), .. } if message == words.join(" "))
+            );
+        }
+    }
 }
 
 fn reader_line(output: &str) -> Option<(&str, &str, &str)> {
