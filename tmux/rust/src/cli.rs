@@ -153,7 +153,7 @@ pub fn parse(surface: &str, args: &[String], env: &Env) -> Result<Operation> {
 pub fn outcome(state: State) -> i32 {
     match state {
         State::Submitted => 0,
-        State::TerminalNoInput => 1,
+        State::TerminalNoInput | State::Refused => 1,
         State::PendingNoInput => 6,
         _ => 4,
     }

@@ -111,6 +111,120 @@ fn envelope_capacity() {
     assert!(!capacity.permits());
 }
 #[test]
+fn captured_transition_needs_acceptance_or_exact_removal() {
+    let wire = "sol (config-tt:sol): #rf-r1-p6 -- full: ~/desk/tmp/relay-rust-store/ddb758b0a3d63f5fe4f437d5395865d5.original";
+    let capture = include_str!("../fixtures/claude-transition-staged.ansi");
+    let observe = |capture: &str, x, y| {
+        let (bytes, busy) = match composer::screen('❯', capture, x, y, 149, wire) {
+            composer::Screen::Staged(bytes) => (bytes, false),
+            composer::Screen::Empty => (Vec::new(), false),
+            composer::Screen::Hold => (Vec::new(), true),
+        };
+        View {
+            receipt: composer::receipt('❯', capture, x, y, 149, wire),
+            bytes,
+            busy,
+            copy: false,
+            x: x as u64,
+            y: y as u64,
+            width: 149,
+            height: 45,
+        }
+    };
+    let staged = observe(capture, 111, 29);
+    assert_eq!(staged.bytes, wire.as_bytes());
+    assert!(!staged.accepted(Default::default(), (149, 45), true));
+    let cleared = observe(&capture.replace(wire, ""), 2, 29);
+    assert!(!cleared.busy);
+    assert!(cleared.accepted(Default::default(), (149, 45), true));
+    assert!(!cleared.accepted(Default::default(), (149, 45), false));
+    let changed = observe(&capture.replace(wire, &format!("{wire}!")), 112, 29);
+    assert!(!changed.accepted(Default::default(), (149, 45), true));
+    let queued = include_str!("../fixtures/claude-busy-queued-with-tip.ansi");
+    let old_wire = "sol (config-tt:sol): #rf-p6 -- full: ~/desk/tmp/relay-rust-store/d1cc2d94966b184255b27c7813766208.original";
+    let receipt = composer::receipt('❯', queued, 2, 28, 149, old_wire);
+    let view = View {
+        receipt,
+        bytes: Vec::new(),
+        busy: false,
+        copy: false,
+        x: 2,
+        y: 28,
+        width: 149,
+        height: 45,
+    };
+    assert!(view.accepted(Default::default(), (149, 45), false));
+    assert!(!view.accepted(receipt, (149, 45), false));
+}
+#[test]
+#[ignore = "owned private guard transition, exactly-once submission and residue-free refusal"]
+fn transition_guard_and_owned_refusal() {
+    if crate::test_server::supervised("runtime::tests::transition_guard_and_owned_refusal") {
+        return;
+    }
+    let server = crate::test_server::Server::new();
+    server.fixtures(&["target", "remove", "decoy"]);
+    let ns = server.namespace();
+    let message = "#transition staged-message";
+    let prepared = Prepared::new(&ns, "private-k50", "target", None, message).unwrap();
+    let mut store = Store::open(&server.root.join("archive-transition")).unwrap();
+    let budgets = Budgets {
+        stop_ms: 30,
+        drain_ms: 30,
+        reap_ms: 30,
+        decision_ms: 90,
+    };
+    let mut runtime = Runtime::accept(
+        &ns,
+        prepared,
+        &mut store,
+        message.as_bytes(),
+        budgets.clone(),
+    )
+    .unwrap();
+    runtime.fixture = Some(server.root.join("target.json"));
+    let mut inject = true;
+    runtime.before_enter = Some(Box::new(|| {
+        if inject {
+            server.command(&["copy-mode", "-t", "private-k50:target"]);
+            inject = false;
+        }
+        Ok(())
+    }));
+    assert_eq!(runtime.tick().unwrap(), State::WaitingForFocusRelease);
+    assert_eq!(fixture_state(&server, "target")["submissions"], 0);
+    assert!(!runtime.enter_pending);
+    assert_eq!(runtime.tick().unwrap(), State::WaitingForFocusRelease);
+    server.command(&["send-keys", "-t", "private-k50:target", "-X", "cancel"]);
+    assert_eq!(runtime.tick().unwrap(), State::Submitted);
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while fixture_state(&server, "target")["submissions"] != 1 {
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(runtime.tick().unwrap(), State::Submitted);
+    assert_eq!(fixture_state(&server, "target")["submissions"], 1);
+    runtime.close().unwrap();
+    drop(runtime);
+    let client = attached(&server, "remove");
+    let message = "#remove staged-message";
+    let prepared = Prepared::new(&ns, "private-k50", "remove", None, message).unwrap();
+    let mut store = Store::open(&server.root.join("archive-remove")).unwrap();
+    let mut runtime =
+        Runtime::accept(&ns, prepared, &mut store, message.as_bytes(), budgets).unwrap();
+    runtime.fixture = Some(server.root.join("remove.json"));
+    assert_eq!(runtime.tick().unwrap(), State::WaitingForFocusRelease);
+    runtime.close().unwrap();
+    assert_eq!(runtime.state, State::Refused);
+    assert_eq!(crate::cli::outcome(runtime.state), 1);
+    assert_eq!(store::reader_state(runtime.state), "refused");
+    assert_eq!(fixture_state(&server, "remove")["draft"], "");
+    assert_eq!(fixture_state(&server, "remove")["submissions"], 0);
+    assert_eq!(fixture_state(&server, "decoy")["events"], 0);
+    drop(runtime);
+    detach(client);
+}
+#[test]
 fn owned_cleanup() {
     for n in [0, u64::MAX] {
         assert!(validate_budgets(&Budgets {
@@ -997,7 +1111,7 @@ fn capacity_guards() {
     assert!(runtime.prepared.wire.contains("#capacity -- full: "));
     let before = runtime.view().unwrap();
     runtime.geometry = Some((before.width, before.height, before.y));
-    let condition = runtime.condition().unwrap();
+    let condition = runtime.condition_for(&runtime.view().unwrap()).unwrap();
     server.command(&[
         "resize-window",
         "-t",
@@ -1008,7 +1122,7 @@ fn capacity_guards() {
         "45",
     ]);
     assert_eq!(
-        runtime.condition().unwrap_err(),
+        runtime.condition_for(&runtime.view().unwrap()).unwrap_err(),
         "geometry changed before effect"
     );
     let pane = runtime.prepared.target.selector();
