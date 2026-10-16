@@ -1,0 +1,8 @@
+{
+  "red-k51-tight-core-r2.md": "af48ed79e7b6a0981dedef8c6d90887fa43433d3b83046dde55dd9eb9f4427c8",
+  "k51-tight-core-package.md": "d39144e845bef53b4674e784cb23fac90a6acdb0aaae00b266e43e5b69aa800c",
+  "k51-source-after-diagnostics-sha256.txt": "b43567c2bfceeb04db20686fc2e52ec25c766123f512ff6b63148a581977ffe8",
+  "k51-artifacts-sha256.txt": "6088c643d53abdef33ec7eb84339440fa661e140a63337c18c79f193c3f2d3f5",
+  "k51-review-sha256.txt": "f81105db4c9a5a35f69aec79e0536ca75d063098902b1f954741531486668139",
+  "k51-validation/timing-ledger.json": "d38838aada7f89bb93a44cf3b5ead764fe4deee1e002b1e79ef618718df8b784"
+}

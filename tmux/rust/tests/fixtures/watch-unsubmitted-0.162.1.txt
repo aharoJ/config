@@ -1,0 +1,72 @@
+
+  >_ OpenAI Codex (v0.162.1)
+     ~/desk/lab/tmux-to-rust-release-pane-watch
+
+
+› Ask Codex to do anything
+
+
+
+  Update available · 0.162.1 → 0.163.0
+  Release notes: https://github.com/openai/codex/releases/latest
+
+› 1. Update now (runs `npm install -g @openai/codex`)
+  2. Skip
+  3. Skip until next version
+
+  enter continue · esc skip
+
+  >_ OpenAI Codex (v0.162.1)
+     ~/desk/lab/tmux-to-rust-release-pane-watch
+
+
+› Ask Codex to do anything
+
+
+
+╭─────────────────────────────────────────────────╮
+│ ✨ Update available! 0.162.1 -> 0.163.0         │
+│ Run npm install -g @openai/codex to update.     │
+│                                                 │
+│ See full release notes:                         │
+│ https://github.com/openai/codex/releases/latest │
+╰─────────────────────────────────────────────────╯
+
+
+  >_ OpenAI Codex (v0.162.1)
+     ~/desk/lab/tmux-to-rust-release-pane-watch
+  permissions: YOLO mode
+
+  Tip: Use the desktop app. Run codex app to open it. It installs automatically if needed.
+
+
+› #release-watch-private-1 Reply exactly PW_RELEASE_ALPHA PW_RELEASE_OMEGA without tools.
+
+
+  Fast off · GPT-6.1-Sol xhigh · ~/desk/lab/tmux-to-rust-release-pane-watch · Context 0% used
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
