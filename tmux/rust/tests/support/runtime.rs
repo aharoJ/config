@@ -2,7 +2,7 @@ use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 #[test]
 fn agy_generation_accepts_only_a_fresh_own_receipt() {
-    let capture = include_str!("../fixtures/rt2-agy-busy-generating.ansi");
+    let capture = include_str!("../../../tests/fixtures/rt2-agy-busy-generating.ansi");
     let y = capture
         .lines()
         .position(|row| row == "\x1b[94m>\x1b[39m")
