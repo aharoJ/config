@@ -1,6 +1,186 @@
 use super::*;
 use std::os::unix::fs::OpenOptionsExt;
 #[test]
+fn captured_lab_unknown_requires_retired_producers_and_distinct_request() {
+    let attempt: store::Attempt =
+        serde_json::from_str(include_str!("../fixtures/lab-unsettled-attempt.json")).unwrap();
+    assert_eq!(attempt.state(), State::InputUnknown);
+    assert_eq!(attempt.id, "f91f272f2c10195960ae8d35074175f3");
+    assert!(prior_blocker(&attempt, false, |_, _| false).is_none());
+    assert!(prior_blocker(&attempt, true, |_, _| false)
+        .unwrap()
+        .contains("no replay"));
+    for ownership in attempt
+        .history
+        .iter()
+        .filter_map(|t| t.evidence.ownership.as_ref())
+    {
+        let mut identities = vec![(ownership.owner_pid, ownership.owner_generation)];
+        identities.extend(ownership.child);
+        for active in identities {
+            assert!(
+                prior_blocker(&attempt, false, |pid, generation| (pid, generation)
+                    == active)
+                .unwrap()
+                .contains("still live")
+            );
+        }
+    }
+    let mut unproved = attempt.clone();
+    for transition in &mut unproved.history {
+        transition.evidence.ownership = None;
+    }
+    assert!(prior_blocker(&unproved, false, |_, _| false)
+        .unwrap()
+        .contains("retirement unproved"));
+}
+#[test]
+#[ignore = "private lab target with a retired unknown owner and a cleared mark"]
+fn lab_cleared_mark_after_retired_unknown() {
+    if crate::test_server::supervised("runtime::tests::lab_cleared_mark_after_retired_unknown") {
+        return;
+    }
+    let server = crate::test_server::Server::new();
+    server.fixtures(&["lab", "lab-decoy"]);
+    let ns = server.namespace();
+    let mut store = Store::open(&server.root.join("lab-archive")).unwrap();
+    let budgets = Budgets {
+        stop_ms: 30,
+        drain_ms: 30,
+        reap_ms: 30,
+        decision_ms: 90,
+    };
+    let prepared = Prepared::new(&ns, "private-k50", "lab", None, "#prior old request").unwrap();
+    let mut old = Runtime::accept(
+        &ns,
+        prepared,
+        &mut store,
+        b"#prior old request",
+        budgets.clone(),
+    )
+    .unwrap();
+    old.fixture = Some(server.root.join("lab.json"));
+    let mut child = OwnedChild::spawn(Command::new("/bin/sleep").arg("0.1")).unwrap();
+    let owner = child.identity.unwrap();
+    while !child.poll().unwrap() {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    let lease = identity::delivery_attest(ns.socket()).unwrap();
+    let evidence = Evidence {
+        capacity: Some(store::Capacity {
+            width: 80,
+            height: 24,
+            cursor_x: 2,
+            cursor_y: 0,
+            pointer: old.prepared.wire.clone(),
+            cells: Some(old.prepared.wire.len() as u64),
+            byte_limit: Some(77),
+            cell_limit: Some(77),
+        }),
+        budgets: Some(budgets.clone()),
+        composer_proof: Some("captured empty composer".into()),
+        ownership: Some(Ownership {
+            owner_pid: owner.pid,
+            owner_generation: owner.generation().unwrap(),
+            child: None,
+            socket_path: server.socket.to_string_lossy().into(),
+            socket_device: old.peer.socket_device,
+            socket_inode: old.peer.socket_inode,
+            server_generation: old.peer.server_generation,
+            lease_owner: lease["owner"].as_u64().unwrap() as u32,
+            lease_nonce: lease["nonce"].as_str().unwrap().into(),
+        }),
+        ..Default::default()
+    };
+    old.commit(State::InputIntent, evidence).unwrap();
+    old.unknown("failure cleanup: composer already empty; no removal input")
+        .unwrap();
+    let prior = old.id.clone();
+    old.close().unwrap();
+    drop(old);
+    let prepared = Prepared::new(&ns, "private-k50", "lab", None, "#new distinct request").unwrap();
+    let mut runtime =
+        Runtime::accept(&ns, prepared, &mut store, b"#new distinct request", budgets).unwrap();
+    runtime.fixture = Some(server.root.join("lab.json"));
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while runtime.tick().unwrap() == State::PendingNoInput {
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    runtime.close().unwrap();
+    let observed = runtime.state;
+    drop(runtime);
+    assert_eq!(
+        observed,
+        State::Submitted,
+        "retired unknown with cleared mark blocked a distinct request; evidence {}",
+        server.root.display()
+    );
+    assert_eq!(store.attempt(&prior).unwrap().state(), State::InputUnknown);
+    assert_eq!(fixture_state(&server, "lab")["submissions"], 1);
+    assert_eq!(fixture_state(&server, "lab-decoy")["events"], 0);
+    let prepared = Prepared::new(&ns, "private-k50", "lab", None, "#prior old request").unwrap();
+    let replay = Runtime::accept(
+        &ns,
+        prepared,
+        &mut store,
+        b"#prior old request",
+        Budgets {
+            stop_ms: 30,
+            drain_ms: 30,
+            reap_ms: 30,
+            decision_ms: 90,
+        },
+    );
+    assert!(replay.err().unwrap().contains("Unresolved"));
+    assert_eq!(fixture_state(&server, "lab")["submissions"], 1);
+    let peer = store.attempt(&prior).unwrap().peer;
+    let mark = server.root.join(format!(
+        "target-{}-{}-{}",
+        peer.server_generation, peer.pane, peer.pane_generation
+    ));
+    std::fs::write(&mark, &prior).unwrap();
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    let environment = std::collections::HashMap::from([
+        (
+            "ANGELSTAR_RELAY_STORE".into(),
+            server.root.join("lab-archive").to_string_lossy().into(),
+        ),
+        (
+            "ANGELSTAR_RELAY_SOCKET".into(),
+            server.socket.to_string_lossy().into(),
+        ),
+    ]);
+    assert_eq!(
+        crate::cli::execute(
+            crate::cli::Operation::Send {
+                client: Some('›'),
+                session: "private-k50".into(),
+                window: "lab".into(),
+                pane: None,
+                message: Some("#blocked marked request".into())
+            },
+            &environment,
+            &mut &b""[..],
+            &mut out,
+            &mut err
+        ),
+        1
+    );
+    let stderr = String::from_utf8(err).unwrap();
+    assert!(stderr.contains("prior target effect unresolved"));
+    let stdout = String::from_utf8(out).unwrap();
+    let record = stdout.split("; record ").nth(1).unwrap().trim();
+    let record: store::ReaderRecord =
+        serde_json::from_slice(&std::fs::read(record).unwrap()).unwrap();
+    assert!(stderr.contains(record.reason.as_deref().unwrap()));
+    assert_eq!(record.state, "error");
+    assert_eq!(std::fs::read_to_string(mark).unwrap(), prior);
+    assert_eq!(fixture_state(&server, "lab")["submissions"], 1);
+    println!("lab regression evidence {}", server.root.display());
+}
+#[test]
 fn delivery_guard_accepts_literal_message_formats() {
     assert!(
         identity::validate_delivery(&["send-keys", "-t", "%7", "-N", "27", "BSpace"], true).is_ok()

@@ -100,6 +100,46 @@ fn exits_announcements() {
     assert_eq!(wait_ms(&Env::new()).unwrap(), 30000);
 }
 #[test]
+fn every_non_success_state_has_a_durable_reason() {
+    for state in [
+        State::PendingNoInput,
+        State::InputIntent,
+        State::Pasted,
+        State::WaitingForFocusRelease,
+        State::SubmitIntent,
+        State::InputUnknown,
+        State::TerminalNoInput,
+        State::Refused,
+    ] {
+        let attempt = store::Attempt {
+            id: "a".repeat(32),
+            archive: "b".repeat(32),
+            request: "request".into(),
+            peer: store::Peer {
+                socket_device: 1,
+                socket_inode: 2,
+                server_generation: 3,
+                session: 4,
+                window: 5,
+                pane: 6,
+                pane_generation: 7,
+            },
+            attribution: store::Attribution {
+                source: store::Source::Tool,
+                label: "relay".into(),
+                codes: vec![],
+            },
+            history: vec![store::Transition {
+                sequence: 0,
+                predecessor: None,
+                state,
+                evidence: store::Evidence::default(),
+            }],
+        };
+        assert!(!attempt.reason().unwrap().is_empty(), "{state:?}");
+    }
+}
+#[test]
 fn read_status() {
     use std::os::unix::fs::DirBuilderExt;
     let path = PathBuf::from(std::env::var_os("HOME").unwrap())

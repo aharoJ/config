@@ -462,6 +462,39 @@ struct View {
     x: u64,
     y: u64,
 }
+fn prior_blocker(
+    attempt: &store::Attempt,
+    same_request: bool,
+    mut live: impl FnMut(u32, u64) -> bool,
+) -> Option<String> {
+    let why = if same_request {
+        "same request remains unsettled; no replay"
+    } else {
+        let mut attested = false;
+        for ownership in attempt
+            .history
+            .iter()
+            .filter_map(|t| t.evidence.ownership.as_ref())
+        {
+            attested = true;
+            if live(ownership.owner_pid, ownership.owner_generation)
+                || ownership
+                    .child
+                    .is_some_and(|(pid, generation)| live(pid, generation))
+            {
+                return Some(format!(
+                    "prior unsettled attempt {}: owner or producer still live; no input",
+                    attempt.id
+                ));
+            }
+        }
+        if attested {
+            return None;
+        }
+        "producer retirement unproved; no input"
+    };
+    Some(format!("prior unsettled attempt {}: {why}", attempt.id))
+}
 impl View {
     fn accepted(&self, prior: composer::Receipt, dimensions: (u64, u64), applied: bool) -> bool {
         !self.copy
@@ -498,9 +531,26 @@ pub struct Runtime<'a> {
     before_enter: Option<Box<dyn FnMut() -> Result<()> + 'a>>,
 }
 impl<'a> Runtime<'a> {
-    pub fn reader_record(&mut self) -> Result<(State, std::path::PathBuf)> {
-        let target = &self.prepared.target;
+    pub fn record_diagnostics(&mut self, diagnostics: Vec<String>) -> Result<()> {
+        if !self.closed {
+            return Err("diagnostics require finalized owner".into());
+        }
+        if diagnostics.is_empty() {
+            return Ok(());
+        }
         self.store
+            .diagnostics(&self.id, diagnostics)
+            .map_err(|e| format!("outcome diagnostics: {e:?}"))
+    }
+    pub fn reader_record(&mut self) -> Result<(State, std::path::PathBuf, Option<String>)> {
+        let target = &self.prepared.target;
+        let reason = self
+            .store
+            .attempt(&self.id)
+            .map_err(|e| format!("outcome reason: {e:?}"))?
+            .reason();
+        let (state, path) = self
+            .store
             .reader_record(
                 &self.id,
                 store::ReaderTarget {
@@ -511,7 +561,8 @@ impl<'a> Runtime<'a> {
                 },
                 self.prepared.message.clone(),
             )
-            .map_err(|e| format!("reader record: {e:?}"))
+            .map_err(|e| format!("reader record: {e:?}"))?;
+        Ok((state, path, reason))
     }
     pub fn ids(&self) -> (&str, &str) {
         (&self.id, &self.archive)
@@ -796,12 +847,30 @@ impl<'a> Runtime<'a> {
                 return self.no_input("prior target effect unresolved; no replay");
             }
         }
-        if self
+        let unsettled = self
             .store
-            .target_blocked(&self.id)
-            .map_err(|e| format!("target ledger: {e:?}"))?
-        {
-            return self.no_input("prior unsettled target; no replay");
+            .unsettled_targets(&self.id)
+            .map_err(|e| format!("target ledger: {e:?}"))?;
+        if !unsettled.is_empty() {
+            let original = self
+                .store
+                .read(&self.archive, false)
+                .map_err(|e| format!("request archive: {e:?}"))?;
+            let original = normalize(std::str::from_utf8(&original).map_err(|e| e.to_string())?)?;
+            for attempt in &unsettled {
+                let prior = self
+                    .store
+                    .read(&attempt.archive, false)
+                    .map_err(|e| format!("prior archive {}: {e:?}", attempt.id))?;
+                let same =
+                    normalize(std::str::from_utf8(&prior).map_err(|e| e.to_string())?)? == original;
+                if let Some(reason) = prior_blocker(attempt, same, |pid, generation| {
+                    identity::kernel_process(pid).and_then(|p| p.generation().ok())
+                        == Some(generation)
+                }) {
+                    return self.no_input(&reason);
+                }
+            }
         }
         let before = match self.view() {
             Ok(v) => v,
@@ -818,7 +887,7 @@ impl<'a> Runtime<'a> {
             self.ready_since = None;
             return Ok(self.state);
         }
-        if self.receipt_mode() {
+        if self.receipt_mode() || !unsettled.is_empty() {
             match self.ready_since {
                 Some((since, width, height, y))
                     if (width, height, y) == (before.width, before.height, before.y) =>
@@ -887,6 +956,9 @@ impl<'a> Runtime<'a> {
                 .map_err(|e| e.to_string())?,
             lease_nonce: lease["nonce"].as_str().ok_or("lease nonce absent")?.into(),
         });
+        for attempt in unsettled {
+            self.evidence.diagnostics.push(format!("distinct request admitted after empty settled mark, stable empty composer and retired owner/producers; prior attempt {} remains {:?}; no replay",attempt.id,attempt.state()));
+        }
         self.commit(State::InputIntent, self.evidence.clone())?;
         let lock = self.lock.as_mut().ok_or("target lock absent")?;
         lock.write_all(self.id.as_bytes())

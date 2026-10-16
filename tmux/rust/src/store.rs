@@ -47,6 +47,8 @@ pub struct ReaderTarget {
 pub struct ReaderRecord {
     pub id: String,
     pub state: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
     pub message: String,
     pub label: String,
     pub operator: bool,
@@ -294,6 +296,27 @@ pub struct Attempt {
 }
 
 impl Attempt {
+    pub fn reason(&self) -> Option<String> {
+        let mut notes = Vec::new();
+        for transition in &self.history {
+            for note in &transition.evidence.diagnostics {
+                if !notes.contains(note) {
+                    notes.push(note.clone());
+                }
+            }
+        }
+        if notes.is_empty() {
+            let fallback = match self.state() {
+                State::Submitted => return None,
+                State::TerminalNoInput => "delivery refused before input",
+                State::Refused => "unsubmitted own input removed; delivery refused",
+                State::PendingNoInput => "delivery pending; no input launched",
+                _ => "submission unproved; do not resend",
+            };
+            notes.push(fallback.into());
+        }
+        Some(notes.join("; "))
+    }
     pub fn state(&self) -> State {
         self.history.last().expect("validated history").state
     }
@@ -1025,6 +1048,10 @@ impl Store {
         }
         if record.id != id
             || record.state != reader_state(attempt.state())
+            || record
+                .reason
+                .as_ref()
+                .is_some_and(|reason| reason.is_empty() || Some(reason.clone()) != attempt.reason())
             || record.label != attempt.attribution.label
             || record.message != message
             || record.operator
@@ -1068,6 +1095,7 @@ impl Store {
         let record = ReaderRecord {
             id: id.into(),
             state: reader_state(state).into(),
+            reason: attempt.reason(),
             message,
             label: attempt.attribution.label,
             operator: false,
@@ -1085,7 +1113,7 @@ impl Store {
         )?;
         Ok((state, self.path.join(name)))
     }
-    pub fn target_blocked(&mut self, id: &str) -> Result<bool> {
+    pub fn unsettled_targets(&mut self, id: &str) -> Result<Vec<Attempt>> {
         let _lock = self.lock()?;
         let own = self
             .ledger
@@ -1093,18 +1121,24 @@ impl Store {
             .iter()
             .find(|a| a.id == id)
             .ok_or(Error::Missing)?;
-        Ok(self.ledger.attempts.iter().any(|a| {
-            a.id != id
-                && a.peer == own.peer
-                && matches!(
-                    a.state(),
-                    State::InputIntent
-                        | State::Pasted
-                        | State::WaitingForFocusRelease
-                        | State::SubmitIntent
-                        | State::InputUnknown
-                )
-        }))
+        Ok(self
+            .ledger
+            .attempts
+            .iter()
+            .filter(|a| {
+                a.id != id
+                    && a.peer == own.peer
+                    && matches!(
+                        a.state(),
+                        State::InputIntent
+                            | State::Pasted
+                            | State::WaitingForFocusRelease
+                            | State::SubmitIntent
+                            | State::InputUnknown
+                    )
+            })
+            .cloned()
+            .collect())
     }
     pub fn transition(
         &mut self,

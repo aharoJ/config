@@ -227,7 +227,7 @@ fn announcement(
         outcome(state)
     }
 }
-fn execute(
+pub(crate) fn execute(
     op: Operation,
     env: &Env,
     input: &mut dyn Read,
@@ -326,40 +326,70 @@ fn execute(
                 )?;
                 let id = runtime.ids().0.to_owned();
                 let deadline = Instant::now() + Duration::from_millis(milliseconds);
+                let mut finished = false;
+                let mut diagnostics = Vec::new();
                 while !INTERRUPTED.load(Ordering::Relaxed) && Instant::now() < deadline {
                     match runtime.tick() {
                         Ok(
                             State::PendingNoInput | State::WaitingForFocusRelease | State::Pasted,
                         ) => std::thread::sleep(Duration::from_millis(10)),
-                        Ok(_) => break,
+                        Ok(_) => {
+                            finished = true;
+                            break;
+                        }
                         Err(e) => {
                             let _ = writeln!(err, "relay: {e}; attempt {id}");
+                            diagnostics.push(e);
                             break;
                         }
                     }
                 }
+                if !finished && diagnostics.is_empty() {
+                    diagnostics.push(if INTERRUPTED.load(Ordering::Relaxed) {
+                        "delivery interrupted; finalization follows".into()
+                    } else {
+                        "delivery wait budget expired; finalization follows".into()
+                    });
+                }
                 let closed = runtime.close();
-                let record = runtime.reader_record();
-                drop(runtime);
-                if let Err(e) = closed {
+                if let Err(e) = &closed {
+                    diagnostics.push(format!("cleanup/durability unresolved: {e}"));
                     let _ = writeln!(
                         err,
                         "relay: cleanup/durability unresolved: {e}; attempt {id}"
                     );
-                    return Ok(4);
                 }
-                let (state, path) = match record {
+                let recorded = runtime.record_diagnostics(diagnostics);
+                if let Err(e) = &recorded {
+                    let _ = writeln!(err, "relay: {e}; committed attempt {id}");
+                }
+                let record = runtime.reader_record();
+                drop(runtime);
+                let (state, path, reason) = match record {
                     Ok(record) => record,
                     Err(e) => {
                         let _ = writeln!(err, "relay: {e}; committed attempt {id}");
                         return Ok(4);
                     }
                 };
+                if outcome(state) != 0 {
+                    let _ = writeln!(
+                        err,
+                        "relay: {}; attempt {id}",
+                        reason
+                            .as_deref()
+                            .unwrap_or("delivery unresolved; do not resend")
+                    );
+                }
                 if write_reader_announcement(out, &id, state, &path).is_err() {
                     let _ = writeln!(err, "relay: announcement failed; committed attempt {id}");
                     return Ok(4);
                 }
-                Ok(outcome(state))
+                Ok(if closed.is_err() || recorded.is_err() {
+                    4
+                } else {
+                    outcome(state)
+                })
             }
             Operation::Help => unreachable!(),
         }
