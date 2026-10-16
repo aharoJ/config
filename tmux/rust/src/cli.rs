@@ -373,6 +373,9 @@ fn execute(
     }
 }
 pub fn main_entry(surface: &str, args: &[String]) -> i32 {
+    if matches!(surface, "pane-watch" | "pane-watch.sh") {
+        return crate::watch::entry(args);
+    }
     if let Some(code) = crate::model::entry(surface, args) {
         return code;
     }

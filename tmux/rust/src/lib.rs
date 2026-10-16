@@ -23,3 +23,5 @@ mod store;
 #[cfg(test)]
 #[path = "../tests/support/private_server.rs"]
 mod test_server;
+mod watch;
+mod watch_support;
