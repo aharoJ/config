@@ -35,6 +35,25 @@ fn capture(pane: &str, path: &Path) -> String {
     fs::write(path, &text).unwrap();
     text
 }
+fn current_prompt(capture: &str) -> Option<String> {
+    angelstar_runtime::model_guard::visible(capture)
+        .lines()
+        .rev()
+        .find(|line| line.starts_with(['›', '»']))
+        .map(str::to_owned)
+}
+fn staged(capture: &str, wire: &str) -> bool {
+    current_prompt(capture).is_some_and(|line| {
+        line.strip_prefix(['›', '»'])
+            .is_some_and(|text| text.trim() == wire)
+    })
+}
+fn submitted(capture: &str) -> bool {
+    current_prompt(capture).is_some_and(|line| {
+        line.strip_prefix(['›', '»'])
+            .is_some_and(|text| text.trim() == "Ask Codex to do anything")
+    })
+}
 fn tree(pid: u32) -> Vec<(u32, u32, String)> {
     let output = Command::new("/bin/ps")
         .args(["-axo", "pid=,ppid=,comm="])
@@ -265,8 +284,32 @@ fn release_watch_smoke() {
     let first = smoke.watcher(&executable, &hot, false, "first");
     for turn in [1, 2] {
         let wire = format!("#release-watch-{phase}-{turn} Reply exactly PW_RELEASE_ALPHA PW_RELEASE_OMEGA without tools.");
-        q(&["send-keys", "-t", &smoke.pane, "-l", "--", &wire]);
+        let wire_path = root.join(format!("turn-{turn}.wire"));
+        fs::write(&wire_path, &wire).unwrap();
+        let buffer = format!("watch-release-{}-{turn}", std::process::id());
+        q(&["load-buffer", "-b", &buffer, wire_path.to_str().unwrap()]);
+        q(&["paste-buffer", "-p", "-d", "-b", &buffer, "-t", &smoke.pane]);
+        wait(
+            || {
+                staged(
+                    &capture(&smoke.pane, &root.join(format!("turn-{turn}-staged.txt"))),
+                    &wire,
+                )
+            },
+            3,
+            "exact bracketed paste rendered",
+        );
         q(&["send-keys", "-t", &smoke.pane, "Enter"]);
+        wait(
+            || {
+                submitted(&capture(
+                    &smoke.pane,
+                    &root.join(format!("turn-{turn}-submitted.txt")),
+                ))
+            },
+            3,
+            "one Enter submitted the owned probe",
+        );
         wait(
             || {
                 capture(&smoke.pane, &root.join(format!("turn-{turn}.txt")))
@@ -296,7 +339,6 @@ fn release_watch_smoke() {
             12,
             "idle alert per turn",
         );
-        fs::write(root.join(format!("turn-{turn}.wire")), wire).unwrap();
     }
     assert_eq!(
         text(&first)
@@ -363,4 +405,19 @@ fn release_watch_smoke() {
         &json!({"status":"PASS","phase":phase,"two_real_hot_turns":true,"hot":"PW_RELEASE_OMEGA","resize":[45,35,45],"replaced_exit":143,"target_exit":3,"watcher_lock_absent":true,"owned_pane_process_absent":true,"focus_unchanged":true,"executable":executable}),
     );
     smoke.passed = true;
+}
+
+#[test]
+fn retained_unsubmitted_probe_cannot_count_as_a_submitted_turn() {
+    let capture = include_str!("fixtures/watch-unsubmitted-0.162.1.txt");
+    let wire =
+        "#release-watch-private-1 Reply exactly PW_RELEASE_ALPHA PW_RELEASE_OMEGA without tools.";
+    assert!(!capture.contains('\u{1b}'));
+    assert!(capture.contains("Update available"));
+    assert!(capture.contains("Fast off · GPT-6.1-Sol xhigh"));
+    assert!(staged(capture, wire));
+    assert!(!submitted(capture));
+    assert!(!capture
+        .lines()
+        .any(|line| line.trim() == "• PW_RELEASE_ALPHA PW_RELEASE_OMEGA"));
 }
