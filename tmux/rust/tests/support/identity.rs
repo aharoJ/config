@@ -1,5 +1,23 @@
 use super::*;
+use std::io::Read;
 use std::os::unix::fs::DirBuilderExt;
+#[test]
+#[ignore = "read-only owned live Agy process/TTY admission; never launches a client"]
+fn live_native_agy_binding() {
+    let pane = std::env::var("ANGELSTAR_BIND_PANE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let expected: u32 = std::env::var("ANGELSTAR_BIND_NATIVE_PID")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let client = Client::bind(pane).unwrap();
+    assert_eq!(client.process.pid, expected);
+    assert_eq!(client.glyph, '>');
+    client.current().unwrap();
+    assert!(Client::bind(std::process::id()).is_err());
+}
 #[test]
 #[ignore = "read-only explicitly authorized live Codex descendant identity; never launches a client"]
 fn live_codex_descendant_binding() {

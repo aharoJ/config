@@ -1,4 +1,5 @@
 use crate::identity;
+use std::io::Read;
 use std::path::Path;
 
 fn arguments(pid: u32) -> Option<Vec<String>> {
@@ -95,7 +96,7 @@ pub(crate) fn agent_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
         return None;
     }
     let name = path.file_name()?.to_str()?;
-    if name == "agy" {
+    if native_agy_path(path, &identity::account_home().ok()?) {
         return Some('>');
     }
     match app(pid,path)? {
@@ -110,7 +111,30 @@ pub(crate) fn native_codex_path(path: &Path) -> bool {
             .is_match(path)
     })
 }
+fn native_agy_path(path: &Path, home: &Path) -> bool {
+    let installed = home.join(".local/bin/agy");
+    if path != installed
+        && !std::fs::canonicalize(&installed).is_ok_and(|resolved| resolved == path)
+    {
+        return false;
+    }
+    let cpu: u32 = match std::env::consts::ARCH {
+        "aarch64" => 0x0100000c,
+        "x86_64" => 0x01000007,
+        _ => return false,
+    };
+    let mut header = [0; 16];
+    std::fs::File::open(path)
+        .and_then(|mut file| file.read_exact(&mut header))
+        .is_ok()
+        && header[..4] == [0xcf, 0xfa, 0xed, 0xfe]
+        && header[4..8] == cpu.to_le_bytes()
+        && header[12..16] == 2u32.to_le_bytes()
+}
 fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
+    if native_agy_path(path, home) {
+        return Some('>');
+    }
     if path.parent()? == home.join(".local/share/claude/versions")
         && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
             .is_match(path.file_name()?.to_str()?)
@@ -134,6 +158,72 @@ pub(crate) fn detail(pid: u32) -> identity::Result<String> {
 #[cfg(test)]
 mod relay_tests {
     use super::*;
+    #[test]
+    fn native_agy_install_and_resolved_target_without_version_pins() {
+        let home = identity::account_home()
+            .unwrap()
+            .join("desk/tmp")
+            .join(format!(
+                "agy-admission-{}",
+                crate::runtime::fresh_id().unwrap()
+            ));
+        let installed = home.join(".local/bin/agy");
+        std::fs::create_dir_all(installed.parent().unwrap()).unwrap();
+        let other = std::env::current_exe().unwrap();
+        std::fs::hard_link(&other, &installed).unwrap();
+        assert_eq!(native_relay_path(&installed, &home), Some('>'));
+        for version in ["1.3.6", "1.4.0"] {
+            let target = home.join(format!("agy-{version}"));
+            if version == "1.3.6" {
+                std::fs::rename(&installed, &target).unwrap();
+            } else {
+                std::fs::rename(&installed, home.join("previous-link")).unwrap();
+                std::fs::hard_link(&other, &target).unwrap();
+            }
+            std::os::unix::fs::symlink(&target, &installed).unwrap();
+            assert_eq!(native_relay_path(&target, &home), Some('>'));
+            assert_eq!(native_relay_path(&installed, &home), Some('>'));
+        }
+        assert_eq!(native_relay_path(&other, &home), None);
+        std::fs::rename(&installed, home.join("native-link")).unwrap();
+        std::fs::write(&installed, "#!/bin/sh\nexit 0\n").unwrap();
+        assert_eq!(native_relay_path(&installed, &home), None);
+        assert!(std::process::Command::new("/usr/bin/trash")
+            .arg(&home)
+            .status()
+            .unwrap()
+            .success());
+    }
+    #[test]
+    #[ignore = "explicitly authorized installed Agy images; never launches a client"]
+    fn installed_agy_images_have_version_agnostic_admission() {
+        let root = identity::account_home()
+            .unwrap()
+            .join("desk/tmp")
+            .join(format!(
+                "agy-installed-{}",
+                crate::runtime::fresh_id().unwrap()
+            ));
+        for key in ["ANGELSTAR_AGY_OLD_IMAGE", "ANGELSTAR_AGY_NEW_IMAGE"] {
+            let image = std::fs::canonicalize(std::env::var_os(key).unwrap()).unwrap();
+            let home = root.join(key);
+            let installed = home.join(".local/bin/agy");
+            std::fs::create_dir_all(installed.parent().unwrap()).unwrap();
+            std::os::unix::fs::symlink(&image, &installed).unwrap();
+            assert_eq!(native_relay_path(&image, &home), Some('>'));
+            assert_eq!(native_relay_path(&installed, &home), Some('>'));
+            assert_eq!(
+                native_relay_path(&std::env::current_exe().unwrap(), &home),
+                None
+            );
+            println!("admitted native Agy image: {}", image.display());
+        }
+        assert!(std::process::Command::new("/usr/bin/trash")
+            .arg(root)
+            .status()
+            .unwrap()
+            .success());
+    }
     #[test]
     fn native_relay_versions_and_non_client_paths() {
         assert_eq!(
