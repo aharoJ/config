@@ -60,8 +60,9 @@ pub fn re(pattern: &str) -> Regex {
         .clone()
 }
 pub fn visible(raw: &str) -> String {
+    let raw = re(r"\x1b\]8;[^\x07\x1b]*(?:\x07|\x1b\\)").replace_all(raw, "");
     re(r"\x1b\[[0-?]*[ -/]*[@-~]")
-        .replace_all(raw, "")
+        .replace_all(&raw, "")
         .into_owned()
 }
 pub fn rows(capture: &str) -> Vec<String> {

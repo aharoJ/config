@@ -4,6 +4,25 @@ fn fixture(name: &str) -> String {
     std::fs::read_to_string(format!("{FIXTURES}/{name}")).unwrap()
 }
 #[test]
+fn captured_update_banner_keeps_idle_guard_and_draft_busy_refusals() {
+    let capture = include_str!("../fixtures/codex-batch2-update-idle.ansi");
+    assert_eq!(crate::model_payload::input(capture, '›', 2, 22, 149), 0);
+    assert_eq!(
+        visible(capture.lines().nth(5).unwrap()),
+        "│ https://github.com/openai/codex/releases/latest │"
+    );
+    assert!(!row_checks(&rows(capture), 0, 45).unwrap().contains('\x1b'));
+    let draft = capture.replace("\x1b[2mAsk Codex to do anything\x1b[0m", "typed draft");
+    assert_ne!(draft, capture);
+    assert_eq!(crate::model_payload::input(&draft, '›', 13, 22, 149), 1);
+    let busy = capture.replace(
+        "\x1b[1m›\x1b[0m",
+        "• Working (1s · esc to interrupt)\n\n\x1b[1m›\x1b[0m",
+    );
+    assert_ne!(busy, capture);
+    assert!(crate::model_payload::busy(&busy, '›', 24));
+}
+#[test]
 fn seven_and_eight_model_pickers_preserve_order_labels_and_highlights() {
     let expected = "Fast off · GPT-6.1-Sol low · ~/model-lab/fixture";
     for name in [
