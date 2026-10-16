@@ -304,7 +304,7 @@ fn overflow_pointer(label: &str, codes: &str, path: &std::path::Path) -> String 
         .and_then(|home| path.strip_prefix(home).ok())
         .map(|suffix| format!("~/{}", suffix.display()))
         .unwrap_or_else(|| path.display().to_string());
-    format!("{label}: {codes} read and execute; do not forward: {compact}")
+    format!("{label}: {codes} -- full: {compact}")
 }
 pub struct Prepared {
     pub(crate) client: Option<char>,

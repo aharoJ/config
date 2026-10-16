@@ -59,6 +59,35 @@ fn delivery_guard_accepts_literal_message_formats() {
     }
 }
 #[test]
+fn observed_c16_uses_the_live_legacy_overflow_frame() {
+    let label = "s15x-haiku-final (config-tt:s15x-haiku-final)";
+    let codes = "#s15xhandoff";
+    let path = identity::account_home()
+        .unwrap()
+        .join("desk/tmp/relay-rust-store/568aedc4474443452f6ad87924cddf42.original");
+    let original = format!(
+        "{label}: {codes} read and execute; do not forward: ~/desk/tmp/relay-rust-store/568aedc4474443452f6ad87924cddf42.original"
+    );
+    assert_eq!(original.len(), 163);
+    let legacy = format!(
+        "{label}: {codes} -- full: ~/desk/tmp/relay-rust-store/568aedc4474443452f6ad87924cddf42.original"
+    );
+    for width in [149, 183] {
+        let capacity = store::Capacity {
+            width,
+            height: 45,
+            cursor_x: 2,
+            cursor_y: 42,
+            pointer: legacy.clone(),
+            cells: Some(legacy.len() as u64),
+            byte_limit: Some(width - 3),
+            cell_limit: Some(width - 3),
+        };
+        assert!(capacity.permits());
+    }
+    assert_eq!(overflow_pointer(label, codes, &path), legacy);
+}
+#[test]
 fn envelope_capacity() {
     assert_eq!(normalize("  λ\n\t#x\u{1c} y  ").unwrap(), "λ #x y");
     for text in ["", " \n\t", "bad\u{1b}", "bad\0"] {
@@ -895,9 +924,119 @@ fn overflow_receiver_instruction() {
         .unwrap()
         .join("desk/tmp/relay-rust-store/0123456789abcdef0123456789abcdef.original");
     let pointer = overflow_pointer("peer", "#abc123", &path);
-    assert!(pointer.contains("read and execute; do not forward: ~/desk/tmp/relay-rust-store/"));
+    assert_eq!(pointer, "peer: #abc123 -- full: ~/desk/tmp/relay-rust-store/0123456789abcdef0123456789abcdef.original");
     assert!(pointer.ends_with("0123456789abcdef0123456789abcdef.original"));
-    assert!(!pointer.contains("-- full:"));
+}
+
+#[test]
+fn overflow_capacity_boundary_and_unknown_geometry_stay_closed() {
+    let mut capacity = store::Capacity {
+        width: 149,
+        height: 45,
+        cursor_x: 2,
+        cursor_y: 42,
+        pointer: "x".repeat(146),
+        cells: Some(146),
+        byte_limit: Some(146),
+        cell_limit: Some(146),
+    };
+    assert!(capacity.permits());
+    capacity.pointer.push('x');
+    capacity.cells = Some(147);
+    assert!(!capacity.permits());
+    capacity.pointer.pop();
+    capacity.cells = None;
+    assert!(!capacity.permits());
+    capacity.cells = Some(146);
+    capacity.width = 0;
+    assert!(!capacity.permits());
+    capacity.width = 149;
+    capacity.height = 0;
+    assert!(!capacity.permits());
+}
+
+#[test]
+#[ignore = "explicit signed leased private capacity and geometry fixture only"]
+fn capacity_guards() {
+    if crate::test_server::supervised("runtime::tests::capacity_guards") {
+        return;
+    }
+    let server = crate::test_server::Server::new();
+    server.fixtures(&["capacity-target", "capacity-decoy"]);
+    let ns = server.namespace();
+    server.command(&[
+        "resize-window",
+        "-t",
+        "private-k50:capacity-target",
+        "-x",
+        "183",
+        "-y",
+        "45",
+    ]);
+    let message = format!("#capacity {}", "original message ".repeat(20));
+    let prepared = Prepared::new(&ns, "private-k50", "capacity-target", None, &message).unwrap();
+    let mut store = Store::open(&server.root.join("capacity-archive")).unwrap();
+    let mut runtime = Runtime::accept(
+        &ns,
+        prepared,
+        &mut store,
+        message.as_bytes(),
+        Budgets {
+            stop_ms: 30,
+            drain_ms: 30,
+            reap_ms: 30,
+            decision_ms: 90,
+        },
+    )
+    .unwrap();
+    runtime.fixture = Some(server.root.join("capacity-target.json"));
+    assert_eq!(
+        std::fs::read(runtime.store.original_path(&runtime.archive)).unwrap(),
+        message.as_bytes()
+    );
+    assert!(runtime.prepared.wire.contains("#capacity -- full: "));
+    let before = runtime.view().unwrap();
+    runtime.geometry = Some((before.width, before.height, before.y));
+    let condition = runtime.condition().unwrap();
+    server.command(&[
+        "resize-window",
+        "-t",
+        "private-k50:capacity-target",
+        "-x",
+        "149",
+        "-y",
+        "45",
+    ]);
+    assert_eq!(
+        runtime.condition().unwrap_err(),
+        "geometry changed before effect"
+    );
+    let pane = runtime.prepared.target.selector();
+    assert_eq!(
+        ns.command(&[
+            "if-shell",
+            "-F",
+            "-t",
+            &pane,
+            &condition,
+            &format!("send-keys -t {pane} Enter"),
+            "display-message -p refused"
+        ])
+        .unwrap()
+        .trim(),
+        "refused"
+    );
+    assert_eq!(fixture_state(&server, "capacity-target")["events"], 0);
+    assert_eq!(fixture_state(&server, "capacity-decoy")["events"], 0);
+    runtime.close().unwrap();
+    assert_eq!(runtime.state, State::PendingNoInput);
+    assert_eq!(fixture_state(&server, "capacity-target")["events"], 0);
+    assert_eq!(fixture_state(&server, "capacity-target")["submissions"], 0);
+    assert_eq!(fixture_state(&server, "capacity-decoy")["events"], 0);
+    println!(
+        "capacity149/183 archive and atomic resize proof {}",
+        server.root.display()
+    );
 }
 
 #[test]
