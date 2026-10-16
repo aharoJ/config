@@ -394,6 +394,12 @@ pub fn receipt(
         && rows[y - 2].is_empty()
     {
         Some(y - 6)
+    } else if y >= 7
+        && rows[y - 6] == "\x1b[49m  \x1b[38;5;246mctrl+x ctrl+s to send now\x1b[39m"
+        && rows[y - 5].is_empty()
+        && rows[y - 2].is_empty()
+    {
+        Some(y - 7)
     } else {
         None
     };
