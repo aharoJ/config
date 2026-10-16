@@ -1,12 +1,11 @@
 # path: ~/.config/fish/internal/tmux/tai.fish
 # description: Spawn AI agent tmux windows in the current directory.
-# patched: panel seats on low effort; fable on Sonnet 5.5 low, astra on gpt-6-luna
 # date: 2026-10-03
 
 # tai all: window name | exact command. Comment a row to disable only that panel slot.
 function __tai_panel
     printf '%s\n' 'gemini|agy --dangerously-skip-permissions --effort low'
-    printf '%s\n' 'astra|codex -m gpt-6-luna -c model_reasoning_effort="low"'
+    printf '%s\n' 'astra|codex -m gpt-6-sol -c model_reasoning_effort="low"'
     printf '%s\n' 'fable|cc --settings {"model":"claude-sonnet-5-5"} --effort low'
     printf '%s\n' 'deepseek|deepseek --settings {"model":"deepseek-flash"} --effort low'
     # printf '%s\n' 'kimi|kimi --auto'
@@ -150,10 +149,7 @@ function __tai_spawn
     end
     set -l commandline (string join ' ' -- $parts)
 
-    set -l pane (tmux new-window -t "=$session:" -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args "$fish_bin -l")
-    or return $status
-
-    tmux send-keys -t "$pane" "$commandline" Enter
+    tmux new-window -t "=$session:" -P -F '#{pane_id}' -c "$launch_dir" -n "$window_name" $env_args -- "$fish_bin" -C "$commandline"
     or return $status
     echo "tai: $window_name -> $commandline"
 end
@@ -173,26 +169,30 @@ function __tai_seat
     set -l isolation
     switch "$seat"
         case gemini
+            echo 'tai: Agy native sandbox does not confine outside writes; this seat is not fully isolated' >&2
             set trust_kind agy
             set parts agy --dangerously-skip-permissions
             set defaults --effort low
-            __tai_validate gemini $argv
-            or return $status
+            set isolation --sandbox
         case astra
             set trust_kind codex
-            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home codex
+            set -l native_codex ($HOME/.local/bin/panel-dispatch codex-path)
+            or return $status
+            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home _agent_limit "$native_codex" --no-daemon --strict-config
+            set defaults -m gpt-6-sol -c 'model_reasoning_effort="low"'
+            set isolation -a never -c 'default_permissions="panel-seat"' -c 'permissions.panel-seat.filesystem={":root"="deny",":minimal"="read",":slash_tmp"="deny",":workspace_roots"="write"}' -c 'permissions.panel-seat.network.enabled=false'
             __tai_validate codex $argv
             or return $status
         case fable
             set trust_kind claude
-            set parts cc
-            set defaults --settings '{"model":"claude-sonnet-5-5"}' --effort low
-            set isolation --safe-mode --disable-slash-commands
+            set parts _agent_limit claude
+            set defaults --model claude-sonnet-5-5 --effort low
+            set isolation --tools Read,Glob,Grep,Write,Edit,Bash --safe-mode --disable-slash-commands --setting-sources '' --settings "$launch_dir/panel-settings.json" --permission-mode dontAsk
         case deepseek
             set trust_kind deepseek
-            set parts deepseek
-            set defaults --settings '{"model":"deepseek-flash"}' --effort low
-            set isolation --bare --disable-slash-commands
+            set parts --env=PANEL_SEAT_CONFINED=1 deepseek
+            set defaults --model deepseek-flash --effort low
+            set isolation --bare --disable-slash-commands --setting-sources '' --settings "$launch_dir/panel-settings.json" --permission-mode dontAsk --tools Read,Glob,Grep,Write,Edit,Bash
         case '*'
             echo "tai: seat must be one of gemini astra fable deepseek" >&2
             return 2
@@ -200,16 +200,39 @@ function __tai_seat
 
     set -l args $defaults
     if test (count $argv) -gt 0
-        set args
-        for arg in $argv
-            contains -- "$arg" $isolation; or set -a args "$arg"
+        set args $argv
+    end
+    if test "$seat" = astra
+        if string match -qr '(^|[[:space:]])(-c[=[:space:]]*|--config[=[:space:]]+)model[[:space:]]*=' -- (string join ' ' -- $args)
+            echo 'tai: select the Astra seat model with -m; model config overrides could drift' >&2
+            return 2
+        end
+        if not string match -qr '(^|[[:space:]])(-m|--model)([=[:space:]]|[^[:space:]])' -- (string join ' ' -- $args)
+            set -p args -m gpt-6-sol
         end
     end
 
-    $HOME/.config/tmux/tools/panel-seat-trust $trust_kind "$launch_dir"
+    $HOME/.local/bin/panel-seat-trust $trust_kind "$launch_dir"
     or return $status
 
-    __tai_spawn "$seat" "$launch_dir" "--session=$session" $parts $args $isolation
+    set -l seat_env "--env=TMPDIR=$launch_dir/scratch"
+    if contains -- "$seat" fable deepseek
+        set seat_env "--env=TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir")
+        set -a seat_env "--env=CLAUDE_CODE_TMPDIR=/private/tmp/panel-"(stat -f %i "$launch_dir") "--env=CLAUDE_ENV_FILE=$launch_dir/panel-env.sh"
+    end
+    set -l launch_args
+    set -l isolation_inserted 0
+    for arg in $args
+        if test "$arg" = --; and test $isolation_inserted -eq 0
+            set -a launch_args $isolation
+            set isolation_inserted 1
+        end
+        set -a launch_args "$arg"
+    end
+    if test $isolation_inserted -eq 0
+        set -a launch_args $isolation
+    end
+    __tai_spawn "$seat" "$launch_dir" "--session=$session" $seat_env $parts $launch_args
 end
 
 function tai --description 'tmux: spawn AI agent window in current directory'

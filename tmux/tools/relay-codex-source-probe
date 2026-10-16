@@ -1,5 +1,0 @@
-#!/usr/bin/env python3
-import sys
-
-print('P0: interactive identity probing disabled; no pane input was requested', file=sys.stderr)
-sys.exit(1)

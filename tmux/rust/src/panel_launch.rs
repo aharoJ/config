@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-fn executable(name: &str) -> Result<PathBuf> {
+pub(crate) fn executable(name: &str) -> Result<PathBuf> {
     let path = if name.contains('/') {
         PathBuf::from(name)
     } else {
