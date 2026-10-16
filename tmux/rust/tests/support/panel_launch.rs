@@ -1,6 +1,78 @@
 use super::*;
 use crate::panel_schema::list;
 #[test]
+fn codex_wrapper_resolves_only_to_the_native_vendor_image() {
+    let root = home().unwrap().join("desk/tmp").join(format!(
+        "panel-native-{}",
+        crate::runtime::fresh_id().unwrap()
+    ));
+    let (package, target) = match std::env::consts::ARCH {
+        "aarch64" => ("codex-darwin-arm64", "aarch64-apple-darwin"),
+        "x86_64" => ("codex-darwin-x64", "x86_64-apple-darwin"),
+        other => panic!("unsupported fixture architecture: {other}"),
+    };
+    for (index, layout) in [
+        format!("node_modules/@openai/{package}/vendor/{target}/bin/codex"),
+        format!("vendor/{target}/bin/codex"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let install = root
+            .join(index.to_string())
+            .join("node_modules/@openai/codex");
+        let wrapper = install.join("bin/codex.js");
+        fs::create_dir_all(wrapper.parent().unwrap()).unwrap();
+        fs::write(
+            &wrapper,
+            "#!/usr/bin/env node\nthrow new Error('wrapper must never execute');\n",
+        )
+        .unwrap();
+        fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).unwrap();
+        let entry = root.join(format!("codex-{index}"));
+        std::os::unix::fs::symlink(&wrapper, &entry).unwrap();
+        let native = install.join(layout);
+        fs::create_dir_all(native.parent().unwrap()).unwrap();
+        fs::hard_link(std::env::current_exe().unwrap(), &native).unwrap();
+        assert_eq!(
+            native_codex(&entry).unwrap(),
+            fs::canonicalize(&native).unwrap()
+        );
+        assert_eq!(
+            native_codex(&native).unwrap(),
+            fs::canonicalize(&native).unwrap()
+        );
+        fs::rename(&native, native.with_file_name("native-saved")).unwrap();
+        fs::write(
+            &native,
+            "#!/usr/bin/env node\nthrow new Error('not a native image');\n",
+        )
+        .unwrap();
+        fs::set_permissions(&native, fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(native_codex(&entry)
+            .unwrap_err()
+            .contains("Mach-O executable required"));
+        fs::rename(&native, native.with_file_name("script-saved")).unwrap();
+        assert!(native_codex(&entry).unwrap_err().contains("not found"));
+    }
+    assert!(native_codex(&std::env::current_exe().unwrap())
+        .unwrap_err()
+        .contains("unrecognized Codex install path"));
+    assert!(Command::new("/usr/bin/trash")
+        .arg(root)
+        .status()
+        .unwrap()
+        .success());
+}
+#[test]
+#[ignore = "read-only installed Codex native resolution; launches no client"]
+fn installed_codex_native_resolution() {
+    let program = executable("codex").unwrap();
+    assert!(crate::model_identity::native_codex_path(&program));
+    assert_eq!(native_codex(&program).unwrap(), program);
+    println!("native Codex program: {}", program.display());
+}
+#[test]
 fn trimmed_live_capture_misaligns_actual_tmux_cursor_row() {
     let raw = include_str!("../fixtures/panel-codex-idle.ansi");
     let meta = include_str!("../fixtures/panel-codex-idle.meta").trim();

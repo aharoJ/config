@@ -104,6 +104,12 @@ pub(crate) fn agent_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
         _=>None,
     }
 }
+pub(crate) fn native_codex_path(path: &Path) -> bool {
+    path.to_str().is_some_and(|path| {
+        crate::model_guard::re(r"/node_modules/@openai/codex(?:/node_modules/@openai/codex-[^/]+)?/vendor/[^/]+/(?:bin/)?codex$")
+            .is_match(path)
+    })
+}
 fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
     if path.parent()? == home.join(".local/share/claude/versions")
         && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
@@ -111,9 +117,7 @@ fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
     {
         return Some('❯');
     }
-    crate::model_guard::re(r"/node_modules/@openai/codex(?:/node_modules/@openai/codex-[^/]+)?/vendor/[^/]+/(?:bin/)?codex$")
-        .is_match(path.to_str()?)
-        .then_some('›')
+    native_codex_path(path).then_some('›')
 }
 pub(crate) fn relay_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
     let expected = native_relay_path(path, &identity::account_home().ok()?)?;
