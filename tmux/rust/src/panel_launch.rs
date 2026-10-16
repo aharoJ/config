@@ -6,6 +6,7 @@ use crate::{
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs;
+use std::io::Read;
 use std::os::unix::{
     fs::{MetadataExt, PermissionsExt},
     process::CommandExt,
@@ -29,11 +30,63 @@ fn executable(name: &str) -> Result<PathBuf> {
         fs::metadata(&path).is_ok_and(|m| m.is_file() && m.mode() & 0o111 != 0),
         "seat CLI not executable",
     )?;
-    if path.is_absolute() {
+    if name == "codex" {
+        native_codex(&path)
+    } else if path.is_absolute() {
         Ok(path)
     } else {
         Ok(io(std::env::current_dir())?.join(path))
     }
+}
+fn native_codex(path: &Path) -> Result<PathBuf> {
+    let installed = io(fs::canonicalize(path))?;
+    let (package, target, cpu): (&str, &str, u32) = match std::env::consts::ARCH {
+        "aarch64" => ("codex-darwin-arm64", "aarch64-apple-darwin", 0x0100000c),
+        "x86_64" => ("codex-darwin-x64", "x86_64-apple-darwin", 0x01000007),
+        other => return Err(format!("unsupported native Codex architecture: {other}")),
+    };
+    let candidates = if crate::model_identity::native_codex_path(&installed) {
+        vec![installed]
+    } else {
+        check(
+            installed.ends_with("node_modules/@openai/codex/bin/codex.js"),
+            &format!("unrecognized Codex install path: {}", installed.display()),
+        )?;
+        let root = installed.parent().and_then(Path::parent).unwrap();
+        vec![
+            root.join(format!(
+                "node_modules/@openai/{package}/vendor/{target}/bin/codex"
+            )),
+            root.join(format!("vendor/{target}/bin/codex")),
+        ]
+    };
+    for candidate in &candidates {
+        if !candidate.exists() {
+            continue;
+        }
+        let native = io(fs::canonicalize(candidate))?;
+        check(
+            crate::model_identity::native_codex_path(&native)
+                && fs::metadata(&native).is_ok_and(|m| m.is_file() && m.mode() & 0o111 != 0),
+            &format!("native Codex path is not executable: {}", native.display()),
+        )?;
+        let mut header = [0; 16];
+        io(io(fs::File::open(&native))?.read_exact(&mut header))?;
+        check(
+            header[..4] == [0xcf, 0xfa, 0xed, 0xfe]
+                && header[4..8] == cpu.to_le_bytes()
+                && header[12..16] == 2u32.to_le_bytes(),
+            &format!(
+                "native Codex Mach-O executable required: {}",
+                native.display()
+            ),
+        )?;
+        return Ok(native);
+    }
+    Err(format!(
+        "native Codex executable not found beside {}",
+        path.display()
+    ))
 }
 pub(crate) fn profile(seat: &Value, home: &Path) -> Result<Value> {
     let directory = Path::new(s(seat, "directory")?);
@@ -262,6 +315,12 @@ fn exec(args: &[String]) -> Result<()> {
         }),
         "seat exec lacks own pane registration",
     )?;
+    if seat["transport"] == "astra" {
+        check(
+            native_codex(program)? == program,
+            "native Codex program changed",
+        )?;
+    }
     let mut command = Command::new(program);
     command
         .args(a(&profile, "args")?.iter().map(|v| v.as_str().unwrap()))
