@@ -377,6 +377,7 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
         return code;
     }
     match surface {
+        "tmux-freeze-capture.fish" => return crate::lab_tools::freeze::entry(args),
         "codex-new-chat" => return crate::new_chat::entry(args),
         "codex-new-guard" => return crate::new_guard::entry(args),
         "panel-dispatch" => return crate::panel_dispatch::main_entry(args),
