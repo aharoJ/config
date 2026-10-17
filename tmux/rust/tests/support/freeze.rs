@@ -85,9 +85,7 @@ fn unavailable_probe_and_binary_output_preserve_evidence_shape() {
 #[test]
 #[ignore]
 fn owned_unresponsive_socket_records_timeout_status() {
-    let root = home()
-        .join("desk/tmp/relay/lead-plan/release/freeze/private")
-        .join(format!("killed-query-{}", fresh().unwrap()));
+    let root = std::env::temp_dir().join(format!("fq-{}", std::process::id()));
     private_dir(&root).unwrap();
     let socket = root.join("server");
     let _listener = std::os::unix::net::UnixListener::bind(&socket).unwrap();
