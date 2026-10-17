@@ -178,7 +178,8 @@ function __tai_seat
             set trust_kind codex
             set -l native_codex ($HOME/.local/bin/panel-dispatch codex-path)
             or return $status
-            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home _agent_limit "$native_codex" --no-daemon --strict-config
+            set -l package_root (string replace -r '/(node_modules/@openai/codex-[^/]+/)?vendor/.*$' '' -- "$native_codex")
+            set parts --env=CODEX_HOME=$HOME/.local/state/codex-panel-home _agent_limit env -u CODEX_MANAGED_BY_NPM -u CODEX_MANAGED_BY_BUN -u CODEX_MANAGED_BY_PNPM -u CODEX_MANAGED_BY_VITE_PLUS "CODEX_MANAGED_PACKAGE_ROOT=$package_root" CODEX_MANAGED_BY_NPM=1 "$native_codex" --no-daemon --strict-config
             set defaults -m gpt-6-sol -c 'model_reasoning_effort="low"'
             set isolation -a never -c 'default_permissions="panel-seat"' -c 'permissions.panel-seat.filesystem={":root"="deny",":minimal"="read",":slash_tmp"="deny",":workspace_roots"="write"}' -c 'permissions.panel-seat.network.enabled=false'
             __tai_validate codex $argv
