@@ -232,3 +232,6 @@ fish/fish_variables
 # Tool caches that land in $XDG_CONFIG_HOME (== this repo root)
 # e.g. qwen-code's update-notifier writes configstore/update-notifier-@qwen-code/
 configstore/
+
+# Machine-local cagent identity
+/cagent/user-uuid
