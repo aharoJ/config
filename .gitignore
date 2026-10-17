@@ -235,3 +235,4 @@ configstore/
 
 # Machine-local cagent identity
 /cagent/user-uuid
+/tmux/plugins/tmux-continuum/
