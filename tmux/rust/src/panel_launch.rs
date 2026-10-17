@@ -88,6 +88,24 @@ fn native_codex(path: &Path) -> Result<PathBuf> {
         path.display()
     ))
 }
+fn codex_environment(command: &mut Command, program: &Path) -> Result<()> {
+    let root = program
+        .ancestors()
+        .find(|path| path.ends_with("node_modules/@openai/codex"))
+        .ok_or("native Codex package root missing")?;
+    for key in [
+        "CODEX_MANAGED_BY_NPM",
+        "CODEX_MANAGED_BY_BUN",
+        "CODEX_MANAGED_BY_PNPM",
+        "CODEX_MANAGED_BY_VITE_PLUS",
+    ] {
+        command.env_remove(key);
+    }
+    command
+        .env("CODEX_MANAGED_PACKAGE_ROOT", root)
+        .env("CODEX_MANAGED_BY_NPM", "1");
+    Ok(())
+}
 pub(crate) fn profile(seat: &Value, home: &Path) -> Result<Value> {
     let directory = Path::new(s(seat, "directory")?);
     let kind = s(seat, "transport")?;
@@ -327,6 +345,9 @@ fn exec(args: &[String]) -> Result<()> {
         .current_dir(s(seat, "directory")?);
     for (key, value) in profile["env"].as_object().unwrap() {
         command.env(key, value.as_str().unwrap());
+    }
+    if seat["transport"] == "astra" {
+        codex_environment(&mut command, program)?;
     }
     if seat["transport"] == "deepseek" {
         let key = io(fs::read_to_string(

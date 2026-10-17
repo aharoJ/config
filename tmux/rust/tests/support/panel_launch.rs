@@ -1,6 +1,47 @@
 use super::*;
 use crate::panel_schema::list;
 #[test]
+fn native_codex_environment_replaces_stale_package_provenance() {
+    for layout in [
+        "node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex",
+        "vendor/aarch64-apple-darwin/bin/codex",
+    ] {
+        let root = Path::new("/fixtures/node_modules/@openai/codex");
+        let mut command = Command::new(root.join(layout));
+        for key in [
+            "CODEX_MANAGED_BY_NPM",
+            "CODEX_MANAGED_BY_BUN",
+            "CODEX_MANAGED_BY_PNPM",
+            "CODEX_MANAGED_BY_VITE_PLUS",
+            "CODEX_MANAGED_PACKAGE_ROOT",
+        ] {
+            command.env(key, "stale");
+        }
+        command.env("PANEL_FIXTURE_KEEP", "kept");
+        codex_environment(&mut command, &root.join(layout)).unwrap();
+        let env = command.get_envs().collect::<BTreeMap<_, _>>();
+        assert_eq!(
+            env[std::ffi::OsStr::new("CODEX_MANAGED_PACKAGE_ROOT")],
+            Some(root.as_os_str())
+        );
+        assert_eq!(
+            env[std::ffi::OsStr::new("CODEX_MANAGED_BY_NPM")],
+            Some(std::ffi::OsStr::new("1"))
+        );
+        for key in [
+            "CODEX_MANAGED_BY_BUN",
+            "CODEX_MANAGED_BY_PNPM",
+            "CODEX_MANAGED_BY_VITE_PLUS",
+        ] {
+            assert_eq!(env[std::ffi::OsStr::new(key)], None);
+        }
+        assert_eq!(
+            env[std::ffi::OsStr::new("PANEL_FIXTURE_KEEP")],
+            Some(std::ffi::OsStr::new("kept"))
+        );
+    }
+}
+#[test]
 fn codex_wrapper_resolves_only_to_the_native_vendor_image() {
     let root = home().unwrap().join("desk/tmp").join(format!(
         "panel-native-{}",
