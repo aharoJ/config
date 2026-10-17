@@ -53,7 +53,15 @@ if [ -n "$BLOCKED_FILES" ]; then
   exit 1
 fi
 
-python3 - "$REPO_ROOT" <<'PY'
+STAGED_BLOBS=()
+while IFS= read -r -d '' file; do
+  entry=$(git ls-files --stage -- "$file")
+  if [ "${entry%% *}" != 160000 ]; then
+    STAGED_BLOBS+=("$file")
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+python3 - "$REPO_ROOT" "${STAGED_BLOBS[@]}" <<'PY'
 import json
 import pathlib
 import re
@@ -62,7 +70,7 @@ import sys
 import unicodedata
 
 root = pathlib.Path(sys.argv[1])
-names = subprocess.check_output(['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], cwd=root).split(b'\0')
+names = [name.encode('utf-8', errors='surrogateescape') for name in sys.argv[2:]]
 email = re.compile(r'[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
 mac = re.compile(r'(?<![\w:])(?:[0-9a-f]{2}:){5}[0-9a-f]{2}(?![\w:])', re.I)
 absolute = re.compile(r'(?:/' + r'Users/[^/\s"\x1b]+|/' + r'home/[^/\s"\x1b]+)')
