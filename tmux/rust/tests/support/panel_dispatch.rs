@@ -2,6 +2,21 @@ use super::*;
 use std::os::unix::fs::symlink;
 
 #[test]
+fn multicall_launcher_binds_embedded_trust_without_sibling_tools() {
+    let digest = adapter().unwrap()["source_sha256"].clone();
+    let launcher = json!({"tai_sha256":digest,"trust_sha256":digest});
+    launcher_sources(&launcher).unwrap();
+    for key in ["tai_sha256", "trust_sha256"] {
+        let mut wrong = launcher.clone();
+        wrong[key] = json!("0".repeat(64));
+        assert_eq!(
+            launcher_sources(&wrong).unwrap_err(),
+            "launcher source drift"
+        );
+    }
+}
+
+#[test]
 fn relay_start_refuses_unknown_transport_before_routing() {
     for kind in ["unknown", "agy", "", "ASTRA"] {
         assert_eq!(

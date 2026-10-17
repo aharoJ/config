@@ -23,19 +23,17 @@ pub(crate) fn context(v: &Value) -> Value {
 pub(crate) fn source() -> Result<PathBuf> {
     io(std::env::current_exe()).and_then(|p| io(fs::canonicalize(p)))
 }
-pub(crate) fn tools() -> Result<PathBuf> {
-    source()?
-        .parent()
-        .map(Path::to_owned)
-        .ok_or("tool directory missing".into())
-}
 pub(crate) fn adapter() -> Result<Value> {
     Ok(
         json!({"id":"config-panel-dispatch","version":"1","source_sha256":reference(&source()?)?["sha256"]}),
     )
 }
-fn executable_hash(path: &Path) -> Result<Value> {
-    Ok(reference(&io(fs::canonicalize(path))?)?["sha256"].clone())
+fn launcher_sources(launcher: &Value) -> Result<()> {
+    let digest = adapter()?["source_sha256"].clone();
+    check(
+        launcher["tai_sha256"] == digest && launcher["trust_sha256"] == digest,
+        "launcher source drift",
+    )
 }
 pub(crate) fn format(kind: &str) -> Result<&'static str> {
     match kind {
@@ -285,16 +283,7 @@ pub(crate) fn request_check(reference: &Value) -> Result<Value> {
             && launcher["authorized"] == true,
         "launcher identity/authority mismatch",
     )?;
-    check(
-        launcher["tai_sha256"] == adapter()?["source_sha256"]
-            && launcher["trust_sha256"] == executable_hash(&tools()?.join("panel-seat-trust"))?,
-        "launcher source drift",
-    )?;
-    check(
-        executable_hash(&home()?.join(".config/tmux/tools/panel-seat-trust"))?
-            == launcher["trust_sha256"],
-        "installed trust helper differs from bound launcher",
-    )?;
+    launcher_sources(&launcher)?;
     let policy = read(&value["redispatch_policy_ref"])?;
     check(
         policy["context"] == context(&value)
