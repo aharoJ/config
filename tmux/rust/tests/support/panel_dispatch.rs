@@ -2,6 +2,16 @@ use super::*;
 use std::os::unix::fs::symlink;
 
 #[test]
+fn relay_start_refuses_unknown_transport_before_routing() {
+    for kind in ["unknown", "agy", "", "ASTRA"] {
+        assert_eq!(
+            relay_start(&Value::Null, &json!({"transport":kind})).unwrap_err(),
+            "unsupported transport"
+        );
+    }
+}
+
+#[test]
 fn parser_preserves_documented_phases_and_argument_exits() {
     assert!(parse(&[]).is_err());
     assert!(parse(&["--help".into()]).unwrap().is_none());

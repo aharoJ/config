@@ -706,7 +706,8 @@ pub(crate) fn relay_start(request: &Value, seat: &Value) -> Result<Value> {
     let name = match kind {
         "fable" | "deepseek" => "cc-msg",
         "astra" => "codex-send-to",
-        _ => "agy-send-to",
+        "gemini" => "agy-send-to",
+        _ => return Err("unsupported transport".into()),
     };
     let mut command = Command::new(name);
     if ["fable", "deepseek"].contains(&kind) {
