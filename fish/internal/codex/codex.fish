@@ -100,6 +100,8 @@ function codex --description 'Codex CLI model presets: --model-gpt-5-5, --model-
                 set -a passthrough "$arg"
             case --no-daemon
                 set explicit_local 1
+            case --dangerously-bypass-approvals-and-sandbox
+                # Always added below; a second copy makes codex exit.
             case --remote --remote-auth-token-env
                 set local_launch 0
                 set value_next 1
