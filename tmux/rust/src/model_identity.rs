@@ -112,12 +112,8 @@ pub(crate) fn agent_image(pid: u32, pane: u32, path: &Path) -> Option<char> {
         return None;
     }
     let name = path.file_name()?.to_str()?;
-    let home = identity::account_home().ok()?;
-    if native_agy_path(path, &home) {
+    if native_agy_path(path, &identity::account_home().ok()?) {
         return Some('>');
-    }
-    if pinned_claude_path(path, &home) {
-        return Some('❯');
     }
     match app(pid,path)? {
         "claude"=>Some('❯'),
@@ -135,17 +131,11 @@ fn native_agy_path(path: &Path, home: &Path) -> bool {
     let installed = home.join(".local/bin/agy");
     path == installed || std::fs::canonicalize(&installed).is_ok_and(|resolved| resolved == path)
 }
-fn pinned_claude_path(path: &Path, home: &Path) -> bool {
-    let root = home.join(".local/cc-pinned-2.1.153/node_modules");
-    path == root.join(".bin/claude")
-        || path == root.join("@anthropic-ai/claude-code/bin/claude.exe")
-}
 fn native_relay_path(path: &Path, home: &Path) -> Option<char> {
     if native_agy_path(path, home) {
         return Some('>');
     }
     if path == home.join(".local/bin/claude")
-        || pinned_claude_path(path, home)
         || (path.parent()? == home.join(".local/share/claude/versions")
             && crate::model_guard::re(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?$")
                 .is_match(path.file_name()?.to_str()?))
@@ -292,28 +282,15 @@ mod relay_tests {
         assert!(identity::Client::bind(std::process::id()).is_err());
     }
     #[test]
-    fn pinned_deepseek_claude_has_exact_install_admission() {
+    fn pinned_deepseek_claude_is_refused() {
         let home = Path::new("/test-account");
         for relative in [
             ".local/cc-pinned-2.1.153/node_modules/.bin/claude",
             ".local/cc-pinned-2.1.153/node_modules/@anthropic-ai/claude-code/bin/claude.exe",
         ] {
             let path = home.join(relative);
-            assert!(pinned_claude_path(&path, home));
-            assert_eq!(native_relay_path(&path, home), Some('❯'));
-            assert_eq!(native_relay_path(&path, Path::new("/other-account")), None);
-        }
-        for relative in [
-            ".local/cc-pinned-2.1.154/node_modules/.bin/claude",
-            ".local/cc-pinned-2.1.154/node_modules/@anthropic-ai/claude-code/bin/claude.exe",
-            ".local/cc-pinned-2.1.153-other/node_modules/.bin/claude",
-            ".local/cc-pinned-2.1.153/node_modules/@anthropic-ai/claude-code/cli.js",
-            ".local/cc-pinned-2.1.153/node_modules/@anthropic-ai/claude-code/bin/claude.exe/child",
-            ".local/cc-pinned-2.1.153/node_modules/.bin/other",
-        ] {
-            let path = home.join(relative);
-            assert!(!pinned_claude_path(&path, home));
             assert_eq!(native_relay_path(&path, home), None, "{relative}");
+            assert_eq!(native_relay_path(&path, Path::new("/other-account")), None);
         }
     }
 }
