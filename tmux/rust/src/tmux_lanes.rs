@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use unicode_width::UnicodeWidthChar;
 
-const HELP: &str = "usage: tmux-lanes <file.toml>\nRead-only board; refreshes every 15 seconds; Ctrl-C exits.\nTOML: session, title, and [[lanes]] with name, window, job, result, end.\nOptional lane started is Unix seconds. Result paths are relative to the TOML file.\n";
+const HELP: &str = "usage: tmux-lanes <file.toml>\nRead-only board; reloads every 15 seconds; Ctrl-C exits.\nTOML: session, title, optional footer = [\"Next: ...\"], and [[lanes]] with name, window, job, result, end.\nOptional lane started is Unix seconds. Result paths are relative to the TOML file.\n";
 static STOP: AtomicBool = AtomicBool::new(false);
 
 #[derive(Deserialize)]
@@ -18,6 +18,8 @@ static STOP: AtomicBool = AtomicBool::new(false);
 struct Board {
     session: String,
     title: String,
+    #[serde(default)]
+    footer: Vec<String>,
     lanes: Vec<Lane>,
 }
 
@@ -37,12 +39,16 @@ fn parse(text: &str, base: &Path) -> Result<Board, String> {
     if board.lanes.is_empty() {
         return Err("at least one lane is required".into());
     }
-    for field in [&board.session, &board.title].into_iter().chain(
-        board
-            .lanes
-            .iter()
-            .flat_map(|l| [&l.name, &l.window, &l.job, &l.end]),
-    ) {
+    for field in [&board.session, &board.title]
+        .into_iter()
+        .chain(&board.footer)
+        .chain(
+            board
+                .lanes
+                .iter()
+                .flat_map(|l| [&l.name, &l.window, &l.job, &l.end]),
+        )
+    {
         if field.trim().is_empty() || field.chars().any(char::is_control) {
             return Err(
                 "text fields must be nonempty single lines without control characters".into(),
@@ -58,27 +64,60 @@ fn parse(text: &str, base: &Path) -> Result<Board, String> {
     Ok(board)
 }
 
-fn result(lane: &Lane) -> io::Result<(bool, Option<u64>)> {
+fn load(path: &Path) -> Result<Board, String> {
+    fs::read_to_string(path)
+        .map_err(|e| e.to_string())
+        .and_then(|text| parse(&text, path.parent().unwrap_or(Path::new("."))))
+}
+
+fn reload(path: &Path, board: &mut Board) -> Option<&'static str> {
+    match load(path) {
+        Ok(next) => {
+            *board = next;
+            None
+        }
+        Err(_) => Some("config error; showing last valid board"),
+    }
+}
+
+#[derive(Default)]
+struct ResultFile {
+    done: bool,
+    size: Option<u64>,
+    modified: Option<u64>,
+}
+
+fn result(lane: &Lane) -> io::Result<ResultFile> {
     let file = match OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NONBLOCK)
         .open(&lane.result)
     {
         Ok(file) => file,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok((false, None)),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(ResultFile::default()),
         Err(e) => return Err(e),
     };
     let metadata = file.metadata()?;
     if !metadata.is_file() {
         return Err(io::Error::other("result is not a regular file"));
     }
+    let mut result = ResultFile {
+        done: false,
+        size: Some(metadata.len()),
+        modified: metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|time| time.as_secs()),
+    };
     let marker = format!("END {}", lane.end);
     for line in BufReader::new(file).lines() {
         if line? == marker {
-            return Ok((true, Some(metadata.len())));
+            result.done = true;
+            break;
         }
     }
-    Ok((false, Some(metadata.len())))
+    Ok(result)
 }
 
 fn tmux(args: &[&str]) -> Result<String, String> {
@@ -180,22 +219,148 @@ fn width() -> usize {
     }
 }
 
-fn draw(board: &Board, out: &mut impl Write) -> io::Result<()> {
-    let columns = [10, 7, 26, 9, 10];
-    let width = width();
-    let row = |fields: &[&str]| {
-        let line = fields
-            .iter()
-            .enumerate()
-            .map(|(i, value)| cell(value, *columns.get(i).unwrap_or(&width.saturating_sub(67))))
-            .collect::<Vec<_>>()
-            .join(" ");
-        cell(&line, width)
-    };
-    let now = SystemTime::now()
+fn epoch() -> u64 {
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_secs();
+        .as_secs()
+}
+
+fn clock(now: u64) -> String {
+    let seconds = now as libc::time_t;
+    let mut local: libc::tm = unsafe { std::mem::zeroed() };
+    if unsafe { libc::localtime_r(&seconds, &mut local) }.is_null() {
+        return "--:--:--".into();
+    }
+    format!(
+        "{:02}:{:02}:{:02}",
+        local.tm_hour, local.tm_min, local.tm_sec
+    )
+}
+
+fn lane_row(
+    lane: &Lane,
+    pane: Result<Option<String>, String>,
+    result: io::Result<ResultFile>,
+    now: u64,
+) -> [String; 6] {
+    let (status, size, until) = match result {
+        Ok(result) => (
+            state(result.done, &pane),
+            result.size.map(|n| n.to_string()).unwrap_or("-".into()),
+            if result.done {
+                result.modified.filter(|time| *time <= now)
+            } else {
+                Some(now)
+            },
+        ),
+        Err(_) => ("ERROR", "ERROR".into(), Some(now)),
+    };
+    let seat = if status == "DONE" {
+        "result complete"
+    } else {
+        match &pane {
+            Ok(Some(text)) => activity(text).0,
+            Ok(None) => "window missing",
+            Err(e) => e,
+        }
+    };
+    [
+        lane.name.clone(),
+        status.into(),
+        lane.job.clone(),
+        until
+            .map(|end| elapsed(lane.started, end))
+            .unwrap_or("-".into()),
+        size,
+        seat.into(),
+    ]
+}
+
+fn wrapped(text: &str, width: usize) -> String {
+    let mut out = String::new();
+    let mut used = 0;
+    for c in text.chars().filter(|c| !c.is_control()) {
+        let n = c.width().unwrap_or(0);
+        if used + n > width && used > 0 {
+            out.push('\n');
+            used = 0;
+        }
+        out.push(c);
+        used += n;
+    }
+    out.push('\n');
+    out
+}
+
+fn render(
+    board: &Board,
+    rows: &[[String; 6]],
+    width: usize,
+    warning: Option<&str>,
+    now: u64,
+) -> String {
+    let width = width.max(1);
+    let mut out = format!(
+        "\x1b[H\x1b[2J{}\n{}\n\n",
+        cell(&format!("{} · {}", board.title, board.session), width),
+        cell(
+            &format!("updated {} · read-only · 15s · Ctrl-C exits", clock(now)),
+            width
+        )
+    );
+    if let Some(warning) = warning {
+        out.push_str(&wrapped(&format!("WARNING: {warning}"), width));
+    }
+    let header = ["LANE", "STATE", "JOB", "ELAPSED", "RESULT (B)", "SEAT"].map(str::to_owned);
+    let time_width = rows.iter().map(|r| r[3].len()).max().unwrap_or(0).max(9);
+    let size_width = rows.iter().map(|r| r[4].len()).max().unwrap_or(0).max(10);
+    let core = 10 + 7 + time_width + size_width + 3;
+    let table_row = |fields: &[String; 6], indices: &[usize], columns: &[usize]| {
+        let line = indices
+            .iter()
+            .zip(columns)
+            .map(|(i, w)| cell(&fields[*i], *w))
+            .collect::<Vec<_>>()
+            .join(" ");
+        format!("{}\n", cell(&line, width))
+    };
+    if width >= core + 33 {
+        let job = 26.min(width - core - 17);
+        let columns = [10, 7, job, time_width, size_width, width - core - job - 2];
+        for fields in std::iter::once(&header).chain(rows) {
+            out.push_str(&table_row(fields, &[0, 1, 2, 3, 4, 5], &columns));
+        }
+    } else if width >= core {
+        let columns = [10, 7, time_width, size_width];
+        out.push_str(&table_row(&header, &[0, 1, 3, 4], &columns));
+        let job = 26.min(width.saturating_sub(31));
+        for fields in rows {
+            out.push_str(&table_row(fields, &[0, 1, 3, 4], &columns));
+            out.push_str(&format!(
+                "  JOB: {} | SEAT: {}\n",
+                cell(&fields[2], job),
+                cell(&fields[5], width - job - 16)
+            ));
+        }
+    } else {
+        for fields in rows {
+            for (label, value) in header.iter().zip(fields) {
+                out.push_str(&wrapped(&format!("{label}: {value}"), width));
+            }
+            out.push('\n');
+        }
+    }
+    if !board.footer.is_empty() {
+        out.push('\n');
+        for line in &board.footer {
+            out.push_str(&wrapped(line, width));
+        }
+    }
+    out
+}
+
+fn draw(board: &Board, warning: Option<&str>, out: &mut impl Write) -> io::Result<()> {
     let snapshot = tmux(&[
         "list-windows",
         "-a",
@@ -203,23 +368,7 @@ fn draw(board: &Board, out: &mut impl Write) -> io::Result<()> {
         "#{session_name}\t#{window_name}\t#{pane_id}",
     ])
     .map(|text| windows(&text, &board.session));
-    write!(out, "\x1b[H\x1b[2J")?;
-    writeln!(
-        out,
-        "{}\n",
-        cell(
-            &format!(
-                "{} · {} · read-only · 15s · Ctrl-C exits",
-                board.title, board.session
-            ),
-            width
-        )
-    )?;
-    writeln!(
-        out,
-        "{}",
-        row(&["LANE", "STATE", "JOB", "ELAPSED", "RESULT (B)", "SEAT"])
-    )?;
+    let mut rows = Vec::new();
     for lane in &board.lanes {
         if STOP.load(Ordering::Relaxed) {
             break;
@@ -232,32 +381,9 @@ fn draw(board: &Board, out: &mut impl Write) -> io::Result<()> {
                 Some(_) => Err("ambiguous window name".into()),
             },
         };
-        let result = result(lane);
-        let (status, size) = match result {
-            Ok((done, size)) => (
-                state(done, &pane),
-                size.map(|n| n.to_string()).unwrap_or("-".into()),
-            ),
-            Err(_) => ("ERROR", "ERROR".into()),
-        };
-        let seat = match &pane {
-            Ok(Some(text)) => activity(text).0,
-            Ok(None) => "window missing",
-            Err(e) => e,
-        };
-        writeln!(
-            out,
-            "{}",
-            row(&[
-                &lane.name,
-                status,
-                &lane.job,
-                &elapsed(lane.started, now),
-                &size,
-                seat
-            ])
-        )?;
+        rows.push(lane_row(lane, pane, result(lane), epoch()));
     }
+    out.write_all(render(board, &rows, width(), warning, epoch()).as_bytes())?;
     out.flush()
 }
 
@@ -275,10 +401,7 @@ pub fn entry(args: &[String]) -> i32 {
         return 2;
     };
     let path = Path::new(path);
-    let board = match fs::read_to_string(path)
-        .map_err(|e| e.to_string())
-        .and_then(|text| parse(&text, path.parent().unwrap_or(Path::new("."))))
-    {
+    let mut board = match load(path) {
         Ok(board) => board,
         Err(e) => {
             eprintln!("tmux-lanes: {}: {e}", path.display());
@@ -292,7 +415,8 @@ pub fn entry(args: &[String]) -> i32 {
     }
     let mut out = io::stdout().lock();
     while !STOP.load(Ordering::Relaxed) {
-        if let Err(e) = draw(&board, &mut out) {
+        let warning = reload(path, &mut board);
+        if let Err(e) = draw(&board, warning, &mut out) {
             eprintln!("tmux-lanes: {e}");
             return 1;
         }
