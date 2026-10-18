@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — Yazi moved to its own repo
 
-Yazi now has its own repo at `~/.repository/yazi`, with one empty public `main` commit. The live `~/.config/yazi` folder is its `private` worktree, preserving all 21 filtered commits, the old keymap and local archive files. Config ignores `/yazi/`, and the config and copy scripts keep the same paths. No repo was pushed.
+Yazi now has its own repo at `~/.repository/yazi`, with public `main` published as `aharoJ/yazi`: the three TOML configs, three copy scripts, README and MIT license. The live `~/.config/yazi` folder is its `private` worktree, preserving all 21 filtered commits, the old keymap and local archive files. Config ignores `/yazi/`, and the config and copy scripts keep the same paths. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — Starship moved to its own repo
 
