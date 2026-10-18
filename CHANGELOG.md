@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — eza moved to its own repo
 
-eza now has its own repo at `~/.repository/eza`, with one empty public `main` commit. The live `~/.config/eza` folder is its `private` worktree, preserving both filtered commits plus a local commit defining the `eza-themes` submodule in its own `.gitmodules`. Config ignores `/eza/` and removes its now-unused root `.gitmodules`. The gruvbox-dark symlink, submodule commit `17095bff` and Fish `EZA_CONFIG_DIR` path stay the same. No repo was pushed.
+eza now has its own repo at `~/.repository/eza`. Public `main` is published as `aharoJ/eza`: the gruvbox-dark theme symlink, `eza-themes` gitlink, `.gitmodules`, README and MIT license. The live `~/.config/eza` folder is its `private` worktree, preserving both filtered commits plus a local commit defining the submodule in its own `.gitmodules`. Config ignores `/eza/` and removed its now-unused root `.gitmodules`. The original checkout was moved back, its Git data absorbed into the new private worktree, and a full copy retained in the migration backup. All 59 checkout file hashes, the relative link and resolved theme bytes match; the submodule stays at `17095bff`. Fish keeps `EZA_CONFIG_DIR=~/.config/eza`, and eza version/list checks pass. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — Karabiner moved to its own repo
 

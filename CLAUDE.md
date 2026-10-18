@@ -12,7 +12,7 @@ Starship has its own repo at `~/.repository/starship` (`main`, published as `aha
 
 Yazi has its own repo at `~/.repository/yazi` (`main`, published as `aharoJ/yazi`); `~/.config/yazi` is its live `private` worktree. This repo ignores `/yazi/`.
 
-eza has its own repo at `~/.repository/eza` (`main`, empty and local for now); `~/.config/eza` is its live `private` worktree. This repo ignores `/eza/`. Its own `.gitmodules` defines `eza-themes` at the existing HTTPS URL, pinned to `17095bff`; `theme.yml` stays a relative symlink to `eza-themes/themes/gruvbox-dark.yml`. Fish keeps `EZA_CONFIG_DIR=~/.config/eza`. Config's root `.gitmodules` was removed after its last entry moved out.
+eza has its own repo at `~/.repository/eza` (`main`, published as `aharoJ/eza`); public files are `.gitmodules`, the `eza-themes` gitlink, the `theme.yml` symlink, README and MIT license. `~/.config/eza` is its live `private` worktree. This repo ignores `/eza/`. Its own `.gitmodules` defines `eza-themes` at the existing HTTPS URL, pinned to `17095bff`; `theme.yml` stays a relative symlink to `eza-themes/themes/gruvbox-dark.yml`. The submodule's Git data now belongs to the new private worktree. Fish keeps `EZA_CONFIG_DIR=~/.config/eza`. Config's root `.gitmodules` was removed after its last entry moved out.
 
 ## Reload Commands
 
