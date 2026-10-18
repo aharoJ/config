@@ -85,7 +85,7 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 
 ## Hammerspoon (`hammerspoon/`)
 
-Visual stack indicators for yabai. Config lives in `~/.config/hammerspoon/` and is symlinked from `~/.hammerspoon/init.lua`.
+Visual stack indicators and display helpers for yabai. Hammerspoon's `MJConfigFile` preference points directly to `~/.config/hammerspoon/init.lua`; `~/.hammerspoon` is absent. `~/.repository/hammerspoon` holds the real repo on `main` (empty and local for now), and `~/.config/hammerspoon` is its live `private` worktree. This repo ignores `/hammerspoon/`.
 
 ```
 hammerspoon/
@@ -93,12 +93,15 @@ hammerspoon/
 ├── modules/
 │   ├── reload.lua            # Auto-reload on .lua save via hs.pathwatcher
 │   ├── stack-indicators.lua  # App icon pills for yabai window stacks
+│   ├── dock-on-display.lua   # Reset Dock after connected screen membership changes
 │   └── utils.lua             # yabaiQuery(), isDarkMode(), debounce()
 ```
 
-**Stack indicators:** Queries `yabai -m query --windows --space`, groups by `stack-index`, draws rounded pills with app icons in the yabai left padding gap. Click-to-focus, theme-aware (light/dark), debounced redraws.
+**Stack indicators:** Queries `yabai -m query --windows --space`, filters visible windows with positive `stack-index` and sorts by that index. With at least two matching windows, draws app-icon pills to the left of the first window, highlights focus and adapts colors to light/dark mode. Redraws are debounced.
 
-**Reload:** Auto-reloads on any `.lua` file save. Also reloaded by `Hyper+Q` (via `yr` fish function alongside yabai/skhd). IPC enabled for `hs -c` CLI commands.
+**Display changes:** Resets Dock after a three-second debounce only when connected screen identities change; startup and unchanged screen membership do not reset Dock.
+
+**Reload:** Auto-reloads on any `.lua` file save. Manual reload: `hs.reload()` in the Hammerspoon console or `hs -c "hs.reload()"` with the CLI. IPC is enabled. The current `yr` Fish function restarts yabai/skhd only.
 
 ## tmux (separate repo)
 
