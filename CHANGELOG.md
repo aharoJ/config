@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — eza moved to its own repo
+
+eza now has its own repo at `~/.repository/eza`, with one empty public `main` commit. The live `~/.config/eza` folder is its `private` worktree, preserving both filtered commits plus a local commit defining the `eza-themes` submodule in its own `.gitmodules`. Config ignores `/eza/` and removes its now-unused root `.gitmodules`. The gruvbox-dark symlink, submodule commit `17095bff` and Fish `EZA_CONFIG_DIR` path stay the same. No repo was pushed.
+
 ## 2026-10-18 — Karabiner moved to its own repo
 
 Karabiner now has its own repo at `~/.repository/karabiner`. Public `main` is published as `aharoJ/karabiner`: `karabiner.json`, README and MIT license. Tags `v0.1.0`–`v0.9.0` preserve changed automatic-backup snapshots as `karabiner.json`, oldest first; `v0.10.0` marks current main. The February 18 and March 8 snapshots are skipped because each equals its immediate predecessor. The existing `~/.config/karabiner` folder was adopted in place as its `private` worktree, preserving all 29 filtered commits (25 changes and four merges), all automatic backups and the two empty untracked assets directories. Config ignores `/karabiner/`. The live directory and JSON never moved; JSON bytes, mtime, inodes, Karabiner PIDs and selected profile stayed unchanged. No restart or key event was used. The `private` branch and config repo stay local.
