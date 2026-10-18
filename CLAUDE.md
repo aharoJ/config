@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux is managed in a separate repo (see below). There is no build system or CI for this repo. Dotfile changes are applied by reloading the relevant tool.
 
-Ghostty has its own repo at `~/.repository/ghostty` (`main`, currently empty); `~/.config/ghostty` is its live `private` worktree. This repo ignores `/ghostty/`.
+Ghostty has its own repo at `~/.repository/ghostty` (`main`, published as `aharoJ/ghostty`); `~/.config/ghostty` is its live `private` worktree. This repo ignores `/ghostty/`.
 
 ## Reload Commands
 

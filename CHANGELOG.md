@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — Ghostty moved to its own repo
 
-Ghostty now has its own local repo at `~/.repository/ghostty`; `main` is an empty root until public files are chosen. The live `~/.config/ghostty` folder is its `private` worktree, preserving the filtered config history and both backups. Config ignores `/ghostty/`, and the reload guidance now names the manual command. No GitHub repo was created or pushed.
+Ghostty now has its own repo at `~/.repository/ghostty`; `main` is published as `aharoJ/ghostty`. The live `~/.config/ghostty` folder is its `private` worktree, preserving the filtered config history and both backups. Config ignores `/ghostty/`, and the reload guidance now names the manual command. The public repo contains only `README.md`, `LICENSE` and `config`; `private` stays local.
 
 ## 2026-10-18 — tmux moved to its own repo
 
