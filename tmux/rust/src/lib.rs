@@ -19,6 +19,7 @@ mod panel_schema;
 mod panel_trust;
 mod runtime;
 mod tmux_lab;
+mod tmux_lanes;
 pub use panel_launch::main_entry as panel_seat_entry;
 pub use runtime::producer_entry;
 mod new_chat;

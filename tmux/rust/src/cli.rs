@@ -462,6 +462,7 @@ pub fn main_entry(surface: &str, args: &[String]) -> i32 {
         "panel-seat-trust" => return crate::panel_trust::main_entry(args),
         "panel-catch" => return crate::panel_catch::entry(args),
         "mem-cpu" | "mem-cpu.sh" => return crate::mem_cpu::entry(args),
+        "tmux-lanes" => return crate::tmux_lanes::entry(args),
         _ => (),
     }
     INTERRUPTED.store(false, Ordering::Relaxed);
