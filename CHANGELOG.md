@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — Karabiner moved to its own repo
 
-Karabiner now has its own repo at `~/.repository/karabiner`, with one empty public `main` commit. The existing `~/.config/karabiner` folder is adopted in place as its `private` worktree, preserving all 29 filtered commits (25 changes and four merges), automatic backups and empty assets directories. Config ignores `/karabiner/`. The live directory and `karabiner.json` stay in place; no Karabiner restart or key event is used. No repo was pushed.
+Karabiner now has its own repo at `~/.repository/karabiner`. Public `main` will be published as `aharoJ/karabiner` after the `#kb1b` gate: `karabiner.json`, README and MIT license. Tags `v0.1.0`–`v0.9.0` preserve changed automatic-backup snapshots as `karabiner.json`, oldest first; `v0.10.0` marks current main. The February 18 and March 8 snapshots are skipped because each equals its immediate predecessor. The existing `~/.config/karabiner` folder was adopted in place as its `private` worktree, preserving all 29 filtered commits (25 changes and four merges), all automatic backups and the two empty untracked assets directories. Config ignores `/karabiner/`. The live directory and JSON never moved; JSON bytes, mtime, inodes, Karabiner PIDs and selected profile stayed unchanged. No restart or key event was used. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — skhd moved to its own repo
 
