@@ -1,1 +1,0 @@
-../../../.local/bin/mem-cpu

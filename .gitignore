@@ -236,3 +236,6 @@ configstore/
 # Machine-local cagent identity
 /cagent/user-uuid
 /tmux/plugins/tmux-continuum/
+
+# tmux moved to its own repo (~/.repository/tmux) 2026-10-18
+/tmux/
