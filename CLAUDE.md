@@ -79,7 +79,7 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 
 **Karabiner** (`karabiner/`): CapsLock → Hyper (Ctrl+Opt+Shift+Cmd) on the HHKB (vendor 1278, product 33); CapsLock → Control on other devices. Escape held → Hyper, tapped → Escape. Config is auto-generated JSON — edit with care.
 
-`~/.repository/karabiner` holds public `main`, which will be published as `aharoJ/karabiner` after the `#kb1b` gate: `karabiner.json`, README and MIT license. Tags `v0.1.0`–`v0.9.0` hold changed automatic-backup snapshots as `karabiner.json`; `v0.10.0` marks current main. `~/.config/karabiner` is its live `private` worktree, adopted in place without moving the folder or JSON file. This repo ignores `/karabiner/`. Full filtered history, all automatic backups and the empty untracked assets directories stay local.
+`~/.repository/karabiner` holds public `main`, published as `aharoJ/karabiner`: `karabiner.json`, README and MIT license. Tags `v0.1.0`–`v0.9.0` hold changed automatic-backup snapshots as `karabiner.json`; `v0.10.0` marks current main. `~/.config/karabiner` is its live `private` worktree, adopted in place without moving the folder or JSON file. This repo ignores `/karabiner/`. Full filtered history, all automatic backups and the empty untracked assets directories stay local.
 
 ### Key Sovereignty
 
