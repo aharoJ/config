@@ -56,6 +56,8 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 **yabai** (`yabai/`): Neutral base config in `yabairc` — no layout opinion. Layout-specific settings (BSP, stack, float) live in `profiles/`. SIP is fully enabled (no scripting addition).
 
+`~/.repository/yabai` holds the real repo on `main` (empty and local for now); `~/.config/yabai` is its live `private` worktree. This repo ignores `/yabai/`. The existing LaunchAgent still reads `~/.config/yabai/yabairc`.
+
 **skhd** (`skhd/`): Profile-based architecture using symlink swap. Uses skhd-zig fork.
 
 ```

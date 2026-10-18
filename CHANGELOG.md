@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — yabai moved to its own repo
+
+yabai now has its own repo at `~/.repository/yabai`, with one empty public `main` commit. The live `~/.config/yabai` folder is its `private` worktree, preserving all 42 filtered commits (34 changes and eight merges), backups and executable files. Config ignores `/yabai/`. The LaunchAgent and live config path are unchanged; neither yabai nor skhd was restarted. No repo was pushed.
+
 ## 2026-10-18 — Hammerspoon moved to its own repo
 
 Hammerspoon now has its own repo at `~/.repository/hammerspoon`, with public `main` published as `aharoJ/hammerspoon`: the five Lua files, README and MIT license. The live `~/.config/hammerspoon` folder is its `private` worktree, preserving all three filtered commits and the empty `Spoons/` directory. Config ignores `/hammerspoon/`. The `MJConfigFile` preference keeps loading the same `init.lua` path directly; no home-folder symlink is used. The `private` branch and config repo stay local.
