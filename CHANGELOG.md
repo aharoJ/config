@@ -2,11 +2,11 @@
 
 ## 2026-10-18 — skhd moved to its own repo
 
-skhd now has its own repo at `~/.repository/skhd`, with one empty public `main` commit. The live `~/.config/skhd` folder is its `private` worktree, preserving all 51 filtered commits (42 changes and nine merges), backups, legacy modules and the `modules/active` symlink. Config ignores `/skhd/`. The LaunchAgent and live config path are unchanged; neither skhd nor yabai was restarted. No repo was pushed.
+skhd now has its own repo at `~/.repository/skhd`. Public `main` is published as `aharoJ/skhd`: the root config, shared/stack/BSP modules, `modules/active` symlink, README and MIT license. Tags `v0.3.0` and `v0.4.0` preserve numbered backups as `skhdrc`; `v0.5.0` marks current main. The live `~/.config/skhd` folder is its `private` worktree, preserving all 51 filtered commits (42 changes and nine merges), backups and legacy files. Config ignores `/skhd/`. The LaunchAgent, live config path and active stack link are unchanged. Codex ran a config-only reload and no restart command; both processes had new start times before the skhd folder handoff (cause unconfirmed). The `private` branch and config repo stay local.
 
 ## 2026-10-18 — yabai moved to its own repo
 
-yabai now has its own repo at `~/.repository/yabai`, with one empty public `main` commit. The live `~/.config/yabai` folder is its `private` worktree, preserving all 42 filtered commits (34 changes and eight merges), backups and executable files. Config ignores `/yabai/`. The LaunchAgent and live config path are unchanged; neither yabai nor skhd was restarted. No repo was pushed.
+yabai now has its own repo at `~/.repository/yabai`. Public `main` is published as `aharoJ/yabai`: the neutral base, three profiles, restart helper, README and MIT license. Tags `v0.1.0`–`v0.3.0` preserve numbered backups as `yabairc`; `v0.4.0` marks current main. The live `~/.config/yabai` folder is its `private` worktree, preserving all 42 filtered commits (34 changes and eight merges), backups and executable files. Config ignores `/yabai/`. The LaunchAgent and live config path are unchanged. Original yabai/skhd PIDs survived the yabai handoff; both later changed before the skhd handoff without a Codex restart command. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — Hammerspoon moved to its own repo
 

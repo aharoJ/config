@@ -56,11 +56,11 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 **yabai** (`yabai/`): Neutral base config in `yabairc` — no layout opinion. Layout-specific settings (BSP, stack, float) live in `profiles/`. SIP is fully enabled (no scripting addition).
 
-`~/.repository/yabai` holds the real repo on `main` (empty and local for now); `~/.config/yabai` is its live `private` worktree. This repo ignores `/yabai/`. The existing LaunchAgent still reads `~/.config/yabai/yabairc`.
+`~/.repository/yabai` holds public `main`, published as `aharoJ/yabai`: the neutral base, three profiles, restart helper, README and MIT license. Tags `v0.1.0`–`v0.3.0` hold numbered backups as `yabairc`; `v0.4.0` marks current main. `~/.config/yabai` is the live `private` worktree and keeps the full filtered history and backups locally. This repo ignores `/yabai/`. The existing LaunchAgent still reads `~/.config/yabai/yabairc`.
 
 **skhd** (`skhd/`): Profile-based architecture using symlink swap. Uses skhd-zig fork.
 
-`~/.repository/skhd` holds the real repo on `main` (empty and local for now); `~/.config/skhd` is its live `private` worktree. This repo ignores `/skhd/`. The existing LaunchAgent still reads `~/.config/skhd/skhdrc`, with `modules/active` pointing at the selected profile.
+`~/.repository/skhd` holds public `main`, published as `aharoJ/skhd`: the root config, shared/stack/BSP modules, `modules/active` symlink, README and MIT license. Tags `v0.3.0` and `v0.4.0` hold numbered backups as `skhdrc`; `v0.5.0` marks current main. `~/.config/skhd` is the live `private` worktree and keeps full filtered history, backups and legacy files locally. This repo ignores `/skhd/`. The existing LaunchAgent still reads `~/.config/skhd/skhdrc`, with `modules/active` pointing at the selected profile.
 
 ```
 skhd/
