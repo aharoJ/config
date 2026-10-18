@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — Hammerspoon moved to its own repo
 
-Hammerspoon now has its own repo at `~/.repository/hammerspoon`, with one empty public `main` commit. The live `~/.config/hammerspoon` folder is its `private` worktree, preserving the filtered history and all Lua files. Config ignores `/hammerspoon/`. The `MJConfigFile` preference keeps loading the same `init.lua` path directly; no home-folder symlink is used. No repo was pushed.
+Hammerspoon now has its own repo at `~/.repository/hammerspoon`, with public `main` published as `aharoJ/hammerspoon`: the five Lua files, README and MIT license. The live `~/.config/hammerspoon` folder is its `private` worktree, preserving all three filtered commits and the empty `Spoons/` directory. Config ignores `/hammerspoon/`. The `MJConfigFile` preference keeps loading the same `init.lua` path directly; no home-folder symlink is used. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — Yazi moved to its own repo
 

@@ -85,7 +85,7 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 
 ## Hammerspoon (`hammerspoon/`)
 
-Visual stack indicators and display helpers for yabai. Hammerspoon's `MJConfigFile` preference points directly to `~/.config/hammerspoon/init.lua`; `~/.hammerspoon` is absent. `~/.repository/hammerspoon` holds the real repo on `main` (empty and local for now), and `~/.config/hammerspoon` is its live `private` worktree. This repo ignores `/hammerspoon/`.
+Visual stack indicators and display helpers for yabai. Hammerspoon's `MJConfigFile` preference points directly to `~/.config/hammerspoon/init.lua`; `~/.hammerspoon` is absent. `~/.repository/hammerspoon` holds the real repo on `main` (published as `aharoJ/hammerspoon`), and `~/.config/hammerspoon` is its live `private` worktree. This repo ignores `/hammerspoon/`.
 
 ```
 hammerspoon/
