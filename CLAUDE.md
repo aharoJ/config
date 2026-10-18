@@ -8,7 +8,7 @@ Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux
 
 Ghostty has its own repo at `~/.repository/ghostty` (`main`, published as `aharoJ/ghostty`); `~/.config/ghostty` is its live `private` worktree. This repo ignores `/ghostty/`.
 
-Starship has its own repo at `~/.repository/starship` (`main`, cloned from `aharoJ/starship`); `~/.config/starship` is its live `private` worktree. This repo ignores `/starship/`.
+Starship has its own repo at `~/.repository/starship` (`main`, published as `aharoJ/starship`). Public `main` was cleaned to `starship.toml`, `README.md` and `img/`; old versions are tags `v0.1.0`–`v0.4.0`. `~/.config/starship` is its live `private` worktree. This repo ignores `/starship/`.
 
 ## Reload Commands
 

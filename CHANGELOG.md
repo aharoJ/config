@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — Starship moved to its own repo
 
-Starship now has its own repo at `~/.repository/starship`, cloned from `aharoJ/starship`; public `main` stays unchanged. The live `~/.config/starship` folder is its `private` worktree, preserving the filtered config history and local files. Config ignores `/starship/`, and Fish keeps the same `STARSHIP_CONFIG` path. No repo was pushed.
+Starship now has its own repo at `~/.repository/starship`, published as `aharoJ/starship`. Public `main` was cleaned to `starship.toml`, `README.md` and `img/`, with old versions published as tags `v0.1.0`–`v0.4.0`. The live `~/.config/starship` folder is its `private` worktree, preserving the filtered config history and local files. Config ignores `/starship/`, and Fish keeps the same `STARSHIP_CONFIG` path. The `private` branch and config repo stay local.
 
 ## 2026-10-18 — Ghostty moved to its own repo
 
