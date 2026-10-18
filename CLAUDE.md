@@ -77,7 +77,9 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 
 **SIP is fully enabled** — `window --space`, `space --focus`, scratchpad, opacity, animations, and shadows are all unavailable. Only bind commands that work without the scripting addition.
 
-**Karabiner** (`karabiner/`): CapsLock → Hyper (Ctrl+Opt+Shift+Cmd). Escape held → Hyper, tapped → Escape. Config is auto-generated JSON — edit with care.
+**Karabiner** (`karabiner/`): CapsLock → Hyper (Ctrl+Opt+Shift+Cmd) on the HHKB (vendor 1278, product 33); CapsLock → Control on other devices. Escape held → Hyper, tapped → Escape. Config is auto-generated JSON — edit with care.
+
+`~/.repository/karabiner` holds the real repo on `main` (empty and local for now); `~/.config/karabiner` is its live `private` worktree, adopted in place without moving the folder or JSON file. This repo ignores `/karabiner/`. Automatic backups and the empty untracked assets directories stay local.
 
 ### Key Sovereignty
 
