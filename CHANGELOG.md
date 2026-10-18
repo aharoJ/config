@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — Fish moved to its own local repo
+
+Fish now has its own repo at `~/.repository/fish`, with one empty public `main` root and no remote. The live `~/.config/fish` directory was adopted in place as its `private` worktree, preserving all 98 tracked source files and the full filtered history. Config ignores `/fish/`; universal variables and `.DS_Store` files stay ignored locally. No startup file, function, live shell, fnm link or inbound process-guard link was moved or restarted. Nothing was published or pushed to a real remote; Angel will choose public files later.
+
 ## 2026-10-18 — eza moved to its own repo
 
 eza now has its own repo at `~/.repository/eza`. Public `main` is published as `aharoJ/eza`: the gruvbox-dark theme symlink, `eza-themes` gitlink, `.gitmodules`, README and MIT license. The live `~/.config/eza` folder is its `private` worktree, preserving both filtered commits plus a local commit defining the submodule in its own `.gitmodules`. Config ignores `/eza/` and removed its now-unused root `.gitmodules`. The original checkout was moved back, its Git data absorbed into the new private worktree, and a full copy retained in the migration backup. All 59 checkout file hashes, the relative link and resolved theme bytes match; the submodule stays at `17095bff`. Fish keeps `EZA_CONFIG_DIR=~/.config/eza`, and eza version/list checks pass. The `private` branch and config repo stay local.

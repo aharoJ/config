@@ -48,6 +48,8 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 ## Fish Shell (`fish/`)
 
+Fish has its own local repo at `~/.repository/fish`. Its `main` branch has one empty root and no remote; Angel will choose public files later. The live `~/.config/fish` directory is its `private` worktree, adopted in place, preserving every tracked file and the full filtered history. This repo ignores `/fish/`. Universal variables and `.DS_Store` files remain ignored local state; no shell or function path changed.
+
 - `config.fish` — env vars, brew path, interactive aliases/abbrs
 - `internal/` — subdirs auto-added to `fish_function_path` at startup
 - `functions/` — standard fish autoloaded functions
