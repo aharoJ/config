@@ -2,7 +2,7 @@
 
 ## 2026-10-18 — skhd moved to its own repo
 
-skhd now has its own repo at `~/.repository/skhd`. Public `main` is published as `aharoJ/skhd`: the root config, shared/stack/BSP modules, `modules/active` symlink, README and MIT license. Tags `v0.3.0` and `v0.4.0` preserve numbered backups as `skhdrc`; `v0.5.0` marks current main. The live `~/.config/skhd` folder is its `private` worktree, preserving all 51 filtered commits (42 changes and nine merges), backups and legacy files. Config ignores `/skhd/`. The LaunchAgent, live config path and active stack link are unchanged. Codex ran a config-only reload and no restart command; both processes had new start times before the skhd folder handoff (cause unconfirmed). The `private` branch and config repo stay local.
+skhd now has its own repo at `~/.repository/skhd`. Public `main` is published as `aharoJ/skhd`: the root config, shared/stack/BSP modules, `modules/active` symlink, README and MIT license. Tags `v0.1.0` and `v0.2.0` preserve numbered backups as `skhdrc`; `v0.3.0` marks current main. The live `~/.config/skhd` folder is its `private` worktree, preserving all 51 filtered commits (42 changes and nine merges), backups and legacy files. Config ignores `/skhd/`. The LaunchAgent, live config path and active stack link are unchanged. Codex ran a config-only reload and no restart command; both processes had new start times before the skhd folder handoff (cause unconfirmed). The `private` branch and config repo stay local.
 
 ## 2026-10-18 — yabai moved to its own repo
 
