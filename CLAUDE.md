@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/` and is managed as a single git repo. There is no build system or CI. Dotfile changes are applied by reloading the relevant tool. The tmux relay tools (`tmux/tools/`) have a regression suite under `tmux/tests/` (see `tmux/tests/README.md`); relay changes are gated there and deployed to `~/.local/share/relay-stable`.
+Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux is managed in a separate repo (see below). There is no build system or CI for this repo. Dotfile changes are applied by reloading the relevant tool.
 
 ## Reload Commands
 
@@ -94,9 +94,11 @@ hammerspoon/
 
 **Reload:** Auto-reloads on any `.lua` file save. Also reloaded by `Hyper+Q` (via `yr` fish function alongside yabai/skhd). IPC enabled for `hs -c` CLI commands.
 
-## tmux (`tmux/`)
+## tmux (separate repo)
 
-Config in `tmux.conf`. Plugins managed by TPM: tmux-resurrect (manual save/restore only), vim-tmux-navigator. Vi copy-mode with `y` → pbcopy.
+`~/.repository/tmux` is the main checkout of `aharoJ/tmux` on branch `main` and holds the real `.git` directory. `~/.config/tmux` is its `private` worktree and the live config. This repo ignores `/tmux/`; tmux plugins, relay tools and tests belong to the separate repo.
+
+Known leftover: `~/.local/share/relay-stable` is still a worktree of `~/.config/.git`, built from config's old `tmux/` history.
 
 ## Pre-commit Hook
 

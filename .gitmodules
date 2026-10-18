@@ -1,12 +1,3 @@
 [submodule "eza/eza-themes"]
 	path = eza/eza-themes
 	url = https://github.com/eza-community/eza-themes.git
-[submodule "tmux/plugins/tpm"]
-	path = tmux/plugins/tpm
-	url = https://github.com/tmux-plugins/tpm
-[submodule "tmux/plugins/tmux-resurrect"]
-	path = tmux/plugins/tmux-resurrect
-	url = https://github.com/tmux-plugins/tmux-resurrect
-[submodule "tmux/plugins/tmux-mem-cpu-load"]
-	path = tmux/plugins/tmux-mem-cpu-load
-	url = https://github.com/thewtex/tmux-mem-cpu-load

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — tmux moved to its own repo
+
+Moved tmux to its own `aharoJ/tmux` repo: `~/.repository/tmux` is the `main` checkout and `~/.config/tmux` is the live `private` worktree. Config ignores `/tmux/`; removed the stale tmux plugin submodule entries and updated the repo guidance. The existing relay-stable worktree still uses config's old tmux history.
+
 ## 2026-10-12 — Reset Dock after monitor membership changes
 
 Hammerspoon now watches connected screen identities and debounces display-change bursts for three seconds before running `killall Dock` once. Unchanged screen membership, resolution/arrangement changes and Dock-generated layout noise do not trigger a reset. Initial loading does not restart Dock. Yabai and skhd configuration remain unchanged.
