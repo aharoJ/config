@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux is managed in a separate repo (see below). There is no build system or CI for this repo. Dotfile changes are applied by reloading the relevant tool.
 
+Ghostty has its own repo at `~/.repository/ghostty` (`main`, currently empty); `~/.config/ghostty` is its live `private` worktree. This repo ignores `/ghostty/`.
+
 ## Reload Commands
 
 | Tool       | Reload command                                                |
@@ -16,7 +18,7 @@ Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux
 | yabai      | `yabai --restart-service`                                     |
 | skhd       | `skhd --restart-service`                                      |
 | Starship   | Automatic on new prompt                                       |
-| Ghostty    | Automatic on config save                                      |
+| Ghostty    | `Cmd+Shift+R` or Ghostty → Reload Configuration                |
 | Karabiner  | Automatic on JSON save                                        |
 | Hammerspoon| Automatic on `.lua` save (pathwatcher), or `hs -c "hs.reload()"` |
 
