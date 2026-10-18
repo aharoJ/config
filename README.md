@@ -38,7 +38,7 @@ config/
 ├─ nvim/            # Neovim — LSP, Treesitter, Telescope, cmp, custom JDTLS fmt
 ├─ obsidian/        # Vault‑friendly tweaks
 ├─ skhd/            # Hotkeys orchestrator for Yabai + app layers
-├─ starship/        # Prompt tuned for signal‑over‑noise
+├─ starship/        # Separate repo: aharoJ/starship; live private worktree
 ├─ tmux/            # Session glue — zero flicker, sane italics, truecolor
 ├─ yabai/           # WM rules (stacks, float rules, borders, spaces)
 └─ README.md
@@ -58,7 +58,7 @@ config/
 | <img src="https://cdn.simpleicons.org/yabai/fff" width="18" /> [Yabai](https://github.com/aharoJ/config/tree/main/yabai) <br> Tiling WM, zero-lag                                                                  | <img src="https://cdn.simpleicons.org/neovim/fff" width="18" /> [Neovim](https://github.com/aharoJ/config/tree/main/nvim) <br> LSP, custom formatter | <img src="https://cdn.simpleicons.org/startpage/fff" width="18" />  [LF](https://github.com/aharoJ/config/tree/main/lf) <br> Fast file previews                                                                         |
 | <img src="https://cdn.simpleicons.org/saturn/fff" width="18" />  [Skhd](https://github.com/aharoJ/config/tree/main/skhd) <br> Optimized hotkeys                                                                      | <img src="https://cdn.simpleicons.org/tmux/fff" width="18" /> [Tmux](https://github.com/aharoJ/config/tree/main/tmux) <br> Session management        | <img src="https://cdn.simpleicons.org/argo/fff" width="18" /> [Flameshot](https://github.com/aharoJ/config/tree/main/flameshot) <br> Precise captures                                                             |
 | <img src="https://cdn.simpleicons.org/knime/fff" width="18" /> [Karabiner](https://github.com/aharoJ/config/tree/main/karabiner) <br> Advanced remaps                                                              | <img src="https://cdn.simpleicons.org/fishshell/fff" width="18" /> [Fish](https://github.com/aharoJ/config/tree/main/fish) <br> Intuitive shell      | <img src="https://cdn.simpleicons.org/lua/fff" width="18" /> [Sketchybar](https://github.com/aharoJ/config/tree/main/sketchybar) <br> Clean status bar |
-| <img src="https://cdn.simpleicons.org/gnometerminal/fff" width="18" />  [Kitty](https://github.com/aharoJ/config/tree/main/kitty) <br> Vibrant terminal                                                                     | <img src="https://cdn.simpleicons.org/starship/fff" width="18" /> [Starship](https://github.com/aharoJ/config/tree/main/starship) <br> Custom prompt | <img src="https://cdn.simpleicons.org/markdown/fff" width="18" /> [Universal Linker](https://github.com/aharoJ/config/tree/main/configstore) <br> Dynamic links |
+| <img src="https://cdn.simpleicons.org/gnometerminal/fff" width="18" />  [Kitty](https://github.com/aharoJ/config/tree/main/kitty) <br> Vibrant terminal                                                                     | <img src="https://cdn.simpleicons.org/starship/fff" width="18" /> [Starship](https://github.com/aharoJ/starship) <br> Custom prompt | <img src="https://cdn.simpleicons.org/markdown/fff" width="18" /> [Universal Linker](https://github.com/aharoJ/config/tree/main/configstore) <br> Dynamic links |
 | <img src="https://cdn.simpleicons.org/alacritty/fff" width="18" /> [Alacritty](https://github.com/aharoJ/config/tree/main/alacritty) <br> GPU terminal | <img src="https://cdn.simpleicons.org/git/fff" width="18" />  [Lazygit](https://github.com/aharoJ/config/blob/main/lazygit.yml) <br> Git TUI                                                                   | <img src="https://cdn.simpleicons.org/gcore/fff" width="18" /> [Glow](https://github.com/aharoJ/config/tree/main/glow) <br> Markdown preview        |
 | <img src="https://cdn.simpleicons.org/alienware/fff" width="18" /> [Hammerspoon](https://github.com/aharoJ/config/DONT-EXIST) <br> macOS automation      | <img src="https://cdn.simpleicons.org/obsidian/fff" width="18" /> [Obsidian](https://github.com/aharoJ/config/tree/main/obsidian) <br> Notes & PKM   |                                                                                                                                                        |
 
@@ -77,7 +77,7 @@ config/
 | Terminal    | Alacritty & Kitty parity; ligatures optional         | [`alacritty/`](./alacritty), [`kitty/`](./kitty) |
 | WM          | Yabai rules, borders, gaps; Skhd layers              | [`yabai/`](./yabai), [`skhd/`](./skhd)           |
 | Input       | Karabiner Hyper + nav layers                         | [`karabiner/`](./karabiner)                      |
-| Prompt      | Starship minimal signal                              | [`starship/`](./starship)                        |
+| Prompt      | Starship minimal signal                              | [aharoJ/starship](https://github.com/aharoJ/starship) |
 | Multiplexer | Tmux with smooth updates                             | [`tmux/`](./tmux)                                |
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     ...........       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
