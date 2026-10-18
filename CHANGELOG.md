@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — skhd moved to its own repo
+
+skhd now has its own repo at `~/.repository/skhd`, with one empty public `main` commit. The live `~/.config/skhd` folder is its `private` worktree, preserving all 51 filtered commits (42 changes and nine merges), backups, legacy modules and the `modules/active` symlink. Config ignores `/skhd/`. The LaunchAgent and live config path are unchanged; neither skhd nor yabai was restarted. No repo was pushed.
+
 ## 2026-10-18 — yabai moved to its own repo
 
 yabai now has its own repo at `~/.repository/yabai`, with one empty public `main` commit. The live `~/.config/yabai` folder is its `private` worktree, preserving all 42 filtered commits (34 changes and eight merges), backups and executable files. Config ignores `/yabai/`. The LaunchAgent and live config path are unchanged; neither yabai nor skhd was restarted. No repo was pushed.

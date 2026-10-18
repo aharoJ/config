@@ -60,6 +60,8 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 **skhd** (`skhd/`): Profile-based architecture using symlink swap. Uses skhd-zig fork.
 
+`~/.repository/skhd` holds the real repo on `main` (empty and local for now); `~/.config/skhd` is its live `private` worktree. This repo ignores `/skhd/`. The existing LaunchAgent still reads `~/.config/skhd/skhdrc`, with `modules/active` pointing at the selected profile.
+
 ```
 skhd/
 ├── skhdrc                    # Entry point — loads shared/ + active/
