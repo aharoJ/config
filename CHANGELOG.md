@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — Alacritty moved to its own repo
+
+Alacritty now has its own repo at `~/.repository/alacritty`, continuing `aharoJ/alacritty` (renamed from `alacritty-config`). Public `main` contains the current TOML config, themes, saved configurations, nine fonts with complete embedded notices, README and the existing 2023 MIT license. Tags `v0.1.0`–`v0.12.0` preserve older configurations and the current snapshot. The live folder was adopted in place as `private`, preserving all 36 tracked source files, all 19 fonts, backups and 92 filtered history commits. Original paths, notes and raw config/old_dotfiles history remain local. Config ignores `/alacritty/`; no live file, font or import path changed. Ten font binaries whose source copies lack required full or companion notices remain private, along with historical scripts and local state.
+
 ## 2026-10-18 — Neovim moved to its own repo
 
 Neovim now has its own repo at `~/.repository/nvim`, continuing `aharoJ/nvim`. Public `main` contains today's rebuild config, `lazy-lock.json`, README and MIT license; annotated tags preserve older Vim, LunarVim and Neovim setups. The live `nvim-rebuild`, `nvim` and `nvim-v3` folders were adopted in place as `private`, `private-legacy` and `private-v3` worktrees, preserving full filtered histories and all source files, including the previously ignored icon definitions. Original histories, LunarVim trees, backup notes, the ZIP and a config-history bundle remain on local archive refs. Config ignores the three live folders and leaves `.bak/` unchanged. The daily `NVIM_APPNAME=nvim-rebuild` path stays the same.

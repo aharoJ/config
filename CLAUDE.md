@@ -14,6 +14,8 @@ Yazi has its own repo at `~/.repository/yazi` (`main`, published as `aharoJ/yazi
 
 eza has its own repo at `~/.repository/eza` (`main`, published as `aharoJ/eza`); public files are `.gitmodules`, the `eza-themes` gitlink, the `theme.yml` symlink, README and MIT license. `~/.config/eza` is its live `private` worktree. This repo ignores `/eza/`. Its own `.gitmodules` defines `eza-themes` at the existing HTTPS URL, pinned to `17095bff`; `theme.yml` stays a relative symlink to `eza-themes/themes/gruvbox-dark.yml`. The submodule's Git data now belongs to the new private worktree. Fish keeps `EZA_CONFIG_DIR=~/.config/eza`. Config's root `.gitmodules` was removed after its last entry moved out.
 
+Alacritty has its own repo at `~/.repository/alacritty`, continuing the renamed `aharoJ/alacritty` public history. Public `main` contains the current TOML config, themes, saved configurations, nine font files with complete embedded license notices, README and the original 2023 MIT license. Tags `v0.1.0`–`v0.12.0` preserve the older configurations and current snapshot. The live `~/.config/alacritty` folder is its `private` worktree, adopted in place with all 36 source files, all 19 original fonts and full filtered history. Other original paths, notes and exact backups stay on local archive refs. This repo ignores `/alacritty/`; Alacritty still reads `~/.config/alacritty/alacritty.toml` and its existing theme paths.
+
 ## Reload Commands
 
 | Tool       | Reload command                                                |
