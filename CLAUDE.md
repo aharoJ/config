@@ -48,7 +48,7 @@ The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fis
 
 ## Fish Shell (`fish/`)
 
-Fish has its own local repo at `~/.repository/fish`. Its `main` branch has one empty root and no remote; Angel will choose public files later. The live `~/.config/fish` directory is its `private` worktree, adopted in place, preserving every tracked file and the full filtered history. This repo ignores `/fish/`. Universal variables and `.DS_Store` files remain ignored local state; no shell or function path changed.
+Fish has its own repo at `~/.repository/fish` (`main`, published as `aharoJ/fish`, the renamed 2023 `dot-fish`). Public `main` is `config.fish`, README and MIT license. Tags: `v0.1.0` is the 2023 repo, `v0.2.0` and `v0.3.0` hold older `config.fish` backups, `v0.4.0` is the full config before cleanup (every private file except `config.fish.bak`). The live `~/.config/fish` directory is its `private` worktree, adopted in place, preserving every tracked file and the full filtered history. This repo ignores `/fish/`. Universal variables and `.DS_Store` files remain ignored local state; no shell or function path changed.
 
 - `config.fish` — env vars, brew path, interactive aliases/abbrs
 - `internal/` — subdirs auto-added to `fish_function_path` at startup

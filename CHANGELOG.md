@@ -1,8 +1,8 @@
 # Changelog
 
-## 2026-10-18 — Fish moved to its own local repo
+## 2026-10-18 — Fish moved to its own repo
 
-Fish now has its own repo at `~/.repository/fish`, with one empty public `main` root and no remote. The live `~/.config/fish` directory was adopted in place as its `private` worktree, preserving all 98 tracked source files and the full filtered history. Config ignores `/fish/`; universal variables and `.DS_Store` files stay ignored locally. No startup file, function, live shell, fnm link or inbound process-guard link was moved or restarted. Nothing was published or pushed to a real remote; Angel will choose public files later.
+Fish now has its own repo at `~/.repository/fish`. Public `main` is published as `aharoJ/fish` (the renamed 2023 `dot-fish`): `config.fish`, README and the existing MIT license. Tags `v0.1.0` (the 2023 repo), `v0.2.0` and `v0.3.0` (older `config.fish` backups) and `v0.4.0` (the full config before cleanup, without `config.fish.bak`) hold the old versions. The live `~/.config/fish` directory was adopted in place as its `private` worktree, preserving all 98 tracked source files and the full filtered history. Config ignores `/fish/`; universal variables and `.DS_Store` files stay ignored locally. No startup file, function, live shell, fnm link or inbound process-guard link was moved or restarted. The `private` branch stays local.
 
 ## 2026-10-18 — eza moved to its own repo
 
