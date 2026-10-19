@@ -256,3 +256,6 @@ configstore/
 /eza/
 
 /fish/
+/nvim/
+/nvim-rebuild/
+/nvim-v3/

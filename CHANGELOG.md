@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-18 — Neovim moved to its own repo
+
+Neovim now has its own repo at `~/.repository/nvim`, continuing `aharoJ/nvim`. Public `main` contains today's rebuild config, `lazy-lock.json`, README and MIT license; annotated tags preserve older Vim, LunarVim and Neovim setups. The live `nvim-rebuild`, `nvim` and `nvim-v3` folders were adopted in place as `private`, `private-legacy` and `private-v3` worktrees, preserving full filtered histories and all source files, including the previously ignored icon definitions. Original histories, LunarVim trees, backup notes, the ZIP and a config-history bundle remain on local archive refs. Config ignores the three live folders and leaves `.bak/` unchanged. The daily `NVIM_APPNAME=nvim-rebuild` path stays the same.
+
 ## 2026-10-18 — Fish moved to its own repo
 
 Fish now has its own repo at `~/.repository/fish`. Public `main` is published as `aharoJ/fish` (the renamed 2023 `dot-fish`): `config.fish`, README and the existing MIT license. Tags `v0.1.0` (the 2023 repo), `v0.2.0` and `v0.3.0` (older `config.fish` backups) and `v0.4.0` (the full config before cleanup, without `config.fish.bak`) hold the old versions. The live `~/.config/fish` directory was adopted in place as its `private` worktree, preserving all 98 tracked source files and the full filtered history. Config ignores `/fish/`; universal variables and `.DS_Store` files stay ignored locally. No startup file, function, live shell, fnm link or inbound process-guard link was moved or restarted. The `private` branch stays local.

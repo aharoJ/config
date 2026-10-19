@@ -30,21 +30,11 @@ eza has its own repo at `~/.repository/eza` (`main`, published as `aharoJ/eza`);
 
 ## Neovim (`nvim-rebuild/`)
 
-The active Neovim config uses `NVIM_APPNAME=nvim-rebuild` (aliased as `n` in fish). The old `nvim/` directory exists but is not the active config.
+Neovim has its own repo at `~/.repository/nvim`, continuing the existing `aharoJ/nvim` history. Public `main` contains the current rebuild configuration, `lazy-lock.json`, README and MIT license; annotated version tags preserve older Vim, LunarVim and Neovim setups.
 
-**Boot sequence:** `init.lua` → `core/init.lua` (sets leader=Space, then loads options → keymaps → autocmds → filetypes) → `config/lazy.lua` (lazy.nvim bootstrap).
+The live `~/.config/nvim-rebuild` folder is its `private` worktree, with full filtered history and the previously ignored `lua/lib/icons.lua`. `~/.config/nvim` and `~/.config/nvim-v3` are the `private-legacy` and `private-v3` worktrees. All three were adopted in place. Private branches and archive refs keep original histories, backups, notes and the ZIP locally. This repo ignores `/nvim/`, `/nvim-rebuild/` and `/nvim-v3/`; `.bak/` stays here unchanged.
 
-**Plugin organization:** `lua/plugins/init.lua` imports subdirectories:
-
-- `plugins/core/` — colorscheme (kanagawa), telescope, treesitter, which-key
-- `plugins/editor/` — autopairs, completion, formatting, lint, lsp
-- `plugins/lang/` — language-specific: java, json, markdown, react, rust
-- `plugins/tools/` — git, tmux-navigator
-- `plugins/ui/` — file explorer, statusline
-
-**LSP configs** live in `lsp/` (top-level, using Neovim 0.11+ native LSP dir convention): basedpyright, bashls, eslint, fish_lsp, jsonls, lemminx, lua_ls, marksman, tailwindcss, taplo, ts_ls.
-
-**All plugins are lazy-loaded by default** (`defaults.lazy = true` in lazy.lua).
+The daily editor still uses `NVIM_APPNAME=nvim-rebuild` (fish alias `n`). It loads `init.lua`, core settings, `config/lazy.lua` and categorized plugin modules; LSP definitions live in `lsp/`. No live config path changed.
 
 ## Fish Shell (`fish/`)
 
