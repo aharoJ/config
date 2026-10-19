@@ -80,7 +80,7 @@ Profile switching: `Hyper+T` (stack) or `Hyper+P` (BSP) calls the `yp` fish func
 - `Hyper + key` → skhd/yabai
 - `Ctrl + h/j/k/l` → RESERVED for Neovim ↔ tmux navigation (never bind in skhd)
 - `Alt + h/j/k/l` → RESERVED for Neovim resize
-- `Ctrl + Space` → tmux prefix
+- `Ctrl + b` → tmux prefix (tmux default; Ghostty sends it on `Cmd + z`)
 - `Hyper + 1-9, [, ]` → Karabiner-claimed (desktop switching, backlight)
 
 ## Hammerspoon (`hammerspoon/`)
@@ -105,7 +105,7 @@ hammerspoon/
 
 ## tmux (separate repo)
 
-`~/.repository/tmux` is the main checkout of `aharoJ/tmux` on branch `main` and holds the real `.git` directory. `~/.config/tmux` is its `private` worktree and the live config. This repo ignores `/tmux/`; tmux plugins, relay tools and tests belong to the separate repo.
+`~/.repository/tmux` is the main checkout of `aharoJ/tmux` on branch `main` and holds the real `.git` directory. `~/.config/tmux` is its `private` worktree and the live config. This repo ignores `/tmux/`; tmux plugins, relay tools and tests belong to the separate repo. Agent rules and the messaging guide for that repo live in `~/.config/tmux/.claude/AGENTS.md` (private).
 
 Known leftover: `~/.local/share/relay-stable` is still a worktree of `~/.config/.git`, built from config's old `tmux/` history.
 
