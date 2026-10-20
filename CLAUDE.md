@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal dotfiles for macOS (Apple Silicon). The repo root is `~/.config/`; tmux is managed in a separate repo (see below). There is no build system or CI for this repo. Dotfile changes are applied by reloading the relevant tool.
 
+Each tool's agent rules live in `~/.config/<tool>/.claude/AGENTS.md` (private), and the Claude started in that tool's live directory leads it; Neovim uses `nvim-rebuild`.
+
 Ghostty has its own repo at `~/.repository/ghostty` (`main`, published as `aharoJ/ghostty`); `~/.config/ghostty` is its live `private` worktree. This repo ignores `/ghostty/`.
 
 Starship has its own repo at `~/.repository/starship` (`main`, published as `aharoJ/starship`). Public `main` was cleaned to `starship.toml`, `README.md` and `img/`; old versions are tags `v0.1.0`–`v0.4.0`. `~/.config/starship` is its live `private` worktree. This repo ignores `/starship/`.
