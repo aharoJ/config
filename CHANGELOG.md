@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-22 — Zsh moved to its own repo
+
+Zsh now has public `main` at `~/.repository/zsh` for `aharoJ/zsh`, with `~/.config/zsh` as its independent live `private` worktree. The home `.zshenv` is a pointer; startup settings, PATH ordering and agent snapshot sourcing retain their behavior. Interactive history stays at `~/.zsh_history`; the login shell remains Fish. Tag `v0.1.0` marks the current setup. Private agent rules and a native push lock keep local work out of public history. Config ignores `/zsh/`.
+
 ## 2026-10-18 — Alacritty moved to its own repo
 
 Alacritty now has its own repo at `~/.repository/alacritty`, continuing `aharoJ/alacritty` (renamed from `alacritty-config`). Public `main` contains the current TOML config, themes, saved configurations, nine fonts with complete embedded notices, README and the existing 2023 MIT license. Tags `v0.1.0`–`v0.12.0` preserve older configurations and the current snapshot. The live folder was adopted in place as `private`, preserving all 36 tracked source files, all 19 fonts, backups and 92 filtered history commits. Original paths, notes and raw config/old_dotfiles history remain local. Config ignores `/alacritty/`; no live file, font or import path changed. Ten font binaries whose source copies lack required full or companion notices remain private, along with historical scripts and local state.

@@ -50,6 +50,10 @@ Fish has its own repo at `~/.repository/fish` (`main`, published as `aharoJ/fish
 - `conf.d/` — config snippets sourced on startup
 - Version managers: jenv (Java), fnm (Node), pyenv (Python), direnv
 
+## Zsh (`zsh/`)
+
+`~/.repository/zsh` holds public `main` for `aharoJ/zsh`; `~/.config/zsh` is its independent `private` worktree. Home `~/.zshenv` sets `ZDOTDIR` and sources the live `.zshenv`; `.zprofile` and `.zshrc` load from that directory. Interactive history stays at `~/.zsh_history`. The tool's Claude leads from `~/.config/zsh/.claude/AGENTS.md`. Config ignores `/zsh/`; the login shell remains Fish. Tag `v0.1.0` marks the current setup.
+
 ## Window Management
 
 **yabai** (`yabai/`): Neutral base config in `yabairc` — no layout opinion. Layout-specific settings (BSP, stack, float) live in `profiles/`. SIP is fully enabled (no scripting addition).
